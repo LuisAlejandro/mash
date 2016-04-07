@@ -1,4 +1,3 @@
-set nocompatible
 filetype plugin on
 filetype indent on
 
@@ -109,7 +108,7 @@ set undoreload=10000        " Maximum number lines to save for undo on a buffer 
 " window/icon titles
 set title
 set icon
-let &titlestring = "%t%m%r\ \[%{ProjectFilepath(1)}\]"
+let &titlestring = '%t%m%r\ \[%{ProjectFilepath(1)}\]'
 let &iconstring = &titlestring
 
 set clipboard=unnamed,unnamedplus
@@ -127,14 +126,14 @@ set listchars=tab:--,trail:•,extends:#,nbsp:. " Highlight problematic whitespa
 
 " Fix Alt mappings
 " http://stackoverflow.com/a/10216459
-
-let c='a'
-while c <= 'z'
-  exec "set <A-".c.">=\e".c
-  exec "imap \e".c." <A-".c.">"
-  let c = nr2char(1+char2nr(c))
-endw
-
+"
+" let c='a'
+" while c <= 'z'
+"   exec "set <A-".c.">=\e".c
+"   exec "imap \e".c." <A-".c.">"
+"   let c = nr2char(1+char2nr(c))
+" endw
+"
 set timeout ttimeoutlen=50
 
 " " Tab completion

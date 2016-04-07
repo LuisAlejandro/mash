@@ -1,3 +1,6 @@
+set nocompatible
+set runtimepath=~/.subliminal-vim,$VIMRUNTIME
+
 runtime bundle/vim-pathogen/autoload/pathogen.vim
 execute pathogen#infect()
 

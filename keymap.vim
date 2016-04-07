@@ -1,99 +1,106 @@
+" Sublime Text key noremappings
+
+
+
+
 " Text editing
-noremap <C-a> gg<S-v>G
+noremap <silent> <C-a> gg<S-v>G
 
 " Move a line of text using ALT+[jk] or Comamnd+[jk] on mac
-nnoremap <C-j> mz:m+<cr>`z
-vnoremap <C-j> :m'>+<cr>`<my`>mzgv`yo`z
-nnoremap <C-k> mz:m-2<cr>`z
-vnoremap <C-k> :m'<-2<cr>`>my`<mzgv`yo`z
+nnoremap <silent> <C-S-Down> mz:m+<cr>`z
+vnoremap <silent> <C-S-Down> :m'>+<cr>`<my`>mzgv`yo`z
+nnoremap <silent> <C-S-Up> mz:m-2<cr>`z
+vnoremap <silent> <C-S-Up> :m'<-2<cr>`>my`<mzgv`yo`z
 
 " duplicate the selection
-nnoremap <A-d> yyp
-vnoremap <A-d> yp
-inoremap <A-d> <Esc>yypi
+nnoremap <silent> <Esc>[68;5~ yyp
+vnoremap <silent> <Esc>[68;5~ yp
+inoremap <silent> <Esc>[68;5~ <Esc>yypi
 
 " indent / deindent after selecting the text with (⇧ v), (.) to repeat.
-vnoremap <Tab> >gv
-nnoremap <Tab> >>
-vnoremap <S-Tab> <gv
-nnoremap <S-Tab> <<
+vnoremap <silent> <Tab> >gv
+nnoremap <silent> <Tab> >>
+vnoremap <silent> <S-Tab> <gv
+nnoremap <silent> <S-Tab> <<
 
 " Cut, Paste, Copy
-vnoremap <C-x> d
-vnoremap <C-v> p
-vnoremap <C-c> ygv
-inoremap <C-x> <Esc>ddi
-inoremap <C-v> <Esc>pi
-inoremap <C-c> <Esc>yyi
-nnoremap <C-x> dd
-nnoremap <C-v> p
-nnoremap <C-c> yy
+vnoremap <silent> <C-x> "xygvd:call system('xsel -i -b', @x)<CR>v
+nnoremap <silent> <C-x> "xdd:call system('xsel -i -b', @x)<CR>
+inoremap <silent> <C-x> <Esc>"xdd:call system('xsel -i -b', @x)<CR>i
+
+vnoremap <silent> <C-v> :let @x=system('xsel -b')<CR>"xpv
+nnoremap <silent> <C-v> :let @x=system('xsel -b')<CR>"xp
+inoremap <silent> <C-v> <Esc>:let @x=system('xsel -b')<CR>"xpi
+
+vnoremap <silent> <C-c> "xy:call system('xsel -i -b', @x)<CR>v
+nnoremap <silent> <C-c> "xyy:call system('xsel -i -b', @x)<CR>
+inoremap <silent> <C-c> <Esc>"xyy:call system('xsel -i -b', @x)<CR>i
 
 " Undo, Redo
-nnoremap <C-z> :undo<CR>
-inoremap <C-z> <Esc>:undo<CR>
-vnoremap <C-z> <Esc>:undo<CR>
-nnoremap <C-y> :redo<CR>
-inoremap <C-y> <Esc>:redo<CR>
-vnoremap <C-y> <Esc>:redo<CR>
+nnoremap <silent> <C-z> :undo<CR>
+inoremap <silent> <C-z> <Esc>:undo<CR>
+vnoremap <silent> <C-z> <Esc>:undo<CR>
+nnoremap <silent> <C-y> :redo<CR>
+inoremap <silent> <C-y> <Esc>:redo<CR>
+vnoremap <silent> <C-y> <Esc>:redo<CR>
 
 
 " Buffers (tabs) ----------------------------------------------------
 
 " Save tab
-nnoremap <C-s> :w<CR>
-inoremap <C-s> <Esc>:w<CR>
-vnoremap <C-s> <Esc>:w<CR>
+nnoremap <silent> <C-s> :w<CR>
+inoremap <silent> <C-s> <Esc>:w<CR>
+vnoremap <silent> <C-s> <Esc>:w<CR>
 
 " Save all tabs
-nnoremap <C-e> :wa<CR>
-inoremap <C-e> <Esc>:wa<CR>
-vnoremap <C-e> <Esc>:wa<CR>
+nnoremap <silent> <C-e> :wa<CR>
+inoremap <silent> <C-e> <Esc>:wa<CR>
+vnoremap <silent> <C-e> <Esc>:wa<CR>
 
 " Close tab
-nnoremap <C-w> :bp <BAR> bd #<CR>
-inoremap <C-w> <Esc>:bp <BAR> bd #<CR>
-vnoremap <C-w> <Esc>:bp <BAR> bd #<CR>
+nnoremap <silent> <C-w> :bp <BAR> bd #<CR>
+inoremap <silent> <C-w> <Esc>:bp <BAR> bd #<CR>
+vnoremap <silent> <C-w> <Esc>:bp <BAR> bd #<CR>
 
 " Close all tabs
-nnoremap <C-q> :bufdo bd<CR>
-inoremap <C-q> <Esc>:bufdo bd<CR>
-vnoremap <C-q> <Esc>:bufdo bd<CR>
+nnoremap <silent> <C-q> :bufdo bd<CR>
+inoremap <silent> <C-q> <Esc>:bufdo bd<CR>
+vnoremap <silent> <C-q> <Esc>:bufdo bd<CR>
 
 " Move back and forth through previous and next tabs
 " with ,z and ,x
-noremap <leader>z :bprevious<CR>
-noremap <leader>x :bnext<CR>
+noremap <silent> <leader>z :bprevious<CR>
+noremap <silent> <leader>x :bnext<CR>
 
 " To open a new empty tab
-nmap <leader>n :e<SPACE>
+nnoremap <silent> <leader>n :e<SPACE>
 
 " Windows (splits) --------------------------------------------------
 
 " Create window splits easier
-nnoremap <leader>v <C-w>v
-nnoremap <leader>s <C-w>s
+nnoremap <silent> <leader>v <C-w>v
+nnoremap <silent> <leader>s <C-w>s
 
 " Close split
-nnoremap <leader>q <C-w>q
+nnoremap <silent> <leader>q <C-w>q
 
 " Navigate between split buffers windows
-nnoremap <C-Down> <C-w>j<C-w>_
-nnoremap <C-Up> <C-w>k<C-w>_
-nnoremap <C-Left> <C-w>h<C-w>_
-nnoremap <C-Right> <C-w>l<C-w>_
+nnoremap <silent> <C-Down> <C-w>j<C-w>_
+nnoremap <silent> <C-Up> <C-w>k<C-w>_
+nnoremap <silent> <C-Left> <C-w>h<C-w>_
+nnoremap <silent> <C-Right> <C-w>l<C-w>_
 
 " Resize windows with arrow keys
-nnoremap <S-Up> <C-w>+
-nnoremap <S-Down> <C-w>-
-nnoremap <S-Left> <C-w><
-nnoremap <S-Right>  <C-w>>
-
+" nnoremap <silent> <S-Up> <C-w>+
+" nnoremap <silent> <S-Down> <C-w>-
+" nnoremap <silent> <S-Left> <C-w><
+" nnoremap <silent> <S-Right>  <C-w>>
+"
 " Console (quickfix) ------------------------------------------------
 " ,q to toggle quickfix window (where you have stuff like Ag)
 " ,oq to open it back up (rare)
-nmap <silent> <leader>qc :cclose<CR>
-nmap <silent> <leader>qo :copen<CR>
+nnoremap <silent> <leader>qc :cclose<CR>
+nnoremap <silent> <leader>qo :copen<CR>
 
 
 " Navigation =================================================================
@@ -132,7 +139,7 @@ nnoremap ^ 0
 "   endfunction " }}}
 "   function! s:ToggleList(bufname, pfx) " {{{
 "     let buflist = GetBufferList()
-"     for bufnum in map(filter(split(buflist, '\n'), 'v:val =~ "'.a:bufname.'"'), 'str2nr(matchstr(v:val, "\\d\\+"))')
+"     for bufnum in noremap(filter(split(buflist, '\n'), 'v:val =~ "'.a:bufname.'"'), 'str2nr(matchstr(v:val, "\\d\\+"))')
 "       if bufwinnr(bufnum) != -1
 "         exec(a:pfx.'close')
 "         if a:pfx == 'l'
@@ -224,7 +231,7 @@ nnoremap ^ 0
 "   nnoremap <silent> ,X :silent lclose<CR>:silent bd<CR>
 "
 "   " ,d - open definition in new window
-"   nmap <silent> ,d <C-w>f
+"   nnoremap <silent> ,d <C-w>f
 "
 "   " ,r - reload current buffer
 "   nnoremap <silent> ,r :edit<CR>
@@ -315,34 +322,34 @@ nnoremap ^ 0
 "     " character) add the following to your .vimrc.before.local file:
 "     "   let g:spf13_leader='\'
 "     if !exists('g:spf13_leader')
-"         let mapleader = ','
+"         let noremapleader = ','
 "     else
-"         let mapleader=g:spf13_leader
+"         let noremapleader=g:spf13_leader
 "     endif
 "     if !exists('g:spf13_localleader')
-"         let maplocalleader = '_'
+"         let noremaplocalleader = '_'
 "     else
-"         let maplocalleader=g:spf13_localleader
+"         let noremaplocalleader=g:spf13_localleader
 "     endif
 "
-"     " The default mappings for editing and applying the spf13 configuration
+"     " The default noremappings for editing and applying the spf13 configuration
 "     " are <leader>ev and <leader>sv respectively. Change them to your preference
 "     " by adding the following to your .vimrc.before.local file:
-"     "   let g:spf13_edit_config_mapping='<leader>ec'
-"     "   let g:spf13_apply_config_mapping='<leader>sc'
-"     if !exists('g:spf13_edit_config_mapping')
-"         let s:spf13_edit_config_mapping = '<leader>ev'
+"     "   let g:spf13_edit_config_noremapping='<leader>ec'
+"     "   let g:spf13_apply_config_noremapping='<leader>sc'
+"     if !exists('g:spf13_edit_config_noremapping')
+"         let s:spf13_edit_config_noremapping = '<leader>ev'
 "     else
-"         let s:spf13_edit_config_mapping = g:spf13_edit_config_mapping
+"         let s:spf13_edit_config_noremapping = g:spf13_edit_config_noremapping
 "     endif
-"     if !exists('g:spf13_apply_config_mapping')
-"         let s:spf13_apply_config_mapping = '<leader>sv'
+"     if !exists('g:spf13_apply_config_noremapping')
+"         let s:spf13_apply_config_noremapping = '<leader>sv'
 "     else
-"         let s:spf13_apply_config_mapping = g:spf13_apply_config_mapping
+"         let s:spf13_apply_config_noremapping = g:spf13_apply_config_noremapping
 "     endif
 "
 "     " Easier moving in tabs and windows
-"     " The lines conflict with the default digraph mapping of <C-K>
+"     " The lines conflict with the default digraph noremapping of <C-K>
 "     " If you prefer that functionality, add the following to your
 "     " .vimrc.before.local file:
 
@@ -370,17 +377,17 @@ nnoremap ^ 0
 "             endif
 "         endfunction
 "
-"         " Map g* keys in Normal, Operator-pending, and Visual+select
+"         " noremap g* keys in Normal, Operator-pending, and Visual+select
 "         noremap $ :call WrapRelativeMotion("$")<CR>
 "         noremap <End> :call WrapRelativeMotion("$")<CR>
 "         noremap 0 :call WrapRelativeMotion("0")<CR>
 "         noremap <Home> :call WrapRelativeMotion("0")<CR>
 "         noremap ^ :call WrapRelativeMotion("^")<CR>
-"         " Overwrite the operator pending $/<End> mappings from above
+"         " Overwrite the operator pending $/<End> noremappings from above
 "         " to force inclusive motion with :execute normal!
 "         onoremap $ v:call WrapRelativeMotion("$")<CR>
 "         onoremap <End> v:call WrapRelativeMotion("$")<CR>
-"         " Overwrite the Visual+select mode mappings from above
+"         " Overwrite the Visual+select mode noremappings from above
 "         " to ensure the correct vis_sel flag is passed to function
 "         vnoremap $ :<C-U>call WrapRelativeMotion("$", 1)<CR>
 "         vnoremap <End> :<C-U>call WrapRelativeMotion("$", 1)<CR>
@@ -395,8 +402,8 @@ nnoremap ^ 0
 "     " .vimrc.before.local file:
 "     "   let g:spf13_no_fastTabs = 1
 "     if !exists('g:spf13_no_fastTabs')
-"         map <S-H> gT
-"         map <S-L> gt
+"         noremap <S-H> gT
+"         noremap <S-L> gt
 "     endif
 "
 "     " Stupid shift key fixes
@@ -413,42 +420,42 @@ nnoremap ^ 0
 "             command! -bang Qa qa<bang>
 "         endif
 "
-"         cmap Tabe tabe
+"         cnoremap Tabe tabe
 "     endif
 "
 "     " Yank from the cursor to the end of the line, to be consistent with C and D.
 "     nnoremap Y y$
 "
 "     " Code folding options
-"     nmap <leader>f0 :set foldlevel=0<CR>
-"     nmap <leader>f1 :set foldlevel=1<CR>
-"     nmap <leader>f2 :set foldlevel=2<CR>
-"     nmap <leader>f3 :set foldlevel=3<CR>
-"     nmap <leader>f4 :set foldlevel=4<CR>
-"     nmap <leader>f5 :set foldlevel=5<CR>
-"     nmap <leader>f6 :set foldlevel=6<CR>
-"     nmap <leader>f7 :set foldlevel=7<CR>
-"     nmap <leader>f8 :set foldlevel=8<CR>
-"     nmap <leader>f9 :set foldlevel=9<CR>
+"     nnoremap <leader>f0 :set foldlevel=0<CR>
+"     nnoremap <leader>f1 :set foldlevel=1<CR>
+"     nnoremap <leader>f2 :set foldlevel=2<CR>
+"     nnoremap <leader>f3 :set foldlevel=3<CR>
+"     nnoremap <leader>f4 :set foldlevel=4<CR>
+"     nnoremap <leader>f5 :set foldlevel=5<CR>
+"     nnoremap <leader>f6 :set foldlevel=6<CR>
+"     nnoremap <leader>f7 :set foldlevel=7<CR>
+"     nnoremap <leader>f8 :set foldlevel=8<CR>
+"     nnoremap <leader>f9 :set foldlevel=9<CR>
 "
 "     " Most prefer to toggle search highlighting rather than clear the current
 "     " search results. To clear search highlighting rather than toggle it on
 "     " and off, add the following to your .vimrc.before.local file:
 "     "   let g:spf13_clear_search_highlight = 1
 "     if exists('g:spf13_clear_search_highlight')
-"         nmap <silent> <leader>/ :nohlsearch<CR>
+"         nnoremap <silent> <leader>/ :nohlsearch<CR>
 "     else
-"         nmap <silent> <leader>/ :set invhlsearch<CR>
+"         nnoremap <silent> <leader>/ :set invhlsearch<CR>
 "     endif
 "
 "
 "     " Find merge conflict markers
-"     map <leader>fc /\v^[<\|=>]{7}( .*\|$)<CR>
+"     noremap <leader>fc /\v^[<\|=>]{7}( .*\|$)<CR>
 "
 "     " Shortcuts
 "     " Change Working Directory to that of the current file
-"     cmap cwd lcd %:p:h
-"     cmap cd. lcd %:p:h
+"     cnoremap cwd lcd %:p:h
+"     cnoremap cd. lcd %:p:h
 "
 "     " Visual shifting (does not exit Visual mode)
 "     vnoremap < <gv
@@ -459,33 +466,33 @@ nnoremap ^ 0
 "     vnoremap . :normal .<CR>
 "
 "     " For when you forget to sudo.. Really Write the file.
-"     cmap w!! w !sudo tee % >/dev/null
+"     cnoremap w!! w !sudo tee % >/dev/null
 "
 "     " Some helpers to edit mode
 "     " http://vimcasts.org/e/14
 "     cnoremap %% <C-R>=fnameescape(expand('%:h')).'/'<cr>
-"     map <leader>ew :e %%
-"     map <leader>es :sp %%
-"     map <leader>ev :vsp %%
-"     map <leader>et :tabe %%
+"     noremap <leader>ew :e %%
+"     noremap <leader>es :sp %%
+"     noremap <leader>ev :vsp %%
+"     noremap <leader>et :tabe %%
 "
 "     " Adjust viewports to the same size
-"     map <Leader>= <C-w>=
+"     noremap <Leader>= <C-w>=
 "
-"     " Map <Leader>ff to display all lines with keyword under cursor
+"     " noremap <Leader>ff to display all lines with keyword under cursor
 "     " and ask which one to jump to
-"     nmap <Leader>ff [I:let nr = input("Which one: ")<Bar>exe "normal " . nr ."[\t"<CR>
+"     nnoremap <Leader>ff [I:let nr = input("Which one: ")<Bar>exe "normal " . nr ."[\t"<CR>
 "
 "     " Easier horizontal scrolling
-"     map zl zL
-"     map zh zH
+"     noremap zl zL
+"     noremap zh zH
 "
 "     " Easier formatting
 "     nnoremap <silent> <leader>q gwip
 "
 "     " FIXME: Revert this f70be548
 "     " fullscreen mode for GVIM and Terminal, need 'wmctrl' in you PATH
-"     map <silent> <F11> :call system("wmctrl -ir " . v:windowid . " -b toggle,fullscreen")<CR>
+"     noremap <silent> <F11> :call system("wmctrl -ir " . v:windowid . " -b toggle,fullscreen")<CR>
 "
 " " }
 

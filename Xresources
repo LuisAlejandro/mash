@@ -9,6 +9,7 @@ Xft.rgba:      rgb
 
 !--[ urxvt ]---------------------------
 
+URxvt*.geometry: 		150x40
 URxvt*.depth: 			32
 URxvt*.buffered:		true
 URxvt*.scrollBar: 		false
@@ -174,3 +175,57 @@ URxvt.keysym.M-C-S-Home       : \033[1;8H
 URxvt.keysym.M-C-S-End        : \033[1;8F
 URxvt.keysym.M-C-S-Insert     : \033[2;8~
 URxvt.keysym.M-C-S-Delete     : \033[3;8~
+
+! Ctrl-Shift-a
+URxvt.keysym.C-0x41            : \033[65;5~
+! Ctrl-Shift-b
+URxvt.keysym.C-0x42            : \033[66;5~
+! Ctrl-Shift-c
+URxvt.keysym.C-0x43            : \033[67;5~
+! Ctrl-Shift-d
+URxvt.keysym.C-0x44            : \033[68;5~
+! Ctrl-Shift-e
+URxvt.keysym.C-0x45            : \033[69;5~
+! Ctrl-Shift-f
+URxvt.keysym.C-0x46            : \033[70;5~
+! Ctrl-Shift-g
+URxvt.keysym.C-0x47            : \033[71;5~
+! Ctrl-Shift-h
+URxvt.keysym.C-0x48            : \033[72;5~
+! Ctrl-Shift-i
+URxvt.keysym.C-0x49            : \033[73;5~
+! Ctrl-Shift-j
+URxvt.keysym.C-0x50            : \033[74;5~
+! Ctrl-Shift-k
+URxvt.keysym.C-0x51            : \033[75;5~
+! Ctrl-Shift-l
+URxvt.keysym.C-0x52            : \033[76;5~
+! Ctrl-Shift-m
+URxvt.keysym.C-0x53            : \033[77;5~
+! Ctrl-Shift-n
+URxvt.keysym.C-0x54            : \033[78;5~
+! Ctrl-Shift-o
+URxvt.keysym.C-0x55            : \033[79;5~
+! Ctrl-Shift-p
+URxvt.keysym.C-0x56            : \033[80;5~
+! Ctrl-Shift-q
+URxvt.keysym.C-0x57            : \033[81;5~
+! Ctrl-Shift-r
+URxvt.keysym.C-0x58            : \033[82;5~
+! Ctrl-Shift-s
+URxvt.keysym.C-0x59            : \033[83;5~
+! Ctrl-Shift-t
+URxvt.keysym.C-0x60            : \033[84;5~
+! Ctrl-Shift-u
+URxvt.keysym.C-0x61            : \033[85;5~
+! Ctrl-Shift-v
+URxvt.keysym.C-0x62            : \033[86;5~
+! Ctrl-Shift-w
+URxvt.keysym.C-0x63            : \033[87;5~
+! Ctrl-Shift-x
+URxvt.keysym.C-0x64            : \033[88;5~
+! Ctrl-Shift-y
+URxvt.keysym.C-0x65            : \033[89;5~
+! Ctrl-Shift-z
+URxvt.keysym.C-0x66            : \033[90;5~
+

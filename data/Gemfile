@@ -1,4 +1,0 @@
-source 'https://rubygems.org'
-gem 'ruby'
-gem 'sqlint'
-gem 'rubocop'

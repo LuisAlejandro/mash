@@ -171,37 +171,40 @@ nmap <silent> <leader>st :SyntasticToggleMode<CR>
 nmap <silent> <leader>sc :SyntasticCheck<CR>
 
 " Python
-let g:syntastic_python_checkers = ['python', 'flake8']
-let g:syntastic_python_python_exec = '~/.vim/sandboxes/python/bin/python'
-let g:syntastic_python_flake8_exec = '~/.vim/sandboxes/python/bin/flake8'
+let g:syntastic_python_checkers = ['python', 'pep8', 'pylint', 'pyflakes', 'pydocstyle']
+let g:syntastic_python_python_exec = '~/.subliminal-vim/sandboxes/python/bin/python'
+let g:syntastic_python_pep8_exec = '~/.subliminal-vim/sandboxes/python/bin/pep8'
+let g:syntastic_python_pylint_exec = '~/.subliminal-vim/sandboxes/python/bin/pylint'
+let g:syntastic_python_pyflakes_exec = '~/.subliminal-vim/sandboxes/python/bin/pyflakes'
+let g:syntastic_python_pydocstyle_exec = '~/.subliminal-vim/sandboxes/python/bin/pydocstyle'
 
 " Ruby
 let g:syntastic_ruby_checkers = ['mri', 'rubocop']
-let g:syntastic_ruby_mri_exec = '~/.vim/sandboxes/ruby/ruby/2.3.0/bin/ruby'
-let g:syntastic_ruby_rubocop_exec = '~/.vim/sandboxes/ruby/ruby/2.3.0/bin/rubocop'
+let g:syntastic_ruby_mri_exec = '~/.subliminal-vim/sandboxes/ruby/ruby/2.3.0/bin/ruby'
+let g:syntastic_ruby_rubocop_exec = '~/.subliminal-vim/sandboxes/ruby/ruby/2.3.0/bin/rubocop'
 
 " Shell
 let g:syntastic_sh_checkers = ['sh', 'shellcheck', 'checkbashisms']
 
 " Javascript
 let g:syntastic_javascript_checkers = ['jshint', 'jscs']
-let g:syntastic_javascript_jshint_exec =  '~/.vim/sandboxes/node/node_modules/.bin/jshint'
-let g:syntastic_javascript_jscs_exec =  '~/.vim/sandboxes/node/node_modules/.bin/jscs'
+let g:syntastic_javascript_jshint_exec =  '~/.subliminal-vim/sandboxes/node/node_modules/.bin/jshint'
+let g:syntastic_javascript_jscs_exec =  '~/.subliminal-vim/sandboxes/node/node_modules/.bin/jscs'
 
 " Go
 let g:syntastic_go_checkers = ['go', 'gometalinter']
 
 " Markdown
 let g:syntastic_markdown_checkers = ['textlint']
-let g:syntastic_markdown_textlint_exec =  '~/.vim/sandboxes/node/node_modules/.bin/textlint'
+let g:syntastic_markdown_textlint_exec =  '~/.subliminal-vim/sandboxes/node/node_modules/.bin/textlint'
 
 " HTML
 let g:syntastic_html_checkers = ['textlint']
-let g:syntastic_html_textlint_exec =  '~/.vim/sandboxes/node/node_modules/.bin/textlint'
+let g:syntastic_html_textlint_exec =  '~/.subliminal-vim/sandboxes/node/node_modules/.bin/textlint'
 
 " CSS
 let g:syntastic_css_checkers = ['csslint']
-let g:syntastic_css_csslint_exec =  '~/.vim/sandboxes/node/node_modules/.bin/csslint'
+let g:syntastic_css_csslint_exec =  '~/.subliminal-vim/sandboxes/node/node_modules/.bin/csslint'
 
 " C
 let g:syntastic_c_checkers = ['clang_tidy']
@@ -211,11 +214,11 @@ let g:syntastic_cpp_checkers = ['clang_tidy']
 
 " Vim
 let g:syntastic_vim_checkers = ['vint']
-let g:syntastic_vim_vint_exec = '~/.vim/sandboxes/python/bin/vint'
+let g:syntastic_vim_vint_exec = '~/.subliminal-vim/sandboxes/python/bin/vint'
 
 " SQL
 let g:syntastic_sql_checkers = ['sqlint']
-let g:syntastic_sql_sqlint_exec = '~/.vim/sandboxes/ruby/ruby/2.3.0/bin/sqlint'
+let g:syntastic_sql_sqlint_exec = '~/.subliminal-vim/sandboxes/ruby/ruby/2.3.0/bin/sqlint'
 
 " PHP
 let g:syntastic_php_checkers = ['php']
@@ -431,7 +434,7 @@ vmap ,{ c{<C-R>"}<ESC>
 
 " bundle/YankRing.vim
 " ------------------------------------------------------------------
-let g:yankring_history_dir = '~/.vim/tempdir'
+let g:yankring_history_dir = '~/.subliminal-vim/tempdir'
 let g:yankring_max_history = 100
 let g:yankring_window_use_horiz = 0
 let g:yankring_clipboard_monitor = 0
