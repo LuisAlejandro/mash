@@ -1,5 +1,7 @@
 ### File explorer panel
 
+[![Join the chat at https://gitter.im/LuisAlejandro/subliminal-vim](https://badges.gitter.im/LuisAlejandro/subliminal-vim.svg)](https://gitter.im/LuisAlejandro/subliminal-vim?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 The file explorer panel is powered by the NERDTree plugin. You can use it with the following shorcuts.
 
 
