@@ -1,9 +1,14 @@
 [Desktop Entry]
-Version=1.0
+Encoding=UTF-8
 Name=Subliminal Vim
 GenericName=Text Editor
-Exec=subliminal-vim
+Comment=Text Editor
+X-GNOME-FullName=Subliminal Vim
+Exec=subliminal-vim %u
 Terminal=false
 Icon=/usr/share/icons/subliminal-vim.png
 Type=Application
 Categories=TextEditor;IDE;Development
+MimeType=text/plain;
+StartupNotify=true
+StartupWMClass=subliminal-vim

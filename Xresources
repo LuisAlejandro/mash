@@ -14,19 +14,22 @@ URxvt*.depth: 			32
 URxvt*.buffered:		true
 URxvt*.scrollBar: 		false
 URxvt*.borderLess:		false
-URxvt*.borderwidth: 
+URxvt*.borderwidth: 0
 URxvt*.cursorBlink:		true
 URxvt*.cursorUnderline:		true
 URxvt*.saveLines:		5000
 URxvt*.internalborder:	0
-URxvt*.transparent: true
+URxvt*.transparent: false
 URxvt*.iso14755: false
 URxvt*.iso14755_52: false
 URxvt*.font: xft:Droid Sans Mono for Powerline:size=11:Regular
+URxvt*.iconFile: /usr/share/icons/subliminal-vim.png
+URxvt*.iconName: subliminal-vim
+URxvt*.title: Subliminal Vim
 URxvt*.letterSpace: -1.0
 URxvt*.intensityStyles: false
-URxvt*.title: Terminal
-URxvt*.loginShell: true
+URxvt*.termName: rxvt-unicode-256color
+!URxvt*.loginShell: true
 URxvt*.xftAntialias: true
 
 !--[ colours ]-------------------------

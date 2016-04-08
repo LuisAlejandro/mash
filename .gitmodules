@@ -112,3 +112,12 @@
 [submodule "bundle/vim-misc"]
 	path = bundle/vim-misc
 	url = https://github.com/xolox/vim-misc
+[submodule "bundle/vim-auto-save"]
+	path = bundle/vim-auto-save
+	url = https://github.com/vim-scripts/vim-auto-save
+[submodule "bundle/GoldenView.Vim"]
+	path = bundle/GoldenView.Vim
+	url = https://github.com/zhaocai/GoldenView.Vim
+[submodule "bundle/vim-ctrlp-cmdpalette"]
+	path = bundle/vim-ctrlp-cmdpalette
+	url = https://github.com/fisadev/vim-ctrlp-cmdpalette
