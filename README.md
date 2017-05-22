@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/LuisAlejandro/subliminal-view.png?label=ready&title=Ready)](https://waffle.io/LuisAlejandro/subliminal-view?utm_source=badge)
 <img align="right" height="100" src="https://cloud.githubusercontent.com/assets/324683/14374725/0a483732-fd23-11e5-9b56-b0e280b20760.png">
 
 # Subliminal Vim 0.1a1
