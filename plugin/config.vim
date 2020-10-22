@@ -21,8 +21,6 @@
 " SEARCH FUNCTIONS
 " ----------------------------------------------------------------------------
 
-let $KIVY_NO_CONSOLELOG='1'
-let $KIVY_NO_FILELOG='1'
 
 let g:sv_py_path = '/usr/bin/python'
 let g:sv_py_search = '~/.config/subliminal-view/app/ui/search.py'
@@ -361,14 +359,19 @@ let g:airline_left_alt_sep = "\ue0b9"
 let g:airline_right_sep = "\ue0ba"
 let g:airline_right_alt_sep = "\ue0bb"
 
+if !exists('g:airline_symbols')
+    let g:airline_symbols = {}
+endif
+
+let g:airline_symbols.modified = "  \u2022"
+
+
 " Enable the list of buffers
 let g:airline#extensions#tabline#enabled = 1
 let g:airline#extensions#tabline#show_tabs = 0
-let g:airline#extensions#tabline#show_buffers = 1
 let g:airline#extensions#tabline#show_tab_type = 0
 
-" Show just the filename
-let g:airline#extensions#tabline#fnamemod = ':t'
+let g:airline#extensions#tabline#formatter = 'subliminal'
 let g:airline#extensions#tabline#left_sep = "\ue0b8"
 let g:airline#extensions#tabline#left_alt_sep = "\ue0b9"
 let g:airline#extensions#tabline#buffer_idx_mode = 1
@@ -382,7 +385,7 @@ let g:airline#extensions#default#layout = [
             \ ['a', 'b', 'warning', 'error', 'c'], ['x', 'y', 'z']
             \ ]
 
-" let g:airline_exclude_filetypes = ['nerdtree', 'unite']
+let g:airline_exclude_filetypes = ['nerdtree', 'unite']
 
 " bundle/vim-devicons
 " ------------------------------------------------------------------

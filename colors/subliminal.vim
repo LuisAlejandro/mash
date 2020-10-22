@@ -30,10 +30,11 @@ let g:colors_name = "subliminal"
 
 hi Cursor ctermfg=235 ctermbg=231 cterm=NONE guifg=#272822 guibg=#f8f8f0 gui=NONE
 hi Visual ctermfg=NONE ctermbg=59 cterm=NONE guifg=NONE guibg=#49483e gui=NONE
-hi CursorLine ctermfg=NONE ctermbg=237 cterm=NONE guifg=NONE guibg=#3c3d37 gui=NONE
-hi CursorColumn ctermfg=NONE ctermbg=237 cterm=NONE guifg=NONE guibg=#3c3d37 gui=NONE
-hi ColorColumn ctermfg=NONE ctermbg=237 cterm=NONE guifg=NONE guibg=#3c3d37 gui=NONE
-hi LineNr ctermfg=102 ctermbg=237 cterm=NONE guifg=#90908a guibg=#3c3d37 gui=NONE
+hi CursorLine ctermfg=NONE ctermbg=235 cterm=NONE guifg=NONE guibg=#272822 gui=NONE
+hi CursorLineNr ctermfg=102 ctermbg=237 cterm=NONE guifg=#90908a guibg=#3c3d37 gui=NONE
+hi CursorColumn ctermfg=NONE ctermbg=235 cterm=NONE guifg=NONE guibg=#272822 gui=NONE
+hi ColorColumn ctermfg=NONE ctermbg=235 cterm=NONE guifg=NONE guibg=#272822 gui=NONE
+hi LineNr ctermfg=102 ctermbg=235 cterm=NONE guifg=#90908a guibg=#272822 gui=NONE
 hi VertSplit ctermfg=241 ctermbg=241 cterm=NONE guifg=#64645e guibg=#64645e gui=NONE
 hi MatchParen ctermfg=197 ctermbg=NONE cterm=underline guifg=#f92672 guibg=NONE gui=underline
 hi StatusLine ctermfg=231 ctermbg=241 cterm=bold guifg=#f8f8f2 guibg=#64645e gui=bold
@@ -44,7 +45,7 @@ hi IncSearch ctermfg=235 ctermbg=186 cterm=NONE guifg=#272822 guibg=#e6db74 gui=
 hi Search ctermfg=NONE ctermbg=NONE cterm=underline guifg=NONE guibg=NONE gui=underline
 hi Directory ctermfg=141 ctermbg=NONE cterm=NONE guifg=#ae81ff guibg=NONE gui=NONE
 hi Folded ctermfg=242 ctermbg=235 cterm=NONE guifg=#75715e guibg=#272822 gui=NONE
-hi SignColumn ctermfg=NONE ctermbg=237 cterm=NONE guifg=NONE guibg=#3c3d37 gui=NONE
+hi SignColumn ctermfg=NONE ctermbg=235 cterm=NONE guifg=NONE guibg=#272822 gui=NONE
 hi Normal ctermfg=231 ctermbg=235 cterm=NONE guifg=#f8f8f2 guibg=#272822 gui=NONE
 hi Boolean ctermfg=141 ctermbg=NONE cterm=NONE guifg=#ae81ff guibg=NONE gui=NONE
 hi Character ctermfg=141 ctermbg=NONE cterm=NONE guifg=#ae81ff guibg=NONE gui=NONE
@@ -56,6 +57,7 @@ hi DiffAdd ctermfg=231 ctermbg=64 cterm=bold guifg=#f8f8f2 guibg=#46830c gui=bol
 hi DiffDelete ctermfg=88 ctermbg=NONE cterm=NONE guifg=#8b0807 guibg=NONE gui=NONE
 hi DiffChange ctermfg=NONE ctermbg=NONE cterm=NONE guifg=#f8f8f2 guibg=#243955 gui=NONE
 hi DiffText ctermfg=231 ctermbg=24 cterm=bold guifg=#f8f8f2 guibg=#204a87 gui=bold
+hi Error ctermfg=NONE ctermbg=160 cterm=NONE guifg=NONE guibg=#d70000 gui=NONE
 hi ErrorMsg ctermfg=231 ctermbg=197 cterm=NONE guifg=#f8f8f0 guibg=#f92672 gui=NONE
 hi WarningMsg ctermfg=231 ctermbg=197 cterm=NONE guifg=#f8f8f0 guibg=#f92672 gui=NONE
 hi Float ctermfg=141 ctermbg=NONE cterm=NONE guifg=#ae81ff guibg=NONE gui=NONE
@@ -63,7 +65,7 @@ hi Function ctermfg=148 ctermbg=NONE cterm=NONE guifg=#a6e22e guibg=NONE gui=NON
 hi Identifier ctermfg=81 ctermbg=NONE cterm=NONE guifg=#66d9ef guibg=NONE gui=italic
 hi Keyword ctermfg=197 ctermbg=NONE cterm=NONE guifg=#f92672 guibg=NONE gui=NONE
 hi Label ctermfg=186 ctermbg=NONE cterm=NONE guifg=#e6db74 guibg=NONE gui=NONE
-hi NonText ctermfg=59 ctermbg=236 cterm=NONE guifg=#49483e guibg=#31322c gui=NONE
+hi NonText ctermfg=59 ctermbg=236 cterm=NONE guifg=#272822 guibg=#272822 gui=NONE
 hi Number ctermfg=141 ctermbg=NONE cterm=NONE guifg=#ae81ff guibg=NONE gui=NONE
 hi Operator ctermfg=197 ctermbg=NONE cterm=NONE guifg=#f92672 guibg=NONE gui=NONE
 hi PreProc ctermfg=197 ctermbg=NONE cterm=NONE guifg=#f92672 guibg=NONE gui=NONE
@@ -125,33 +127,47 @@ hi cssValueLength ctermfg=141 ctermbg=NONE cterm=NONE guifg=#ae81ff guibg=NONE g
 hi cssCommonAttr ctermfg=81 ctermbg=NONE cterm=NONE guifg=#66d9ef guibg=NONE gui=NONE
 hi cssBraces ctermfg=NONE ctermbg=NONE cterm=NONE guifg=NONE guibg=NONE gui=NONE
 
+" Spelling
 
+hi SpellBad ctermfg=NONE ctermbg=160 cterm=NONE guifg=NONE guibg=#d70000 gui=NONE
+hi SpellCap ctermfg=NONE ctermbg=227 cterm=NONE guifg=NONE guibg=#ffff5f gui=NONE
 
-hi NERDTreePart ctermfg=238 ctermbg=NONE
-hi NERDTreePartFile ctermfg=238 ctermbg=NONE
-hi NERDTreeExecFile ctermfg=238 ctermbg=NONE
-hi NERDTreeDirSlash ctermfg=238 ctermbg=NONE
-hi NERDTreeBookmarksHeader ctermfg=238 ctermbg=NONE
-hi NERDTreeBookmarksLeader ctermfg=238 ctermbg=NONE
-hi NERDTreeBookmarkName ctermfg=238 ctermbg=NONE
-hi NERDTreeBookmark ctermfg=238 ctermbg=NONE
-hi NERDTreeHelp ctermfg=238 ctermbg=NONE
-hi NERDTreeHelpKey ctermfg=238 ctermbg=NONE
-hi NERDTreeHelpCommand ctermfg=238 ctermbg=NONE
-hi NERDTreeHelpTitle ctermfg=238 ctermbg=NONE
-hi NERDTreeToggleOn ctermfg=238 ctermbg=NONE
-hi NERDTreeToggleOff ctermfg=238 ctermbg=NONE
-hi NERDTreeLinkTarget ctermfg=238 ctermbg=NONE
-hi NERDTreeLinkFile ctermfg=238 ctermbg=NONE
-hi NERDTreeLinkDir ctermfg=238 ctermbg=NONE
-hi NERDTreeDir ctermfg=238 ctermbg=NONE
-hi NERDTreeUp ctermfg=238 ctermbg=NONE
-hi NERDTreeFile ctermfg=238 ctermbg=NONE
-hi NERDTreeCWD ctermfg=238 ctermbg=NONE
-hi NERDTreeOpenable ctermfg=238 ctermbg=NONE
-hi NERDTreeClosable ctermfg=238 ctermbg=NONE
-hi NERDTreeIgnore ctermfg=238 ctermbg=NONE
-hi NERDTreeRO ctermfg=238 ctermbg=NONE
-hi NERDTreeBookmark ctermfg=238 ctermbg=NONE
-hi NERDTreeFlags ctermfg=238 ctermbg=NONE
-hi NERDTreeCurrentNode ctermfg=238 ctermbg=NONE
+" Syntastic
+
+hi SyntasticError ctermfg=NONE ctermbg=160 cterm=NONE guifg=NONE guibg=#d70000 gui=NONE
+hi SyntasticWarning ctermfg=NONE ctermbg=227 cterm=NONE guifg=NONE guibg=#ffff5f gui=NONE
+hi SyntasticErrorSign ctermfg=160 ctermbg=NONE cterm=NONE guifg=#d70000 guibg=NONE gui=NONE
+hi SyntasticWarningSign ctermfg=227 ctermbg=NONE cterm=NONE guifg=#ffff5f guibg=NONE gui=NONE
+hi SyntasticErrorLine ctermfg=NONE ctermbg=NONE cterm=NONE guifg=NONE guibg=NONE gui=NONE
+hi SyntasticWarningLine ctermfg=NONE ctermbg=NONE cterm=NONE guifg=NONE guibg=NONE gui=NONE
+
+" NerdTree
+
+hi NERDTreePart ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreePartFile ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreeExecFile ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreeDirSlash ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreeBookmarksHeader ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreeBookmarksLeader ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreeBookmarkName ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreeBookmark ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreeHelp ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreeHelpKey ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreeHelpCommand ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreeHelpTitle ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreeToggleOn ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreeToggleOff ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreeLinkTarget ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreeLinkFile ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreeLinkDir ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreeDir ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreeUp ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreeFile ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreeCWD ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreeOpenable ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreeClosable ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreeIgnore ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreeRO ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreeBookmark ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreeFlags ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE
+hi NERDTreeCurrentNode ctermfg=238 ctermbg=NONE guifg=#444444 guibg=NONE gui=NONE

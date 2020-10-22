@@ -30,10 +30,10 @@ function! NERDTreePatch()
         setlocal nomodifiable
         silent execute "normal ".l:curlinen."G"
         let &colorcolumn = join(range(1,300),",")
-        highlight ColorColumn ctermbg=254
-        highlight CursorLine ctermfg=0 cterm=bold
+        highlight ColorColumn ctermbg=254 guibg=#e4e4e4
+        highlight CursorLine ctermfg=0 cterm=bold guifg=#000000 gui=bold
     else
-        highlight CursorLine ctermfg=NONE cterm=NONE
+        highlight CursorLine ctermfg=NONE cterm=NONE guifg=NONE gui=NONE
     endif
 endfunction
 
@@ -43,7 +43,7 @@ function! NERDTreeInit()
         call webdevicons#hardRefresh()
         call NERDTreePatch()
         wincmd w
-        highlight CursorLine ctermfg=NONE cterm=NONE
+        highlight CursorLine ctermfg=NONE cterm=NONE guifg=NONE gui=NONE
     endif
 endfunction
 
@@ -56,7 +56,7 @@ function! NERDTreeRefresh()
         call NERDTreePatch()
         " silent execute "normal ".l:curlinen."G"
         wincmd w
-        highlight CursorLine ctermfg=NONE cterm=NONE
+        highlight CursorLine ctermfg=NONE cterm=NONE guifg=NONE gui=NONE
     endif
 endfunction
 

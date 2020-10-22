@@ -1,0 +1,88 @@
+* {
+  all: unset;
+}
+
+#window {
+    background: #545454;
+    border-radius: 2px;
+}
+
+#combo {
+    background-color: #ffffff;
+    margin: 5px 0 5px 0;
+    border-radius: 2px;
+}
+
+#combo arrow {
+	-gtk-icon-source: -gtk-icontheme("pan-down-symbolic");
+	color: #000000;
+	min-height: 16px;
+	min-width: 16px;
+}
+
+#combo window.popup {
+	background: #ffffff;
+	color: #000000;
+}
+
+#combo #gtk-combobox-popup-menu menuitem:hover cellview  {
+	background: #bbbbbb;
+}
+
+#entry {
+    margin: 0 5px 0 5px;
+    color: #000000;
+    caret-color: #000000;
+}
+
+#entry selection {
+	background: #bbbbbb;
+}
+
+#regex_button, #case_button, #whole_button, #continue_button,
+#selection_button, #highlight_button, #find_button, #find_prev_button,
+#find_all_button {
+	color: #ffffff;
+	background: linear-gradient(#4D4D4D, #333333);
+    margin: 5px 0 5px 0;
+    border: 1px solid #262626;
+    text-shadow: 0 -1px #000000;
+    font-size: 11px;
+}
+
+#regex_button:hover, #case_button:hover, #whole_button:hover, #continue_button:hover,
+#selection_button:hover, #highlight_button:hover, #find_button:hover, #find_prev_button:hover,
+#find_all_button:hover {
+	background: linear-gradient(#333333, #222222);
+}
+
+#regex_button:active, #case_button:active, #whole_button:active, #continue_button:active,
+#selection_button:active, #highlight_button:active, #find_button:active, #find_prev_button:active,
+#find_all_button:active {
+	background: #222222;
+}
+
+#highlight_button, #find_button, #find_prev_button, #find_all_button {
+    border-radius: 2px;
+}
+
+#selection_button, #whole_button {
+    border-radius: 0 2px 2px 0;
+}
+
+#regex_button, #continue_button {
+    border-radius: 2px 0 0 2px;
+}
+
+#case_button, #whole_button, #selection_button {
+	border-left: 0;
+}
+
+#continue_button, #selection_button, #highlight_button {
+	font-family: 'FontAwesome';
+	font-size: 12px;
+}
+
+#regex_button, #case_button, #whole_button {
+	font-weight: bold;
+}

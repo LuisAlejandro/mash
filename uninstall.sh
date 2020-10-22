@@ -24,7 +24,7 @@ function echospaced() {
 }
 
 ICONSIZES="16 22 32 48 64 128 256 512"
-FONTNAME="DejaVu Sans Mono for Powerline Nerd Font Complete Mono.ttf"
+FONTNAME="DejaVu Sans Mono Nerd Font Complete Mono.ttf"
 
 
 echospaced "Removing icons ..."

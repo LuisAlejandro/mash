@@ -23,31 +23,76 @@ function echospaced() {
     printf "\n# %s\n" "${1}"
 }
 
-TEMPFILE="$( mktemp -u )"
-APTGET="$( which apt-get )"
-APTGETCMD="env DEBIAN_FRONTEND=noninteractive ${APTGET}"
-APTGETOPTS="-o Apt::Install-Recommends=false \
-    -o Apt::Get::Assume-Yes=true \
-    -o Apt::Get::AllowUnauthenticated=true \
-    -o DPkg::Options::=--force-confmiss \
-    -o DPkg::Options::=--force-confnew \
-    -o DPkg::Options::=--force-overwrite \
-    -o DPkg::Options::=--force-unsafe-io"
+eval "$(tr '\0' '\n' < /proc/${$}/environ | grep '^DISPLAY=')"
 
-eval "$( tr '\0' '\n' < /proc/${$}/environ | grep '^DISPLAY=' )"
+TEMPFILE="$(mktemp -u)"
+BINDIR="$(dirname "$(readlink -f "${0}")")"
 
-BUILDPKGLIST="make imagemagick librsvg2-bin"
-RUNPKGLIST="silversearcher-ag exuberant-ctags xclip rxvt-unicode-256color \
-            wmctrl vim-gtk python-kivy fontconfig git zenity curl bash gksu \
-            xdg-utils coreutils"
+if [ "${BINDIR}" == "/usr/bin" ]; then
+    BASEDIR="/opt/subliminal-view"
+else
+    BASEDIR="${BINDIR}"
+fi
+
+ICONSIZES="16 22 32 48 64 128 256 512"
+FONTNAME="DejaVu Sans Mono Nerd Font Complete Mono.ttf"
 
 RUBYSNDBX="${HOME}/.config/subliminal-view/sandboxes/ruby"
 PYTHONSNDBX="${HOME}/.config/subliminal-view/sandboxes/python"
 NODESNDBX="${HOME}/.config/subliminal-view/sandboxes/node"
 GOSNDBX="${HOME}/.config/subliminal-view/sandboxes/go"
 
+PYTHONPKGLIST="pylint pyflakes pep8 pydocstyle docutils yamllint vim-vint"
+NODEPKGLIST="jshint jsonlint csslint sass-lint less dockerfile_lint"
+RUBYPKGLIST="rubocop mdl sqlint"
+GOPKGLIST="github.com/golang/lint/golint"
+
+BUILDPKGLIST="make imagemagick librsvg2-bin"
+RUNPKGLIST="silversearcher-ag exuberant-ctags xclip wmctrl fontconfig git zenity \
+    curl bash gksu xdg-utils coreutils"
+
 INSTALL_ARGS_FILE="${HOME}/.config/subliminal-view/install-args.conf"
-WINDOW_ICON="${HOME}/.local/share/icons/hicolor/22x22/apps/subliminal-view.png"
+
+if [ ! -d "${HOME}/.config/subliminal-view" ]; then
+
+    echospaced "Creating folders ..."
+    mkdir -vp "${HOME}/.local/bin"
+    mkdir -vp "${HOME}/.config/subliminal-view/recovery"
+    mkdir -vp "${HOME}/.config/subliminal-view/backups"
+    mkdir -vp "${HOME}/.config/subliminal-view/undo"
+
+    cp -vrf "${BASEDIR}/bin/." "${HOME}/.config/subliminal-view/bin"
+    cp -vrf "${BASEDIR}/plugins/subliminal-view/." "${HOME}/.config/subliminal-view/app"
+    cp -vrf "${BASEDIR}/sandboxes" "${HOME}/.config/subliminal-view"
+    cp -vrf "${BASEDIR}/urxvt" "${HOME}/.config/subliminal-view"
+    cp -vrf "${BASEDIR}/runtime" "${HOME}/.config/subliminal-view"
+    cp -vrf "${BASEDIR}/plug" "${HOME}/.config/subliminal-view"
+    cp -vrf "${BASEDIR}/subliminal-view.sh" "${HOME}/.local/bin/subliminal-view"
+
+    echospaced "Installing icons ..."
+    for S in ${ICONSIZES}; do
+        xdg-icon-resource install --size "${S}" \
+            "${BASEDIR}/icons/hicolor/${S}x${S}/apps/subliminal-view.png" \
+            subliminal-view
+    done
+
+    echospaced "Installing desktop and menu files ..."
+    xdg-desktop-icon install "${BASEDIR}/subliminal-view.desktop"
+    xdg-desktop-menu install "${BASEDIR}/subliminal-view.desktop"
+
+    echospaced "Updating font cache ..."
+    cp -vf "${BASEDIR}/fonts/${FONTNAME}" "${HOME}/.local/share/fonts/"
+    fc-cache -vr "${HOME}/.local/share/fonts"
+
+    echospaced "Configuring executables ..."
+    if [ ! -f "${HOME}/.bashrc" ]; then
+        touch "${HOME}/.bashrc"
+    fi
+
+    if ! grep -q 'PATH="${PATH}:${HOME}/.local/bin"' "${HOME}/.bashrc"; then
+        echo 'PATH="${PATH}:${HOME}/.local/bin"' >> "${HOME}/.bashrc"
+    fi
+fi
 
 
 if [ ! -f "${INSTALL_ARGS_FILE}" ]; then
@@ -81,18 +126,17 @@ completion support. Please select below which ones would you like to activate."
     fi
 
     if [ -n "${ANS}" ]; then
-        printf -- '--%s\n' ${ANS} > ${INSTALL_ARGS_FILE}
+        printf -- '--%s\n' "${ANS}" > "${INSTALL_ARGS_FILE}"
     else
-        touch ${INSTALL_ARGS_FILE}
+        touch "${INSTALL_ARGS_FILE}"
     fi
 fi
 
-INSTALL_ARGS="$( cat ${INSTALL_ARGS_FILE} )"
+INSTALL_ARGS="$( cat "${INSTALL_ARGS_FILE}" )"
 
 for OPT in ${INSTALL_ARGS}; do
     case ${OPT} in
         --include-python)
-            PYTHONPKGLIST="pylint pyflakes pep8 pydocstyle ${PYTHONPKGLIST}"
             BUILDPKGLIST="virtualenv python-dev ${BUILDPKGLIST}"
             RUNPKGLIST="python ${RUNPKGLIST}"
         ;;
@@ -102,24 +146,19 @@ for OPT in ${INSTALL_ARGS}; do
         ;;
 
         --include-js)
-            NODEPKGLIST="jshint jsonlint ${NODEPKGLIST}"
             RUNPKGLIST="nodejs ${RUNPKGLIST}"
         ;;
 
         --include-ruby)
-            RUBYPKGLIST="rubocop ${RUBYPKGLIST}"
             BUILDPKGLIST="ruby-dev ${BUILDPKGLIST}"
             RUNPKGLIST="ruby ${RUNPKGLIST}"
         ;;
 
         --include-go)
-            GOPKGLIST="github.com/golang/lint/golint ${GOPKGLIST}"
             RUNPKGLIST="golang-go ${RUNPKGLIST}"
         ;;
 
         --include-markdown)
-            RUBYPKGLIST="mdl ${RUBYPKGLIST}"
-            PYTHONPKGLIST="docutils ${PYTHONPKGLIST}"
             BUILDPKGLIST="virtualenv python-dev ruby-dev ${BUILDPKGLIST}"
             RUNPKGLIST="python ruby ${RUNPKGLIST}"
         ;;
@@ -133,13 +172,11 @@ for OPT in ${INSTALL_ARGS}; do
         ;;
 
         --include-yaml)
-            PYTHONPKGLIST="yamllint ${PYTHONPKGLIST}"
             BUILDPKGLIST="virtualenv python-dev ${BUILDPKGLIST}"
             RUNPKGLIST="python ${RUNPKGLIST}"
         ;;
 
         --include-css)
-            NODEPKGLIST="csslint sass-lint less ${NODEPKGLIST}"
             RUNPKGLIST="nodejs ${RUNPKGLIST}"
         ;;
 
@@ -152,13 +189,11 @@ for OPT in ${INSTALL_ARGS}; do
         ;;
 
         --include-vim)
-            PYTHONPKGLIST="vim-vint ${PYTHONPKGLIST}"
             BUILDPKGLIST="virtualenv python-dev ${BUILDPKGLIST}"
             RUNPKGLIST="python ${RUNPKGLIST}"
         ;;
 
         --include-sql)
-            RUBYPKGLIST="sqlint ${RUBYPKGLIST}"
             BUILDPKGLIST="ruby-dev ${BUILDPKGLIST}"
             RUNPKGLIST="ruby ${RUNPKGLIST}"
         ;;
@@ -168,7 +203,6 @@ for OPT in ${INSTALL_ARGS}; do
         ;;
 
         --include-docker)
-            NODEPKGLIST="dockerfile_lint ${NODEPKGLIST}"
             RUNPKGLIST="nodejs ${RUNPKGLIST}"
         ;;
 
@@ -178,14 +212,26 @@ for OPT in ${INSTALL_ARGS}; do
     esac
 done
 
-for DDEP in ${BUILDPKGLIST} ${RUNPKGLIST}; do
-    if ! dpkg -L ${DDEP} >/dev/null 2>&1; then
-        DDEPENDS="${DDEP} ${DDEPENDS}"
-    fi
-done
+if [ -n "$(which dpkg)" ]; then
+    APTGET="$(which apt-get)"
+    APTGETCMD="env DEBIAN_FRONTEND=noninteractive ${APTGET}"
+    APTGETOPTS="-o Apt::Install-Recommends=false \
+        -o Apt::Get::Assume-Yes=true \
+        -o Apt::Get::AllowUnauthenticated=true \
+        -o DPkg::Options::=--force-confmiss \
+        -o DPkg::Options::=--force-confnew \
+        -o DPkg::Options::=--force-overwrite \
+        -o DPkg::Options::=--force-unsafe-io"
+
+    for DDEP in ${BUILDPKGLIST} ${RUNPKGLIST}; do
+        if ! dpkg -L "${DDEP}" >/dev/null 2>&1; then
+            DDEPENDS="${DDEP} ${DDEPENDS}"
+        fi
+    done
+fi
 
 for RDEP in ${RUBYPKGLIST}; do
-    if [ ! -f "${HOME}/.config/subliminal-view/sandboxes/ruby/bin/${RDEP}" ]; then
+    if [ ! -f "${BASEDIR}/sandboxes/ruby/bin/${RDEP}" ]; then
         RDEPENDS="${RDEP} ${RDEPENDS}"
     fi
 done
@@ -198,7 +244,7 @@ for PDEP in ${PYTHONPKGLIST}; do
     if [ "${PDEP}" == "vim-vint" ]; then
         REALBIN="vint"
     fi
-    if [ ! -f "${HOME}/.config/subliminal-view/sandboxes/python/bin/${REALBIN}" ]; then
+    if [ ! -f "${BASEDIR}/sandboxes/python/bin/${REALBIN}" ]; then
         PDEPENDS="${PDEP} ${PDEPENDS}"
     fi
 done
@@ -208,7 +254,7 @@ for NDEP in ${NODEPKGLIST}; do
     if [ "${NDEP}" == "less" ]; then
         REALBIN="lessc"
     fi
-    if [ ! -f "${HOME}/.config/subliminal-view/sandboxes/node/node_modules/.bin/${REALBIN}" ]; then
+    if [ ! -f "${BASEDIR}/sandboxes/node/node_modules/.bin/${REALBIN}" ]; then
         NDEPENDS="${NDEP} ${NDEPENDS}"
     fi
 done
@@ -218,7 +264,7 @@ for GDEP in ${GOPKGLIST}; do
     if [ "${GDEP}" == "github.com/golang/lint/golint" ]; then
         REALBIN="golint"
     fi
-    if [ ! -f "${HOME}/.config/subliminal-view/sandboxes/go/bin/${REALBIN}" ]; then
+    if [ ! -f "${BASEDIR}/sandboxes/go/bin/${REALBIN}" ]; then
         GDEPENDS="${GDEP} ${GDEPENDS}"
     fi
 done
@@ -232,7 +278,7 @@ zenity --progress --pulsate --auto-close --no-cancel --window-icon "${WINDOW_ICO
         echospaced "Installing missing dpkg dependencies ..."
 
         if [ -n "${NODEPKGLIST}" ]; then
-            sudo -E bash <(curl -sfLo- https://deb.nodesource.com/setup_6.x) >/dev/null 2>&1
+            sudo -E bash <(curl -sfLo- https://deb.nodesource.com/setup_14.x) >/dev/null 2>&1
         fi
 
         gksudo -- ${APTGETCMD} ${APTGETOPTS} update
@@ -267,17 +313,15 @@ zenity --progress --pulsate --auto-close --no-cancel --window-icon "${WINDOW_ICO
 
 } | tee ${TEMPFILE}
 
-
-#xfconf-query -c xfce4-keyboard-shortcuts -p /commands/custom -r -R
-#xfconf-query -c xfce4-keyboard-shortcuts -p /xfwm4/custom -r -R
-
-if [ ! -d "${HOME}/.config/subliminal-view/recovery" ]; then
-    bash "${HOME}/.config/subliminal-view/app/configure.sh"
-fi
+# xfconf-query -c xfce4-keyboard-shortcuts -p /commands/custom -r -R
+# xfconf-query -c xfce4-keyboard-shortcuts -p /xfwm4/custom -r -R
 
 env XENVIRONMENT="${HOME}/.config/subliminal-view/app/Xresources" \
-    urxvt -perl-lib "${HOME}/.config/subliminal-view/app/extensions" \
-        -icon "${WINDOW_ICON}" -name "subliminal-view" -e bash -c \
-            "stty -ixon susp undef; \
-                vim --servername subliminal-view-${$} \
-                    -u ${HOME}/.config/subliminal-view/app/init.vim ${*}"
+    URXVT_PERL_LIB="${HOME}/.config/subliminal-view/app/extensions" \
+    PERL5LIB="${HOME}/.config/subliminal-view/urxvt" \
+    DISPLAY="${DISPLAY}" \
+    "${HOME}/.config/subliminal-view/bin/rxvt" \
+    -icon "${HOME}/.local/share/icons/hicolor/22x22/apps/subliminal-view.png" \
+    -name "subliminal-view" -e bash -c "stty -ixon susp undef; \
+        ${HOME}/.config/subliminal-view/bin/vim --servername subliminal-view-${$} \
+        -u ${HOME}/.config/subliminal-view/app/init.vim ${*}"

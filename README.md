@@ -1,8 +1,10 @@
 <img align="right" height="100" src="https://cloud.githubusercontent.com/assets/324683/14374725/0a483732-fd23-11e5-9b56-b0e280b20760.png">
 
-# Subliminal View 0.1a1
+# Subliminal View
 
 > An open source alternative to Sublime Text based on vim and urxvt
+
+Current version: 0.1a1
 
 **Attention: this in an alpha release. Don't use it on production environments as
 you will probably experience bugs.**
@@ -20,7 +22,7 @@ and does not integrate with Vim (yet). See [Usage](#usage) for details.
 Also, for now we are only supporting Debian-based systems on the installation
 script, but you might want to try installing on a different OS and tell us how
 you you did it, or submit a
-[greatly appreciated PR](https://github.com/LuisAlejandro/subliminal-view/pulls).
+[greatly appreciated PR](https://github.com/CollageLabs/subliminal-view/pulls).
 
 ![Screenshot](https://cloud.githubusercontent.com/assets/324683/18112460/b9c94b3a-6ef5-11e6-9d11-43df8c950f87.png "Screenshot")
 
@@ -32,7 +34,7 @@ you you did it, or submit a
 
 ## Known bugs - work in progess
 
-* See the [issues section](https://github.com/LuisAlejandro/subliminal-view/issues)
+* See the [issues section](https://github.com/CollageLabs/subliminal-view/issues)
 for more information.
 
 ## Installation
@@ -48,7 +50,7 @@ Then, open a user terminal and start the installation process with the following
 This will take a few minutes to complete depending on your internet connection speed.
 
 ```bash
-bash <(curl -sfLo- https://raw.githubusercontent.com/LuisAlejandro/subliminal-view/development/install.sh)
+bash <(curl -fLo- https://raw.githubusercontent.com/CollageLabs/subliminal-view/develop/install.sh)
 ```
 
 ## Usage
