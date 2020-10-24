@@ -26,14 +26,7 @@ function echospaced() {
 eval "$(tr '\0' '\n' < /proc/${$}/environ | grep '^DISPLAY=')"
 
 TEMPFILE="$(mktemp -u)"
-BINDIR="$(dirname "$(echo "${0}")")"
-
-if [ "${BINDIR}" == "/usr/bin" ]; then
-    BASEDIR="/opt/mash"
-else
-    BASEDIR="${BINDIR}"
-fi
-
+SHAREDIR="/usr/share/mash"
 ICONSIZES="16 22 32 48 64 128 256 512"
 FONTNAME="DejaVu Sans Mono Nerd Font Complete Mono.ttf"
 
@@ -48,9 +41,22 @@ FONTNAME="DejaVu Sans Mono Nerd Font Complete Mono.ttf"
 # RUBYPKGLIST="rubocop mdl sqlint"
 # GOPKGLIST="github.com/golang/lint/golint"
 
-BUILDPKGLIST="make imagemagick librsvg2-bin"
-RUNPKGLIST="silversearcher-ag exuberant-ctags xclip wmctrl fontconfig git zenity \
-    curl bash gksu xdg-utils coreutils"
+# BUILDPKGLIST="
+# make,
+# imagemagick,
+# librsvg2-bin,
+# silversearcher-ag,
+# exuberant-ctags,
+# xclip,
+# wmctrl,
+# fontconfig,
+# git,
+# zenity,
+# curl,
+# bash,
+# gksu,
+# xdg-utils,
+# coreutils"
 
 INSTALL_ARGS_FILE="${HOME}/.config/mash/install-args.conf"
 
@@ -63,27 +69,27 @@ if [ ! -d "${HOME}/.config/mash" ]; then
     mkdir -vp "${HOME}/.config/mash/undo"
 
     echospaced "Copying files ..."
-    cp -rf "${BASEDIR}/bin/." "${HOME}/.config/mash/bin"
-    cp -rf "${BASEDIR}/plugins/mash/." "${HOME}/.config/mash/app"
-    cp -rf "${BASEDIR}/sandboxes" "${HOME}/.config/mash"
-    cp -rf "${BASEDIR}/urxvt" "${HOME}/.config/mash"
-    cp -rf "${BASEDIR}/runtime" "${HOME}/.config/mash"
-    cp -rf "${BASEDIR}/plug" "${HOME}/.config/mash"
-    cp -rf "${BASEDIR}/mash.sh" "${HOME}/.local/bin/mash"
+    cp -rf "${SHAREDIR}/bin/." "${HOME}/.config/mash/bin"
+    cp -rf "${SHAREDIR}/plugins/mash/." "${HOME}/.config/mash/app"
+    cp -rf "${SHAREDIR}/urxvt" "${HOME}/.config/mash"
+    cp -rf "${SHAREDIR}/runtime" "${HOME}/.config/mash"
+    cp -rf "${SHAREDIR}/plug" "${HOME}/.config/mash"
+    cp -rf "${SHAREDIR}/mash.sh" "${HOME}/.local/bin/mash"
+    chmod +x "${HOME}/.local/bin/mash"
 
     echospaced "Installing icons ..."
-    for S in ${ICONSIZES}; do
-        xdg-icon-resource install --size "${S}" \
-            "${BASEDIR}/icons/hicolor/${S}x${S}/apps/mash.png" \
+    for SIZE in ${ICONSIZES}; do
+        xdg-icon-resource install --size "${SIZE}" \
+            "${SHAREDIR}/icons/hicolor/${SIZE}x${SIZE}/apps/mash.png" \
             mash
     done
 
     echospaced "Installing desktop and menu files ..."
-    xdg-desktop-icon install "${BASEDIR}/mash.desktop"
-    xdg-desktop-menu install "${BASEDIR}/mash.desktop"
+    xdg-desktop-icon install "${SHAREDIR}/mash.desktop"
+    xdg-desktop-menu install "${SHAREDIR}/mash.desktop"
 
     echospaced "Updating font cache ..."
-    cp -vf "${BASEDIR}/fonts/${FONTNAME}" "${HOME}/.local/share/fonts/"
+    cp -vf "${SHAREDIR}/fonts/${FONTNAME}" "${HOME}/.local/share/fonts/"
     fc-cache -vr "${HOME}/.local/share/fonts"
 
     echospaced "Configuring executables ..."
