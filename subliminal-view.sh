@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-#   This file is part of Subliminal View
-#   Copyright (c) 2016, Subliminal View Developers
+#   This file is part of Mash
+#   Copyright (c) 2016, Mash Developers
 #
 #   Please refer to CONTRIBUTORS.md for a complete list of Copyright
 #   holders.
 #
-#   Subliminal View is free software: you can redistribute it and/or modify
+#   Mash is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
 #   the Free Software Foundation, either version 3 of the License, or
 #   (at your option) any later version.
 #
-#   Subliminal View is distributed in the hope that it will be useful,
+#   Mash is distributed in the hope that it will be useful,
 #   but WITHOUT ANY WARRANTY; without even the implied warranty of
 #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #   GNU General Public License for more details.
@@ -26,10 +26,10 @@ function echospaced() {
 eval "$(tr '\0' '\n' < /proc/${$}/environ | grep '^DISPLAY=')"
 
 TEMPFILE="$(mktemp -u)"
-BINDIR="$(dirname "$(readlink -f "${0}")")"
+BINDIR="$(dirname "$(echo "${0}")")"
 
 if [ "${BINDIR}" == "/usr/bin" ]; then
-    BASEDIR="/opt/subliminal-view"
+    BASEDIR="/opt/mash"
 else
     BASEDIR="${BINDIR}"
 fi
@@ -37,48 +37,50 @@ fi
 ICONSIZES="16 22 32 48 64 128 256 512"
 FONTNAME="DejaVu Sans Mono Nerd Font Complete Mono.ttf"
 
-RUBYSNDBX="${HOME}/.config/subliminal-view/sandboxes/ruby"
-PYTHONSNDBX="${HOME}/.config/subliminal-view/sandboxes/python"
-NODESNDBX="${HOME}/.config/subliminal-view/sandboxes/node"
-GOSNDBX="${HOME}/.config/subliminal-view/sandboxes/go"
+# DEBIANSNDBX="${HOME}/.config/mash/sandboxes/debian"
+# RUBYSNDBX="${HOME}/.config/mash/sandboxes/ruby"
+# PYTHONSNDBX="${HOME}/.config/mash/sandboxes/python"
+# NODESNDBX="${HOME}/.config/mash/sandboxes/node"
+# GOSNDBX="${HOME}/.config/mash/sandboxes/go"
 
-PYTHONPKGLIST="pylint pyflakes pep8 pydocstyle docutils yamllint vim-vint"
-NODEPKGLIST="jshint jsonlint csslint sass-lint less dockerfile_lint"
-RUBYPKGLIST="rubocop mdl sqlint"
-GOPKGLIST="github.com/golang/lint/golint"
+# PYTHONPKGLIST="pylint pyflakes pep8 pydocstyle docutils yamllint vim-vint"
+# NODEPKGLIST="jshint jsonlint csslint sass-lint less dockerfile_lint"
+# RUBYPKGLIST="rubocop mdl sqlint"
+# GOPKGLIST="github.com/golang/lint/golint"
 
 BUILDPKGLIST="make imagemagick librsvg2-bin"
 RUNPKGLIST="silversearcher-ag exuberant-ctags xclip wmctrl fontconfig git zenity \
     curl bash gksu xdg-utils coreutils"
 
-INSTALL_ARGS_FILE="${HOME}/.config/subliminal-view/install-args.conf"
+INSTALL_ARGS_FILE="${HOME}/.config/mash/install-args.conf"
 
-if [ ! -d "${HOME}/.config/subliminal-view" ]; then
+if [ ! -d "${HOME}/.config/mash" ]; then
 
     echospaced "Creating folders ..."
     mkdir -vp "${HOME}/.local/bin"
-    mkdir -vp "${HOME}/.config/subliminal-view/recovery"
-    mkdir -vp "${HOME}/.config/subliminal-view/backups"
-    mkdir -vp "${HOME}/.config/subliminal-view/undo"
+    mkdir -vp "${HOME}/.config/mash/recovery"
+    mkdir -vp "${HOME}/.config/mash/backups"
+    mkdir -vp "${HOME}/.config/mash/undo"
 
-    cp -vrf "${BASEDIR}/bin/." "${HOME}/.config/subliminal-view/bin"
-    cp -vrf "${BASEDIR}/plugins/subliminal-view/." "${HOME}/.config/subliminal-view/app"
-    cp -vrf "${BASEDIR}/sandboxes" "${HOME}/.config/subliminal-view"
-    cp -vrf "${BASEDIR}/urxvt" "${HOME}/.config/subliminal-view"
-    cp -vrf "${BASEDIR}/runtime" "${HOME}/.config/subliminal-view"
-    cp -vrf "${BASEDIR}/plug" "${HOME}/.config/subliminal-view"
-    cp -vrf "${BASEDIR}/subliminal-view.sh" "${HOME}/.local/bin/subliminal-view"
+    echospaced "Copying files ..."
+    cp -rf "${BASEDIR}/bin/." "${HOME}/.config/mash/bin"
+    cp -rf "${BASEDIR}/plugins/mash/." "${HOME}/.config/mash/app"
+    cp -rf "${BASEDIR}/sandboxes" "${HOME}/.config/mash"
+    cp -rf "${BASEDIR}/urxvt" "${HOME}/.config/mash"
+    cp -rf "${BASEDIR}/runtime" "${HOME}/.config/mash"
+    cp -rf "${BASEDIR}/plug" "${HOME}/.config/mash"
+    cp -rf "${BASEDIR}/mash.sh" "${HOME}/.local/bin/mash"
 
     echospaced "Installing icons ..."
     for S in ${ICONSIZES}; do
         xdg-icon-resource install --size "${S}" \
-            "${BASEDIR}/icons/hicolor/${S}x${S}/apps/subliminal-view.png" \
-            subliminal-view
+            "${BASEDIR}/icons/hicolor/${S}x${S}/apps/mash.png" \
+            mash
     done
 
     echospaced "Installing desktop and menu files ..."
-    xdg-desktop-icon install "${BASEDIR}/subliminal-view.desktop"
-    xdg-desktop-menu install "${BASEDIR}/subliminal-view.desktop"
+    xdg-desktop-icon install "${BASEDIR}/mash.desktop"
+    xdg-desktop-menu install "${BASEDIR}/mash.desktop"
 
     echospaced "Updating font cache ..."
     cp -vf "${BASEDIR}/fonts/${FONTNAME}" "${HOME}/.local/share/fonts/"
@@ -94,10 +96,9 @@ if [ ! -d "${HOME}/.config/subliminal-view" ]; then
     fi
 fi
 
-
 if [ ! -f "${INSTALL_ARGS_FILE}" ]; then
 
-    INSTALLDESC="Subliminal View ships with linting, syntax highlighting and \
+    INSTALLDESC="Mash ships with linting, syntax highlighting and \
 completion support. Please select below which ones would you like to activate."
 
     ANS="$( zenity --list --text "${INSTALLDESC}" --checklist --separator "\n" \
@@ -213,8 +214,7 @@ for OPT in ${INSTALL_ARGS}; do
 done
 
 if [ -n "$(which dpkg)" ]; then
-    APTGET="$(which apt-get)"
-    APTGETCMD="env DEBIAN_FRONTEND=noninteractive ${APTGET}"
+    APTGETCMD="apt-get"
     APTGETOPTS="-o Apt::Install-Recommends=false \
         -o Apt::Get::Assume-Yes=true \
         -o Apt::Get::AllowUnauthenticated=true \
@@ -270,58 +270,47 @@ for GDEP in ${GOPKGLIST}; do
 done
 
 mkfifo ${TEMPFILE}
-zenity --progress --pulsate --auto-close --no-cancel --window-icon "${WINDOW_ICON}" \
-    --height 100 --width 600 < ${TEMPFILE} 2>/dev/null &
+zenity --progress --pulsate --auto-close --no-cancel \
+    --window-icon "${WINDOW_ICON}" --height 100 \
+    --width 600 < ${TEMPFILE} 2>/dev/null &
 
 {
     if [ -n "${DDEPENDS}" ]; then
         echospaced "Installing missing dpkg dependencies ..."
-
-        if [ -n "${NODEPKGLIST}" ]; then
-            sudo -E bash <(curl -sfLo- https://deb.nodesource.com/setup_14.x) >/dev/null 2>&1
-        fi
-
-        gksudo -- ${APTGETCMD} ${APTGETOPTS} update
-        gksudo -- ${APTGETCMD} ${APTGETOPTS} install ${DDEPENDS}
+        docker run -it -w ${PWD} -v ${PWD}:${PWD} collagelabs/mash:build fakechroot fakeroot chroot ${DEBIANSNDBX} ${APTGETCMD} ${APTGETOPTS} update
+        docker run -it -w ${PWD} -v ${PWD}:${PWD} collagelabs/mash:build fakechroot fakeroot chroot ${DEBIANSNDBX} ${APTGETCMD} ${APTGETOPTS} install ${DDEPENDS}
     fi
+
+    exit 0
 
     if [ -n "${RDEPENDS}" ]; then
         echospaced "Installing missing ruby dependencies ..."
-        mkdir -vp ${RUBYSNDBX}
-        gem install --install-dir ${RUBYSNDBX} ${RUBYPKGLIST}
+        ${DEBIANSNDBX}/usr/local/gem install --install-dir "${RUBYSNDBX}" ${RUBYPKGLIST}
     fi
 
     if [ -n "${PDEPENDS}" ]; then
         echospaced "Installing missing python dependencies ..."
-        mkdir -vp ${PYTHONSNDBX}
-        virtualenv ${PYTHONSNDBX}
-        ${PYTHONSNDBX}/bin/pip install ${PYTHONPKGLIST}
+        ${PYTHONSNDBX}/bin/pip3 install ${PYTHONPKGLIST}
     fi
 
     if [ -n "${NDEPENDS}" ]; then
         echospaced "Installing missing nodejs dependencies ..."
-        mkdir -vp ${NODESNDBX}
-        npm --prefix ${NODESNDBX} install ${NODEPKGLIST}
+        ${DEBIANSNDBX}/usr/local/npm --prefix "${NODESNDBX}" install ${NODEPKGLIST}
     fi
 
     if [ -n "${GDEPENDS}" ]; then
         echospaced "Installing missing go dependencies ..."
-        mkdir -vp ${GOSNDBX}
-        export GOPATH="${GOSNDBX}"
-        go get -v ${GOPKGLIST}
+        env GOPATH="${GOSNDBX}" ${DEBIANSNDBX}/usr/local/go get -v ${GOPKGLIST}
     fi
 
 } | tee ${TEMPFILE}
 
-# xfconf-query -c xfce4-keyboard-shortcuts -p /commands/custom -r -R
-# xfconf-query -c xfce4-keyboard-shortcuts -p /xfwm4/custom -r -R
-
-env XENVIRONMENT="${HOME}/.config/subliminal-view/app/Xresources" \
-    URXVT_PERL_LIB="${HOME}/.config/subliminal-view/app/extensions" \
-    PERL5LIB="${HOME}/.config/subliminal-view/urxvt" \
+env XENVIRONMENT="${HOME}/.config/mash/app/Xresources" \
+    URXVT_PERL_LIB="${HOME}/.config/mash/app/extensions" \
+    PERL5LIB="${HOME}/.config/mash/urxvt" \
     DISPLAY="${DISPLAY}" \
-    "${HOME}/.config/subliminal-view/bin/rxvt" \
-    -icon "${HOME}/.local/share/icons/hicolor/22x22/apps/subliminal-view.png" \
-    -name "subliminal-view" -e bash -c "stty -ixon susp undef; \
-        ${HOME}/.config/subliminal-view/bin/vim --servername subliminal-view-${$} \
-        -u ${HOME}/.config/subliminal-view/app/init.vim ${*}"
+    "${HOME}/.config/mash/bin/rxvt" \
+    -icon "${HOME}/.local/share/icons/hicolor/22x22/apps/mash.png" \
+    -name "mash" -e bash -c "stty -ixon susp undef; \
+        ${HOME}/.config/mash/bin/vim --servername mash-${$} \
+        -u ${HOME}/.config/mash/app/init.vim ${*}"

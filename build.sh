@@ -6,14 +6,14 @@ function echospaced() {
     printf "\n# %s\n" "${1}"
 }
 
-ICONSIZES="16 22 32 48 64 128 256 512"
-
 BASEDIR="$(pwd)"
 URXVT_TEMPDIR="$(mktemp -d)"
 VIM_TEMPDIR="$(mktemp -d)"
 
+ICONSIZES="16 22 32 48 64 128 256 512"
+
 BUILDER="luis@luisalejandro.org"
-PLUGINREPOS="$(cat "${BASEDIR}/init.vim" | grep "Plug" | grep -v "subliminal-view" | awk -F"'" '{print "https://github.com/"$2".git"}')"
+PLUGINREPOS="$(cat "${BASEDIR}/init.vim" | grep "Plug" | grep -v "mash" | awk -F"'" '{print "https://github.com/"$2".git"}')"
 NERDFONT="DejaVu Sans Mono Nerd Font Complete Mono.ttf"
 ESCNERDFONT="$(python3 -c "import urllib.parse; print(urllib.parse.quote('''${NERDFONT}'''))")"
 
@@ -98,31 +98,12 @@ URXVT_CONFIG=" \
     --enable-startup-notification \
     --with-term=rxvt-unicode-256color"
 
-DEBIANSNDBX="${BASEDIR}/subliminal-view/sandboxes/debian"
-
-PACKAGE_MANAGERS_DEPENDS="ruby python3-pip golang nodejs"
-URXVT_BUILD_DEPENDS="libxt-dev libxrender-dev libx11-dev libxpm-dev groff-base \
-                     autotools-dev xutils-dev libxft-dev chrpath libperl-dev \
-                     libev-dev libstartup-notification0-dev libgtk2.0-dev"
-VIM_BUILD_DEPENDS="libacl1-dev libgpmg1-dev autoconf debhelper libncurses5-dev \
-                   libselinux1-dev libgtk2.0-dev libgtk-3-dev libxaw7-dev libxt-dev \
-                   libxpm-dev libperl-dev tcl-dev python3-dev ruby ruby-dev lua5.2 \
-                   liblua5.2-dev"
-
-PYTHONPKGLIST="pylint pyflakes pep8 pydocstyle docutils yamllint vim-vint"
-NODEPKGLIST="jshint jsonlint csslint sass-lint less dockerfile_lint"
-RUBYPKGLIST="rubocop mdl sqlint"
-GOPKGLIST="github.com/golang/lint/golint"
-
-apt-get update
-apt-get install ${URXVT_BUILD_DEPENDS} ${VIM_BUILD_DEPENDS}
-
-mkdir -vp "${BASEDIR}/subliminal-view/bin"
-mkdir -vp "${BASEDIR}/subliminal-view/urxvt"
-mkdir -vp "${BASEDIR}/subliminal-view/plugins"
+mkdir -vp "${BASEDIR}/mash/bin"
+mkdir -vp "${BASEDIR}/mash/urxvt"
+mkdir -vp "${BASEDIR}/mash/plugins"
 
 echospaced "Downloading Vim source ..."
-git clone --depth 1 --branch v8.0.0300 --single-branch \
+git clone --depth 1 --branch v8.0.1635 --single-branch \
     --recursive --shallow-submodules \
     https://github.com/CollageLabs/vim "${VIM_TEMPDIR}/vim"
 
@@ -140,63 +121,50 @@ echospaced "Compiling Urxvt ..."
 cd "${URXVT_TEMPDIR}/urxvt"
 env "${URXVT_FLAGS}" ./configure ${URXVT_CONFIG} && make
 
-echospaced "Compiling Subliminal View UI ..."
+echospaced "Compiling Mash UI ..."
 cd "${BASEDIR}"
 gcc $(pkg-config --cflags gtk+-3.0) "ui/search.c" -o "ui/search" $(pkg-config --libs gtk+-3.0)
 
-echospaced "Copying Subliminal View source ..."
-cp -vrf "${BASEDIR}/subliminal-view.sh" "${BASEDIR}/subliminal-view/subliminal-view"
-cp -vrf "${BASEDIR}/subliminal-view.svg" "${BASEDIR}/subliminal-view/"
-cp -vrf "${BASEDIR}/ui/search" "${BASEDIR}/subliminal-view/bin"
-cp -vrf "${URXVT_TEMPDIR}/urxvt/src/rxvt" "${BASEDIR}/subliminal-view/bin"
-cp -vrf "${URXVT_TEMPDIR}/urxvt/src/urxvt.pm" "${BASEDIR}/subliminal-view/urxvt"
-cp -vrf "${VIM_TEMPDIR}/vim/src/vim" "${BASEDIR}/subliminal-view/bin"
-cp -vrf "${VIM_TEMPDIR}/vim/runtime" "${BASEDIR}/subliminal-view/"
-chmod +x "${BASEDIR}/subliminal-view/subliminal-view"
+echospaced "Copying Mash source ..."
+cp -vrf "${BASEDIR}/mash.sh" "${BASEDIR}/mash/"
+cp -vrf "${BASEDIR}/mash.desktop" "${BASEDIR}/mash/"
+cp -vrf "${BASEDIR}/mash.svg" "${BASEDIR}/mash/"
+cp -vrf "${BASEDIR}/ui/search" "${BASEDIR}/mash/bin"
+cp -vrf "${URXVT_TEMPDIR}/urxvt/src/rxvt" "${BASEDIR}/mash/bin"
+cp -vrf "${URXVT_TEMPDIR}/urxvt/src/urxvt.pm" "${BASEDIR}/mash/urxvt"
+cp -vrf "${VIM_TEMPDIR}/vim/src/vim" "${BASEDIR}/mash/bin"
+cp -vrf "${VIM_TEMPDIR}/vim/runtime" "${BASEDIR}/mash/"
+chmod +x "${BASEDIR}/mash/mash.sh"
 
-echospaced "Generating Subliminal View icons ..."
+echospaced "Generating Mash icons ..."
 for SIZE in ${ICONSIZES}; do
-    mkdir -p "${BASEDIR}/subliminal-view/icons/hicolor/${SIZE}x${SIZE}/apps"
+    mkdir -p "${BASEDIR}/mash/icons/hicolor/${SIZE}x${SIZE}/apps"
     convert -verbose -background None -resize "${SIZE}x${SIZE}" \
-        "${BASEDIR}/subliminal-view.svg" \
-        "${BASEDIR}/subliminal-view/icons/hicolor/${SIZE}x${SIZE}/apps/subliminal-view.png"
+        "${BASEDIR}/mash.svg" \
+        "${BASEDIR}/mash/icons/hicolor/${SIZE}x${SIZE}/apps/mash.png"
 done
 
-echospaced "Generating Subliminal View fonts ..."
-curl -fLo "${BASEDIR}/subliminal-view/fonts/${NERDFONT}" --create-dirs \
+echospaced "Generating Mash fonts ..."
+curl -fLo "${BASEDIR}/mash/fonts/${NERDFONT}" --create-dirs \
     "https://github.com/CollageLabs/nerd-fonts/raw/v1.0.0/patched-fonts/DejaVuSansMono/Regular/complete/${ESCNERDFONT}"
 
-curl -fLo "${BASEDIR}/subliminal-view/fonts/fontawesome-webfont.ttf" --create-dirs \
+curl -fLo "${BASEDIR}/mash/fonts/fontawesome-webfont.ttf" --create-dirs \
     https://github.com/CollageLabs/Font-Awesome/raw/v4.7.0/fonts/fontawesome-webfont.ttf
 
-echospaced "Installing Subliminal View plugins ..."
-cd "${BASEDIR}/subliminal-view/plugins"
+echospaced "Installing Mash plugins ..."
+cd "${BASEDIR}/mash/plugins"
 
 git clone --depth 1 --single-branch --branch develop \
-    https://github.com/CollageLabs/subliminal-view
+    https://github.com/CollageLabs/mash
 
 for REPO in ${PLUGINREPOS}; do
     git clone --depth 1 --single-branch ${REPO}
 done
 
-curl -fLo "${BASEDIR}/subliminal-view/plug/autoload/plug.vim" --create-dirs \
+curl -fLo "${BASEDIR}/mash/plug/autoload/plug.vim" --create-dirs \
     https://github.com/CollageLabs/vim-plug/raw/0.9.1/plug.vim
-
-fakechroot fakeroot debootstrap buster ${DEBIANSNDBX}
-
-echo "deb https://deb.nodesource.com/node_14.x sid main" > "${DEBIANSNDBX}/etc/apt/sources.list.d/nodesource.list"
-curl -fLo "${DEBIANSNDBX}/root/nodesource.gpg.key" https://deb.nodesource.com/gpgkey/nodesource.gpg.key
-
-fakechroot fakeroot chroot ${DEBIANSNDBX} apt-get update
-fakechroot fakeroot chroot ${DEBIANSNDBX} apt-get install gnupg
-fakechroot fakeroot chroot ${DEBIANSNDBX} apt-key add /root/nodesource.gpg.key
-fakechroot fakeroot chroot ${DEBIANSNDBX} apt-get install ${PACKAGE_MANAGERS_DEPENDS}
-fakechroot fakeroot chroot ${DEBIANSNDBX} gem install ${RUBYPKGLIST}
-fakechroot fakeroot chroot ${DEBIANSNDBX} pip install ${PYTHONPKGLIST}
-fakechroot fakeroot chroot ${DEBIANSNDBX} npm install ${NODEPKGLIST}
-fakechroot fakeroot chroot ${DEBIANSNDBX} go get -v ${GOPKGLIST}
 
 echospaced "Generating tar distribution ..."
 cd ${BASEDIR}
-tar -czf subliminal-view_${VERSION}.tar.gz subliminal-view
-rm -rf "${VIM_TEMPDIR}" "${URXVT_TEMPDIR}" subliminal-view
+tar -czf mash.tar.gz mash
+rm -rf "${VIM_TEMPDIR}" "${URXVT_TEMPDIR}" mash

@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-#   This file is part of Subliminal View
-#   Copyright (c) 2016, Subliminal View Developers
+#   This file is part of Mash
+#   Copyright (c) 2016, Mash Developers
 #
 #   Please refer to CONTRIBUTORS.md for a complete list of Copyright
 #   holders.
 #
-#   Subliminal View is free software: you can redistribute it and/or modify
+#   Mash is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
 #   the Free Software Foundation, either version 3 of the License, or
 #   (at your option) any later version.
 #
-#   Subliminal View is distributed in the hope that it will be useful,
+#   Mash is distributed in the hope that it will be useful,
 #   but WITHOUT ANY WARRANTY; without even the implied warranty of
 #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #   GNU General Public License for more details.
@@ -30,17 +30,17 @@ FONTNAME="DejaVu Sans Mono Nerd Font Complete Mono.ttf"
 echospaced "Removing icons ..."
 for S in ${ICONSIZES}; do
 	xdg-icon-resource uninstall --size "${S}" --theme "hicolor" \
-		--context "apps" --mode "user" subliminal-view
+		--context "apps" --mode "user" mash
 done
 
 echospaced "Removing desktop and menu files ..."
-xdg-desktop-icon uninstall "${HOME}/.config/subliminal-view/app/subliminal-view.desktop"
-xdg-desktop-menu uninstall "${HOME}/.config/subliminal-view/app/subliminal-view.desktop"
+xdg-desktop-icon uninstall "${HOME}/.config/mash/app/mash.desktop"
+xdg-desktop-menu uninstall "${HOME}/.config/mash/app/mash.desktop"
 
 echospaced "Removing folders ..."
-rm -rfv "${HOME}/.config/subliminal-view"*
+rm -rfv "${HOME}/.config/mash"*
 rm -rfv "${HOME}/.local/share/fonts/${FONTNAME}"
-rm -rfv "${HOME}/.local/bin/subliminal-view"
+rm -rfv "${HOME}/.local/bin/mash"
 
 echospaced "Updating font cache ..."
 fc-cache -vr "${HOME}/.local/share/fonts"

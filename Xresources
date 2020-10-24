@@ -26,8 +26,8 @@ URxvt*.iso14755:                false
 URxvt*.iso14755_52:             false
 URxvt*.font:                    xft:DejaVuSansMonoForPowerline Nerd Font:style=Book:size=10, \
                                 xft:DejaVuSansMonoForPowerline Nerd Font:style=Book:size=8
-URxvt*.iconName:                subliminal-view
-URxvt*.title:                   Subliminal View
+URxvt*.iconName:                mash
+URxvt*.title:                   Mash
 URxvt*.letterSpace:             -1.0
 URxvt*.intensityStyles:         false
 URxvt*.termName:                rxvt-unicode-256color

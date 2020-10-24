@@ -1,6 +1,6 @@
 <img align="right" height="100" src="https://cloud.githubusercontent.com/assets/324683/14374725/0a483732-fd23-11e5-9b56-b0e280b20760.png">
 
-# Subliminal View
+# Mash
 
 > An open source alternative to Sublime Text based on vim and urxvt
 
@@ -9,20 +9,20 @@ Current version: 0.1a1
 **Attention: this in an alpha release. Don't use it on production environments as
 you will probably experience bugs.**
 
-*Subliminal View* is a group of Vim plugins and configurations designed to resemble
+*Mash* is a group of Vim plugins and configurations designed to resemble
 the appeareance and functionality of Sublime Text. Its main purpose is to make
 users from Sublime to be more comfortable using Vim and perhaps encourage them
 to switch IDE environments in the future.
 
-*Subliminal View* needs a graphical interface to work because we need urxvt for
+*Mash* needs a graphical interface to work because we need urxvt for
 proper key shorcuts, but in the future this might change. This means it won't
-work on server environments, sorry. *Subliminal View* ships as a separate binary
+work on server environments, sorry. *Mash* ships as a separate binary
 and does not integrate with Vim (yet). See [Usage](#usage) for details.
 
 Also, for now we are only supporting Debian-based systems on the installation
 script, but you might want to try installing on a different OS and tell us how
 you you did it, or submit a
-[greatly appreciated PR](https://github.com/CollageLabs/subliminal-view/pulls).
+[greatly appreciated PR](https://github.com/CollageLabs/mash/pulls).
 
 ![Screenshot](https://cloud.githubusercontent.com/assets/324683/18112460/b9c94b3a-6ef5-11e6-9d11-43df8c950f87.png "Screenshot")
 
@@ -34,7 +34,7 @@ you you did it, or submit a
 
 ## Known bugs - work in progess
 
-* See the [issues section](https://github.com/CollageLabs/subliminal-view/issues)
+* See the [issues section](https://github.com/CollageLabs/mash/issues)
 for more information.
 
 ## Installation
@@ -50,13 +50,13 @@ Then, open a user terminal and start the installation process with the following
 This will take a few minutes to complete depending on your internet connection speed.
 
 ```bash
-bash <(curl -fLo- https://raw.githubusercontent.com/CollageLabs/subliminal-view/develop/install.sh)
+bash <(curl -fLo- https://raw.githubusercontent.com/CollageLabs/mash/develop/install.sh)
 ```
 
 ## Usage
 
 You can click on Subliminal Vim's icon on the menu or execute it on console by
-typing `subliminal-view`.
+typing `mash`.
 
 You can use the mouse to select documents on the panel, single click opens them.
 You cannot select tabs by clicking on them (yet), you'll have to use key shorcuts

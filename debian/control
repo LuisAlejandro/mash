@@ -1,0 +1,17 @@
+Source: mash
+Section: devel
+Priority: optional
+Maintainer: Luis Alejandro Martínez Faneyth <luis@collagelabs.org>
+Build-Depends: debhelper (>= 9)
+Standards-Version: 4.5.0
+Homepage: https://github.com/CollageLabs/mash
+Vcs-Git: https://github.com/CollageLabs/mash.git
+Vcs-Browser: https://github.com/CollageLabs/mash
+
+Package: mash
+Architecture: any
+Depends: ${misc:Depends}, gtk2-engines-murrine, gtk2-engines-pixbuf, gtk3-engines-unico, fonts-jara
+Description: an Open Source text editor based on vim an urxvt
+ mash is a text editor which supports most standard editor features,
+ extending this basic functionality with other features not usually
+ found in simple text editors.

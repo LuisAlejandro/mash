@@ -5,7 +5,7 @@ use File::Glob ':bsd_glob';
 my %handlers;
 my $modifiermask;
 my $windowid;
-my $menufile = bsd_glob('~/.config/subliminal-view/app/extensions/table.txt');
+my $menufile = bsd_glob('~/.config/mash/app/extensions/table.txt');
 
 
 sub handle_on_exec {

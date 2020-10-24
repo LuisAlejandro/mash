@@ -1,14 +1,14 @@
 [Desktop Entry]
 Encoding=UTF-8
-Name=Subliminal View
+Name=Mash
 GenericName=Text Editor
 Comment=Text Editor
-X-GNOME-FullName=Subliminal View
-Exec=subliminal-view %F
+X-GNOME-FullName=Mash
+Exec=mash %F
 Terminal=false
-Icon=subliminal-view
+Icon=mash
 Type=Application
 Categories=TextEditor;IDE;Development
 MimeType=text/plain;
 StartupNotify=true
-StartupWMClass=subliminal-view
+StartupWMClass=mash

@@ -1,15 +1,15 @@
-"   This file is part of Subliminal View
-"   Copyright (c) 2016, Subliminal View Developers
+"   This file is part of Mash
+"   Copyright (c) 2016, Mash Developers
 "
 "   Please refer to CONTRIBUTORS.md for a complete list of Copyright
 "   holders.
 "
-"   Subliminal View is free software: you can redistribute it and/or modify
+"   Mash is free software: you can redistribute it and/or modify
 "   it under the terms of the GNU General Public License as published by
 "   the Free Software Foundation, either version 3 of the License, or
 "   (at your option) any later version.
 "
-"   Subliminal View is distributed in the hope that it will be useful,
+"   Mash is distributed in the hope that it will be useful,
 "   but WITHOUT ANY WARRANTY; without even the implied warranty of
 "   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 "   GNU General Public License for more details.
@@ -28,7 +28,7 @@ endfunction
 function! AutoPlugInstall()
     if !empty(filter(copy(g:plugs), '!isdirectory(v:val.dir)')) && exists(':PlugInstall')
         PlugInstall
-        call system('nohup subliminal-view >/dev/null 2>&1 &')
+        call system('nohup mash >/dev/null 2>&1 &')
         qall
     endif
 endfunction

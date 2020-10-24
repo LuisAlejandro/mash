@@ -1,15 +1,15 @@
-"   This file is part of Subliminal View
-"   Copyright (c) 2016, Subliminal View Developers
+"   This file is part of Mash
+"   Copyright (c) 2016, Mash Developers
 "
 "   Please refer to CONTRIBUTORS.md for a complete list of Copyright
 "   holders.
 "
-"   Subliminal View is free software: you can redistribute it and/or modify
+"   Mash is free software: you can redistribute it and/or modify
 "   it under the terms of the GNU General Public License as published by
 "   the Free Software Foundation, either version 3 of the License, or
 "   (at your option) any later version.
 "
-"   Subliminal View is distributed in the hope that it will be useful,
+"   Mash is distributed in the hope that it will be useful,
 "   but WITHOUT ANY WARRANTY; without even the implied warranty of
 "   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 "   GNU General Public License for more details.
@@ -33,8 +33,8 @@ map <silent> <C-q> :call system('pkill -P $(pgrep -d, urxvt)')<CR>
 map! <silent> <C-q> <Esc>:call system('pkill -P $(pgrep -d, urxvt)')<CR>
 
 " `ctrl-q` | New window
-map <silent> <Esc>[78;5~ :call system('subliminal-view')<CR>
-map! <silent> <Esc>[78;5~ <Esc>:call system('subliminal-view')<CR>
+map <silent> <Esc>[78;5~ :call system('mash')<CR>
+map! <silent> <Esc>[78;5~ <Esc>:call system('mash')<CR>
 
 " Close window
 map <silent> <Esc>[87;5~ :qall!<CR>

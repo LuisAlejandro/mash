@@ -1,15 +1,15 @@
-"   This file is part of Subliminal View
-"   Copyright (c) 2016, Subliminal View Developers
+"   This file is part of Mash
+"   Copyright (c) 2016, Mash Developers
 "
 "   Please refer to CONTRIBUTORS.md for a complete list of Copyright
 "   holders.
 "
-"   Subliminal View is free software: you can redistribute it and/or modify
+"   Mash is free software: you can redistribute it and/or modify
 "   it under the terms of the GNU General Public License as published by
 "   the Free Software Foundation, either version 3 of the License, or
 "   (at your option) any later version.
 "
-"   Subliminal View is distributed in the hope that it will be useful,
+"   Mash is distributed in the hope that it will be useful,
 "   but WITHOUT ANY WARRANTY; without even the implied warranty of
 "   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 "   GNU General Public License for more details.
@@ -23,9 +23,9 @@
 
 
 let g:sv_py_path = '/usr/bin/python'
-let g:sv_py_search = '~/.config/subliminal-view/app/ui/search.py'
-let g:sv_py_searchreplace = '~/.config/subliminal-view/app/ui/searchreplace.py'
-let g:sv_py_searchfiles = '~/.config/subliminal-view/app/ui/searchfiles.py'
+let g:sv_py_search = '~/.config/mash/app/ui/search.py'
+let g:sv_py_searchreplace = '~/.config/mash/app/ui/searchreplace.py'
+let g:sv_py_searchfiles = '~/.config/mash/app/ui/searchfiles.py'
 
 map <silent> <C-f> :call system(g:sv_py_path.' '.g:sv_py_search.' '.v:servername.' &')<CR>
 map! <silent> <C-f> <Esc>:call system(g:sv_py_path.' '.g:sv_py_search.' '.v:servername.' &')<CR>
@@ -205,6 +205,74 @@ let NERDTreeIgnore = ['\.py[cd]$', '\~$', '\.swo$', '\.swp$', '^\.git$',
 " bundle/syntastic
 " ----------------------------------------------------------------------------
 
+" Uninstalling pylint-2.6.0:
+"   Would remove:
+"     /usr/local/bin/epylint
+"     /usr/local/bin/pylint
+"     /usr/local/bin/pyreverse
+"     /usr/local/bin/symilar
+"     /usr/local/lib/python3.7/dist-packages/pylint-2.6.0.dist-info/*
+"     /usr/local/lib/python3.7/dist-packages/pylint/*
+" Proceed (y/n)? 
+" Your response ('') was not one of the expected responses: y, n
+" Proceed (y/n)? y
+"   Successfully uninstalled pylint-2.6.0
+" Uninstalling pyflakes-2.2.0:
+"   Would remove:
+"     /usr/local/bin/pyflakes
+"     /usr/local/lib/python3.7/dist-packages/pyflakes-2.2.0.dist-info/*
+"     /usr/local/lib/python3.7/dist-packages/pyflakes/*
+" Proceed (y/n)? y
+"   Successfully uninstalled pyflakes-2.2.0
+" Uninstalling pep8-1.7.1:
+"   Would remove:
+"     /usr/local/bin/pep8
+"     /usr/local/lib/python3.7/dist-packages/pep8-1.7.1.dist-info/*
+"     /usr/local/lib/python3.7/dist-packages/pep8.py
+" Proceed (y/n)? y
+"   Successfully uninstalled pep8-1.7.1
+" Uninstalling pydocstyle-5.1.1:
+"   Would remove:
+"     /usr/local/bin/pydocstyle
+"     /usr/local/lib/python3.7/dist-packages/pydocstyle-5.1.1.dist-info/*
+"     /usr/local/lib/python3.7/dist-packages/pydocstyle/*
+" Proceed (y/n)? y
+"   Successfully uninstalled pydocstyle-5.1.1
+" Uninstalling docutils-0.16:
+"   Would remove:
+"     /usr/local/bin/rst2html.py
+"     /usr/local/bin/rst2html4.py
+"     /usr/local/bin/rst2html5.py
+"     /usr/local/bin/rst2latex.py
+"     /usr/local/bin/rst2man.py
+"     /usr/local/bin/rst2odt.py
+"     /usr/local/bin/rst2odt_prepstyles.py
+"     /usr/local/bin/rst2pseudoxml.py
+"     /usr/local/bin/rst2s5.py
+"     /usr/local/bin/rst2xetex.py
+"     /usr/local/bin/rst2xml.py
+"     /usr/local/bin/rstpep2html.py
+"     /usr/local/lib/python3.7/dist-packages/docutils-0.16.dist-info/*
+"     /usr/local/lib/python3.7/dist-packages/docutils/*
+" Proceed (y/n)? y
+"   Successfully uninstalled docutils-0.16
+" Uninstalling yamllint-1.25.0:
+"   Would remove:
+"     /usr/local/bin/yamllint
+"     /usr/local/lib/python3.7/dist-packages/yamllint-1.25.0.dist-info/*
+"     /usr/local/lib/python3.7/dist-packages/yamllint/*
+" Proceed (y/n)? y
+"   Successfully uninstalled yamllint-1.25.0
+" Uninstalling vim-vint-0.3.21:
+"   Would remove:
+"     /usr/local/bin/vint
+"     /usr/local/lib/python3.7/dist-packages/vim_vint-0.3.21.dist-info/*
+"     /usr/local/lib/python3.7/dist-packages/vint/*
+" Proceed (y/n)? y
+"   Successfully uninstalled vim-vint-0.3.21
+
+
+
 " show the error list automatically
 let g:syntastic_check_on_open = 1
 let g:syntastic_error_symbol = "\uf12a"
@@ -215,132 +283,132 @@ let g:syntastic_stl_format = "%E{%e Errors}%B{, }%W{%w Warnings}"
 
 " Python
 let g:syntastic_python_checkers = ['python', 'pep8', 'pylint', 'pyflakes', 'pydocstyle']
-let g:syntastic_python_python_exec = '~/.config/subliminal-view/sandboxes/python/bin/python'
-let g:syntastic_python_pep8_exec = '~/.config/subliminal-view/sandboxes/python/bin/pep8'
-let g:syntastic_python_pylint_exec = '~/.config/subliminal-view/sandboxes/python/bin/pylint'
-let g:syntastic_python_pyflakes_exec = '~/.config/subliminal-view/sandboxes/python/bin/pyflakes'
-let g:syntastic_python_pydocstyle_exec = '~/.config/subliminal-view/sandboxes/python/bin/pydocstyle'
+let g:syntastic_python_python_exec = '~/.config/mash/sandboxes/python/bin/python'
+let g:syntastic_python_pep8_exec = '~/.config/mash/sandboxes/python/bin/pep8'
+let g:syntastic_python_pylint_exec = '~/.config/mash/sandboxes/python/bin/pylint'
+let g:syntastic_python_pyflakes_exec = '~/.config/mash/sandboxes/python/bin/pyflakes'
+let g:syntastic_python_pydocstyle_exec = '~/.config/mash/sandboxes/python/bin/pydocstyle'
 
 " Ruby
 let g:syntastic_ruby_checkers = ['mri', 'rubocop']
-let g:syntastic_ruby_mri_exec = '~/.config/subliminal-view/sandboxes/ruby/bin/ruby'
-let g:syntastic_ruby_rubocop_exec = '~/.config/subliminal-view/sandboxes/ruby/bin/rubocop'
+let g:syntastic_ruby_mri_exec = '~/.config/mash/sandboxes/ruby/bin/ruby'
+let g:syntastic_ruby_rubocop_exec = '~/.config/mash/sandboxes/ruby/bin/rubocop'
 let g:syntastic_ruby_rubocop_args = '--cache false'
-let $GEM_PATH .= ':~/.config/subliminal-view/sandboxes/ruby'
+let $GEM_PATH .= ':~/.config/mash/sandboxes/ruby'
 
 " Shell
 let g:syntastic_sh_checkers = ['sh', 'checkbashisms', 'shellcheck']
-let g:syntastic_sh_sh_exec = '/usr/bin/bash'
-let g:syntastic_sh_checkbashisms_exec = '/usr/bin/checkbashisms'
-let g:syntastic_sh_shellcheck_exec = '/usr/bin/shellcheck'
+let g:syntastic_sh_sh_exec = '~/.config/mash/sandboxes/debian/usr/bin/bash'
+let g:syntastic_sh_checkbashisms_exec = '~/.config/mash/sandboxes/debian/usr/bin/checkbashisms'
+let g:syntastic_sh_shellcheck_exec = '~/.config/mash/sandboxes/debian/usr/bin/shellcheck'
 
 " Javascript
 let g:syntastic_javascript_checkers = ['jshint']
-let g:syntastic_javascript_jshint_exec =  '~/.config/subliminal-view/sandboxes/node/node_modules/.bin/jshint'
+let g:syntastic_javascript_jshint_exec = '~/.config/mash/sandboxes/node/node_modules/.bin/jshint'
 
 " Go
 let g:syntastic_go_checkers = ['go', 'gofmt', 'golint']
-let g:syntastic_go_go_exec = '/usr/bin/go'
-let g:syntastic_go_gofmt_exec = '/usr/bin/gofmt'
-let g:syntastic_go_golint_exec = '~/.config/subliminal-view/sandboxes/go/bin/golint'
+let g:syntastic_go_go_exec = '~/.config/mash/sandboxes/debian/usr/bin/go'
+let g:syntastic_go_gofmt_exec = '~/.config/mash/sandboxes/debian/usr/bin/gofmt'
+let g:syntastic_go_golint_exec = '~/.config/mash/sandboxes/go/bin/golint'
 
 " Markdown
 let g:syntastic_markdown_checkers = ['mdl']
-let g:syntastic_markdown_mdl_exec =  '~/.config/subliminal-view/sandboxes/ruby/bin/mdl'
+let g:syntastic_markdown_mdl_exec = '~/.config/mash/sandboxes/ruby/bin/mdl'
 
 " RST
 let g:syntastic_rst_checkers = ['rst2pseudoxml']
-let g:syntastic_rst_rst2pseudoxml_exec =  '~/.config/subliminal-view/sandboxes/python/bin/rst2pseudoxml.py'
+let g:syntastic_rst_rst2pseudoxml_exec = '~/.config/mash/sandboxes/python/bin/rst2pseudoxml.py'
 
 " HTML
 let g:syntastic_html_checkers = ['tidy']
-let g:syntastic_html_tidy_exec =  '/usr/bin/tidy'
+let g:syntastic_html_tidy_exec = '~/.config/mash/sandboxes/debian/usr/bin/tidy'
 
 " XHTML
 let g:syntastic_xhtml_checkers = ['tidy']
-let g:syntastic_xhtml_tidy_exec =  '/usr/bin/tidy'
+let g:syntastic_xhtml_tidy_exec = '~/.config/mash/sandboxes/debian/usr/bin/tidy'
 
 " XML
 let g:syntastic_xml_checkers = ['xmllint']
-let g:syntastic_xml_xmllint_exec =  '/usr/bin/xmllint'
+let g:syntastic_xml_xmllint_exec = '~/.config/mash/sandboxes/debian/usr/bin/xmllint'
 
 " YAML
 let g:syntastic_yaml_checkers = ['yamllint']
-let g:syntastic_yaml_yamllint_exec =  '~/.config/subliminal-view/sandboxes/python/bin/yamllint'
+let g:syntastic_yaml_yamllint_exec = '~/.config/mash/sandboxes/python/bin/yamllint'
 
 " CSS
 let g:syntastic_css_checkers = ['csslint']
-let g:syntastic_css_csslint_exec =  '~/.config/subliminal-view/sandboxes/node/node_modules/.bin/csslint'
+let g:syntastic_css_csslint_exec = '~/.config/mash/sandboxes/node/node_modules/.bin/csslint'
 
 " LESS
 let g:syntastic_less_checkers = ['lessc']
-let g:syntastic_less_lessc_exec =  '~/.config/subliminal-view/sandboxes/node/node_modules/.bin/lessc'
+let g:syntastic_less_lessc_exec = '~/.config/mash/sandboxes/node/node_modules/.bin/lessc'
 
 " SASS
 let g:syntastic_sass_checkers = ['sass_lint']
-let g:syntastic_sass_sass_lint_exec =  '~/.config/subliminal-view/sandboxes/node/node_modules/.bin/sass-lint'
+let g:syntastic_sass_sass_lint_exec = '~/.config/mash/sandboxes/node/node_modules/.bin/sass-lint'
 
 " SCSS
 let g:syntastic_scss_checkers = ['sass_lint']
-let g:syntastic_scss_sass_lint_exec =  '~/.config/subliminal-view/sandboxes/node/node_modules/.bin/sass-lint'
+let g:syntastic_scss_sass_lint_exec = '~/.config/mash/sandboxes/node/node_modules/.bin/sass-lint'
 
 " C
 let g:syntastic_c_checkers = ['gcc']
-let g:syntastic_c_gcc_exec = '/usr/bin/gcc'
+let g:syntastic_c_gcc_exec = '~/.config/mash/sandboxes/debian/usr/bin/gcc'
 
 " Objective C
 let g:syntastic_objc_checkers = ['gcc']
-let g:syntastic_objc_gcc_exec = '/usr/bin/gcc'
+let g:syntastic_objc_gcc_exec = '~/.config/mash/sandboxes/debian/usr/bin/gcc'
 
 " C++
 let g:syntastic_cpp_checkers = ['gcc']
-let g:syntastic_cpp_gcc_exec = '/usr/bin/gcc'
+let g:syntastic_cpp_gcc_exec = '~/.config/mash/sandboxes/debian/usr/bin/gcc'
 
 " Objective C++
 let g:syntastic_objcpp_checkers = ['gcc']
-let g:syntastic_objcpp_gcc_exec = '/usr/bin/gcc'
+let g:syntastic_objcpp_gcc_exec = '~/.config/mash/sandboxes/debian/usr/bin/gcc'
 
 " C#
 let g:syntastic_cs_checkers = ['mcs']
-let g:syntastic_cs_mcs_exec = '/usr/bin/mcs'
+let g:syntastic_cs_mcs_exec = '~/.config/mash/sandboxes/debian/usr/bin/mcs'
 
 " Vim
 let g:syntastic_vim_checkers = ['vint']
-let g:syntastic_vim_vint_exec = '~/.config/subliminal-view/sandboxes/python/bin/vint'
+let g:syntastic_vim_vint_exec = '~/.config/mash/sandboxes/python/bin/vint'
 
 " SQL
 let g:syntastic_sql_checkers = ['sqlint']
-let g:syntastic_sql_sqlint_exec = '~/.config/subliminal-view/sandboxes/ruby/bin/sqlint'
+let g:syntastic_sql_sqlint_exec = '~/.config/mash/sandboxes/ruby/bin/sqlint'
 
 " PHP
 let g:syntastic_php_checkers = ['php']
-let g:syntastic_php_php_exec = '/usr/bin/php'
+let g:syntastic_php_php_exec = '~/.config/mash/sandboxes/debian/usr/bin/php'
 
 " Perl
 let g:syntastic_enable_perl_checker = 1
 let g:syntastic_perl_checkers = ['perl']
-let g:syntastic_perl_perl_exec = '/usr/bin/perl'
+let g:syntastic_perl_perl_exec = '~/.config/mash/sandboxes/debian/usr/bin/perl'
 
 " Rust
 let g:syntastic_rust_checkers = ['rustc']
-let g:syntastic_rust_rustc_exec = '/usr/bin/rustc'
+let g:syntastic_rust_rustc_exec = '~/.config/mash/sandboxes/debian/usr/bin/rustc'
 
 " Docker
 let g:syntastic_dockerfile_checkers = ['dockerfile_lint']
-let g:syntastic_dockerfile_dockerfile_lint_exec = '~/.config/subliminal-view/sandboxes/node/node_modules/.bin/dockerfile_lint'
-let g:syntastic_dockerfile_dockerfile_lint_args = '-r ~/.config/subliminal-view/sandboxes/node/node_modules/dockerfile_lint/config/default_rules.yaml'
+let g:syntastic_dockerfile_dockerfile_lint_exec = '~/.config/mash/sandboxes/node/node_modules/.bin/dockerfile_lint'
+let g:syntastic_dockerfile_dockerfile_lint_args = '-r ~/.config/mash/sandboxes/node/node_modules/dockerfile_lint/config/default_rules.yaml'
 
 " JSON
 let g:syntastic_json_checkers = ['jsonlint']
-let g:syntastic_json_jsonlint_exec =  '~/.config/subliminal-view/sandboxes/node/node_modules/.bin/jsonlint'
+let g:syntastic_json_jsonlint_exec = '~/.config/mash/sandboxes/node/node_modules/.bin/jsonlint'
 
 " PO
 let g:syntastic_po_checkers = ['msgfmt']
-let g:syntastic_po_msgfmt_exec =  '/usr/bin/msgfmt'
+let g:syntastic_po_msgfmt_exec = '~/.config/mash/sandboxes/debian/usr/bin/msgfmt'
 
 " Rust
 let g:syntastic_rust_checkers = ['rustc']
-let g:syntastic_rust_rustc_exec =  '/usr/bin/rustc'
+let g:syntastic_rust_rustc_exec = '~/.config/mash/sandboxes/debian/usr/bin/rustc'
 
 " bundle/tcomment_vim
 " ------------------------------------------------------------------
@@ -404,7 +472,7 @@ let g:WebDevIconsNerdTreeAfterGlyphPadding = ''
 " ------------------------------------------------------------------
 
 let g:easytags_async = 1
-let g:easytags_file = '~/.config/subliminal-view/vimtags'
+let g:easytags_file = '~/.config/mash/vimtags'
 let g:easytags_include_members = 1
 let g:easytags_auto_highlight = 0
 let g:easytags_resolve_links = 1

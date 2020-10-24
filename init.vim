@@ -1,15 +1,15 @@
-"   This file is part of Subliminal View
-"   Copyright (c) 2016, Subliminal View Developers
+"   This file is part of Mash
+"   Copyright (c) 2016, Mash Developers
 "
 "   Please refer to CONTRIBUTORS.md for a complete list of Copyright
 "   holders.
 "
-"   Subliminal View is free software: you can redistribute it and/or modify
+"   Mash is free software: you can redistribute it and/or modify
 "   it under the terms of the GNU General Public License as published by
 "   the Free Software Foundation, either version 3 of the License, or
 "   (at your option) any later version.
 "
-"   Subliminal View is distributed in the hope that it will be useful,
+"   Mash is distributed in the hope that it will be useful,
 "   but WITHOUT ANY WARRANTY; without even the implied warranty of
 "   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 "   GNU General Public License for more details.
@@ -19,13 +19,13 @@
 
 set nocompatible
 
-let $VIM='~/.config/subliminal-view/runtime'
-let $VIMRUNTIME='~/.config/subliminal-view/runtime'
-set runtimepath=$VIMRUNTIME,~/.config/subliminal-view/plug
+let $VIM='~/.config/mash/runtime'
+let $VIMRUNTIME='~/.config/mash/runtime'
+set runtimepath=$VIMRUNTIME,~/.config/mash/plug
 
-call plug#begin('~/.config/subliminal-view/plugins')
+call plug#begin('~/.config/mash/plugins')
 
-Plug 'CollageLabs/subliminal-view', {'dir': '~/.config/subliminal-view/app', 'do': './configure.sh', 'branch': 'develop'}
+Plug 'CollageLabs/mash', {'dir': '~/.config/mash/app', 'do': './configure.sh', 'branch': 'develop'}
 Plug 'CollageLabs/vim-autoswap', {'branch': 'master'}
 Plug 'xolox/vim-misc', {'commit': '3e6b8fb6f03f13434543ce1f5d24f6a5d3f34f0b'}
 Plug 'xolox/vim-easytags', {'commit': '72a8753b5d0a951e547c51b13633f680a95b5483'}

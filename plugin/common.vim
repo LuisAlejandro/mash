@@ -1,15 +1,15 @@
-"   This file is part of Subliminal View
-"   Copyright (c) 2016, Subliminal View Developers
+"   This file is part of Mash
+"   Copyright (c) 2016, Mash Developers
 "
 "   Please refer to CONTRIBUTORS.md for a complete list of Copyright
 "   holders.
 "
-"   Subliminal View is free software: you can redistribute it and/or modify
+"   Mash is free software: you can redistribute it and/or modify
 "   it under the terms of the GNU General Public License as published by
 "   the Free Software Foundation, either version 3 of the License, or
 "   (at your option) any later version.
 "
-"   Subliminal View is distributed in the hope that it will be useful,
+"   Mash is distributed in the hope that it will be useful,
 "   but WITHOUT ANY WARRANTY; without even the implied warranty of
 "   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 "   GNU General Public License for more details.
@@ -54,7 +54,7 @@ colorscheme subliminal                          " color scheme
 
 set title
 set icon
-let &titlestring='%F (%{ProjectFilePath(1)}) - Subliminal View'
+let &titlestring='%F (%{ProjectFilePath(1)}) - Mash'
 let &iconstring=&titlestring
 
 " Mouse
@@ -100,26 +100,26 @@ set autowriteall                                " Automatically save before :nex
 " Viminfo file
 
 set viminfo^=%
-set viminfo+=n~/.config/subliminal-view/viminfo
+set viminfo+=n~/.config/mash/viminfo
 
 " Ctags file
 
-set tags=~/.config/subliminal-view/vimtags
+set tags=~/.config/mash/vimtags
 
 " Swap files dir
 
 set swapfile
 set updatecount=1
-set directory=~/.config/subliminal-view/recovery/
+set directory=~/.config/mash/recovery/
 
 " Backups dir
 
 set backup
 set writebackup
-set backupdir=~/.config/subliminal-view/backups/
+set backupdir=~/.config/mash/backups/
 
 " Undo history dir
 
 set history=1000
 set undofile
-set undodir=~/.config/subliminal-view/undo/
+set undodir=~/.config/mash/undo/
