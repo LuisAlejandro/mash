@@ -80,16 +80,16 @@ for that (Alt+1, Alt+2, ...).
 
 ## License
 
-Copyright (C) 2016 Sublime Vim Developers
+Copyright (C) 2016 Mash Developers
 
 Please refer to CONTRIBUTORS.md for a complete list of Copyright holders.
 
-Sublime Vim is free software: you can redistribute it and/or modify it under the
+Mash is free software: you can redistribute it and/or modify it under the
 terms of the GNU General Public License as published by the Free Software
 Foundation, either version 3 of the License, or (at your option) any later
 version.
 
-Sublime Vim is distributed in the hope that it will be useful, but WITHOUT ANY
+Mash is distributed in the hope that it will be useful, but WITHOUT ANY
 WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 

@@ -17,7 +17,7 @@
 "   You should have received a copy of the GNU General Public License
 "   along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-let g:airline#themes#subliminal#palette = {
+let g:airline#themes#mash#palette = {
     \ 'normal': {
         \ 'airline_a':              ['#D0D0D0', '#1C1C1C', 252, 234, ''],
         \ 'airline_b':              ['#D0D0D0', '#3A3A3A', 252, 237, ''],

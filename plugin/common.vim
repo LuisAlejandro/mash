@@ -47,8 +47,8 @@ set list listchars=tab:--,trail:·,nbsp:·        " Formatting of spaces in text
 
 " Color theme
 
-set termguicolors								" User GUI colors on terminal
-colorscheme subliminal                          " color scheme
+set termguicolors                               " User GUI colors on terminal
+colorscheme mash                                " color scheme
 
 " Window/icon titles
 

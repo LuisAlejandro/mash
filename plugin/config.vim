@@ -420,7 +420,7 @@ map! <silent> <C-_> <Esc>:TComment<CR>i
 " bundle/vim-airline
 " ------------------------------------------------------------------
 
-let g:airline_theme = 'subliminal'
+let g:airline_theme = 'mash'
 let g:airline_powerline_fonts = 1
 let g:airline_left_sep = "\ue0b8"
 let g:airline_left_alt_sep = "\ue0b9"
@@ -439,7 +439,7 @@ let g:airline#extensions#tabline#enabled = 1
 let g:airline#extensions#tabline#show_tabs = 0
 let g:airline#extensions#tabline#show_tab_type = 0
 
-let g:airline#extensions#tabline#formatter = 'subliminal'
+let g:airline#extensions#tabline#formatter = 'mash'
 let g:airline#extensions#tabline#left_sep = "\ue0b8"
 let g:airline#extensions#tabline#left_alt_sep = "\ue0b9"
 let g:airline#extensions#tabline#buffer_idx_mode = 1

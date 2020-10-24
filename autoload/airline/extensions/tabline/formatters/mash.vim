@@ -5,7 +5,7 @@ scriptencoding utf-8
 
 let s:skip_symbol = '…'
 
-function! airline#extensions#tabline#formatters#subliminal#format(bufnr, buffers)
+function! airline#extensions#tabline#formatters#mash#format(bufnr, buffers)
   if len(a:buffers) <= 1 " don't need to compare bufnames if has less than one buffer opened
     return airline#extensions#tabline#formatters#base#format(a:bufnr, a:buffers)
   endif
