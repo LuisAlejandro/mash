@@ -1,0 +1,38 @@
+sudo: required
+services: docker
+dist: trusty
+group: edge
+language: python
+python: 3.5
+env:
+    global:
+        - GITUSERNAME="Luis Alejandro Martínez Faneyth"
+        - GITUSERMAIL="luis@luisalejandro.org"
+        - GHREPO="https://github.com/CollageLabs/mash"
+        - secure: ""
+before_script:
+    - |
+        git config --global user.name "${GITUSERNAME}"
+        git config --global user.email "${GITUSERMAIL}"
+        git fetch origin contents:contents
+        git checkout contents
+before_script: docker pull luisalejandro/mash:build
+script: docker run -it -w ${PWD} -v ${PWD}:${PWD} luisalejandro/mash:build bash build.sh
+after_success:
+    - |
+        if [ "${TRAVIS_BRANCH}" == "develop" ] && [ "${TRAVIS_PULL_REQUEST}" == "false" ] && [ -z "${TRAVIS_TAG}" ]; then
+            git tag -a v${TRAVIS_BUILD_NUMBER} -m "Travis build $TRAVIS_BUILD_NUMBER pushed a tag."
+            git push origin --tags
+            git fetch origin
+        fi
+deploy:
+    provider: releases
+    skip_cleanup: true
+    file_glob: true
+    file: mash_*.tar.gz
+    on:
+        tags: true
+        repo: CollageLabs/mash
+        branch: develop
+    api_key:
+        secure: OXC9jXrxOWLS4OOTrDioz5faLODP7Ar8lQHUt9Tl5/qyD5Jc7a7sJr3a+lR1oip0T4Hv2ZJ+pDtZX2I+GciYobLa1rOOnAZG98fJzTDKaF2KVYHE12+EMpA8vcgAw38dbFHWYfKzpvMquNM6kQHi7VMi/75Fz4WGRzfj2SJbIEVyBS8lBxqUnIM4bNHB+3YP0gTXbickDZ9RIWm6GstBU+bv2RKkpIqCa10nT3jYypDSXddHPHQNFyslpE5XwQI8w3YwR0yEvEhNZkkuzfWdHSaJaVgb17IT6chB0D4ajb7qGF/5aXEElXPkXmI1icMToTdoFybgephZFc9y27lQag8JlRQJxu2hAZ3589h6HKx88SY8jatz30eJvbSzRSGYQdbLWLA7y9NSL4qypjwHgBfHowpq27//oUOw/GTKGXV1bPXvtHDJvQQrVzjDVtqHFoSZ4EA/EBw3qQX7k+yZYIHuJXmC5McCsrQDDATqwPcLnxMYjH51wMVSAmNmE0HGVA+aQUSbNBk9ZFFqaSIVY6UyK+ymwyfwBjHSBDZe+FWB0dYsjn7H/vynEESqTGjG1OZhf3FeD1XFS1V005UzgIPJHxISu8+GVZizc60Iqnq0O+KEt69N1beAolFeQ/2ZAV5jHfl/6VmJjVngEvkfX4neL/19kKSSzpDog52wC+o=

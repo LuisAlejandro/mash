@@ -1,14 +1,14 @@
 [Desktop Entry]
 Encoding=UTF-8
-Name=Subliminal Vim
+Name=Mash
 GenericName=Text Editor
 Comment=Text Editor
-X-GNOME-FullName=Subliminal Vim
-Exec=subliminal-vim %u
+X-GNOME-FullName=Mash
+Exec=mash %F
 Terminal=false
-Icon=/usr/share/icons/subliminal-vim.png
+Icon=collagelabs-mash
 Type=Application
 Categories=TextEditor;IDE;Development
 MimeType=text/plain;
 StartupNotify=true
-StartupWMClass=subliminal-vim
+StartupWMClass=mash

@@ -1,0 +1,68 @@
+Source: mash
+Section: devel
+Priority: optional
+Maintainer: Luis Alejandro Martínez Faneyth <luis@collagelabs.org>
+Build-Depends:  apt-transport-https,
+                autoconf,
+                autotools-dev,
+                build-essential,
+                ca-certificates,
+                chrpath,
+                curl,
+                debhelper-compat (= 13),
+                dpkg-dev,
+                git,
+                gnupg,
+                groff-base,
+                imagemagick,
+                libacl1-dev,
+                libev-dev,
+                libgpmg1-dev,
+                libgtk-3-dev,
+                libgtk2.0-dev,
+                liblua5.2-dev,
+                libncurses5-dev,
+                libperl-dev,
+                librsvg2-bin,
+                libselinux1-dev,
+                libstartup-notification0-dev,
+                libx11-dev,
+                libxaw7-dev,
+                libxft-dev,
+                libxpm-dev,
+                libxrender-dev,
+                libxt-dev,
+                lua5.2,
+                python3,
+                python3-dev,
+                ruby,
+                ruby-dev,
+                tcl-dev,
+                xutils-dev
+Standards-Version: 4.5.0
+Homepage: https://github.com/CollageLabs/mash
+Vcs-Git: https://github.com/CollageLabs/mash.git
+Vcs-Browser: https://github.com/CollageLabs/mash
+
+Package: mash
+Architecture: any
+Depends:    ${misc:Depends},
+            make,
+            imagemagick,
+            librsvg2-bin,
+            silversearcher-ag,
+            exuberant-ctags,
+            xclip,
+            wmctrl,
+            fontconfig,
+            git,
+            zenity,
+            curl,
+            bash,
+            gksu,
+            xdg-utils,
+            coreutils
+Description: an Open Source text editor based on vim an urxvt
+ mash is a text editor which supports most standard editor features,
+ extending this basic functionality with other features not usually
+ found in simple text editors.

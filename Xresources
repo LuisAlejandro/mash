@@ -1,233 +1,239 @@
-! Xft ----------------
-Xft.autohint:  false
-Xft.lcdfilter: lcddefault
-Xft.hintstyle: hintfull
-Xft.hinting:   true
-Xft.antialias: true
-Xft.dpi:       96
-Xft.rgba:      rgb
+! -- [ Xft ] --------------------------
 
-!--[ urxvt ]---------------------------
+Xft.autohint:                   false
+Xft.lcdfilter:                  lcddefault
+Xft.hintstyle:                  hintfull
+Xft.hinting:                    true
+Xft.antialias:                  true
+Xft.dpi:                        96
+Xft.rgba:                       rgb
 
-URxvt*.geometry: 		150x40
-URxvt*.depth: 			32
-URxvt*.buffered:		true
-URxvt*.scrollBar: 		false
-URxvt*.borderLess:		false
-URxvt*.borderwidth: 0
-URxvt*.cursorBlink:		true
-URxvt*.cursorUnderline:		true
-URxvt*.saveLines:		5000
-URxvt*.internalborder:	0
-URxvt*.transparent: false
-URxvt*.iso14755: false
-URxvt*.iso14755_52: false
-URxvt*.font: xft:DejaVu Sans Mono for Powerline:style=Book:size=10
-URxvt*.iconFile: /usr/share/icons/subliminal-vim.png
-URxvt*.iconName: subliminal-vim
-URxvt*.title: Subliminal Vim
-URxvt*.letterSpace: -1.0
-URxvt*.intensityStyles: false
-URxvt*.termName: rxvt-unicode-256color
-!URxvt*.loginShell: true
-URxvt*.xftAntialias: true
+
+! --[ urxvt ]---------------------------
+
+URxvt*.geometry:                150x40
+URxvt*.depth:                   32
+URxvt*.buffered:                true
+URxvt*.scrollBar:               false
+URxvt*.borderLess:              false
+URxvt*.borderwidth:             0
+URxvt*.cursorBlink:             true
+URxvt*.cursorUnderline:         true
+URxvt*.saveLines:               5000
+URxvt*.internalborder:          0
+URxvt*.transparent:             false
+URxvt*.iso14755:                false
+URxvt*.iso14755_52:             false
+URxvt*.font:                    xft:DejaVuSansMonoForPowerline Nerd Font:style=Book:size=10, \
+                                xft:DejaVuSansMonoForPowerline Nerd Font:style=Book:size=8
+URxvt*.iconName:                mash
+URxvt*.title:                   Mash
+URxvt*.letterSpace:             -1.0
+URxvt*.intensityStyles:         false
+URxvt*.termName:                rxvt-unicode-256color
+URxvt*.xftAntialias:            true
 
 !--[ colours ]-------------------------
 
-URxvt*.background:		#000000
-URxvt*.foreground:		#ffffff
+URxvt*.background:              #000000
+URxvt*.foreground:              #ffffff
 ! black
-URxvt*.color0:  		#2E3436
-URxvt*.color8:  		#555753
+URxvt*.color0:                  #2E3436
+URxvt*.color8:                  #555753
 ! red
-URxvt*.color1:  		#a40000
-URxvt*.color9:  		#EF2929
+URxvt*.color1:                  #a40000
+URxvt*.color9:                  #EF2929
 ! green
-URxvt*.color2:  		#4E9A06
-URxvt*.color10: 		#8AE234
+URxvt*.color2:                  #4E9A06
+URxvt*.color10:                 #8AE234
 ! yellow
-URxvt*.color3:  		#C4A000
-URxvt*.color11: 		#FCE94F
+URxvt*.color3:                  #C4A000
+URxvt*.color11:                 #FCE94F
 ! blue
-URxvt*.color4:  		#3465A4
-URxvt*.color12: 		#729FCF
+URxvt*.color4:                  #3465A4
+URxvt*.color12:                 #729FCF
 ! magenta
-URxvt*.color5:  		#75507B
-URxvt*.color13: 		#AD7FA8
+URxvt*.color5:                  #75507B
+URxvt*.color13:                 #AD7FA8
 ! cyan
-URxvt*.color6:  		#ce5c00
-URxvt*.color14: 		#fcaf3e
+URxvt*.color6:                  #ce5c00
+URxvt*.color14:                 #fcaf3e
 ! white
-URxvt*.color7:  		#babdb9
-URxvt*.color15: 		#eeeeee
+URxvt*.color7:                  #babdb9
+URxvt*.color15:                 #eeeeee
 
-! emulate XTerm for proper recognition of key combinations in Vim
-! original source: https://github.com/sunaku/home/
-URxvt.keysym.S-F1             : \033[1;2P
-URxvt.keysym.S-F2             : \033[1;2Q
-URxvt.keysym.S-F3             : \033[1;2R
-URxvt.keysym.S-F4             : \033[1;2S
-URxvt.keysym.S-F5             : \033[15;2~
-URxvt.keysym.S-F6             : \033[17;2~
-URxvt.keysym.S-F7             : \033[18;2~
-URxvt.keysym.S-F8             : \033[19;2~
-URxvt.keysym.S-F9             : \033[20;2~
-URxvt.keysym.S-F10            : \033[21;2~
-URxvt.keysym.S-F11            : \033[23;2~
-URxvt.keysym.S-F12            : \033[24;2~
+!--[ Extensions ]--------------------------------
 
-URxvt.keysym.M-F1             : \033[1;3P
-URxvt.keysym.M-F2             : \033[1;3Q
-URxvt.keysym.M-F3             : \033[1;3R
-URxvt.keysym.M-F4             : \033[1;3S
-URxvt.keysym.M-F5             : \033[15;3~
-URxvt.keysym.M-F6             : \033[17;3~
-URxvt.keysym.M-F7             : \033[18;3~
-URxvt.keysym.M-F8             : \033[19;3~
-URxvt.keysym.M-F9             : \033[20;3~
-URxvt.keysym.M-F10            : \033[21;3~
-URxvt.keysym.M-F11            : \033[23;3~
-URxvt.keysym.M-F12            : \033[24;3~
+URxvt.perl-ext-common:          fullscreen,contextual-menu
+URxvt.keysym.F11:               perl:fullscreen:switch
 
-URxvt.keysym.C-F1             : \033[1;5P
-URxvt.keysym.C-F2             : \033[1;5Q
-URxvt.keysym.C-F3             : \033[1;5R
-URxvt.keysym.C-F4             : \033[1;5S
-URxvt.keysym.C-F5             : \033[15;5~
-URxvt.keysym.C-F6             : \033[17;5~
-URxvt.keysym.C-F7             : \033[18;5~
-URxvt.keysym.C-F8             : \033[19;5~
-URxvt.keysym.C-F9             : \033[20;5~
-URxvt.keysym.C-F10            : \033[21;5~
-URxvt.keysym.C-F11            : \033[23;5~
-URxvt.keysym.C-F12            : \033[24;5~
+URxvt.keysym.S-F1:              \033[1;2P
+URxvt.keysym.S-F2:              \033[1;2Q
+URxvt.keysym.S-F3:              \033[1;2R
+URxvt.keysym.S-F4:              \033[1;2S
+URxvt.keysym.S-F5:              \033[15;2~
+URxvt.keysym.S-F6:              \033[17;2~
+URxvt.keysym.S-F7:              \033[18;2~
+URxvt.keysym.S-F8:              \033[19;2~
+URxvt.keysym.S-F9:              \033[20;2~
+URxvt.keysym.S-F10:             \033[21;2~
+URxvt.keysym.S-F11:             \033[23;2~
+URxvt.keysym.S-F12:             \033[24;2~
 
-URxvt.keysym.S-Up             : \033[1;2A
-URxvt.keysym.S-Down           : \033[1;2B
-URxvt.keysym.S-Right          : \033[1;2C
-URxvt.keysym.S-Left           : \033[1;2D
-!URxvt.keysym.S-Page_Up       : captured by terminal for scrolling
-!URxvt.keysym.S-Page_Down     : captured by terminal for scrolling
-URxvt.keysym.S-Home           : \033[1;2H
-URxvt.keysym.S-End            : \033[1;2F
-!URxvt.keysym.S-Insert        : captured by terminal as paste
-URxvt.keysym.S-Delete         : \033[3;2~
+URxvt.keysym.M-F1:              \033[1;3P
+URxvt.keysym.M-F2:              \033[1;3Q
+URxvt.keysym.M-F3:              \033[1;3R
+URxvt.keysym.M-F4:              \033[1;3S
+URxvt.keysym.M-F5:              \033[15;3~
+URxvt.keysym.M-F6:              \033[17;3~
+URxvt.keysym.M-F7:              \033[18;3~
+URxvt.keysym.M-F8:              \033[19;3~
+URxvt.keysym.M-F9:              \033[20;3~
+URxvt.keysym.M-F10:             \033[21;3~
+URxvt.keysym.M-F11:             \033[23;3~
+URxvt.keysym.M-F12:             \033[24;3~
 
-URxvt.keysym.M-Up             : \033[1;3A
-URxvt.keysym.M-Down           : \033[1;3B
-URxvt.keysym.M-Right          : \033[1;3C
-URxvt.keysym.M-Left           : \033[1;3D
-URxvt.keysym.M-Page_Up        : \033[5;3~
-URxvt.keysym.M-Page_Down      : \033[6;3~
-URxvt.keysym.M-Home           : \033[1;3H
-URxvt.keysym.M-End            : \033[1;3F
-URxvt.keysym.M-Insert         : \033[2;3~
-URxvt.keysym.M-Delete         : \033[3;3~
+URxvt.keysym.C-F1:              \033[1;5P
+URxvt.keysym.C-F2:              \033[1;5Q
+URxvt.keysym.C-F3:              \033[1;5R
+URxvt.keysym.C-F4:              \033[1;5S
+URxvt.keysym.C-F5:              \033[15;5~
+URxvt.keysym.C-F6:              \033[17;5~
+URxvt.keysym.C-F7:              \033[18;5~
+URxvt.keysym.C-F8:              \033[19;5~
+URxvt.keysym.C-F9:              \033[20;5~
+URxvt.keysym.C-F10:             \033[21;5~
+URxvt.keysym.C-F11:             \033[23;5~
+URxvt.keysym.C-F12:             \033[24;5~
 
-URxvt.keysym.M-S-Up           : \033[1;4A
-URxvt.keysym.M-S-Down         : \033[1;4B
-URxvt.keysym.M-S-Right        : \033[1;4C
-URxvt.keysym.M-S-Left         : \033[1;4D
-URxvt.keysym.M-S-Page_Up      : \033[5;4~
-URxvt.keysym.M-S-Page_Down    : \033[6;4~
-URxvt.keysym.M-S-Home         : \033[1;4H
-URxvt.keysym.M-S-End          : \033[1;4F
-URxvt.keysym.M-S-Insert       : \033[2;4~
-URxvt.keysym.M-S-Delete       : \033[3;4~
+URxvt.keysym.S-Up:              \033[1;2A
+URxvt.keysym.S-Down:            \033[1;2B
+URxvt.keysym.S-Right:           \033[1;2C
+URxvt.keysym.S-Left:            \033[1;2D
+URxvt.keysym.S-Home:            \033[1;2H
+URxvt.keysym.S-End:             \033[1;2F
+URxvt.keysym.S-Delete:          \033[3;2~
 
-URxvt.keysym.C-Up             : \033[1;5A
-URxvt.keysym.C-Down           : \033[1;5B
-URxvt.keysym.C-Right          : \033[1;5C
-URxvt.keysym.C-Left           : \033[1;5D
-URxvt.keysym.C-Page_Up        : \033[5;5~
-URxvt.keysym.C-Page_Down      : \033[6;5~
-URxvt.keysym.C-Home           : \033[1;5H
-URxvt.keysym.C-End            : \033[1;5F
-URxvt.keysym.C-Insert         : \033[2;5~
-URxvt.keysym.C-Delete         : \033[3;5~
+URxvt.keysym.M-Up:              \033[1;3A
+URxvt.keysym.M-Down:            \033[1;3B
+URxvt.keysym.M-Right:           \033[1;3C
+URxvt.keysym.M-Left:            \033[1;3D
+URxvt.keysym.M-Page_Up:         \033[5;3~
+URxvt.keysym.M-Page_Down:       \033[6;3~
+URxvt.keysym.M-Home:            \033[1;3H
+URxvt.keysym.M-End:             \033[1;3F
+URxvt.keysym.M-Insert:          \033[2;3~
+URxvt.keysym.M-Delete:          \033[3;3~
 
-URxvt.keysym.C-S-Up           : \033[1;6A
-URxvt.keysym.C-S-Down         : \033[1;6B
-URxvt.keysym.C-S-Right        : \033[1;6C
-URxvt.keysym.C-S-Left         : \033[1;6D
-URxvt.keysym.C-S-Page_Up      : \033[5;6~
-URxvt.keysym.C-S-Page_Down    : \033[6;6~
-URxvt.keysym.C-S-Home         : \033[1;6H
-URxvt.keysym.C-S-End          : \033[1;6F
-URxvt.keysym.C-S-Insert       : \033[2;6~
-URxvt.keysym.C-S-Delete       : \033[3;6~
+URxvt.keysym.M-S-Up:            \033[1;4A
+URxvt.keysym.M-S-Down:          \033[1;4B
+URxvt.keysym.M-S-Right:         \033[1;4C
+URxvt.keysym.M-S-Left:          \033[1;4D
+URxvt.keysym.M-S-Page_Up:       \033[5;4~
+URxvt.keysym.M-S-Page_Down:     \033[6;4~
+URxvt.keysym.M-S-Home:          \033[1;4H
+URxvt.keysym.M-S-End:           \033[1;4F
+URxvt.keysym.M-S-Insert:        \033[2;4~
+URxvt.keysym.M-S-Delete:        \033[3;4~
 
-URxvt.keysym.M-C-Up           : \033[1;7A
-URxvt.keysym.M-C-Down         : \033[1;7B
-URxvt.keysym.M-C-Right        : \033[1;7C
-URxvt.keysym.M-C-Left         : \033[1;7D
-URxvt.keysym.M-C-Page_Up      : \033[5;7~
-URxvt.keysym.M-C-Page_Down    : \033[6;7~
-URxvt.keysym.M-C-Home         : \033[1;7H
-URxvt.keysym.M-C-End          : \033[1;7F
-URxvt.keysym.M-C-Insert       : \033[2;7~
-URxvt.keysym.M-C-Delete       : \033[3;7~
+URxvt.keysym.C-Up:              \033[1;5A
+URxvt.keysym.C-Down:            \033[1;5B
+URxvt.keysym.C-Right:           \033[1;5C
+URxvt.keysym.C-Left:            \033[1;5D
+URxvt.keysym.C-Page_Up:         \033[5;5~
+URxvt.keysym.C-Page_Down:       \033[6;5~
+URxvt.keysym.C-Home:            \033[1;5H
+URxvt.keysym.C-End:             \033[1;5F
+URxvt.keysym.C-Insert:          \033[2;5~
+URxvt.keysym.C-Delete:          \033[3;5~
 
-URxvt.keysym.M-C-S-Up         : \033[1;8A
-URxvt.keysym.M-C-S-Down       : \033[1;8B
-URxvt.keysym.M-C-S-Right      : \033[1;8C
-URxvt.keysym.M-C-S-Left       : \033[1;8D
-URxvt.keysym.M-C-S-Page_Up    : \033[5;8~
-URxvt.keysym.M-C-S-Page_Down  : \033[6;8~
-URxvt.keysym.M-C-S-Home       : \033[1;8H
-URxvt.keysym.M-C-S-End        : \033[1;8F
-URxvt.keysym.M-C-S-Insert     : \033[2;8~
-URxvt.keysym.M-C-S-Delete     : \033[3;8~
+URxvt.keysym.C-S-Up:            \033[1;6A
+URxvt.keysym.C-S-Down:          \033[1;6B
+URxvt.keysym.C-S-Right:         \033[1;6C
+URxvt.keysym.C-S-Left:          \033[1;6D
+URxvt.keysym.C-S-Page_Up:       \033[5;6~
+URxvt.keysym.C-S-Page_Down:     \033[6;6~
+URxvt.keysym.C-S-Home:          \033[1;6H
+URxvt.keysym.C-S-End:           \033[1;6F
+URxvt.keysym.C-S-Insert:        \033[2;6~
+URxvt.keysym.C-S-Delete:        \033[3;6~
+URxvt.keysym.C-Tab:             \033[27;5;9~
+URxvt.keysym.C-ISO_Left_Tab:    \033[27;5;9~
+URxvt.keysym.C-S-Tab:           \033[27;6;9~
+URxvt.keysym.C-S-ISO_Left_Tab:  \033[27;6;9~
 
-! Ctrl-Shift-a
-URxvt.keysym.C-0x41            : \033[65;5~
-! Ctrl-Shift-b
-URxvt.keysym.C-0x42            : \033[66;5~
-! Ctrl-Shift-c
-URxvt.keysym.C-0x43            : \033[67;5~
-! Ctrl-Shift-d
-URxvt.keysym.C-0x44            : \033[68;5~
-! Ctrl-Shift-e
-URxvt.keysym.C-0x45            : \033[69;5~
-! Ctrl-Shift-f
-URxvt.keysym.C-0x46            : \033[70;5~
-! Ctrl-Shift-g
-URxvt.keysym.C-0x47            : \033[71;5~
-! Ctrl-Shift-h
-URxvt.keysym.C-0x48            : \033[72;5~
-! Ctrl-Shift-i
-URxvt.keysym.C-0x49            : \033[73;5~
-! Ctrl-Shift-j
-URxvt.keysym.C-0x4A            : \033[74;5~
-! Ctrl-Shift-k
-URxvt.keysym.C-0x4B            : \033[75;5~
-! Ctrl-Shift-l
-URxvt.keysym.C-0x4C            : \033[76;5~
-! Ctrl-Shift-m
-URxvt.keysym.C-0x4D            : \033[77;5~
-! Ctrl-Shift-n
-URxvt.keysym.C-0x4E            : \033[78;5~
-! Ctrl-Shift-o
-URxvt.keysym.C-0x4F            : \033[79;5~
-! Ctrl-Shift-p
-URxvt.keysym.C-0x50            : \033[80;5~
-! Ctrl-Shift-q
-URxvt.keysym.C-0x51            : \033[81;5~
-! Ctrl-Shift-r
-URxvt.keysym.C-0x52            : \033[82;5~
-! Ctrl-Shift-s
-URxvt.keysym.C-0x53            : \033[83;5~
-! Ctrl-Shift-t
-URxvt.keysym.C-0x54            : \033[84;5~
-! Ctrl-Shift-u
-URxvt.keysym.C-0x55            : \033[85;5~
-! Ctrl-Shift-v
-URxvt.keysym.C-0x56            : \033[86;5~
-! Ctrl-Shift-w
-URxvt.keysym.C-0x57            : \033[87;5~
-! Ctrl-Shift-x
-URxvt.keysym.C-0x58            : \033[88;5~
-! Ctrl-Shift-y
-URxvt.keysym.C-0x59            : \033[89;5~
-! Ctrl-Shift-z
-URxvt.keysym.C-0x5A            : \033[90;5~
+URxvt.keysym.M-C-Up:            \033[1;7A
+URxvt.keysym.M-C-Down:          \033[1;7B
+URxvt.keysym.M-C-Right:         \033[1;7C
+URxvt.keysym.M-C-Left:          \033[1;7D
+URxvt.keysym.M-C-Page_Up:       \033[5;7~
+URxvt.keysym.M-C-Page_Down:     \033[6;7~
+URxvt.keysym.M-C-Home:          \033[1;7H
+URxvt.keysym.M-C-End:           \033[1;7F
+URxvt.keysym.M-C-Insert:        \033[2;7~
+URxvt.keysym.M-C-Delete:        \033[3;7~
+
+URxvt.keysym.M-C-S-Up:          \033[1;8A
+URxvt.keysym.M-C-S-Down:        \033[1;8B
+URxvt.keysym.M-C-S-Right:       \033[1;8C
+URxvt.keysym.M-C-S-Left:        \033[1;8D
+URxvt.keysym.M-C-S-Page_Up:     \033[5;8~
+URxvt.keysym.M-C-S-Page_Down:   \033[6;8~
+URxvt.keysym.M-C-S-Home:        \033[1;8H
+URxvt.keysym.M-C-S-End:         \033[1;8F
+URxvt.keysym.M-C-S-Insert:      \033[2;8~
+URxvt.keysym.M-C-S-Delete:      \033[3;8~
+
+
+! C-S-a
+URxvt.keysym.C-0x41:            \033[65;5~
+! C-S-b
+URxvt.keysym.C-0x42:            \033[66;5~
+! C-S-c
+URxvt.keysym.C-0x43:            \033[67;5~
+! C-S-d
+URxvt.keysym.C-0x44:            \033[68;5~
+! C-S-e
+URxvt.keysym.C-0x45:            \033[69;5~
+! C-S-f
+URxvt.keysym.C-0x46:            \033[70;5~
+! C-S-g
+URxvt.keysym.C-0x47:            \033[71;5~
+! C-S-h
+URxvt.keysym.C-0x48:            \033[72;5~
+! C-S-i
+URxvt.keysym.C-0x49:            \033[73;5~
+! C-S-j
+URxvt.keysym.C-0x4A:            \033[74;5~
+! C-S-k
+URxvt.keysym.C-0x4B:            \033[75;5~
+! C-S-l
+URxvt.keysym.C-0x4C:            \033[76;5~
+! C-S-m
+URxvt.keysym.C-0x4D:            \033[77;5~
+! C-S-n
+URxvt.keysym.C-0x4E:            \033[78;5~
+! C-S-o
+URxvt.keysym.C-0x4F:            \033[79;5~
+! C-S-p
+URxvt.keysym.C-0x50:            \033[80;5~
+! C-S-q
+URxvt.keysym.C-0x51:            \033[81;5~
+! C-S-r
+URxvt.keysym.C-0x52:            \033[82;5~
+! C-S-s
+URxvt.keysym.C-0x53:            \033[83;5~
+! C-S-t
+URxvt.keysym.C-0x54:            \033[84;5~
+! C-S-u
+URxvt.keysym.C-0x55:            \033[85;5~
+! C-S-v
+URxvt.keysym.C-0x56:            \033[86;5~
+! C-S-w
+URxvt.keysym.C-0x57:            \033[87;5~
+! C-S-x
+URxvt.keysym.C-0x58:            \033[88;5~
+! C-S-y
+URxvt.keysym.C-0x59:            \033[89;5~
+! C-S-z
+URxvt.keysym.C-0x5A:            \033[90;5~

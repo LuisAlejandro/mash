@@ -1,0 +1,10 @@
+MATCHALL "Jump to symbol definition      " exec ""
+----
+MATCHALL "Copy" send "\033c"
+MATCHALL "Cut" exec ""
+MATCHALL "Paste" exec ""
+----
+MATCHALL "Select all" exec ""
+----
+MATCHALL "Open containing folder" exec ""
+MATCHALL "Copy file path" exec ""

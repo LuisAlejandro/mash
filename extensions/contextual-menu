@@ -1,0 +1,81 @@
+#!/usr/bin/env perl
+
+use File::Glob ':bsd_glob';
+
+my %handlers;
+my $modifiermask;
+my $windowid;
+my $menufile = bsd_glob('~/.config/mash/app/extensions/table.txt');
+
+
+sub handle_on_exec {
+    my ($term, $line) = @_;
+    $term->exec_async($line);
+}
+
+sub handle_on_send {
+    my ($term, $line) = @_;
+    my $octets = $term->locale_encode($line);
+    $term->tt_write($octets);
+}
+
+$handlers{exec} = \&handle_on_exec;
+$handlers{send} = \&handle_on_send;
+
+sub build_menu {
+    my ($term, $popup, $fh, $selection) = @_;
+
+    while (<$fh>) {
+
+        # comment, blank or spaces
+        next if (/^(#.*|\s*)$/);
+
+        # /regex/ "title" cmd and args...
+        if (/^(.*)\s+(".*")\s+(exec|send|menu)\s+(".*")/x) {
+            my ($regex, $display, $cmd, $line) = ($1, $2, $3, $4);
+
+            # test the $regex against the $selection ##XXX not working
+            if ($selection !~ /$regex/ && $regex ne "MATCHALL" ) {
+                next;
+            }
+
+            my $cmdline = eval($line);
+            my $title = eval($display);
+
+            $popup->add_button($title,
+                sub {
+                    $handlers{$cmd}->($term, $cmdline, $selection)
+                }
+            );
+        }
+        # dashes
+        elsif ($_ =~ /^-+/) {
+             $popup->add_separator;
+        }
+    }
+}
+
+sub on_start {
+   my ($self) = @_;
+   $self->grab_button(3, $modifiermask);
+   ()
+}
+
+sub on_button_press {
+   my ($self, $event) = @_;
+
+   if ($event->{button} != 3) {
+     return ();
+   }
+
+   my $popup = $self->popup($event);
+   my $text = $self->selection;
+
+   open(my $fh, "<", $menufile);
+
+   build_menu($self, $popup, $fh, $text);
+
+   $popup->show;
+
+   return 1;
+}

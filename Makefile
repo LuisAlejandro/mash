@@ -1,100 +1,42 @@
 #!/usr/bin/make -f
-# -*- makefile -*-
 
-APTGET=$(shell which apt-get )
-APTGETCMD=env DEBIAN_FRONTEND=noninteractive ${APTGET}
-APTGETOPTS=-o Apt::Install-Recommends=false \
-	-o Apt::Get::Assume-Yes=true \
-	-o Apt::Get::AllowUnauthenticated=true \
-	-o DPkg::Options::=--force-confmiss \
-	-o DPkg::Options::=--force-confnew \
-	-o DPkg::Options::=--force-overwrite \
-	-o DPkg::Options::=--force-unsafe-io
-TRMFONTNAME=DejaVu Sans Mono for Powerline 10
-TRMPROFILEID=$(shell dconf list /org/gnome/terminal/legacy/profiles:/ | sed -n '1p' | sed 's|/||g')
+image:
 
-BUILDPKGLIST=cmake devscripts gcc g++ golang nodejs imagemagick librsvg2-bin \
-	ruby-dev
-RUNPKGLIST=silversearcher-ag exuberant-ctags vim-nox xsel rsync \
-	rxvt-unicode-256color dconf-cli
-LINTPKGLIST=golang clang-tidy ruby virtualenv nodejs php-cli cabal-install
+	@docker build --rm -t collagelabs/mash:latest .
 
-RUBYSNDBX=${HOME}/.subliminal-vim/sandboxes/ruby
-PYTHONSNDBX=${HOME}/.subliminal-vim/sandboxes/python
-NODESNDBX=${HOME}/.subliminal-vim/sandboxes/node
-GOSNDBX=${HOME}/.subliminal-vim/sandboxes/go
-HASKELLSNDBX=${HOME}/.subliminal-vim/sandboxes/haskell
-PERLSNDBX=${HOME}/.subliminal-vim/sandboxes/perl
+console:
 
-NODEPKGLIST=textlint-plugin-html textlint jshint jscs \
-	textlint-plugin-markdown csslint dockerfile_lint jsonlint
-PYTHONPKGLIST=vim-vint pylint pyflakes pep8 pydocstyle
-GOPKGLIST=github.com/alecthomas/gometalinter
-RUBYPKGLIST=sqlint rubocop
-HASKELLPKGLIST=shellcheck
+	@docker run -it -w ${PWD} -v ${PWD}:${PWD} collagelabs/mash:latest bash
 
-all: install_build_dependencies init build
-install: copy install_runtime_dependencies install_linters config
+build: clean
 
-init:
+	@bash build.sh
 
-	@git submodule update --init --recursive
-	@git submodule foreach --recursive git clean -xfd
+install:
 
-install_build_dependencies:
+	@mkdir -vp $(DESTDIR)/usr/bin
+	@mkdir -vp $(DESTDIR)/usr/share/mash/bin
+	@mkdir -vp $(DESTDIR)/usr/share/mash/urxvt
 
-	@wget -qO- https://deb.nodesource.com/setup_6.x | sudo -E bash -
-	@sudo ${APTGETCMD} ${APTGETOPTS} install ${BUILDPKGLIST}
+	@cp -vrf build/ui/search $(DESTDIR)/usr/share/mash/bin
+	@cp -vrf build/urxvt/src/rxvt $(DESTDIR)/usr/share/mash/bin
+	@cp -vrf build/vim/src/vim $(DESTDIR)/usr/share/mash/bin
 
-build:
+	@cp -vrf build/urxvt/src/urxvt.pm $(DESTDIR)/usr/share/mash/urxvt
+	@cp -vrf build/vim/runtime $(DESTDIR)/usr/share/mash
+	@cp -vrf build/plugins $(DESTDIR)/usr/share/mash
+	@cp -vrf build/plug $(DESTDIR)/usr/share/mash
+	@cp -vrf build/fonts $(DESTDIR)/usr/share/mash
+	@cp -vrf build/icons $(DESTDIR)/usr/share/mash
+	@cp -vrf build/app $(DESTDIR)/usr/share/mash
+	@cp -vrf metadata.conf $(DESTDIR)/usr/share/mash
+	@cp -vrf collagelabs-mash.desktop $(DESTDIR)/usr/share/mash
 
-	@cd bundle/vimproc && make
-	@cd bundle/YouCompleteMe && export GOPATH=/usr/lib/go \
-		&& python install.py --clang-completer --gocode-completer \
-		--tern-completer
-	@convert -background None subliminal-vim.svg subliminal-vim.png
+	@cp -vrf mash.sh $(DESTDIR)/usr/bin/mash
+	@chmod +x $(DESTDIR)/usr/bin/mash
 
-copy:
+clean:
 
-	@if [ -d ${HOME}/.subliminal-vim ]; then \
-		rm -rf ${HOME}/.subliminal-vim.bak; \
-		mv ${HOME}/.subliminal-vim ${HOME}/.subliminal-vim.bak; \
-	fi
-	@mkdir -p ${HOME}/.subliminal-vim/bundle
-	@mkdir -p ${HOME}/.subliminal-vim/tempdir
-	@mkdir -p ${HOME}/.local/share/fonts
-	@rsync -qavz settings/* ${HOME}/.subliminal-vim/settings/
-	@rsync -qavz bundle/* ${HOME}/.subliminal-vim/bundle/
-	@rsync -qavz fonts/* ${HOME}/.local/share/fonts/
-	@rsync -qavz Xresources subliminal-vim.png subliminal-vim.desktop subliminal-vim.sh ${HOME}/.subliminal-vim/
-	@sudo ln -fs ${HOME}/.subliminal-vim/subliminal-vim.desktop /usr/share/applications/
-	@sudo ln -fs ${HOME}/.subliminal-vim/subliminal-vim.sh /usr/bin/subliminal-vim
-	@sudo ln -fs ${HOME}/.subliminal-vim/subliminal-vim.png /usr/share/icons/
+	@rm -rf ./build ./debian/mash
 
-install_runtime_dependencies:
-
-	@sudo ${APTGETCMD} ${APTGETOPTS} update
-	@sudo ${APTGETCMD} ${APTGETOPTS} install ${RUNPKGLIST}
-
-install_linters:
-
-	@sudo ${APTGETCMD} ${APTGETOPTS} update
-	@sudo ${APTGETCMD} ${APTGETOPTS} install ${LINTPKGLIST}
-	@mkdir -p ${PERLSNDBX}/bin && cp /usr/bin/checkbashisms ${PERLSNDBX}/bin/
-	@gem install --install-dir ${RUBYSNDBX} ${RUBYPKGLIST}
-	@virtualenv ${PYTHONSNDBX} \
-		&& ${PYTHONSNDBX}/bin/pip install ${PYTHONPKGLIST}
-	@mkdir -p ${NODESNDBX} \
-		&& npm --prefix ${NODESNDBX} install ${NODEPKGLIST}
-	@export GOPATH=${GOSNDBX} \
-		&& go get ${GOPKGLIST} \
-		&& ${GOSNDBX}/bin/gometalinter --install
-	@cabal update && cabal install --prefix ${HASKELLSNDBX} ${HASKELLPKGLIST}
-
-config:
-
-	@fc-cache -rfv ${HOME}/.local/share/fonts
-	@echo "stty -ixon" >> ${HOME}/.bashrc
-	@dconf write /org/gnome/terminal/legacy/profiles:/${TRMPROFILEID}/font "'${TRMFONTNAME}'"
-	@dconf write /org/gnome/terminal/legacy/profiles:/${TRMPROFILEID}/use-system-font "false"
-	@bash
+.PHONY: build image console install clean
