@@ -1,4 +1,22 @@
 #!/usr/bin/env bash
+#   This file is part of Mash
+#   Copyright (c) 2016-2020, Mash Developers
+#
+#   Please refer to CONTRIBUTORS.md for a complete list of Copyright
+#   holders.
+#
+#   Mash is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   Mash is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 set -ex
 
@@ -8,11 +26,12 @@ function echospaced() {
 
 BASEDIR="$(pwd)"
 BUILDDIR="${BASEDIR}/build"
+VERSION="0.1a1"
 
 ICONSIZES="16 22 32 48 64 128 256 512"
 
-BUILDER="luis@luisalejandro.org"
-PLUGINREPOS="$(cat "${BASEDIR}/init.vim" | grep "Plug" | awk -F"'" '{print "https://github.com/"$2".git"}')"
+BUILDER="luis@collagelabs.org"
+PLUGINREPOS="$(cat "${BASEDIR}/init.vim" | grep "Plug" | grep -v mash | awk -F"'" '{print "https://github.com/"$2".git"}')"
 NERDFONT="DejaVu Sans Mono Nerd Font Complete Mono.ttf"
 ESCNERDFONT="$(python3 -c "import urllib.parse; print(urllib.parse.quote('''${NERDFONT}'''))")"
 
@@ -131,9 +150,14 @@ for REPO in ${PLUGINREPOS}; do
         ${REPO} "${BUILDDIR}/plugins/$(basename ${REPO::-4})"
 done
 
+echospaced "Downloading Mash core ..."
+git clone --depth 1 --branch "${VERSION}" --single-branch \
+    --recursive --shallow-submodules \
+    https://github.com/CollageLabs/mash "${BUILDDIR}/app"
+
 echospaced "Compiling Vim ..."
+cp -vf "${BUILDDIR}/vim/src/config.mk.dist" "${BUILDDIR}/vim/src/auto/config.mk"
 cd "${BUILDDIR}/vim"
-cp src/config.mk.dist src/auto/config.mk
 env "${VIM_FLAGS}" ./configure ${VIM_CONFIG} && make
 
 echospaced "Compiling Urxvt ..."
@@ -141,7 +165,7 @@ cd "${BUILDDIR}/urxvt"
 env "${URXVT_FLAGS}" ./configure ${URXVT_CONFIG} && make
 
 echospaced "Compiling Mash UI ..."
-cp "${BASEDIR}/ui/search.c" "${BASEDIR}/ui/search.css" "${BUILDDIR}/ui"
+cp -vf "${BASEDIR}/ui/search.c" "${BASEDIR}/ui/search.css" "${BUILDDIR}/ui"
 cd "${BUILDDIR}/ui"
 gcc $(pkg-config --cflags gtk+-3.0) "search.c" -o "search" $(pkg-config --libs gtk+-3.0)
 

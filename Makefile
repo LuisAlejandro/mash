@@ -28,10 +28,12 @@ install:
 	@cp -vrf build/plug $(DESTDIR)/usr/share/mash
 	@cp -vrf build/fonts $(DESTDIR)/usr/share/mash
 	@cp -vrf build/icons $(DESTDIR)/usr/share/mash
+	@cp -vrf build/app $(DESTDIR)/usr/share/mash
+	@cp -vrf metadata.conf $(DESTDIR)/usr/share/mash
+	@cp -vrf collagelabs-mash.desktop $(DESTDIR)/usr/share/mash
 
-	@cp -vrf mash.sh $(DESTDIR)/usr/share/mash
-	@cp -vrf mash.desktop $(DESTDIR)/usr/share/mash
-	@cp -vrf mash.svg $(DESTDIR)/usr/share/mash
+	@cp -vrf mash.sh $(DESTDIR)/usr/bin/mash
+	@chmod +x $(DESTDIR)/usr/bin/mash
 
 clean:
 

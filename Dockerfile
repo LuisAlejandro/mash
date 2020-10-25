@@ -1,5 +1,5 @@
 FROM dockershelf/debian:sid
-LABEL maintainer "Luis Alejandro Martínez Faneyth <luis@luisalejandro.org>"
+LABEL maintainer "Luis Alejandro Martínez Faneyth <luis@collagelabs.org>"
 
 RUN apt-get update && \
     apt-get install \

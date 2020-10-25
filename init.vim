@@ -21,11 +21,12 @@ set nocompatible
 
 let $VIM='~/.config/mash/runtime'
 let $VIMRUNTIME='~/.config/mash/runtime'
-set runtimepath=$VIMRUNTIME,~/.config/mash/plug
+let $VIMPLUG='~/.config/mash/plug'
+set runtimepath=$VIMRUNTIME,$VIMPLUG
 
 call plug#begin('~/.config/mash/plugins')
 
-Plug 'CollageLabs/mash', {'dir': '~/.config/mash/app', 'do': './configure.sh', 'branch': 'develop'}
+Plug 'CollageLabs/mash', {'dir': '~/.config/mash/app', 'do': './configure.sh', 'tag': '0.1a1'}
 Plug 'CollageLabs/vim-autoswap', {'branch': 'master'}
 Plug 'xolox/vim-misc', {'commit': '3e6b8fb6f03f13434543ce1f5d24f6a5d3f34f0b'}
 Plug 'xolox/vim-easytags', {'commit': '72a8753b5d0a951e547c51b13633f680a95b5483'}
