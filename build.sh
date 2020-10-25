@@ -26,7 +26,7 @@ function echospaced() {
 
 BASEDIR="$(pwd)"
 BUILDDIR="${BASEDIR}/build"
-VERSION="0.1.0a0"
+VERSION="0.1.0a1a0"
 
 ICONSIZES="16 22 32 48 64 128 256 512"
 

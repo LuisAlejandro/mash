@@ -29,7 +29,11 @@ leave uncommitted changes.
 
 8. Bump your version:
 
-        bumpversion --no-commit --new-version <release number> patch
+        bumpversion major
+        bumpversion minor
+        bumpversion patch
+        bumpversion release
+        bumpversion build
 
 9. Update your changelog:
 
@@ -47,14 +51,10 @@ leave uncommitted changes.
 
         git flow release finish -s -p <release number>
 
-13. Push your tags:
-
-        git push --tags
-
-14. Draft a new release in GitHub (based on the new version tag) and include
+13. Draft a new release in GitHub (based on the new version tag) and include
 a description. Also pick a codename because it makes you cool.
-15. Close the milestone in GitHub.
-16. Write about your new version in your blog. Tweet it, post it on facebook.
+14. Close the milestone in GitHub.
+15. Write about your new version in your blog. Tweet it, post it on facebook.
 
 ### Making a new hotfix
 
@@ -66,7 +66,11 @@ a description. Also pick a codename because it makes you cool.
 3. Code your hotfix.
 4. Bump your version:
 
-        bumpversion --no-commit --new-version <new version> patch
+        bumpversion major
+        bumpversion minor
+        bumpversion patch
+        bumpversion release
+        bumpversion build
 
 5. Update your changelog:
 
@@ -78,17 +82,13 @@ a description. Also pick a codename because it makes you cool.
 
 7. Delete the tag made by bumpversion:
 
-        git tag -d <new version>
+        git tag -d <release number>
 
 8. Finish your hotfix:
 
         git flow hotfix finish -s -p <new version>
 
-9. Push your tags:
-
-        git push --tags
-
-10. Draft a new release in GitHub (based on the new version tag) and include
+9. Draft a new release in GitHub (based on the new version tag) and include
 a description. Don't change the codename if it is a hotfix.
-11. Close the milestone in GitHub.
-12. Write about your new version in your blog. Tweet it, post it on facebook.
+10. Close the milestone in GitHub.
+11. Write about your new version in your blog. Tweet it, post it on facebook.

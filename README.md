@@ -4,7 +4,7 @@
 
 > An open source alternative to Sublime Text based on vim and urxvt
 
-Current version: 0.1.0a0
+Current version: 0.1.0a1a0
 
 **Attention: this in an alpha release. Don't use it on production environments as
 you will probably experience bugs.**
