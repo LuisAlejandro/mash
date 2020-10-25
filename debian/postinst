@@ -45,7 +45,6 @@ ICONSIZES="16 22 32 48 64 128 256 512"
 
 case "$1" in
     configure)
-
       echospaced "Installing icons ..."
       for SIZE in ${ICONSIZES}; do
           xdg-icon-resource install --size "${SIZE}" --theme "hicolor" \

@@ -26,7 +26,8 @@ function echospaced() {
 
 SHAREDIR="/usr/share/mash"
 ICONDIR="/usr/share/icons"
-VERSION="0.1.0a1a0"
+VERSION="0.1.0a1"
+
 ORIGINMETADATA="https://raw.githubusercontent.com/CollageLabs/mash/master/metadata.conf"
 ORIGINVERSION="$(curl -fsSL ${ORIGINMETADATA} | grep 'VERSION=' | awk -F'=' '{print $2}' | sed 's/"//' )"
 
@@ -36,7 +37,11 @@ fi
 
 if [ "${USERVERSION}" != "${VERSION}" ]; then
 
-    # zenity
+    TEXT="Thanks for using Mash. If you want to activate linters for your favourite languages, take a look at https://github.com/CollageLabs/mash for detailed instrucions on how to activate each one."
+
+    zenity --info --text="${TEXT}" \
+        --window-icon "${ICONDIR}/hicolor/22x22/apps/mash.png" \
+        --height 600 --width 600
 
     echospaced "Creating folders ..."
     mkdir -vp "${HOME}/.config/mash/recovery"
@@ -74,7 +79,11 @@ if [ "${USERVERSION}" != "${VERSION}" ]; then
 fi
 
 if [ "${ORIGINVERSION}" != "${VERSION}" ]; then
-    # zenity
+    TEXT="There's a new version of Mash available. You can go to the release page to download it (https://github.com/CollageLabs/mash/releases) or use your OS package manager to update."
+
+    zenity --info --text="${TEXT}" \
+    --window-icon "${ICONDIR}/hicolor/22x22/apps/mash.png" \
+    --height 600 --width 600
 fi
 
 eval "$(tr '\0' '\n' < /proc/${$}/environ | grep '^DISPLAY=')"

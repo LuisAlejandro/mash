@@ -20,29 +20,11 @@
 
 set -ex
 
-function echospaced() {
-    printf "\n# %s\n" "${1}"
-}
+PKGNAME="$(dpkg-parsechangelog | grep-dctrl -esSource . | awk -F' ' '{print $2}')"
+VERSION="${1}"
+ORIGVER=$(echo ${VERSION} | sed 's/-.*//g' )
 
-echospaced "Creating folders ..."
-mkdir -vp "${HOME}/.config/mash/recovery"
-mkdir -vp "${HOME}/.config/mash/backups"
-mkdir -vp "${HOME}/.config/mash/undo"
-mkdir -vp "${HOME}/.config/mash/bin"
-mkdir -vp "${HOME}/.config/mash/urxvt"
-mkdir -vp "${HOME}/.config/mash/runtime"
-mkdir -vp "${HOME}/.config/mash/plugins"
-mkdir -vp "${HOME}/.config/mash/plug"
-mkdir -vp "${HOME}/.config/mash/app"
+gbp dch --new-version="${VERSION}" --release --auto --id-length=7 --full --commit --git-author
 
-echospaced "Updating font cache ..."
-fc-cache -vr "${HOME}/.local/share/fonts"
-
-echospaced "Configuring executables ..."
-if [ ! -f "${HOME}/.bashrc" ]; then
-    touch "${HOME}/.bashrc"
-fi
-
-if ! grep -q 'PATH="${PATH}:${HOME}/.local/bin"' "${HOME}/.bashrc"; then
-    echo 'PATH="${PATH}:${HOME}/.local/bin"' >> "${HOME}/.bashrc"
-fi
+tar --anchored --exclude-vcs --exclude "./debian" --exclude "./build" -cvzf ../$( echo ${PKGNAME}"_"${ORIGVER} ).orig.tar.gz --directory="$(pwd)" ./
+gbp buildpackage -tc -us -uc -nc -F

@@ -20,5 +20,8 @@ RUN apt-get install \
         libxpm-dev libperl-dev tcl-dev python3-dev ruby ruby-dev lua5.2 \
         liblua5.2-dev
 
+RUN apt-get install \
+        git-buildpackage dctrl-tools
+
 USER build
 CMD ["bash"]

@@ -18,7 +18,7 @@
 "   along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
-let s:sv_window_icon = '~/.local/share/icons/hicolor/22x22/apps/mash.png'
+let s:sv_window_icon = '/usr/share/icons/hicolor/22x22/apps/mash.png'
 
 function! EchoSyntasticText()
     if !exists('b:syntastic_private_messages')
