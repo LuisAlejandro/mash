@@ -18,13 +18,18 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+SHELL = sh -e
+
 image:
 
 	@docker build --rm -t collagelabs/mash:latest .
 
 console:
 
-	@docker run -it -w ${PWD} -v ${PWD}:${PWD} collagelabs/mash:latest bash
+	@docker run -it -w /home/build/dev/app \
+		-v $(shell pwd | xargs dirname):/home/build/dev \
+		-v $(shell pwd):/home/build/dev/app \
+		collagelabs/mash:latest bash
 
 build: clean
 

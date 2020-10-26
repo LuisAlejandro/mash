@@ -1,3 +1,11 @@
+mash (0.1.0a1-2~4.gbp517645) UNRELEASED; urgency=medium
+
+  ** SNAPSHOT build @51764518539600dcb4fd50c399c299b847848821 **
+
+  * [5176451] [REF] Fixing gbp.conf syntax error.
+
+ -- Luis Alejandro Martínez Faneyth <luis@collagelabs.org>  Mon, 26 Oct 2020 03:15:20 -0400
+
 mash (0.1.0a1-1) unstable; urgency=medium
 
   * Initial release.

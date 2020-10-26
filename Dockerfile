@@ -1,27 +1,18 @@
-FROM dockershelf/debian:sid
+ARG DISTRO="debian"
+ARG CODENAME="sid"
+
+FROM dockershelf/${DISTRO}:${CODENAME}}
 LABEL maintainer "Luis Alejandro Martínez Faneyth <luis@collagelabs.org>"
 
 RUN apt-get update && \
     apt-get install \
-        imagemagick librsvg2-bin build-essential git curl apt-transport-https \
-        python3 python3-dev dpkg-dev ca-certificates gnupg sudo
+        sudo devscripts equivs
 
 RUN useradd --create-home --shell /bin/bash --uid 1000 build
 RUN echo "build ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/build
 
-RUN apt-get install \
-        libxt-dev libxrender-dev libx11-dev libxpm-dev groff-base \
-        autotools-dev xutils-dev libxft-dev chrpath libperl-dev \
-        libev-dev libstartup-notification0-dev libgtk2.0-dev
-
-RUN apt-get install \
-        libacl1-dev libgpmg1-dev autoconf debhelper libncurses5-dev \
-        libselinux1-dev libgtk2.0-dev libgtk-3-dev libxaw7-dev libxt-dev \
-        libxpm-dev libperl-dev tcl-dev python3-dev ruby ruby-dev lua5.2 \
-        liblua5.2-dev
-
-RUN apt-get install \
-        git-buildpackage dctrl-tools
+ADD . /home/build/dev/app
+RUN mk-build-deps -t 'apt-get -y -o Debug::pkgProblemResolver=yes --no-install-recommends' -ri /home/build/dev/app/debian/control
 
 USER build
 CMD ["bash"]
