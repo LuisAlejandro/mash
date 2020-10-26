@@ -52,9 +52,8 @@ Vcs-Browser: https://github.com/CollageLabs/mash
 Package: mash
 Architecture: any
 Depends:    ${misc:Depends},
-            make,
-            imagemagick,
-            librsvg2-bin,
+            ${perl:Depends},
+            ${shlibs:Depends},
             silversearcher-ag,
             exuberant-ctags,
             xclip,
@@ -64,7 +63,6 @@ Depends:    ${misc:Depends},
             zenity,
             curl,
             bash,
-            gksu,
             xdg-utils,
             coreutils
 Description: an Open Source text editor based on vim an urxvt

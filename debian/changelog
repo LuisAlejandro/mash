@@ -1,10 +1,11 @@
-mash (0.1.0a1-2~4.gbp517645) UNRELEASED; urgency=medium
+mash (0.1.0a1-2~5.gbpc11686) UNRELEASED; urgency=medium
 
-  ** SNAPSHOT build @51764518539600dcb4fd50c399c299b847848821 **
+  ** SNAPSHOT build @c116868576887a9d17c6ac4a284977cd23be8db7 **
 
   * [5176451] [REF] Fixing gbp.conf syntax error.
+  * [c116868] [REF] Improving debian packaging.
 
- -- Luis Alejandro Martínez Faneyth <luis@collagelabs.org>  Mon, 26 Oct 2020 03:15:20 -0400
+ -- Luis Alejandro Martínez Faneyth <build@34d0929e5c8b>  Mon, 26 Oct 2020 18:41:30 +0000
 
 mash (0.1.0a1-1) unstable; urgency=medium
 

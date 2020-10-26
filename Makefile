@@ -26,9 +26,8 @@ image:
 
 console:
 
-	@docker run -it -w /home/build/dev/app \
-		-v $(shell pwd | xargs dirname):/home/build/dev \
-		-v $(shell pwd):/home/build/dev/app \
+	@docker run -it -w $(shell pwd) \
+		-v $(shell pwd | xargs dirname):$(shell pwd | xargs dirname) \
 		collagelabs/mash:latest bash
 
 build: clean

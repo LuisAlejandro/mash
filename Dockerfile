@@ -11,8 +11,9 @@ RUN apt-get update && \
 RUN useradd --create-home --shell /bin/bash --uid 1000 build
 RUN echo "build ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/build
 
-ADD . /home/build/dev/app
-RUN mk-build-deps -t 'apt-get -y -o Debug::pkgProblemResolver=yes --no-install-recommends' -ri /home/build/dev/app/debian/control
+ADD debian/control /tmp/
+RUN mk-build-deps -t 'apt-get -y -o Debug::pkgProblemResolver=yes --no-install-recommends' -ri /tmp/control
+RUN rm /tmp/control
 
 USER build
 CMD ["bash"]

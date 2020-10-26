@@ -16,9 +16,8 @@ before_script:
             --rm -t collagelabs/mash:build-${DISTRO}-${CODENAME} .
 script:
     - |
-        docker run -it -w /home/build/dev/app \
-            -v $(pwd | xargs dirname):/home/build/dev \
-            -v $(pwd):/home/build/dev/app \
+        docker run -it -w $(pwd) \
+            -v $(pwd | xargs dirname):$(pwd | xargs dirname) \
             collagelabs/mash:build-${DISTRO}-${CODENAME} bash packaging.sh
 # deploy:
 #     provider: releases
