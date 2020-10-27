@@ -28,3 +28,8 @@ gbp dch --new-version="${VERSION}" --release --auto --id-length=7 --full --commi
 
 tar --anchored --exclude-vcs --exclude "./debian" --exclude "./build" -cvzf ../$( echo ${PKGNAME}"_"${ORIGVER} ).orig.tar.gz --directory="$(pwd)" ./
 gbp buildpackage -tc -us -uc -nc -F
+
+gbp buildpackage --git-sign-tags --git-keyid="luis@collagelabs.org" \
+    --git-ignore-new --git-force-create --git-no-pristine-tar \
+    --git-upstream-branch=develop --git-debian-branch=develop \
+    --git-upstream-tree=SLOPPY  --git-export=WC

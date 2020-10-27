@@ -24,8 +24,8 @@ URxvt*.internalborder:          0
 URxvt*.transparent:             false
 URxvt*.iso14755:                false
 URxvt*.iso14755_52:             false
-URxvt*.font:                    xft:DejaVuSansMonoForPowerline Nerd Font:style=Book:size=10, \
-                                xft:DejaVuSansMonoForPowerline Nerd Font:style=Book:size=8
+URxvt*.font:                    xft:DejaVuSansMono Nerd Font:style=Book:size=10, \
+                                xft:DejaVuSansMono Nerd Font:style=Book:size=8
 URxvt*.iconName:                mash
 URxvt*.title:                   Mash
 URxvt*.letterSpace:             -1.0

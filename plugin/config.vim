@@ -205,74 +205,6 @@ let NERDTreeIgnore = ['\.py[cd]$', '\~$', '\.swo$', '\.swp$', '^\.git$',
 " bundle/syntastic
 " ----------------------------------------------------------------------------
 
-" Uninstalling pylint-2.6.0:
-"   Would remove:
-"     /usr/local/bin/epylint
-"     /usr/local/bin/pylint
-"     /usr/local/bin/pyreverse
-"     /usr/local/bin/symilar
-"     /usr/local/lib/python3.7/dist-packages/pylint-2.6.0.dist-info/*
-"     /usr/local/lib/python3.7/dist-packages/pylint/*
-" Proceed (y/n)? 
-" Your response ('') was not one of the expected responses: y, n
-" Proceed (y/n)? y
-"   Successfully uninstalled pylint-2.6.0
-" Uninstalling pyflakes-2.2.0:
-"   Would remove:
-"     /usr/local/bin/pyflakes
-"     /usr/local/lib/python3.7/dist-packages/pyflakes-2.2.0.dist-info/*
-"     /usr/local/lib/python3.7/dist-packages/pyflakes/*
-" Proceed (y/n)? y
-"   Successfully uninstalled pyflakes-2.2.0
-" Uninstalling pep8-1.7.1:
-"   Would remove:
-"     /usr/local/bin/pep8
-"     /usr/local/lib/python3.7/dist-packages/pep8-1.7.1.dist-info/*
-"     /usr/local/lib/python3.7/dist-packages/pep8.py
-" Proceed (y/n)? y
-"   Successfully uninstalled pep8-1.7.1
-" Uninstalling pydocstyle-5.1.1:
-"   Would remove:
-"     /usr/local/bin/pydocstyle
-"     /usr/local/lib/python3.7/dist-packages/pydocstyle-5.1.1.dist-info/*
-"     /usr/local/lib/python3.7/dist-packages/pydocstyle/*
-" Proceed (y/n)? y
-"   Successfully uninstalled pydocstyle-5.1.1
-" Uninstalling docutils-0.16:
-"   Would remove:
-"     /usr/local/bin/rst2html.py
-"     /usr/local/bin/rst2html4.py
-"     /usr/local/bin/rst2html5.py
-"     /usr/local/bin/rst2latex.py
-"     /usr/local/bin/rst2man.py
-"     /usr/local/bin/rst2odt.py
-"     /usr/local/bin/rst2odt_prepstyles.py
-"     /usr/local/bin/rst2pseudoxml.py
-"     /usr/local/bin/rst2s5.py
-"     /usr/local/bin/rst2xetex.py
-"     /usr/local/bin/rst2xml.py
-"     /usr/local/bin/rstpep2html.py
-"     /usr/local/lib/python3.7/dist-packages/docutils-0.16.dist-info/*
-"     /usr/local/lib/python3.7/dist-packages/docutils/*
-" Proceed (y/n)? y
-"   Successfully uninstalled docutils-0.16
-" Uninstalling yamllint-1.25.0:
-"   Would remove:
-"     /usr/local/bin/yamllint
-"     /usr/local/lib/python3.7/dist-packages/yamllint-1.25.0.dist-info/*
-"     /usr/local/lib/python3.7/dist-packages/yamllint/*
-" Proceed (y/n)? y
-"   Successfully uninstalled yamllint-1.25.0
-" Uninstalling vim-vint-0.3.21:
-"   Would remove:
-"     /usr/local/bin/vint
-"     /usr/local/lib/python3.7/dist-packages/vim_vint-0.3.21.dist-info/*
-"     /usr/local/lib/python3.7/dist-packages/vint/*
-" Proceed (y/n)? y
-"   Successfully uninstalled vim-vint-0.3.21
-
-
-
 " show the error list automatically
 let g:syntastic_check_on_open = 1
 let g:syntastic_error_symbol = "\uf12a"
@@ -413,7 +345,7 @@ let g:syntastic_rust_rustc_exec = '~/.config/mash/sandboxes/debian/usr/bin/rustc
 " bundle/tcomment_vim
 " ------------------------------------------------------------------
 
-let g:tcommentMaps = 0
+let g:tcomment_maps = 0
 map <silent> <C-_> :TComment<CR>i
 map! <silent> <C-_> <Esc>:TComment<CR>i
 
