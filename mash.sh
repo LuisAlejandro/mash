@@ -26,7 +26,7 @@ function echospaced() {
 
 SHAREDIR="/usr/share/mash"
 ICONDIR="/usr/share/icons"
-VERSION="0.1.0a1"
+VERSION="0.1.0a2"
 
 ORIGINMETADATA="https://raw.githubusercontent.com/CollageLabs/mash/master/metadata.conf"
 ORIGINVERSION="$(curl -fsSL ${ORIGINMETADATA} | grep 'VERSION=' | awk -F'=' '{print $2}' | sed 's/"//g' )"
