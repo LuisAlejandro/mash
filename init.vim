@@ -42,7 +42,7 @@ Plug 'Shougo/unite.vim', {'commit': 'ada33d888934d8a9e60aa8ff828b651aaedb6457'}
 Plug 'Shougo/neocomplete.vim', {'commit': '4fd73faa262f5e3063422d9fc244c65f1b758cf3'}
 Plug 'Shougo/neosnippet.vim', {'commit': '9996520d6bf1aaee21f66b5eb561c9f0b306216c'}
 Plug 'Shougo/neosnippet-snippets', {'commit': '2a9487bacb924d8e870612b6b0a2afb34deea0ae'}
-Plug 'preservim/nerdtree', {'tag': '5.0.0'}
+Plug 'preservim/nerdtree', {'tag': '5.1.0'}
 Plug 'vim-airline/vim-airline', {'tag': 'v0.8'}
 Plug 'tpope/vim-fugitive', {'tag': 'v2.2'}
 Plug 'airblade/vim-gitgutter', {'commit': 'b803a28f47b26d16f5fe9e747850992c9985c667'}

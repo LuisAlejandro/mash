@@ -29,10 +29,10 @@ ICONDIR="/usr/share/icons"
 VERSION="0.1.0a1"
 
 ORIGINMETADATA="https://raw.githubusercontent.com/CollageLabs/mash/master/metadata.conf"
-ORIGINVERSION="$(curl -fsSL ${ORIGINMETADATA} | grep 'VERSION=' | awk -F'=' '{print $2}' | sed 's/"//' )"
+ORIGINVERSION="$(curl -fsSL ${ORIGINMETADATA} | grep 'VERSION=' | awk -F'=' '{print $2}' | sed 's/"//g' )"
 
 if [ -f "${HOME}/.config/mash/metadata.conf" ]; then
-    USERVERSION="$(cat "${HOME}/.config/mash/metadata.conf" | grep 'VERSION=' | awk -F'=' '{print $2}' | sed 's/"//' )"
+    USERVERSION="$(cat "${HOME}/.config/mash/metadata.conf" | grep 'VERSION=' | awk -F'=' '{print $2}' | sed 's/"//g' )"
 fi
 
 if [ "${USERVERSION}" != "${VERSION}" ]; then
@@ -40,7 +40,7 @@ if [ "${USERVERSION}" != "${VERSION}" ]; then
     TEXT="Thanks for using Mash. If you want to activate linters for your favourite languages, take a look at https://github.com/CollageLabs/mash for detailed instrucions on how to activate each one."
 
     zenity --info --text="${TEXT}" \
-        --window-icon "${ICONDIR}/hicolor/22x22/apps/mash.png" \
+        --window-icon "${ICONDIR}/hicolor/22x22/apps/collagelabs-mash.png" \
         --height 600 --width 600
 
     echospaced "Creating folders ..."
@@ -82,7 +82,7 @@ if [ "${ORIGINVERSION}" != "${VERSION}" ]; then
     TEXT="There's a new version of Mash available. You can go to the release page to download it (https://github.com/CollageLabs/mash/releases) or use your OS package manager to update."
 
     zenity --info --text="${TEXT}" \
-    --window-icon "${ICONDIR}/hicolor/22x22/apps/mash.png" \
+    --window-icon "${ICONDIR}/hicolor/22x22/apps/collagelabs-mash.png" \
     --height 600 --width 600
 fi
 
@@ -93,7 +93,7 @@ env XENVIRONMENT="${HOME}/.config/mash/app/Xresources" \
     PERL5LIB="${HOME}/.config/mash/urxvt" \
     DISPLAY="${DISPLAY}" \
     "${HOME}/.config/mash/bin/rxvt" \
-    -icon "${ICONDIR}/hicolor/22x22/apps/mash.png" \
+    -icon "${ICONDIR}/hicolor/22x22/apps/collagelabs-mash.png" \
     -name "mash" -e bash -c "stty -ixon susp undef; \
         ${HOME}/.config/mash/bin/vim --servername mash-${$} \
         -u ${HOME}/.config/mash/app/init.vim ${*}"
