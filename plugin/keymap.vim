@@ -1,5 +1,5 @@
 "   This file is part of Mash
-"   Copyright (c) 2016, Mash Developers
+"   Copyright (c) 2016-2020, Mash Developers
 "
 "   Please refer to CONTRIBUTORS.md for a complete list of Copyright
 "   holders.

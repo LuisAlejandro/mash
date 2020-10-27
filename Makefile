@@ -36,26 +36,30 @@ build: clean
 
 install:
 
-	@mkdir -vp $(DESTDIR)/usr/bin
-	@mkdir -vp $(DESTDIR)/usr/share/mash/bin
-	@mkdir -vp $(DESTDIR)/usr/share/mash/urxvt
+	@mkdir -p $(DESTDIR)/usr/bin
+	@mkdir -p $(DESTDIR)/usr/share/mash/app
+	@mkdir -p $(DESTDIR)/usr/share/mash/bin
+	@mkdir -p $(DESTDIR)/usr/share/mash/urxvt
 
-	@cp -vrf build/ui/search $(DESTDIR)/usr/share/mash/bin
-	@cp -vrf build/urxvt/src/rxvt $(DESTDIR)/usr/share/mash/bin
-	@cp -vrf build/vim/src/vim $(DESTDIR)/usr/share/mash/bin
+	@cp -rf build/ui/search $(DESTDIR)/usr/share/mash/bin
+	@cp -rf build/ui/search.css $(DESTDIR)/usr/share/mash/bin
+	@cp -rf build/urxvt/src/rxvt $(DESTDIR)/usr/share/mash/bin
+	@cp -rf build/vim/src/vim $(DESTDIR)/usr/share/mash/bin
 
-	@cp -vrf build/urxvt/src/urxvt.pm $(DESTDIR)/usr/share/mash/urxvt
-	@cp -vrf build/vim/runtime $(DESTDIR)/usr/share/mash
-	@cp -vrf build/plugins $(DESTDIR)/usr/share/mash
-	@cp -vrf build/plug $(DESTDIR)/usr/share/mash
-	@cp -vrf build/fonts $(DESTDIR)/usr/share/mash
-	@cp -vrf build/icons $(DESTDIR)/usr/share/mash
-	@cp -vrf build/app $(DESTDIR)/usr/share/mash
-	@cp -vrf metadata.conf $(DESTDIR)/usr/share/mash
-	@cp -vrf collagelabs-mash.desktop $(DESTDIR)/usr/share/mash
+	@cp -rf build/urxvt/src/urxvt.pm $(DESTDIR)/usr/share/mash/urxvt
+	@cp -rf build/vim/runtime $(DESTDIR)/usr/share/mash
+	@cp -rf build/plugins $(DESTDIR)/usr/share/mash
+	@cp -rf build/plug $(DESTDIR)/usr/share/mash
+	@cp -rf build/fonts $(DESTDIR)/usr/share/mash
+	@cp -rf build/icons $(DESTDIR)/usr/share/mash
+	@rsync -a --exclude "$(shell pwd)/build/*" $(shell pwd)/ $(DESTDIR)/usr/share/mash/app
 
-	@cp -vrf mash.sh $(DESTDIR)/usr/bin/mash
+	@cp -rf mash.sh $(DESTDIR)/usr/bin/mash
 	@chmod +x $(DESTDIR)/usr/bin/mash
+
+uninstall:
+
+	@rm -rf /usr/bin/mash /usr/share/mash
 
 clean:
 

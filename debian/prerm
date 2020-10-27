@@ -49,13 +49,13 @@ case "$1" in
       for SIZE in ${ICONSIZES}; do
           xdg-icon-resource uninstall --size "${SIZE}" --theme "hicolor" \
               --mode "system" --context "apps" \
-              "${SHAREDIR}/icons/hicolor/${SIZE}x${SIZE}/apps/mash.png" \
+              "${SHAREDIR}/icons/hicolor/${SIZE}x${SIZE}/apps/collagelabs-mash.png" \
               collagelabs-mash
       done
 
       echospaced "Uninstalling desktop and menu files ..."
-      xdg-desktop-icon uninstall "${SHAREDIR}/collagelabs-mash.desktop"
-      xdg-desktop-menu uninstall --mode "system" "${SHAREDIR}/collagelabs-mash.desktop"
+      xdg-desktop-icon uninstall "${SHAREDIR}/app/collagelabs-mash.desktop"
+      xdg-desktop-menu uninstall --mode "system" "${SHAREDIR}/app/collagelabs-mash.desktop"
     ;;
 
     failed-upgrade)

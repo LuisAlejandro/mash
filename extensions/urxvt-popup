@@ -1,4 +1,4 @@
-#! perl
+#!/usr/bin/perl
 
 # this extension implements popup-menu functionality for urxvt. it works
 # together with the urxvt::popup class - "no user serviceable parts inside".

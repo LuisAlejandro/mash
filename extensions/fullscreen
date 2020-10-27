@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!/usr/bin/perl
 
 sub on_user_command {
     my ($self, $cmd) = @_;

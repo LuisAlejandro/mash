@@ -49,13 +49,13 @@ case "$1" in
       for SIZE in ${ICONSIZES}; do
           xdg-icon-resource install --size "${SIZE}" --theme "hicolor" \
               --mode "system" --context "apps" \
-              "${SHAREDIR}/icons/hicolor/${SIZE}x${SIZE}/apps/mash.png" \
+              "${SHAREDIR}/icons/hicolor/${SIZE}x${SIZE}/apps/collagelabs-mash.png" \
               collagelabs-mash
       done
 
       echospaced "Installing desktop and menu files ..."
-      xdg-desktop-icon install "${SHAREDIR}/collagelabs-mash.desktop"
-      xdg-desktop-menu install --mode "system" "${SHAREDIR}/collagelabs-mash.desktop"
+      xdg-desktop-icon install "${SHAREDIR}/app/collagelabs-mash.desktop"
+      xdg-desktop-menu install --mode "system" "${SHAREDIR}/app/collagelabs-mash.desktop"
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

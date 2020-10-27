@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/bash
 #   This file is part of Mash
 #   Copyright (c) 2016-2020, Mash Developers
 #

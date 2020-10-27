@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/bash
 #   This file is part of Mash
 #   Copyright (c) 2016-2020, Mash Developers
 #
@@ -24,66 +24,87 @@ function echospaced() {
     printf "\n# %s\n" "${1}"
 }
 
-SHAREDIR="/usr/share/mash"
-ICONDIR="/usr/share/icons"
 VERSION="0.1.0a2"
+BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+FONTNAME="DejaVu Sans Mono for Powerline Nerd Font Complete Mono.ttf"
 
-ORIGINMETADATA="https://raw.githubusercontent.com/CollageLabs/mash/master/metadata.conf"
-ORIGINVERSION="$(curl -fsSL ${ORIGINMETADATA} | grep 'VERSION=' | awk -F'=' '{print $2}' | sed 's/"//g' )"
-
-if [ -f "${HOME}/.config/mash/metadata.conf" ]; then
-    USERVERSION="$(cat "${HOME}/.config/mash/metadata.conf" | grep 'VERSION=' | awk -F'=' '{print $2}' | sed 's/"//g' )"
+if [ "${BASEDIR}" == "/usr/bin" ]; then
+    APPSTATE="intalled"
+    SHAREDIR="/usr/share/mash"
+    ICONDIR="/usr/share/icons"
+    ICONPATH="${ICONDIR}/hicolor/22x22/apps/collagelabs-mash.png"
+else
+    APPSTATE="testing"
+    BUILDDIR="${BASEDIR}/build"
+    ICONDIR="${BUILDDIR}/icons"
+    ICONPATH="${ICONDIR}/hicolor/22x22/apps/collagelabs-mash.png"
 fi
 
-if [ "${USERVERSION}" != "${VERSION}" ]; then
+if [ -f "${HOME}/.config/mash/app/metadata.conf" ]; then
+    USERVERSION="$(cat "${HOME}/.config/mash/app/metadata.conf" | grep 'VERSION=' | awk -F'=' '{print $2}' | sed 's/"//g' )"
+fi
 
-    TEXT="Thanks for using Mash. If you want to activate linters for your favourite languages, take a look at https://github.com/CollageLabs/mash for detailed instrucions on how to activate each one."
+if [ "${APPSTATE}" == "installed" ]; then
+    ORIGINMETADATA="https://raw.githubusercontent.com/CollageLabs/mash/master/metadata.conf"
+    ORIGINVERSION="$(curl -fsSL ${ORIGINMETADATA} | grep 'VERSION=' | awk -F'=' '{print $2}' | sed 's/"//g' )"
 
-    zenity --info --text="${TEXT}" \
-        --window-icon "${ICONDIR}/hicolor/22x22/apps/collagelabs-mash.png" \
+    if [ "${USERVERSION}" != "${VERSION}" ]; then
+
+        TEXT="Thanks for using Mash. If you want to activate linters for your favourite languages, take a look at https://github.com/CollageLabs/mash for detailed instrucions on how to activate each one."
+
+        zenity --info --text="${TEXT}" \
+            --window-icon "${ICONPATH}" \
+            --height 600 --width 600
+    fi
+
+    if [ "${ORIGINVERSION}" != "${VERSION}" ]; then
+        TEXT="There's a new version of Mash available. You can go to the release page to download it (https://github.com/CollageLabs/mash/releases) or use your OS package manager to update."
+
+        zenity --info --text="${TEXT}" \
+        --window-icon "${ICONPATH}" \
         --height 600 --width 600
+    fi
+fi
 
+if [ "${USERVERSION}" != "${VERSION}" ] || [ "${APPSTATE}" == "testing" ]; then
     echospaced "Creating folders ..."
-    mkdir -vp "${HOME}/.config/mash/recovery"
-    mkdir -vp "${HOME}/.config/mash/backups"
-    mkdir -vp "${HOME}/.config/mash/undo"
-    mkdir -vp "${HOME}/.config/mash/bin"
-    mkdir -vp "${HOME}/.config/mash/urxvt"
-    mkdir -vp "${HOME}/.config/mash/runtime"
-    mkdir -vp "${HOME}/.config/mash/plugins"
-    mkdir -vp "${HOME}/.config/mash/plug"
-    mkdir -vp "${HOME}/.config/mash/app"
+    mkdir -p "${HOME}/.config/mash/recovery"
+    mkdir -p "${HOME}/.config/mash/backups"
+    mkdir -p "${HOME}/.config/mash/undo"
+    mkdir -p "${HOME}/.config/mash/bin"
+    mkdir -p "${HOME}/.config/mash/urxvt"
+    mkdir -p "${HOME}/.config/mash/runtime"
+    mkdir -p "${HOME}/.config/mash/plugins"
+    mkdir -p "${HOME}/.config/mash/plug"
+    mkdir -p "${HOME}/.config/mash/app"
 
     echospaced "Copying files ..."
-    cp -rf "${SHAREDIR}/metadata.conf" "${HOME}/.config/mash"
-    cp -rf "${SHAREDIR}/bin" "${HOME}/.config/mash"
-    cp -rf "${SHAREDIR}/urxvt" "${HOME}/.config/mash"
-    cp -rf "${SHAREDIR}/runtime" "${HOME}/.config/mash"
-    cp -rf "${SHAREDIR}/plugins" "${HOME}/.config/mash"
-    cp -rf "${SHAREDIR}/plug" "${HOME}/.config/mash"
-    cp -rf "${SHAREDIR}/app" "${HOME}/.config/mash"
+    if [ "${APPSTATE}" == "testing" ]; then
+        cp -rf "${BUILDDIR}/ui/search" "${HOME}/.config/mash/bin"
+        cp -rf "${BUILDDIR}/ui/search.css" "${HOME}/.config/mash/bin"
+        cp -rf "${BUILDDIR}/urxvt/src/rxvt" "${HOME}/.config/mash/bin"
+        cp -rf "${BUILDDIR}/vim/src/vim" "${HOME}/.config/mash/bin"
+        cp -rf "${BUILDDIR}/urxvt/src/urxvt.pm" "${HOME}/.config/mash/urxvt"
+        cp -rf "${BUILDDIR}/vim/runtime" "${HOME}/.config/mash"
+        cp -rf "${BUILDDIR}/plugins" "${HOME}/.config/mash"
+        cp -rf "${BUILDDIR}/plug" "${HOME}/.config/mash"
+        rsync -a --exclude "${BUILDDIR}/*" "${BASEDIR}/" "${HOME}/.config/mash/app"
+        cp -rf "${BUILDDIR}/fonts/${FONTNAME}" "${HOME}/.local/share/fonts/"
+    else
+        cp -rf "${SHAREDIR}/bin" "${HOME}/.config/mash"
+        cp -rf "${SHAREDIR}/urxvt" "${HOME}/.config/mash"
+        cp -rf "${SHAREDIR}/runtime" "${HOME}/.config/mash"
+        cp -rf "${SHAREDIR}/plugins" "${HOME}/.config/mash"
+        cp -rf "${SHAREDIR}/plug" "${HOME}/.config/mash"
+        cp -rf "${SHAREDIR}/app" "${HOME}/.config/mash"
+        cp -rf "${SHAREDIR}/fonts/${FONTNAME}" "${HOME}/.local/share/fonts/"
+    fi
+
+    echospaced "Compiling vimproc ..."
+    cd "${HOME}/.config/mash/plugins/vimproc.vim" && make
 
     echospaced "Updating font cache ..."
-    cp -f "${SHAREDIR}/fonts/DejaVu Sans Mono Nerd Font Complete Mono.ttf" "${HOME}/.local/share/fonts/"
-    cp -f "${SHAREDIR}/fonts/fontawesome-webfont.ttf" "${HOME}/.local/share/fonts/"
     fc-cache -vr "${HOME}/.local/share/fonts"
-
-    echospaced "Configuring executables ..."
-    if [ ! -f "${HOME}/.bashrc" ]; then
-        touch "${HOME}/.bashrc"
-    fi
-
-    if ! grep -q 'PATH="${PATH}:${HOME}/.local/bin"' "${HOME}/.bashrc"; then
-        echo 'PATH="${PATH}:${HOME}/.local/bin"' >> "${HOME}/.bashrc"
-    fi
-fi
-
-if [ "${ORIGINVERSION}" != "${VERSION}" ]; then
-    TEXT="There's a new version of Mash available. You can go to the release page to download it (https://github.com/CollageLabs/mash/releases) or use your OS package manager to update."
-
-    zenity --info --text="${TEXT}" \
-    --window-icon "${ICONDIR}/hicolor/22x22/apps/collagelabs-mash.png" \
-    --height 600 --width 600
 fi
 
 eval "$(tr '\0' '\n' < /proc/${$}/environ | grep '^DISPLAY=')"
@@ -92,8 +113,6 @@ env XENVIRONMENT="${HOME}/.config/mash/app/Xresources" \
     URXVT_PERL_LIB="${HOME}/.config/mash/app/extensions" \
     PERL5LIB="${HOME}/.config/mash/urxvt" \
     DISPLAY="${DISPLAY}" \
-    "${HOME}/.config/mash/bin/rxvt" \
-    -icon "${ICONDIR}/hicolor/22x22/apps/collagelabs-mash.png" \
-    -name "mash" -e bash -c "stty -ixon susp undef; \
-        ${HOME}/.config/mash/bin/vim --servername mash-${$} \
-        -u ${HOME}/.config/mash/app/init.vim ${*}"
+    ${HOME}/.config/mash/bin/rxvt \
+        -icon "${ICONPATH}" \
+        -name "mash" -e bash -c "stty -ixon susp undef; ${HOME}/.config/mash/bin/vim --servername mash-${$} -u ${HOME}/.config/mash/app/init.vim ${*}"
