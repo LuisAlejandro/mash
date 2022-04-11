@@ -26,7 +26,7 @@ filetype indent on
 
 " UI
 
-set insertmode                                  " Get rid of normal mode
+" set insertmode                                  " Get rid of normal mode
 set hidden                                      " Tabs can exist in the
                                                 " backgound without having to
                                                 " open them everytime
@@ -67,7 +67,8 @@ set virtualedit=onemore                         " Allow for cursor beyond last c
 let &t_SI = "\<Esc>[5 q"                        " Blinking cursor (insert)
 let &t_SR = "\<Esc>[4 q"                        " Underline cursor (replace)
 let &t_EI = "\<Esc>[2 q"                        " Blinking cursor (normal)
-
+let &t_8f = "\<Esc>[38;2;%lu;%lu;%lum"
+let &t_8b = "\<Esc>[48;2;%lu;%lu;%lum"
 " Keyboard
 
 set timeout ttimeoutlen=50                      " Lower keyboard timeout for

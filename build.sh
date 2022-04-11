@@ -34,6 +34,7 @@ BUILDER="luis@collagelabs.org"
 FONTNAME="DejaVu Sans Mono for Powerline Nerd Font Complete Mono.ttf"
 ESCFONTNAME="$(python3 -c "import urllib.parse; print(urllib.parse.quote('''${FONTNAME}'''))")"
 
+DEB_BUILD_MAINT_OPTIONS="hardening=+all,-fortify"
 DEB_HOST_GNU_TYPE="$(dpkg-architecture -qDEB_HOST_GNU_TYPE)"
 DEB_BUILD_GNU_TYPE="$(dpkg-architecture -qDEB_BUILD_GNU_TYPE)"
 CPPFLAGS="$(dpkg-buildflags --get CPPFLAGS) -Wall"
@@ -54,17 +55,26 @@ VIM_CONFIG=" \
     --with-modified-by=${BUILDER} \
     --with-compiledby=${BUILDER} \
     --enable-fail-if-missing \
+    --with-global-runtime=\$VIMRUNTIME \
     --enable-cscope \
-    --with-features=huge \
-    --enable-multibyte \
-    --enable-acl \
+    --enable-canberra \
     --enable-gpm \
     --enable-selinux \
     --disable-smack \
+    --with-features=huge \
+    --enable-acl \
+    --enable-terminal \
+
     --with-x \
     --enable-xim \
-    --disable-gui \
-    --enable-fontset \
+
+    --enable-gui=gtk3 \
+    --enable-gtk3-check \
+    --disable-gnome-check \
+    --disable-motif-check \
+    --disable-athena-check \
+    --disable-fontset \
+
     --enable-luainterp \
     --disable-mzschemeinterp \
     --enable-perlinterp \
@@ -145,9 +155,9 @@ mkdir -vp "${BUILDDIR}/fonts"
 mkdir -vp "${BUILDDIR}/plug"
 
 echospaced "Downloading Vim source ..."
-git clone --depth 1 --branch v8.2.0 --single-branch \
+git clone --depth 1 --branch v8.2.0716 --single-branch \
     --recursive --shallow-submodules \
-    https://github.com/CollageLabs/vim "${BUILDDIR}/vim"
+    https://github.com/vim/vim "${BUILDDIR}/vim"
 
 echospaced "Downloading Urxvt source ..."
 git clone --depth 1 --branch 24bit-deprecated --single-branch \
