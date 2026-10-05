@@ -1,0 +1,6 @@
+enter_accept = true
+update_check = false
+auto_sync = false
+
+[ai]
+enabled = true

@@ -1,0 +1,170 @@
+//! Small interactive-terminal helpers for the palette running in the popup.
+//! The popup has a real TTY, so these read the user's keystrokes directly
+//! (fzf is spawned for the pick lists; `ask` drops to a plain prompt).
+
+use std::ffi::OsStr;
+use std::io::{BufRead, Read, Write};
+use std::process::Command;
+
+use crate::herdr;
+
+/// Fill the popup with an opaque background. Herdr's `placement = "popup"`
+/// is a floating terminal: empty cells show the pane underneath, so Grok
+/// (or whatever is focused) bleeds through unless we paint every cell.
+pub fn paint_popup() {
+    // Black SGR + erase display: most terminals fill the erased area with
+    // the current background, which is what we need before fzf starts.
+    eprint!("\x1b[40m\x1b[2J\x1b[H");
+    let _ = std::io::stderr().flush();
+}
+
+/// fzf color spec that paints every pane (list / input / header / preview)
+/// instead of leaving the default (transparent) background.
+pub const FZF_OPAQUE: &str =
+    "bg:#1c1c1c,fg:#e6e6e6,preview-bg:#1c1c1c,list-bg:#1c1c1c,input-bg:#1c1c1c,header-bg:#1c1c1c,gutter:#1c1c1c,current-bg:#2a2a2a,border:#555555,preview-border:#555555";
+
+/// Print `$*` to stderr, hold briefly, then exit 1. Called at the END of a
+/// dispatch error path so it passes through `close_self` before exiting, so a
+/// failure surfaces visibly instead of vanishing with the popup.
+pub fn die(msg: &str) {
+    eprintln!("\n{msg}");
+    eprintln!("Press any key to close…");
+    let _ = read_key();
+    std::process::exit(1);
+}
+
+/// Read a single key from the controlling terminal, if any.
+fn read_key() -> Option<u8> {
+    let mut tty = std::fs::OpenOptions::new()
+        .read(true)
+        .open("/dev/tty")
+        .ok()?;
+    let mut buf = [0u8; 1];
+    // Best-effort: the popup's stdin usually carries keystrokes too.
+    tty.read_exact(&mut buf).ok()?;
+    Some(buf[0])
+}
+
+/// Prompt the user for a single-line answer on the controlling TTY.
+/// Empty or aborted input returns an empty string; callers treat that as cancel.
+///
+/// Must read one line, not the rest of the TTY: `read_to_string` waits for EOF
+/// and never returns after Enter, so named-tab / rename prompts freeze.
+pub fn ask(prompt: &str) -> String {
+    let mut tty = std::fs::OpenOptions::new()
+        .write(true)
+        .read(true)
+        .open("/dev/tty")
+        .ok()
+        .unwrap_or_else(|| {
+            // Fall back to stdout/stdin (works when not literally a tty, e.g. tests).
+            std::fs::File::open("/dev/null")
+                .unwrap_or_else(|_| std::fs::File::open("/dev/full").expect("no tty"))
+        });
+    let _ = tty.write_all(prompt.as_bytes());
+    let _ = tty.flush();
+    read_line(&mut tty)
+}
+
+/// Read through the first newline (or EOF). Used by `ask` so Enter submits.
+pub(crate) fn read_line(r: &mut impl Read) -> String {
+    let mut buf = String::new();
+    match std::io::BufReader::new(r).read_line(&mut buf) {
+        Ok(0) | Err(_) => String::new(),
+        Ok(_) => buf.trim().to_string(),
+    }
+}
+
+/// Run a second fzf over `lines` (each `value\tlabel`), displaying the label and
+/// returning the full chosen line. Returns None on cancel. `lines` may also be
+/// single-column (label only); then the label is the value.
+pub fn pick_lines(lines: &[String], prompt: &str) -> Option<String> {
+    pick_lines_q(lines, prompt, "")
+}
+
+/// Like `pick_lines`, but seeds fzf's input box with `prefill` so the user
+/// starts with the filename query already typed.
+pub fn pick_lines_q(lines: &[String], prompt: &str, prefill: &str) -> Option<String> {
+    if lines.is_empty() {
+        return None;
+    }
+    let input = lines.join("\n") + "\n";
+    let is_tsv = lines[0].contains('\t');
+    let with_nth = if is_tsv { "2" } else { "1" };
+    paint_popup();
+    let mut cmd = Command::new("fzf");
+    cmd.args(["--delimiter=\t", &format!("--with-nth={with_nth}")])
+        .args(["--prompt", prompt])
+        .args(["--color", FZF_OPAQUE]);
+    if !prefill.is_empty() {
+        cmd.args(["--query", prefill]);
+    }
+    cmd.args([
+        "--reverse",
+        "--cycle",
+        "--no-multi",
+        "--tiebreak=begin,index",
+    ]);
+    let mut child = match cmd
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+    {
+        Ok(c) => c,
+        Err(_) => return None,
+    };
+    if let Some(mut stdin) = child.stdin.take() {
+        let _ = stdin.write_all(input.as_bytes());
+    }
+    let out = child.wait_with_output().ok()?;
+    if !out.status.success() {
+        return None;
+    }
+    String::from_utf8(out.stdout)
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::read_line;
+
+    #[test]
+    fn read_line_returns_on_newline_without_waiting_for_eof() {
+        let mut r = std::io::Cursor::new(b"notes\nmore that must not be read");
+        assert_eq!(read_line(&mut r), "notes");
+    }
+
+    #[test]
+    fn read_line_trims_and_treats_empty_as_cancel() {
+        let mut r = std::io::Cursor::new(b"  \n");
+        assert_eq!(read_line(&mut r), "");
+    }
+
+    #[test]
+    fn read_line_at_eof_without_newline_still_returns() {
+        let mut r = std::io::Cursor::new(b"notes");
+        assert_eq!(read_line(&mut r), "notes");
+    }
+}
+
+/// Run a `herdr` command, dying with its stderr on failure. stderr is captured
+/// and surfaced so a failed pane/tab/workspace op doesn't vanish with the popup.
+/// Accepts any iterator of `AsRef<OsStr>` — slice literals or `Vec<String>`.
+pub fn run_cli<I, S>(args: I)
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+{
+    let arg_strings: Vec<String> = args
+        .into_iter()
+        .map(|a| a.as_ref().to_string_lossy().into_owned())
+        .collect();
+    let out = herdr::run(&arg_strings);
+    if !out.status.success() {
+        let cmdline = arg_strings.join(" ");
+        let err = String::from_utf8_lossy(&out.stderr).trim().to_string();
+        die(&format!("herdr {cmdline} failed: {err}"));
+    }
+}

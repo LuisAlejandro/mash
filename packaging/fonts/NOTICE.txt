@@ -1,0 +1,2 @@
+MesloLGS NF is included from Nerd Fonts.
+License: Apache-2.0.

@@ -1,0 +1,117 @@
+#!/bin/bash
+# Print a Herdr agent name that is free right now: "<workspace-slug>-<role>",
+# with a numeric suffix appended when that is already taken.
+#
+#   herdr-agent-name <role> [workspace-id] [fallback-cwd]
+#
+# Used by the tab launchers in this directory so their agent panes can be
+# started with `herdr agent start` (tracked: real idle/working/blocked status in
+# the sidebar, addressable by `herdr agent prompt`) instead of `herdr pane run`
+# (untracked: same binary, but Herdr does not know it is an agent).
+#
+# The naming scheme deliberately matches zackshen/herdr-workspace, which builds
+# "<slug-of-workspace-label>-<role>" and retries "-2", "-3" on collision. Same
+# shape here so names stay predictable no matter which path created the pane.
+#
+# Herdr requires agent names to match [a-z][a-z0-9_-]{0,31} and to be unique
+# among LIVE agents (not per workspace, not per tab). These launchers are
+# repeatable -- pressing cmd+t twice must not fail -- so the collision retry is
+# load-bearing, not defensive.
+set -euo pipefail
+
+role="${1:?usage: herdr-agent-name <role> [workspace-id] [fallback-cwd]}"
+workspace_id="${2:-${HERDR_ACTIVE_WORKSPACE_ID:-${HERDR_WORKSPACE_ID:-}}}"
+fallback_cwd="${3:-${HERDR_ACTIVE_PANE_CWD:-$PWD}}"
+
+herdr="${HERDR_BIN_PATH:-herdr}"
+
+# Max name length Herdr accepts. The role and any "-N" suffix must fit inside
+# it, so the slug is truncated rather than the suffix.
+max_len=32
+
+slugify() {
+	# Lowercase, non-alphanumerics to "-", collapse runs, trim leading and
+	# trailing "-". LC_ALL=C keeps tr byte-oriented for non-ASCII labels.
+	printf '%s' "$1" |
+		LC_ALL=C tr '[:upper:]' '[:lower:]' |
+		LC_ALL=C sed -e 's/[^a-z0-9]\{1,\}/-/g' -e 's/^-*//' -e 's/-*$//'
+}
+
+workspace_label() {
+	[ -n "$workspace_id" ] || return 0
+	"$herdr" workspace list 2>/dev/null |
+		python3 -c '
+import json, sys
+want = sys.argv[1]
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+for ws in data.get("result", {}).get("workspaces", []):
+    if ws.get("workspace_id") == want:
+        print(ws.get("label") or "")
+        break
+' "$workspace_id" 2>/dev/null || true
+}
+
+live_names() {
+	"$herdr" agent list 2>/dev/null |
+		python3 -c '
+import json, sys
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+for a in data.get("result", {}).get("agents", []):
+    # Only rows with a live agent NAME occupy the namespace. Panes hosting an
+    # unnamed agent report "agent" (the kind) but no "name", and do not.
+    name = a.get("name")
+    if name:
+        print(name)
+' 2>/dev/null || true
+}
+
+slug="$(slugify "$(workspace_label)")"
+
+# A label like "~" or "///" slugifies to nothing, and Herdr names cannot start
+# with a digit either. Fall back to the directory basename, then to "ws".
+if [ -z "$slug" ] || ! printf '%s' "$slug" | grep -q '^[a-z]'; then
+	slug="$(slugify "$(basename "$fallback_cwd" 2>/dev/null || true)")"
+fi
+if [ -z "$slug" ] || ! printf '%s' "$slug" | grep -q '^[a-z]'; then
+	slug="ws"
+fi
+
+# Reserve room for "-<role>" plus a worst-case "-99" suffix.
+budget=$((max_len - ${#role} - 1 - 3))
+[ "$budget" -lt 1 ] && budget=1
+slug="$(printf '%s' "$slug" | cut -c1-"$budget" | LC_ALL=C sed 's/-*$//')"
+[ -z "$slug" ] && slug="ws"
+
+base="${slug}-${role}"
+
+taken="$(live_names)"
+is_taken() {
+	printf '%s\n' "$taken" | grep -qxF "$1"
+}
+
+if ! is_taken "$base"; then
+	printf '%s\n' "$base"
+	exit 0
+fi
+
+# Same retry shape as the plugin: -2, -3, ... Bounded so a wedged session cannot
+# spin forever; 99 live agents of one role in one workspace is not a real case.
+n=2
+while [ "$n" -le 99 ]; do
+	candidate="${base}-${n}"
+	if ! is_taken "$candidate"; then
+		printf '%s\n' "$candidate"
+		exit 0
+	fi
+	n=$((n + 1))
+done
+
+# Out of names: print nothing and fail. Callers treat empty output as "fall back
+# to an untracked `pane run`" rather than aborting the whole tab.
+exit 1

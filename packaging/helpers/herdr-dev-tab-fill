@@ -1,0 +1,99 @@
+#!/bin/sh
+# Shape an existing single-pane tab into the cmd+t layout: fresh on the left
+# (run through herdr-fresh-pane, which routes right-clicks to Fresh and reports
+# its resume command) and a tracked pi agent on the right.
+#
+#   herdr-dev-tab-fill <left-pane-id>
+#
+# Prints nothing; exits non-zero only if the split itself failed.
+#
+# Why this exists as its own script: the layout used to be written out twice --
+# once in bin/herdr-new-dev-tab (the cmd+t launcher) and once in
+# plugins/herdr/dev-tab/dev-tab.sh (the "+" tab button's tab.created hook) --
+# and only the launcher's copy was updated when bin/herdr-fresh-pane and
+# tracked-agent support were added. The "+" button silently kept launching a
+# bare `fresh` (no file explorer, right-click going to Herdr instead of Fresh,
+# and no resume command, so the pane did not survive a server restart) and an
+# untracked `pi` (no sidebar status, not addressable by `herdr agent prompt`).
+# Both callers now delegate here, so the two paths cannot drift again.
+set -eu
+
+herdr="${HERDR_BIN_PATH:-herdr}"
+ratio="${FRESH_RATIO:-0.6}"
+here="$(cd "$(dirname "$0")" && pwd)"
+
+left="${1:?usage: herdr-dev-tab-fill <left-pane-id>}"
+
+pane_id() {
+	# pane split returns .result.pane.pane_id
+	sed -n 's/.*"pane_id":"\([^"]*\)".*/\1/p' | head -n 1
+}
+
+# Inherit the left pane's cwd and workspace. Both callers end up here with a
+# pane whose directory is already the intended one (the launcher created the
+# tab with --cwd, the hook found an existing tab's root pane).
+#
+# Read these from the pane rather than from HERDR_ACTIVE_PANE_CWD /
+# HERDR_ACTIVE_WORKSPACE_ID: those are set for `[[keys.command]]` custom
+# commands but NOT for plugin event hooks, so a hook-only caller would
+# otherwise fall back to the hook's own working directory (the plugin
+# directory) and name the agent after it -- observed producing `dev-tab-pi`
+# instead of a workspace-derived name before this was fixed.
+pane_json="$("$herdr" pane get "$left" 2>/dev/null || true)"
+read_cwd="$(printf '%s' "$pane_json" | python3 -c '
+import json, sys
+try:
+    print(json.load(sys.stdin)["result"]["pane"].get("cwd") or "")
+except Exception:
+    print("")
+' 2>/dev/null || true)"
+workspace_id="$(printf '%s' "$pane_json" | python3 -c '
+import json, sys
+try:
+    print(json.load(sys.stdin)["result"]["pane"].get("workspace_id") or "")
+except Exception:
+    print("")
+' 2>/dev/null || true)"
+cwd="${read_cwd:-$HOME}"
+
+right="$("$herdr" pane split "$left" --direction right --ratio "$ratio" \
+	--cwd "$cwd" --no-focus 2>/dev/null | pane_id)"
+[ -n "$right" ] || exit 1
+
+# Start pi as a TRACKED agent (herdr agent start) rather than just running the
+# binary (herdr pane run). Tracked means Herdr knows the pane holds an agent:
+# real idle/working/blocked status in the sidebar, and `herdr agent prompt
+# <name>` can drive it. Name comes from herdr-agent-name, which matches the
+# herdr-workspace plugin's "<workspace-slug>-<role>" scheme and resolves
+# collisions, since this layout can be created repeatedly.
+#
+# agent start is best-effort: it waits for the agent to become interactive and
+# fails if the name is taken or pi never gets ready. A failure there must not
+# cost the user the tab, so fall back to the old untracked `pane run`.
+start_agent() {
+	_pane="$1" _role="$2" _kind="$3" _cmd="$4"
+	_name="$("$here/herdr-agent-name" "$_role" "$workspace_id" "$cwd" 2>/dev/null || true)"
+	if [ -n "$_name" ] &&
+		"$herdr" agent start "$_name" --kind "$_kind" --pane "$_pane" >/dev/null 2>&1; then
+		return 0
+	fi
+	"$herdr" pane run "$_pane" "$_cmd"
+}
+
+# The trailing `.` is load-bearing, NOT redundant with --cwd. Fresh only shows
+# its file explorer for a bare directory launch when the directory arrives as a
+# CLI argument: main.rs sets show_file_explorer only when file_locations is
+# exactly one path that is_dir, then calls
+# restore_active_window_on_launch(!show_file_explorer) -- i.e. a bare `fresh`
+# (no args, cwd only) passes opened_files=true, which makes
+# apply_fresh_session_explorer_default return early and suppress the
+# fresh-session default. A directory with no persisted workspace file then
+# opens with NO explorer. Verified against fresh 0.5.1: bare `fresh` logged 0
+# "explorer initialized" lines in a brand-new directory, while `fresh .` and
+# `fresh <abspath>` each logged 1. Fresh has no file_explorer.open_on_startup
+# setting (FileExplorerConfig in fresh-editor-core/src/config.rs has no
+# visibility field), so this argument is the only lever. A directory that does
+# have a persisted workspace still honours its recorded visibility, so a
+# deliberately-closed explorer stays closed.
+"$herdr" pane run "$left" 'herdr-fresh-pane .'
+start_agent "$right" pi pi pi

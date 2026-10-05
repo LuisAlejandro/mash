@@ -1,0 +1,16 @@
+{
+  "name": "monokai",
+  "version": "1.0.0",
+  "description": "Classic Monokai color theme for the Fresh terminal editor.",
+  "type": "theme",
+  "author": "Lucas Oskorep",
+  "license": "GPL-3.0-or-later",
+  "repository": "https://github.com/lucasoskorep/fresh-monokai",
+  "fresh": {
+    "min_version": "0.1.75",
+    "themes": [
+      { "file": "monokai.json", "name": "Monokai", "variant": "dark" }
+    ]
+  },
+  "keywords": ["color-theme", "theme", "monokai", "dark", "classic"]
+}

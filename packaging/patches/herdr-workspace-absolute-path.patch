@@ -1,0 +1,18 @@
+--- a/src/form.rs
++++ b/src/form.rs
+@@ -367,7 +367,14 @@
+             return;
+         }
+         let expanded = complete::expand_user(trimmed);
+-        self.dir = expanded.to_string_lossy().into_owned();
++        let absolute = match expanded.canonicalize() {
++            Ok(path) => path,
++            Err(_) if expanded.is_absolute() => expanded,
++            Err(_) => std::env::current_dir()
++                .map(|cwd| cwd.join(&expanded))
++                .unwrap_or(expanded),
++        };
++        self.dir = absolute.to_string_lossy().into_owned();
+         if !self.dir.ends_with('/') {
+             self.dir.push('/');
+         }

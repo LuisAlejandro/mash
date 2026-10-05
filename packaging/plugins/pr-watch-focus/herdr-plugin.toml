@@ -1,0 +1,21 @@
+id = "pr-watch-focus"
+name = "PR Watch Focus"
+version = "0.2.0"
+min_herdr_version = "0.8.2"
+description = "Refresh pr-watch-repo's PR badges and git-status-watch's ahead/behind counts for a workspace the moment it is focused, instead of waiting for the hourly LaunchAgents"
+platforms = ["macos", "linux"]
+
+# pr-watch-repo already supports `--workspace ID` to poll one workspace --
+# "for the focus hook" per its own usage comment -- but nothing called it that
+# way until this plugin. Without it, the sidebar badges are only ever as fresh
+# as the last hourly run,
+# so switching into a workspace right after merging/opening a PR elsewhere
+# could show stale counts for up to 59 minutes.
+#
+# workspace.focused's JSON payload is `data.workspace_id` (a flat field, not
+# nested under a "workspace" object the way tab.created nests under "tab") --
+# confirmed by reading fullerzz.sesh's own workspace.focused handler
+# (internal/app/app.go), an installed plugin that already consumes this event.
+[[events]]
+on = "workspace.focused"
+command = ["bash", "focus.sh"]

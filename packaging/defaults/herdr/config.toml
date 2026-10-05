@@ -1,0 +1,609 @@
+onboarding = false
+
+[update]
+version_check = false
+manifest_check = false
+
+[terminal]
+# "auto" on macOS starts a login shell and ignores default_shell.
+shell_mode = "non_login"
+default_shell = "__MASH_SHELL__"
+
+
+# Tab family shares one modifier pair, cmd+shift, across every tab action:
+# new/close/previous/next/switch. Requires `keybind = super+shift+[=unbind` /
+# `super+shift+]=unbind` in Ghostty -- already released there, freed for
+# Fresh's prev/next buffer to move off onto plain cmd+[ / cmd+].
+# REPLACE the prefix defaults: ctrl+b n / ctrl+b p no longer cycle tabs.
+[keys]
+# No real "disable" exists for the prefix key -- prefix = "", false, "none",
+# "off", "disabled", and [] were all tested and every one is rejected, falling
+# back silently to the ctrl+b default (confirmed via `herdr config check`).
+# Remapped to f24 instead: an unreachable key nothing in this stack binds to,
+# which neuters it in practice. Done because every prefix-mode action already
+# has a direct chord (workspace_picker is the one exception, already unbound
+# at "" -- see further down), so this costs nothing currently in use, and it
+# frees ctrl+b for Pi (cursorLeft, secondary binding) and OpenCode
+# (session_background, its ONLY binding -- otherwise permanently unreachable
+# inside this nesting) in any pane running either one.
+prefix = "f24"
+previous_tab = "cmd+shift+["
+next_tab = "cmd+shift+]"
+# rename_tab joins the Tabs family's cmd+shift modifier. Not a letter already
+# claimed by the family (g/l/n/o/p/r/t/w/x/1) -- M for "modify the name".
+# Confirmed free: Herdr config and defaults, Ghostty live and default, Fresh.
+rename_tab = "cmd+shift+m"
+
+# Five actions below have no natural family -- each is global, not scoped to
+# tabs/panes/workspaces/agents -- so they sit on bare cmd, one per action,
+# matching how goto and toggle_sidebar already sit outside every family.
+# All five confirmed free: Herdr config and defaults, Ghostty live and
+# default, Fresh.
+# cmd+shift+/ (= cmd+? on a US keyboard) was the first choice here, matching
+# the macOS "show help" convention -- but it never reached Ghostty or Herdr.
+# macOS itself intercepts it system-wide as "Search this app's Help menu",
+# before any app sees the keystroke, so no app-level config can claim it. Not
+# discoverable by inspecting Herdr/Ghostty/Fresh configs; confirmed only by
+# pressing it and watching the Help menu open. cmd+h and cmd+m are the same
+# class of trap (Hide / Minimize, both OS-level, both confirmed by testing).
+# cmd+shift+i pairs with settings' cmd+i and was confirmed live before being
+# set here.
+help = "cmd+shift+i"
+settings = "cmd+i"    # mnemonic: "i" as in preferences/info, cmd+, is Ghostty's own
+detach = "cmd+u"      # NOT cmd+q -- that is Ghostty's own app-quit, not available
+reload_config = "cmd+r"
+open_notification_target = "cmd+y"
+
+# Workspace family shares one modifier pair, cmd+ctrl, across every
+# workspace action: new/rename/close/goto/sequential-move/indexed-switch.
+# switch_workspace uses the "1..9" range form, not a literal digit.
+# None of the chords below need a Ghostty unbind -- confirmed free,
+# live and default.
+# new_workspace and new_worktree are fully unbound here, prefix default
+# included -- not merely absent from this file. Both chords they used to hold
+# (cmd+ctrl+n and cmd+ctrl+shift+n, and before that prefix+shift+n and
+# prefix+shift+g) now belong to the herdr-workspace plugin instead, which opens
+# a popup form and applies a layout profile (shell / pi / fresh+pi) rather than
+# creating a bare workspace. See the [[keys.command]] entries near the end of
+# this file. An empty string here means unbound, distinct from the action
+# being absent from [keys] (which would leave the prefix default active).
+new_workspace = ""
+new_worktree = ""
+rename_workspace = "cmd+ctrl+r"
+switch_workspace = "cmd+ctrl+1..9"
+
+# Sequential workspace movement, list-relative so it reaches workspace 10+,
+# which switch_workspace's indexed chord cannot.
+previous_workspace = "cmd+ctrl+["
+next_workspace = "cmd+ctrl+]"
+
+# Worktree actions: their own cmd+ctrl+shift pair, off the plain cmd+ctrl
+# workspace-family modifier entirely (new_workspace/rename_workspace/
+# close_workspace/goto). cmd+ctrl+n (new_worktree's former chord) now belongs
+# to new_workspace above. new_worktree moved onto cmd+ctrl+shift+n --
+# "workspace, plus" shift, since a worktree is a grouped workspace in
+# Herdr's own model. remove_worktree moved onto cmd+ctrl+backspace, vacated
+# when close_workspace moved to cmd+ctrl+w -- mirrors close_workspace's own
+# Backspace idiom, scoped down to a single worktree checkout instead of the
+# whole workspace. Both confirmed free in Herdr, Ghostty (live and default),
+# and Fresh (stock and user) before the move -- no unbind required.
+# NOTE: remove_worktree has no undo; it deletes the checkout after
+# confirmation (ui.confirm_close-style prompt).
+# new_worktree's own unbind lives above, next to new_workspace -- both empty
+# strings in one place rather than split across this file.
+remove_worktree = "cmd+ctrl+backspace"
+
+# Pane family shares one modifier pair, cmd+alt, across every pane action:
+# close/split/focus/zoom. Requires `keybind = super+alt+w=unbind` in Ghostty,
+# releasing `close_tab:this` -- Ghostty's own tabs are unused here.
+# REPLACES ctrl+b x.
+close_pane = "cmd+alt+w"
+
+# split_vertical = side-by-side panes; split_horizontal = stacked panes --
+# named for the divider's orientation, not the panes' arrangement.
+# split_vertical needs no Ghostty unbind: cmd+alt+backslash was never bound
+# there. split_horizontal moved off cmd+alt+d onto cmd+alt+minus, freeing
+# cmd+alt+d entirely and cmd+alt+up/down for focus_pane_up/down below.
+# REPLACES ctrl+b v / ctrl+b minus.
+split_vertical = "cmd+alt+backslash"
+split_horizontal = "cmd+alt+minus"
+
+# Pane focus movement, all four directions on the pane family's cmd+alt
+# modifier with the arrow keys -- a uniform arrow set for all four directions.
+# Moved off the vim h/j/k/l family (cmd+alt+k/j) to make room for the arrows.
+# Requires ALL FOUR goto_split unbinds in Ghostty (super+alt+arrow_left,
+# arrow_right, arrow_up, arrow_down). Ghostty binds goto_split to every one of
+# the four arrows by default and, being non-`performable:`, consumes the chord
+# unconditionally -- so an unbind is required per direction, not just for the
+# two that moved.
+# Releasing up/down also orphans Fresh's add_cursor_above/below, which lived
+# on that exact chord; reassigned to ctrl+alt+up/down in Fresh's own config,
+# reclaiming Fresh's own stock-keymap fallback for the same actions.
+# REPLACES ctrl+b h/j/k/l.
+focus_pane_left = "cmd+alt+left"
+focus_pane_down = "cmd+alt+down"
+focus_pane_up = "cmd+alt+up"
+focus_pane_right = "cmd+alt+right"
+
+# Pane cycling, on the pane family's cmd+alt modifier with the bracket keys --
+# mirrors the tab family's cmd+shift+[ / cmd+shift+] exactly, one modifier
+# pair down. Free in Ghostty and Herdr both, so no unbind is required.
+# REPLACES the prefix defaults ctrl+b tab / ctrl+b shift+tab.
+cycle_pane_next = "cmd+alt+]"
+cycle_pane_previous = "cmd+alt+["
+
+# Enter resize mode (modal: enter it, then any movement key resizes). This is
+# the intended resize path -- the four direct resize_pane_* actions are
+# deliberately left unbound below, favoring the modal flow over per-direction
+# chords. cmd+alt+r preserves the prefix default's mnemonic (prefix+r) and is
+# free in both Ghostty and Herdr -- rename_workspace vacated cmd+alt+r when
+# the workspace family regrouped onto cmd+ctrl.
+# REPLACES the prefix default ctrl+b r.
+resize_mode = "cmd+alt+r"
+
+# Keyboard copy mode for the focused pane. cmd+alt+c -- "c for copy". Free in
+# Ghostty and Herdr both, so no unbind. REPLACES the prefix default ctrl+b [.
+copy_mode = "cmd+alt+c"
+
+# Deliberately UNBOUND pane actions. Each is given an explicit empty string
+# rather than simply being omitted: an omitted field silently inherits the
+# default, while an empty one never will -- so these stay released even if a
+# future Herdr version starts shipping a default for one of them.
+#
+#   rename_pane     -- was prefix+shift+p by default, now released
+#   edit_scrollback -- was prefix+e by default, now released
+#   last_pane       -- unset by default
+#   resize_pane_*   -- unset by default; resize_mode above is the intended path
+rename_pane = ""
+edit_scrollback = ""
+last_pane = ""
+resize_pane_left = ""
+resize_pane_right = ""
+resize_pane_up = ""
+resize_pane_down = ""
+
+# Toggle sidebar collapse, matching Orca's sidebar.left.toggle. Deliberately
+# NOT part of the pane family's cmd+alt modifier -- the sidebar is a
+# workspace list, not a pane. Was free in Ghostty. REPLACES ctrl+b b.
+toggle_sidebar = "cmd+b"
+
+# Agent panel navigation. Ships unset by default (no prefix equivalent to
+# replace). Free in Ghostty and Herdr both -- no unbind required.
+# NOTE: cmd+shift+pageup/pagedown was requested first, but Herdr's keybind
+# parser (parse_key_combo in keybinds.rs) has no PageUp/PageDown support at
+# all -- not a spelling issue, the key literally isn't recognized. Several
+# alternatives were tried and rejected: cmd+shift+left/right (worked, needed
+# a Ghostty unbind); alt+shift+up/down (worked, no unbind, but collides with
+# Fresh's block_select_up/down -- Herdr wins by intercepting first, silently
+# shadowing Fresh's binding in every Fresh pane); cmd+alt+left/right (already
+# taken by focus_pane_left/focus_pane_right below -- same-layer conflict);
+# cmd+alt+shift+up/down (worked, distinct from focus_pane_up/down, but 4
+# modifiers was judged too complex). Settled on ctrl+shift+up/down: free in
+# Ghostty, Herdr, and Fresh, only 2 modifiers, keeps the up/down semantic.
+previous_agent = "ctrl+shift+up"
+next_agent = "ctrl+shift+down"
+
+# Focus agent by index 1-9. Moved from alt+1..9 to ctrl+shift+1..9 by request.
+# KNOWN TRADE-OFF: Fresh binds ctrl+shift+1..9 to "Set bookmark 'N'" (context:
+# normal). Herdr's route_key_press intercepts this chord before it reaches
+# the pane, so focus_agent always wins -- but Fresh's bookmark-set-by-number
+# becomes unreachable in every Fresh pane while this binding is active.
+# Accepted deliberately; Fresh's bookmark feature is slated for reassignment
+# to a different chord later. alt+1..9 (the previous chord) is now free again.
+focus_agent = "ctrl+shift+1..9"
+
+# Close the whole workspace, matching Orca's workspace.delete (also
+# Backspace-based there), now on the workspace family's cmd+ctrl modifier.
+# Moved off cmd+ctrl+backspace onto cmd+ctrl+w -- "w for workspace", and
+# frees cmd+ctrl+backspace entirely (nothing reclaims it yet). Confirmed
+# free in Herdr, Ghostty (live and default), and Fresh (stock and user)
+# before the move -- no unbind required.
+# REPLACES ctrl+b shift+d.
+# NOTE: no undo, and this closes every tab/pane inside the workspace.
+close_workspace = "cmd+ctrl+w"
+
+# Toggle pane zoom (fullscreen the focused pane within its tab). Orca has no
+# analog (its "zoom" is font size), so this chord is freely chosen; cmd+alt+z
+# was unbound in Ghostty. Legacy key name `fullscreen` is an accepted alias.
+# REPLACES ctrl+b z.
+zoom = "cmd+alt+z"
+
+# Workspace picker: deliberately UNBOUND. The session navigator (goto,
+# cmd+shift+g) covers browsing workspaces, so the prefix+w default is released
+# here. An empty string replaces the default rather than falling back to it --
+# field_source marks the field user-configured and parse_action_bindings skips
+# empty values, so no binding is produced.
+workspace_picker = ""
+
+# Goto (session navigator overlay), now on the workspace family's cmd+ctrl
+# modifier -- mirrors the shipped prefix default's own mnemonic (prefix+g)
+# one modifier pair over. Moved off cmd+shift+g, which needed Ghostty/Fresh
+# unbinds to work at all; cmd+ctrl+g needs none, confirmed free in Herdr,
+# Ghostty (live and default), and Fresh (stock and user).
+# NOTE: the cmd+shift+g unbinds in the Ghostty config and
+# the Fresh config are now dead weight -- nothing currently
+# reclaims that chord, left idle rather than reverted.
+# REPLACES ctrl+b g.
+goto = "cmd+ctrl+g"
+
+# Native new_tab action: deliberately UNBOUND. The `+` tab button still runs it
+# -- the button needs no chord -- and everything that action creates is enriched
+# into a fresh+pi split by the dev-tab plugin's tab.created hook
+# (the dev-tab plugin). An empty string replaces the default
+# rather than falling back to it, so ctrl+b c stays gone. cmd+shift+t is handled
+# by a custom command below instead, which opens a plain shell tab and marks it
+# for the hook to skip.
+new_tab = ""
+
+# Jump to tab by index, now on the tab family's cmd+shift modifier alongside
+# previous_tab/next_tab/new_tab/close_tab. Moved off bare cmd+1..9 (Cursor/
+# Orca's own tab convention), which Herdr no longer claims at all -- the
+# super+1..9 / super+digit_N unbinds below are now orphaned by this move and
+# could be reverted to restore Ghostty's native tab switching on that bare
+# chord; left unbound for now since nothing conflicts with leaving it idle.
+switch_tab = "cmd+shift+1..9"
+
+# Close the active tab. Moved off cmd+w, which now belongs to Fresh as Close
+# tab, and off cmd+shift+x onto cmd+shift+w -- close_pane claimed cmd+shift+w
+# for a while during the pane-family regrouping, then moved to cmd+alt+w
+# (part of the pane family's single cmd+alt modifier), freeing cmd+shift+w
+# back up. Requires `keybind = super+shift+w=unbind` in Ghostty, releasing
+# its own close_window -- Ghostty's windows are unused here.
+# NOTE: there is no undo -- closing a tab kills its PTYs, and Herdr has no
+# reopen-closed-tab action.
+# cmd+shift+x is where the plugin manager is bound, below.
+close_tab = "cmd+shift+w"
+
+# cmd+shift+t: new tab running a plain shell. The native new_tab action cannot
+# serve this (see above), so the script creates the tab carrying a label the
+# dev-tab hook skips. Requires `keybind = super+shift+t=unbind` in
+# the Ghostty config, which stays for this chord.
+[[keys.command]]
+key = "cmd+shift+t"
+type = "shell"
+command = "herdr-new-plain-tab"
+description = "new plain shell tab"
+
+# cmd+t / cmd+shift+n: new tab with two vertical panes — fresh (left) and pi (right).
+# Two chords, one command: cmd+shift+n is a synonym. Both need no Ghostty
+# forward beyond cmd+t's own unbind; cmd+shift+n was never bound in Ghostty.
+# Requires `keybind = super+t=unbind` in the Ghostty config so Ghostty
+# forwards cmd+t instead of opening its own tab.
+[[keys.command]]
+key = ["cmd+t", "cmd+shift+n"]
+type = "shell"
+command = "herdr-new-dev-tab"
+description = "new dev tab (fresh + pi)"
+
+# cmd+alt+t / cmd+alt+n: new tab running pi in a single pane.
+# Two chords, one command: cmd+alt+n is a synonym. Ghostty never bound either
+# chord, so no unbind is required for either.
+[[keys.command]]
+key = ["cmd+alt+t", "cmd+alt+n"]
+type = "shell"
+command = "herdr-new-pi-tab"
+description = "new pi tab"
+
+[[keys.command]]
+key = "cmd+p"
+type = "popup"
+command = "telescope-files"
+description = "File finder (telescope, files only)"
+width = "70%"
+height = "70%"
+
+# Lazygit over focused pane. Same popup shape as the lazydocker binding above:
+# a `popup` custom command, 90% x 85%, cd'd to the active pane's cwd so it
+# opens the repo you are looking at. Pinned to lazygit rather
+# than a bare `lazygit` because custom commands get a minimal PATH; lazydocker
+# needs no such pin (it is on the server PATH). LazyGit reads Mash's lazygit config
+# on its own, so no CONFIG_DIR is needed.
+# ctrl+shift+g is the agent-panel modifier, free in Ghostty live and default,
+# and free in Fresh.
+[[keys.command]]
+key = "ctrl+shift+g"
+type = "popup"
+command = "cd \"${HERDR_ACTIVE_PANE_CWD:-.}\" && exec lazygit"
+description = "Lazygit"
+width = "90%"
+height = "85%"
+
+[theme]
+name = "terminal"
+auto_switch = false
+
+[theme.custom]
+sidebar_bg = "#1e1f1c"
+panel_bg = "#1e1f1c"
+surface_dim = "#1e1f1c"
+accent = "#cccccc"
+surface0 = "#34352f"
+text = "#d6d6d4"
+subtext0 = "#ffffff"
+mauve = "#e6db74"
+overlay0 = "#999999"
+overlay1 = "#cccccc"
+#surface1 = "#000000"
+#selection_bg = "#000000"
+active_row_bg = "#333333"
+
+[ui]
+prompt_new_tab_name = false
+
+# Status entries at the right edge of the desktop tab bar. Tagged by type;
+# `text` is a literal string, and herdr also supports zoom/hostname/datetime
+# and command entries. An untagged `{ text = "..." }` is a TOML parse error --
+# the tag is required.
+tab_bar_right = [{ type = "text", text = "Mash" }]
+
+# Collapsed sidebar presentation. cmd+b collapses the sidebar; with this set to
+# "hidden" the collapse removes it entirely instead of leaving a compact strip.
+# Default is "compact". Pairs with ui.sidebar_start_collapsed (left unset = false).
+sidebar_collapsed_mode = "hidden"
+agent_panel_sort = "priority"
+show_agent_labels_on_pane_borders = false
+pane_gaps = false
+copy_on_select = true
+# No scrollbar column beside panes. It is a vertical line the borders already
+# imply, and dropping it keeps the column out of terminal-native selections.
+pane_scrollbars = false
+# What the titlebar says. The default is "{hostname}: {workspace}", and the
+# hostname is the one thing on screen that never changes and never matters.
+window_title = "{hostname} › {workspace} › {tab}"
+# Frame every pane, not only splits, and keep the outside edge of the pane
+# area. With sidebar_bg at base there is no colour change left to separate the
+# sidebar from the panes, so the outer border is what draws that line.
+pane_borders = "always"
+pane_outer_borders = false
+
+# Terminal/OS notifications disabled entirely -- "off" suppresses Herdr's own
+# toast rendering AND the OSC9/OSC99 escape sequences that "terminal"/"system"
+# forward to Ghostty (which Ghostty then surfaces as native macOS Notification
+# Center alerts). This is the delivery mechanism itself, distinct from
+# ui.toast.clipboard below (a separate, Herdr-rendered copy indicator) and
+# from [sound] (separate audio notifications, still enabled -- see [sound]).
+[ui.toast]
+delivery = "off"
+
+[ui.sound]
+enabled = false
+
+[ui.sidebar.agents]
+row_gap = 0
+rows = [
+  ["state_icon", "workspace"],
+  ["terminal_title_stripped"],
+  # cache-hit plugin: prompt-cache countdown, hit ratio, and retained cache.
+  # Cache sorting stays disabled; agent_panel_sort remains native priority.
+  [
+    { token = "$cache", fg = "#6b7280", bold = false, dim = true, rules = [
+      { starts_with = "!", bold = false, dim = true, fg = "#b56b6b" },
+      { starts_with = "+", bold = false, dim = true, fg = "#6f9f72" },
+      { starts_with = "-", bold = false, dim = true, fg = "#6b7280" },
+    ] },
+  ],
+]
+
+[ui.sidebar.spaces]
+row_gap = 0
+rows = [
+  ["state_icon", "workspace", "branch"],
+  # Reported by pr-watch-repo (pr-watch-repo), polled hourly
+  # by the app. Repo-wide open-PR counts by bucket, not one branch's PR:
+  # all three can show at once (e.g. "2 blocked  1 waiting  4 ready"). A
+  # zero'd bucket clears its token instead of showing 0, so the row shrinks
+  # rather than padding with zeroes.
+  #
+  # $git_ahead / $git_behind: ahead/behind counts, reported by
+  # git-status-watch (polled hourly by the app, same
+  # cadence as pr-watch-repo, plus an on-focus refresh -- see
+  # the pr-watch-focus plugin).
+  #
+  # This REPLACES Herdr's built-in "git_status" token, which used to sit here
+  # as a bare string. Tried that first; no separator ever rendered between it
+  # and the $pr_* fields even when both sides had real non-empty values
+  # (confirmed live on a workspace, ahead 10, both populated) --
+  # Herdr's middle-dot separator reliably appears BETWEEN tokens within the
+  # same $-custom-metadata family (confirmed: it shows between $pr_blocked,
+  # $pr_waiting, $pr_ready) but not at a custom-field-to-built-in-field
+  # boundary in the same row, for reasons not visible from the installed
+  # herdr binary's exported symbols. git-status-watch sidesteps the question
+  # entirely by reporting ahead/behind as custom fields in the SAME family as
+  # the PR buckets, rather than diagnosing Herdr's internal rendering rule.
+  #
+  # git-status-watch runs `git fetch` before computing these counts (never
+  # pull or push -- fetch only updates remote-tracking refs, confirmed by
+  # direct test to leave HEAD/working tree untouched), so these numbers can
+  # differ from a stale git_status that nothing had recently fetched -- e.g.
+  # one repo showed behind-0 under the old built-in token and behind-62
+  # once git-status-watch's fetch-first poll actually ran.
+  [
+    { token = "$pr_blocked", fg = "#f38ba8" },
+    { token = "$pr_waiting", fg = "#f9e2af" },
+    { token = "$pr_ready",   fg = "#a6e3a1" },
+    { token = "$git_ahead",  fg = "#89b4fa" },
+    { token = "$git_behind", fg = "#f38ba8" },
+  ],
+]
+
+
+[ui.toast.clipboard]
+enabled = false
+
+# Lazydocker over focused pane.
+# Was cmd+shift+l; moved to cmd+shift+o. Free in Herdr, Ghostty (live and
+# default), and Fresh (stock and custom) -- no unbind required.
+[[keys.command]]
+key = "cmd+shift+o"
+type = "popup"
+command = "cd \"${HERDR_ACTIVE_PANE_CWD:-.}\" && CONFIG_DIR=\"__MASH_CONFIG__/lazydocker\" exec lazydocker"
+description = "Docker status"
+width = "90%"
+height = "85%"
+
+# Pet snippet executor over focused pane.
+# Was cmd+shift+p; moved to cmd+alt+p, the chord telescope.open vacated when
+# it took cmd+shift+p. A straight swap of the two "palette" popups, so no new
+# chord to learn and no extra Ghostty unbind: cmd+alt+p is in the pane family's
+# modifier, free in Herdr, Ghostty, and Fresh.
+# cmd+shift+p would also have been a same-family option (Fresh leaves it free),
+# but it is the chord telescope now uses.
+[[keys.command]]
+key = "cmd+alt+p"
+type = "popup"
+command = "exec pet exec --color"
+description = "Pet execute"
+width = "90%"
+height = "85%"
+
+# cmd+shift+r: new tab with reviewr left and pi right, matching cmd+t proportions.
+# Moved off cmd+r, which now belongs to Fresh as the lsp_hover chain.
+[[keys.command]]
+key = "cmd+shift+r"
+type = "shell"
+command = "herdr-new-reviewr-tab"
+description = "Reviewr + pi tab"
+
+# Annotate plugin (plannotator/herdr-annotate/lite).
+# Moved from prefix+a to cmd+k. Requires `keybind = super+k=unbind` in
+# the Ghostty config -- Ghostty otherwise owns cmd+k as clear_screen.
+[[keys.command]]
+key = "cmd+k"
+type = "plugin_action"
+command = "annotate.capture"
+description = "annotate text"
+
+# Moved from prefix+ctrl+v to cmd+l. Free in Ghostty and Fresh; no unbind
+# required.
+[[keys.command]]
+key = "cmd+l"
+type = "plugin_action"
+command = "annotate.paste-archive"
+description = "paste annotations into the agent's prompt and archive them"
+
+[[keys.command]]
+key = "cmd+shift+l"
+type = "plugin_action"
+command = "annotate.manage"
+description = "manage annotations"
+
+# Fingers plugin (hitaishi2222/herdr-fingers), search_engine = "fzf" in
+# the fingers plugin config.
+#
+# Was prefix+f, moved to alt+g -- the last prefix chord is gone, so no `ctrl+b`
+# prefix step is needed for this action any more. alt+g is free in Herdr,
+# Ghostty (live and default), and Fresh.
+#
+# Why bare alt is safe HERE but was NOT for the previous alt+f chord: Ghostty
+# encodes alt+arrow_right as `esc:f` (stock default, `alt+arrow_right=esc:f`),
+# and a bare ESC prefix IS the canonical Alt encoding, so that chord arrived at
+# Herdr as alt+f and got matched here -- swallowed before zsh ever saw it, which
+# silently broke alt+right word-forward while alt+left survived (`esc:b` for
+# alt+left matched no Herdr binding and fell through). Ghostty only emits
+# esc+letter for the ARROW keys, so alt+g is not reachable from any arrow
+# encoding and that trap does not apply. Keep any future bare-alt binding off
+# alt+b and alt+f specifically.
+[[keys.command]]
+key = "alt+g"
+type = "plugin_action"
+command = "herdr-fingers.finger"
+description = "Fingers"
+
+# Plugin manager (speardragon/herdr-plugin-manager, id ray.plugin-manager).
+# Its own `open` action opens the manager as a popup pane, so one binding covers
+# it. cmd+shift+x was freed when close_tab moved to cmd+shift+w; it is free in
+# Ghostty live and default, and in Fresh.
+[[keys.command]]
+key = "cmd+shift+x"
+type = "plugin_action"
+command = "ray.plugin-manager.open"
+description = "Plugin manager"
+
+# herdr-workspace (zackshen/herdr-workspace): popup form that creates a
+# workspace -- or a linked git worktree -- and applies a layout profile picked
+# from cards. Profiles live in config.yaml under
+# `herdr plugin config-dir herdr-workspace`; three are defined (shell, pi,
+# fresh+pi) mirroring the cmd+shift+t / cmd+alt+t / cmd+t tab launchers.
+#
+# These two chords are the ones Herdr's native new_workspace and new_worktree
+# used to hold; both native actions are now unbound (see the [keys] block at the
+# top of this file) so the plugin owns them. The plugin asks for a directory and
+# a name, which the native one-shot actions never did.
+#
+# plugin_action, not popup: the action itself opens the plugin's own centered
+# popup pane (the manifest declares placement), so wrapping it in a popup
+# command would nest one popup inside another.
+[[keys.command]]
+key = "cmd+ctrl+n"
+type = "plugin_action"
+command = "herdr-workspace.open"
+description = "New workspace (layout profile)"
+
+# Worktree variant: runs against the CURRENT git workspace, prompts for branch
+# and base ref, then creates a linked worktree and applies the same profile
+# cards. cmd+ctrl+shift+n keeps the "workspace, plus shift" idiom the native
+# new_worktree used on this chord.
+[[keys.command]]
+key = "cmd+ctrl+shift+n"
+type = "plugin_action"
+command = "herdr-workspace.worktree"
+description = "New worktree (layout profile)"
+
+# Sesh (fullerzz/herdr-plugin-sesh, id fullerzz.sesh): workspace/session picker.
+# cmd+ctrl+o is the workspace family's modifier, and matches the plugin's own
+# mnemonic -- its native picker uses ctrl+o for preview toggling too. Free in
+# Ghostty live and default, and free in Fresh.
+#
+# Note: the picker only lists what it already knows (running workspaces,
+# [[workspace]] config entries, zoxide history) and has no
+# create-from-typed-path fallback, so a path never visited by zoxide will not
+# appear. `zoxide add <path>` registers one, or add a [[workspace]] entry in the
+# plugin config for a named project.
+#
+# Opens as a POPUP, not the overlay the plugin hardcodes: `herdr-sesh` calls
+# `plugin pane open ... --placement overlay` with a literal, and exposes no
+# setting for it, so the placement is chosen here instead. `type = "shell"` is
+# correct for an API call -- no TTY is needed, unlike a popup that draws fzf
+# itself. HERDR_BIN_PATH comes from the custom-command environment.
+#
+# HERDR_SESH_REDUCE_MOTION disables the picker's cursor smear animation. It is
+# an env var read by the picker process, and this --env flag is the only way to
+# set it per-invocation: the config has no animation setting, and putting it in
+# the shell profile would need a Herdr server restart to take effect (killing
+# every pane). Applies to this binding only -- the open-picker ACTION and the
+# F2 settings editor still animate.
+[[keys.command]]
+key = "cmd+ctrl+o"
+type = "shell"
+command = '"${HERDR_BIN_PATH:-herdr}" plugin pane open --plugin fullerzz.sesh --entrypoint picker --placement popup --width 90% --height 85% --env HERDR_SESH_REDUCE_MOTION=1'
+description = "Sesh picker (popup)"
+
+# Telescope plugin (zackshen/herdr-telescope): fzf command palette merging
+# native actions, plugin actions, and a file finder.
+# Moved from cmd+alt+p to cmd+shift+p. cmd+alt+p goes to pet (see above);
+# cmd+shift+p was already released in Ghostty for the pet popup, so the swap
+# needs no Ghostty change at all. Free in Fresh as well -- its cmd-shift
+# family is c/e/f/g/h/k/v/z and the brackets.
+#
+# ACTIONS ONLY: `telescope.open-actions` instead of `telescope.open`, so this
+# chord offers native/plugin/workspace actions and NOT the file finder or
+# content search (cmd+p is the file browser). That is a local fork of the
+# plugin -- the bundled telescope plugin, linked, carrying an
+# open-actions entrypoint that sets TELESCOPE_ACTIONS_ONLY=1 in the popup.
+# Plain `open` (the full palette) is still available via the action list.
+[[keys.command]]
+key = "cmd+shift+p"
+type = "plugin_action"
+command = "telescope.open-actions"
+description = "Telescope (actions only)"
+
+# Fork the focused agent's session from an earlier user message. The plugin
+# resolves Pi or OpenCode from the focused pane, so one chord covers both.
+# Was cmd+alt+f, moved to cmd+alt+m (M for "Message") because that chord now
+# belongs to Fresh's start_search_replace -- Herdr's resolver checks custom
+# commands before the pane sees a key, so the two could not coexist.
+[[keys.command]]
+key = "cmd+alt+m"
+type = "plugin_action"
+command = "fork-from-message.fork"
+description = "Fork agent from message"

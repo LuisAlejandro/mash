@@ -1,0 +1,1296 @@
+{
+  "theme": "https://github.com/lucasoskorep/fresh-monokai#monokai",
+  "file_explorer": {
+    "width": "30",
+    "follow_active_buffer": true,
+    "show_hidden": true,
+    "show_gitignored": true
+  },
+  "file_browser": {
+    "show_hidden": true
+  },
+  "languages": {
+    "markdown": {
+      "page_width": 120,
+      "formatter": {
+        "command": "prettier",
+        "args": [
+          "--stdin-filepath",
+          "$FILE"
+        ],
+        "stdin": true,
+        "timeout_ms": 10000
+      },
+      "format_on_save": true
+    },
+    "c": {
+      "format_on_save": true
+    },
+    "cpp": {
+      "format_on_save": true
+    },
+    "rust": {
+      "format_on_save": true
+    },
+    "go": {
+      "format_on_save": true
+    },
+    "python": {
+      "format_on_save": true
+    },
+    "javascript": {
+      "format_on_save": true
+    },
+    "typescript": {
+      "format_on_save": true
+    },
+    "json": {
+      "format_on_save": true
+    },
+    "jsonc": {
+      "format_on_save": true
+    },
+    "yaml": {
+      "format_on_save": true
+    },
+    "css": {
+      "formatter": {
+        "command": "prettier",
+        "args": [
+          "--stdin-filepath",
+          "$FILE"
+        ],
+        "stdin": true,
+        "timeout_ms": 10000
+      },
+      "format_on_save": true
+    },
+    "svelte": {
+      "formatter": {
+        "command": "prettier",
+        "args": [
+          "--stdin-filepath",
+          "$FILE"
+        ],
+        "stdin": true,
+        "timeout_ms": 10000
+      },
+      "format_on_save": true
+    },
+    "bash": {
+      "formatter": {
+        "command": "shfmt",
+        "args": [],
+        "stdin": true,
+        "timeout_ms": 10000
+      },
+      "format_on_save": true
+    },
+    "latex": {
+      "formatter": {
+        "command": "latexindent",
+        "args": [
+          "--logfile=/dev/null"
+        ],
+        "stdin": true,
+        "timeout_ms": 10000
+      },
+      "format_on_save": true
+    }
+  },
+  "keybindings": [
+    {
+      "key": "x",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "x",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "cut",
+      "when": "normal"
+    },
+    {
+      "key": "x",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "file_explorer"
+    },
+    {
+      "key": "x",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "cut",
+      "when": "file_explorer"
+    },
+    {
+      "key": "c",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "c",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "copy",
+      "when": "normal"
+    },
+    {
+      "key": "c",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "file_explorer"
+    },
+    {
+      "key": "c",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "copy",
+      "when": "file_explorer"
+    },
+    {
+      "key": "v",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "v",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "paste",
+      "when": "normal"
+    },
+    {
+      "key": "v",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "file_explorer"
+    },
+    {
+      "key": "v",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "paste",
+      "when": "file_explorer"
+    },
+    {
+      "key": "s",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "s",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "save",
+      "when": "normal"
+    },
+    {
+      "key": "/",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "/",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "toggle_comment",
+      "when": "normal"
+    },
+    {
+      "key": "a",
+      "modifiers": [
+        "alt",
+        "shift"
+      ],
+      "action": "toggle_comment",
+      "when": "normal"
+    },
+    {
+      "key": "a",
+      "modifiers": [
+        "alt"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "k",
+      "modifiers": [
+        "ctrl",
+        "alt"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "k",
+      "modifiers": [
+        "cmd",
+        "shift"
+      ],
+      "action": "delete_line",
+      "when": "normal"
+    },
+    {
+      "key": ".",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "f12",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": ",",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "f12",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "lsp_implementation",
+      "when": "normal"
+    },
+    {
+      "key": ".",
+      "modifiers": [
+        "alt"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": ".",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "lsp_code_actions",
+      "when": "normal"
+    },
+    {
+      "key": "o",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "o",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "open",
+      "when": "normal"
+    },
+    {
+      "key": "o",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "file_explorer"
+    },
+    {
+      "key": "o",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "open",
+      "when": "file_explorer"
+    },
+    {
+      "key": "b",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "e",
+      "modifiers": [
+        "cmd",
+        "shift"
+      ],
+      "action": "toggle_file_explorer",
+      "when": "normal"
+    },
+    {
+      "key": "'",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": ";",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "backspace",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "backspace",
+      "modifiers": [
+        "alt"
+      ],
+      "action": "delete_word_backward",
+      "when": "normal"
+    },
+    {
+      "key": "delete",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "delete",
+      "modifiers": [
+        "alt"
+      ],
+      "action": "delete_word_forward",
+      "when": "normal"
+    },
+    {
+      "key": "k",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "delete",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "delete_to_line_end",
+      "when": "normal"
+    },
+    {
+      "key": "c",
+      "modifiers": [
+        "cmd",
+        "shift"
+      ],
+      "action": "freshCloakToggleSetting",
+      "when": "normal"
+    },
+    {
+      "key": "g",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "find_next",
+      "when": "normal"
+    },
+    {
+      "key": "g",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "find_next",
+      "when": "searchPrompt"
+    },
+    {
+      "key": "g",
+      "modifiers": [
+        "cmd",
+        "shift"
+      ],
+      "action": "find_previous",
+      "when": "normal"
+    },
+    {
+      "key": "g",
+      "modifiers": [
+        "cmd",
+        "shift"
+      ],
+      "action": "find_previous",
+      "when": "searchPrompt"
+    },
+    {
+      "key": "z",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "undo",
+      "when": "normal"
+    },
+    {
+      "key": "z",
+      "modifiers": [
+        "cmd",
+        "shift"
+      ],
+      "action": "redo",
+      "when": "normal"
+    },
+    {
+      "key": "Down",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "move_document_end",
+      "when": "normal"
+    },
+    {
+      "key": "Up",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "move_document_start",
+      "when": "normal"
+    },
+    {
+      "key": "d",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "add_cursor_next_match",
+      "when": "normal"
+    },
+    {
+      "key": "p",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "unbind",
+      "when": "global",
+      "comment": "cmd+p -> released so Herdr owns it as the file-only Telescope picker (fresh keeps Ctrl+P -> Quick Open below)"
+    },
+    {
+      "key": "n",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "new",
+      "when": "normal"
+    },
+    {
+      "key": "w",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "close_tab",
+      "when": "normal"
+    },
+    {
+      "key": "[",
+      "modifiers": [
+        "cmd",
+        "shift"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "]",
+      "modifiers": [
+        "cmd",
+        "shift"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "[",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "[",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "prev_buffer",
+      "when": "normal"
+    },
+    {
+      "key": "]",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "]",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "next_buffer",
+      "when": "normal"
+    },
+    {
+      "key": "Up",
+      "modifiers": [
+        "cmd",
+        "alt"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "Down",
+      "modifiers": [
+        "cmd",
+        "alt"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "Up",
+      "modifiers": [
+        "cmd",
+        "shift"
+      ],
+      "action": "select_document_start",
+      "when": "normal"
+    },
+    {
+      "key": "Down",
+      "modifiers": [
+        "cmd",
+        "shift"
+      ],
+      "action": "select_document_end",
+      "when": "normal"
+    },
+    {
+      "key": "i",
+      "modifiers": [
+        "cmd",
+        "ctrl"
+      ],
+      "action": "lsp_hover",
+      "when": "normal"
+    },
+    {
+      "key": "v",
+      "modifiers": [
+        "cmd",
+        "shift"
+      ],
+      "action": "toggle_compose_mode",
+      "when": "normal"
+    },
+    {
+      "key": "Up",
+      "modifiers": [
+        "ctrl",
+        "alt"
+      ],
+      "action": "add_cursor_above",
+      "when": "normal"
+    },
+    {
+      "key": "Down",
+      "modifiers": [
+        "ctrl",
+        "alt"
+      ],
+      "action": "add_cursor_below",
+      "when": "normal"
+    },
+    {
+      "key": "i",
+      "modifiers": [
+        "ctrl",
+        "alt"
+      ],
+      "action": "add_cursors_to_line_ends",
+      "when": "normal"
+    },
+    {
+      "key": "d",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "w",
+      "modifiers": [
+        "alt"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "BackTab",
+      "modifiers": [],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "BackTab",
+      "modifiers": [
+        "shift"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "h",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "'",
+      "modifiers": [
+        "ctrl",
+        "alt"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "r",
+      "modifiers": [
+        "ctrl",
+        "alt"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "End",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "Home",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "End",
+      "modifiers": [],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "Right",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "b",
+      "modifiers": [
+        "alt"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "Left",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "n",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "PageDown",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "PageUp",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "f",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "prompt"
+    },
+    {
+      "key": "e",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "prompt"
+    },
+    {
+      "key": "a",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "prompt"
+    },
+    {
+      "key": "a",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "select_all",
+      "when": "normal"
+    },
+    {
+      "key": "a",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "select_all",
+      "when": "file_explorer"
+    },
+    {
+      "key": "b",
+      "modifiers": [
+        "alt"
+      ],
+      "action": "unbind",
+      "when": "prompt"
+    },
+    {
+      "key": "Left",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "prompt"
+    },
+    {
+      "key": "f",
+      "modifiers": [
+        "alt"
+      ],
+      "action": "unbind",
+      "when": "prompt"
+    },
+    {
+      "key": "Right",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "prompt"
+    },
+    {
+      "key": "Left",
+      "modifiers": [
+        "ctrl",
+        "shift",
+        "cmd"
+      ],
+      "action": "select_word_left",
+      "when": "normal"
+    },
+    {
+      "key": "Right",
+      "modifiers": [
+        "ctrl",
+        "shift",
+        "cmd"
+      ],
+      "action": "select_word_end",
+      "when": "normal"
+    },
+    {
+      "key": "p",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "quick_open",
+      "when": "global",
+      "comment": "Ctrl+P -> Quick Open (files, commands >, buffers #, go to line :). Restored: cmd+p was the only other quick_open binding and it now belongs to Herdr (file-only Telescope picker)."
+    },
+    {
+      "key": "r",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "y",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "f",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "f",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "start_search_replace_in_buffer",
+      "when": "normal"
+    },
+    {
+      "key": "f",
+      "modifiers": [
+        "cmd",
+        "alt"
+      ],
+      "action": "start_search_replace_in_buffer",
+      "when": "normal"
+    },
+    {
+      "key": "f",
+      "modifiers": [
+        "cmd",
+        "shift"
+      ],
+      "action": "start_search_replace",
+      "when": "normal"
+    },
+    {
+      "key": "h",
+      "modifiers": [
+        "cmd",
+        "shift"
+      ],
+      "action": "start_search_replace",
+      "when": "normal"
+    },
+    {
+      "key": "End",
+      "modifiers": [
+        "ctrl",
+        "shift"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "Home",
+      "modifiers": [
+        "ctrl",
+        "shift"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "z",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "n",
+      "modifiers": [
+        "alt"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "F3",
+      "modifiers": [
+        "ctrl"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "p",
+      "modifiers": [
+        "alt"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "F3",
+      "modifiers": [
+        "ctrl",
+        "shift"
+      ],
+      "action": "unbind",
+      "when": "normal"
+    },
+    {
+      "key": "f3",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "find_selection_next",
+      "when": "normal"
+    },
+    {
+      "key": "f3",
+      "modifiers": [
+        "cmd",
+        "shift"
+      ],
+      "action": "find_selection_previous",
+      "when": "normal"
+    },
+    {
+      "key": "s",
+      "modifiers": [
+        "cmd",
+        "shift"
+      ],
+      "action": "save_as",
+      "when": "normal"
+    },
+    {
+      "key": "s",
+      "modifiers": [
+        "cmd",
+        "alt"
+      ],
+      "action": "save_all",
+      "when": "normal"
+    },
+    {
+      "key": "down",
+      "modifiers": [
+        "alt",
+        "shift"
+      ],
+      "action": "duplicate_line",
+      "when": "normal"
+    },
+    {
+      "key": "up",
+      "modifiers": [
+        "alt",
+        "shift"
+      ],
+      "action": "duplicateLineUp",
+      "when": "normal"
+    },
+    {
+      "key": "e",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "focus_file_explorer",
+      "when": "normal"
+    },
+    {
+      "key": "e",
+      "modifiers": [
+        "cmd"
+      ],
+      "action": "focus_editor",
+      "when": "file_explorer"
+    }
+  ],
+  "lsp": {
+    "bash": [
+      {
+        "command": "bash-language-server",
+        "enabled": true,
+        "auto_start": true
+      }
+    ],
+    "c": [
+      {
+        "command": "clangd",
+        "enabled": true,
+        "auto_start": true
+      }
+    ],
+    "cpp": [
+      {
+        "command": "clangd",
+        "enabled": true,
+        "auto_start": true
+      }
+    ],
+    "css": [
+      {
+        "command": "vscode-css-language-server",
+        "enabled": true,
+        "auto_start": true
+      }
+    ],
+    "go": [
+      {
+        "command": "gopls",
+        "enabled": true,
+        "auto_start": true
+      }
+    ],
+    "javascript": [
+      {
+        "command": "typescript-language-server",
+        "enabled": true,
+        "auto_start": true
+      }
+    ],
+    "json": [
+      {
+        "command": "vscode-json-language-server",
+        "enabled": true,
+        "auto_start": true
+      }
+    ],
+    "jsonc": [
+      {
+        "command": "vscode-json-language-server",
+        "enabled": true,
+        "auto_start": true
+      }
+    ],
+    "latex": [
+      {
+        "command": "texlab",
+        "enabled": true,
+        "auto_start": true
+      }
+    ],
+    "markdown": [
+      {
+        "command": "marksman",
+        "enabled": true,
+        "auto_start": true
+      }
+    ],
+    "python": [
+      {
+        "command": "pylsp",
+        "enabled": true,
+        "auto_start": true
+      }
+    ],
+    "rust": [
+      {
+        "command": "rust-analyzer",
+        "enabled": true,
+        "auto_start": true
+      }
+    ],
+    "svelte": [
+      {
+        "command": "svelteserver",
+        "enabled": true,
+        "auto_start": true
+      }
+    ],
+    "tailwindcss": [
+      {
+        "command": "tailwindcss-language-server",
+        "enabled": true,
+        "auto_start": true
+      }
+    ],
+    "typescript": [
+      {
+        "command": "typescript-language-server",
+        "enabled": true,
+        "auto_start": true
+      }
+    ],
+    "yaml": [
+      {
+        "command": "yaml-language-server",
+        "enabled": true,
+        "auto_start": true
+      }
+    ],
+    "html": [
+      {
+        "command": "vscode-html-language-server",
+        "enabled": true,
+        "auto_start": true
+      }
+    ],
+    "swift": [
+      {
+        "command": "sourcekit-lsp",
+        "enabled": true,
+        "auto_start": true
+      }
+    ]
+  },
+  "plugins": {
+    "orchestrator": {
+      "enabled": false
+    },
+    "code-tour": {
+      "enabled": false
+    },
+    "welcome": {
+      "enabled": false
+    },
+    "welcome_screen": {
+      "enabled": false
+    },
+    "flash": {
+      "enabled": false
+    },
+    "k8s-workspace": {
+      "enabled": false
+    },
+    "devcontainer": {
+      "enabled": false
+    },
+    "vi_mode": {
+      "enabled": false
+    },
+    "live_grep": {
+      "enabled": false
+    },
+    "dashboard": {
+      "enabled": false
+    },
+    "csharp_support": {
+      "enabled": false
+    },
+    "asm-lsp": {
+      "enabled": false
+    },
+    "slang-lsp": {
+      "enabled": false
+    },
+    "deno_lsp": {
+      "enabled": false
+    },
+    "audit_mode": {
+      "enabled": false
+    },
+    "git_log": {
+      "enabled": false
+    },
+    "git_blame": {
+      "enabled": false
+    },
+    "git_find_file": {
+      "enabled": false
+    },
+    "markdown_toc": {
+      "enabled": false
+    },
+    "theme_editor": {
+      "enabled": false
+    }
+  },
+  "editor": {
+    "status_bar": {
+      "left": [
+        "{trust}",
+        "{remote}",
+        "{terminal_restart}",
+        "{cursor}",
+        "{diagnostics}",
+        "{cursor_count}",
+        "{messages}"
+      ],
+      "right": [
+        "{git_statusbar:branch}",
+        "{read_only}",
+        "{line_ending}",
+        "{encoding}",
+        "{language}",
+        "{lsp}",
+        "{warnings}",
+        "{update}",
+        "{palette}"
+      ]
+    },
+    "show_horizontal_scrollbar": false
+  }
+}

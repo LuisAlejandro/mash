@@ -1,0 +1,35 @@
+# herdr-fingers — extract file paths, URLs, IPs, UUIDs, hashes, and other
+# identifiers from the focused pane and pick one with vimium-style letter keys.
+# Inspired by tmux-fingers (https://github.com/Morantron/tmux-fingers).
+#
+# Flow:
+#   alt+f  →  action "finger" runs  →  opens overlay pane "finger-picker"  →  Python script extracts, displays, reads key, copies to clipboard  →  pane closes.
+
+id = "herdr-fingers"
+name = "Fingers"
+version = "0.1.0"
+min_herdr_version = "0.7.0"
+description = "Extract file paths, URLs, IPs, UUIDs, hashes, and other identifiers from the focused pane and pick one with vimium-style letter keys."
+platforms = ["linux", "macos"]
+
+# finger — the action herdr runs from the alt+f keybinding. It opens
+# the overlay pane that runs the extraction script.
+[[actions]]
+id = "finger"
+title = "Fingers"
+command = ["./bin/herdr-fingers"]
+
+# finger-picker — the picker pane that runs the extraction script.
+# LOCAL CHANGE (originally placement = "overlay"): switched to "popup" so the
+# picker appears as a centred modal with explicit sizing instead of zooming to
+# fill the whole active pane. Safe because bin/herdr-fingers reads the source
+# pane's visible content into /tmp/herdr-fingers-content BEFORE opening this
+# pane, so nothing here depends on the overlay's focus behaviour. The manifest
+# is content-hashed on install, so re-run this edit after any plugin update.
+[[panes]]
+id = "finger-picker"
+title = "Fingers"
+placement = "popup"
+width = "70%"
+height = "70%"
+command = ["/usr/bin/env", "python3", "./herdr_fingers.py"]

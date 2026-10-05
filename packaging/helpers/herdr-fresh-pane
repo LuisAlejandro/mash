@@ -1,0 +1,49 @@
+#!/bin/sh
+# Run Fresh in this pane with right-click routed to Fresh rather than Herdr.
+#
+# Why this exists: Herdr's per-pane routing is set with
+# `herdr pane input --right-click pane`, but there is no hook for "this pane
+# started running Fresh" -- Fresh is not a recognized agent, so pane.agent_detected
+# never fires for it. Where we create the pane ourselves (bin/herdr-new-dev-tab,
+# bin/telescope-files) we already know the pane id and just call `pane input`
+# directly. sesh creates its own panes from a GitHub-managed plugin we cannot
+# edit, so its `[[tab.pane]]` startup points here instead and this finds its own
+# pane.
+#
+# `pane current` resolves the caller's pane from HERDR_PANE_ID, which is how
+# bin/telescope-files already resolves its invoking pane. Best-effort: if it
+# cannot be resolved we still launch Fresh, just with Herdr's right-click menu.
+#
+# `exec` matters. It replaces this process with Fresh, so the pane's foreground
+# process is `fresh` -- which is what the Fresh-pane detection in
+# bin/herdr-new-dev-tab and bin/telescope-files keys on. Without exec the
+# foreground would be this script and those checks would miss the pane.
+set -eu
+
+herdr="${HERDR_BIN_PATH:-herdr}"
+
+if pane="$("$herdr" pane current 2>/dev/null |
+	sed -n 's/.*"pane_id":"\([^"]*\)".*/\1/p' | head -n 1)" && [ -n "$pane" ]; then
+	"$herdr" pane input --pane "$pane" --right-click pane >/dev/null 2>&1 || true
+
+	# Report the command that reopens this pane, so a Herdr server restart brings
+	# Fresh back instead of leaving a shell. Herdr only resumes panes it knows how
+	# to reopen, and Fresh is not an agent, so without this the pane is restored
+	# from session.json, which records only cwd and label for non-agent panes.
+	#
+	# Needs Herdr 0.9.2+ -- the `-- <command>` form and the server-side resume
+	# support arrive there. On an older server the report is refused; it is
+	# swallowed here because the pane still runs Fresh either way, it just comes
+	# back as a shell after a restart.
+	#
+	# The command must start with a plain PATH command name (not a path), which is
+	# why this script is symlinked into ~/.local/bin. `.` is the pane's directory:
+	# Herdr reopens the pane in the same directory and runs the command there, and
+	# Fresh restores its own buffers and cursor from its state for that directory.
+	# The report is repeated by every launch, including a resumed one, so the
+	# pane keeps its resume command as long as it keeps being Fresh.
+	"$herdr" pane report-agent "$pane" --source fresh-pane --agent fresh \
+		--state idle --seq "$(date +%s)" -- herdr-fresh-pane . >/dev/null 2>&1 || true
+fi
+
+exec fresh "$@"

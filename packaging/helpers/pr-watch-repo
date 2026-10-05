@@ -1,0 +1,284 @@
+#!/usr/bin/env python3
+#
+# pr-watch-repo — count each Herdr workspace's open PRs by bucket, report to
+# the sidebar as $pr_blocked / $pr_waiting / $pr_ready.
+#
+# Repo-wide, not branch-wide: unlike upstream pr-watch (which asks "does the
+# checked-out branch have a PR" via `gh pr view` and gets 0 or 1), this asks
+# "how many open PRs does this repo have, bucketed by severity" via
+# `gh pr list`, and reports three simultaneous counts instead of one
+# mutually-exclusive word. A repo with 2 blocked, 1 waiting, 4 ready shows
+# all three on the row at once.
+#
+# Per-PR severity reuses pr-watch's own cascade: conflict > failing checks >
+# changes requested > unresolved threads > draft > pending checks > not
+# approved > ready, checked in that order per PR.
+#
+# A zero'd bucket clears its token entirely rather than reporting 0, so the
+# sidebar row shrinks instead of showing a padded "0". Change notification is
+# coarse: fires only when a bucket's count changes, not per-PR.
+#
+# Run as a child of Mash. Safe to run by hand any time.
+#
+# Usage:
+#   pr-watch-repo                  poll every workspace, notify on change
+#   pr-watch-repo --quiet          poll without notifications (first run, catching up)
+#   pr-watch-repo --workspace ID   poll one workspace, for the focus hook
+
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+SOURCE = "pr-watch-repo"
+TOKEN = "pr"
+_state_root = os.environ.get("XDG_STATE_HOME", "")
+if "/.mash/" not in _state_root:
+    raise SystemExit("pr-watch-repo: Mash state directory is not set")
+STATE = Path(_state_root) / "pr-watch-repo" / "state.json"
+
+# Nerd Font PR icon (nf-oct-git_pull_request), prepended to each bucket's
+# count individually: "2 blocked" and "1 waiting" each get their own icon
+# rather than one shared icon for the group. Requires a Nerd Font in the
+# sidebar's font stack (confirmed present: Ghostty's font-family is
+# "MesloLGS NF"). Herdr's sidebar token styling has no prefix/suffix field
+# (only fg/bold/dim/rules restyle an EXISTING value), so the icon has to be
+# baked into the reported string here, not added in config.toml.
+PR_ICON = "\ue725"
+
+if "--help" in sys.argv or "-h" in sys.argv:
+    print("\n".join(l[2:] if l.startswith("# ") else l[1:]
+                    for l in Path(__file__).read_text().splitlines()[2:]
+                    if l.startswith("#")))
+    raise SystemExit(0)
+
+QUIET = "--quiet" in sys.argv
+ONLY = None
+if "--workspace" in sys.argv:
+    i = sys.argv.index("--workspace")
+    ONLY = sys.argv[i + 1] if i + 1 < len(sys.argv) else None
+
+# gh reads GITHUB_TOKEN over the keyring login if set, and a stale/invalid
+# value there makes every call fail as though logged out — indistinguishable
+# from "no PRs" without this. Scrub it for every gh invocation in this script.
+GH_ENV = {k: v for k, v in os.environ.items() if k != "GITHUB_TOKEN"}
+
+
+def herdr(*args):
+    out = subprocess.run(["herdr", *args], capture_output=True, text=True)
+    if out.returncode != 0:
+        return None
+    try:
+        return json.loads(out.stdout)["result"]
+    except (json.JSONDecodeError, KeyError):
+        return None
+
+
+def repo_root(path):
+    r = subprocess.run(["git", "-C", path, "rev-parse", "--show-toplevel"],
+                       capture_output=True, text=True)
+    return r.stdout.strip() if r.returncode == 0 else None
+
+
+LIST_FAILED = "list-failed"
+
+
+def prs_for(root):
+    """Every open PR in this repo, or LIST_FAILED.
+
+    Unlike pr-watch's pr_for (branch-scoped, 0-or-1 result with a NO_PR/
+    LOOKUP_FAILED split), an empty list here is a legitimate self-describing
+    result — `gh pr list` returns [] both when there truly are no open PRs and
+    is silent on auth/network failure via a clean empty array, so those two
+    cases need a different split: a non-zero exit is the failure signal, not
+    the empty-list content.
+    """
+    r = subprocess.run(
+        ["gh", "pr", "list", "--state", "open", "--json",
+         "number,isDraft,reviewDecision,mergeable,statusCheckRollup,url"],
+        cwd=root, capture_output=True, text=True, env=GH_ENV)
+    if r.returncode != 0:
+        return LIST_FAILED
+    try:
+        return json.loads(r.stdout)
+    except json.JSONDecodeError:
+        return LIST_FAILED
+
+
+PASS = {"SUCCESS", "NEUTRAL", "SKIPPED", "EXPECTED"}
+FAIL = {"FAILURE", "TIMED_OUT", "CANCELLED", "ACTION_REQUIRED", "STARTUP_FAILURE", "ERROR"}
+
+
+def check_verdict(c):
+    """statusCheckRollup mixes two shapes and they do not share a field.
+
+    CheckRun carries `status` + `conclusion`; StatusContext carries `state`
+    and no conclusion at all. Reading only `conclusion` marks every
+    StatusContext pending, which showed green PRs as still running.
+    """
+    if c.get("__typename") == "StatusContext":
+        state = c.get("state")
+    else:
+        if c.get("status") and c.get("status") != "COMPLETED":
+            return "pending"
+        state = c.get("conclusion")
+    if state in PASS:
+        return "pass"
+    if state in FAIL:
+        return "fail"
+    return "pending"
+
+
+THREADS_QUERY = """
+query($owner:String!,$repo:String!,$number:Int!){
+  repository(owner:$owner,name:$repo){
+    pullRequest(number:$number){
+      reviewThreads(first:100){ nodes { isResolved } }
+    }
+  }
+}
+"""
+
+
+def unresolved_threads(pr, cwd):
+    """Count review threads nobody has resolved.
+
+    GitHub blocks merge on these independently of reviewDecision, so a PR can
+    read approved and still not be mergeable. `gh pr list` does not expose
+    them; owner and repo come off the PR url so this costs no extra lookup.
+    """
+    url = pr.get("url") or ""
+    parts = url.split("/")
+    if len(parts) < 5:
+        return None
+    owner, repo = parts[-4], parts[-3]
+    r = subprocess.run(
+        ["gh", "api", "graphql", "-f", f"query={THREADS_QUERY}",
+         "-F", f"owner={owner}", "-F", f"repo={repo}", "-F", f"number={pr['number']}"],
+        cwd=cwd, capture_output=True, text=True, env=GH_ENV)
+    if r.returncode != 0:
+        return None
+    try:
+        nodes = json.loads(r.stdout)["data"]["repository"]["pullRequest"]["reviewThreads"]["nodes"]
+    except (json.JSONDecodeError, KeyError, TypeError):
+        return None
+    return sum(1 for t in nodes if not t.get("isResolved"))
+
+
+BLOCKED, WAITING, READY = "blocked", "waiting", "ready"
+
+
+def severity(pr, threads=0):
+    """Return one of BLOCKED / WAITING / READY for a single PR.
+
+    Same cascade as upstream pr-watch's summarise(), stripped of the
+    "top blocker word" — every consumer here only wants the bucket, not a
+    human-readable reason string, since the count itself is the display.
+    """
+    checks = pr.get("statusCheckRollup") or []
+    verdicts = [check_verdict(c) for c in checks]
+    failed = verdicts.count("fail")
+    pending = verdicts.count("pending")
+    decision = (pr.get("reviewDecision") or "").lower()
+
+    if pr.get("mergeable") == "CONFLICTING":
+        return BLOCKED
+    if failed:
+        return BLOCKED
+    if decision == "changes_requested":
+        return BLOCKED
+    if threads:
+        return WAITING
+    if pr.get("isDraft"):
+        return WAITING
+    if pending:
+        return WAITING
+    if decision != "approved":
+        return WAITING
+    return READY
+
+
+def bucket_counts(prs, root):
+    """{blocked, waiting, ready} counts across every open PR in prs."""
+    counts = {BLOCKED: 0, WAITING: 0, READY: 0}
+    for pr in prs:
+        threads = unresolved_threads(pr, root)
+        if threads is None:
+            threads = 0  # unknown; do not let one PR's thread-lookup failure block the rest
+        counts[severity(pr, threads)] += 1
+    return counts
+
+
+def changed(old, new):
+    """Coarse: only a bucket-count delta is notification-worthy."""
+    if old is None:
+        return None
+    deltas = []
+    for name in (BLOCKED, WAITING, READY):
+        before, after = old.get(name, 0), new.get(name, 0)
+        if before != after:
+            deltas.append(f"{name} {before}→{after}")
+    return "; ".join(deltas) if deltas else None
+
+
+def main():
+    panes = herdr("pane", "list")
+    if not panes:
+        return 1
+    dirs = {}
+    for p in panes["panes"]:
+        dirs.setdefault(p["workspace_id"], p.get("foreground_cwd") or p.get("cwd"))
+
+    labels = {w["workspace_id"]: w.get("label") or w["workspace_id"]
+              for w in (herdr("workspace", "list") or {}).get("workspaces", [])}
+
+    try:
+        previous = json.loads(STATE.read_text())
+    except (OSError, json.JSONDecodeError):
+        previous = {}
+
+    current = {}
+    for ws, path in dirs.items():
+        if ONLY and ws != ONLY:
+            if ws in previous:
+                current[ws] = previous[ws]
+            continue
+        if not path or not os.path.isdir(path):
+            continue
+        root = repo_root(path)
+        if not root:
+            continue
+        prs = prs_for(root)
+        if prs == LIST_FAILED:
+            # Carry the previous reading forward untouched: a failed poll is
+            # not evidence that anything changed.
+            if ws in previous:
+                current[ws] = previous[ws]
+            continue
+
+        counts = bucket_counts(prs, root)
+        current[ws] = counts
+
+        args = ["workspace", "report-metadata", ws, "--source", SOURCE]
+        for name in (BLOCKED, WAITING, READY):
+            n = counts[name]
+            if n > 0:
+                args += ["--token", f"{TOKEN}_{name}={PR_ICON}{n}"]
+            else:
+                args += ["--clear-token", f"{TOKEN}_{name}"]
+        herdr(*args)
+
+        note = changed(previous.get(ws), counts)
+        if note and not QUIET:
+            herdr("notification", "show", f"PR buckets changed",
+                  "--body", f"{labels.get(ws, ws)} — {note}")
+
+    STATE.parent.mkdir(parents=True, exist_ok=True)
+    STATE.write_text(json.dumps(current, indent=1))
+    print(f"{len(current)} workspace(s) polled" + (f" (refreshed {ONLY})" if ONLY else ""))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

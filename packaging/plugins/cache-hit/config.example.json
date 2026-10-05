@@ -1,0 +1,47 @@
+{
+  "hot_symbol": "+",
+  "expiring_symbol": "!",
+  "cold_symbol": "-",
+  "expiring_threshold_seconds": 300,
+  "bold_time": false,
+  "bold_threshold_seconds": 300,
+  "timezone": "",
+  "display_agent": "auto",
+  "mobile_width_threshold": 64,
+  "claude": {
+    "enabled": true,
+    "show_deadline": true,
+    "show_read_tokens": true,
+    "show_write_tokens": false,
+    "show_percentage": false,
+    "show_model": false,
+    "ttl_ceiling": 3600
+  },
+  "codex": {
+    "enabled": true,
+    "show_deadline": true,
+    "show_read_tokens": true,
+    "show_write_tokens": false,
+    "show_percentage": true,
+    "show_model": false,
+    "ttl_ceiling": 3600
+  },
+  "opencode": {
+    "enabled": true,
+    "show_deadline": true,
+    "show_read_tokens": true,
+    "show_write_tokens": false,
+    "show_percentage": true,
+    "show_model": false,
+    "ttl_ceiling": 3600
+  },
+  "pi": {
+    "enabled": true,
+    "show_deadline": true,
+    "show_read_tokens": true,
+    "show_write_tokens": false,
+    "show_percentage": true,
+    "show_model": false,
+    "ttl_ceiling": 3600
+  }
+}

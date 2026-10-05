@@ -1,0 +1,74 @@
+version = 1
+
+[picker]
+# The path column is needed, so this stays on. Cost: with show_path = true the
+# preview is capped at maxPreviewWidth (52 cols) instead of starting at a true
+# half of the terminal. The cap only bites on terminals wider than ~104 columns.
+show_path = true
+
+# Narrow the preview without shrinking the preview pane: -la prints the
+# permissions and user columns, and --no-permissions/--no-user drop them. What
+# is left is size, date, and name. --no-permissions also removes the "@"
+# extended-attribute marker and the alignment width it forced.
+# {} is replaced with the selected workspace's path, shell-quoted.
+[workspace_defaults]
+preview = "eza --icons=always --color=always -la --no-permissions --no-user {}"
+
+# A named tab. `name` IS the Herdr tab label -- this is the string shown on the
+# tab itself, not just an internal reference.
+#
+# The two panes reproduce `cmd+t` (bin/herdr-new-dev-tab): fresh left, pi right.
+#
+# Consequence worth expecting: pane 1 carries a startup command, and sesh only
+# reuses Herdr's initial tab when the first root is a plain shell. So a new
+# workspace ends up with TWO tabs -- Herdr's initial shell tab, plus this one.
+# sesh never closes the leftover tab.
+[[tab]]
+name = "Open workspace"
+
+# Pane 1 reuses the tab's root pane. `focus = true` makes this pane AND this tab
+# active once the layout is built; without it the leftover initial tab stays
+# focused. The marker is valid because this pane inherits the tab's path, so its
+# resolved directory matches the workspace directory.
+#
+# Runs bin/herdr-fresh-pane rather than `fresh` directly for two reasons:
+#   - it routes right-clicks in this pane to Fresh instead of Herdr's menu
+#     (`herdr pane input --right-click pane`), which sesh cannot do for us --
+#     the pane is created by a GitHub-managed plugin, so there is no launcher
+#     script of ours to add the call to. The wrapper finds its own pane via
+#     `herdr pane current`.
+#   - the trailing `.` is load-bearing, exactly as in bin/herdr-new-dev-tab:
+#     Fresh only treats a launch as a directory open (and so shows the file
+#     explorer in a directory with no persisted workspace) when the directory
+#     arrives as a CLI argument.
+[[tab.pane]]
+name = "fresh"
+startup = "herdr-fresh-pane ."
+focus = true
+
+# Pane 2 splits pane 1 to the right and runs pi.
+#
+# ratio is the NEW pane's share, and sesh passes 1-ratio to Herdr (whose ratio
+# is the SPLIT pane's share). cmd+t splits with --ratio 0.6, meaning fresh gets
+# 60% -- so the value here is 0.4, not 0.6. Writing 0.6 would invert it.
+[[tab.pane]]
+name = "pi"
+split_from = "fresh"
+split = "right"
+ratio = 0.4
+startup = "pi"
+
+# Apply that tab to workspaces sesh creates from a discovered or direct path.
+# `/**` matches every absolute path: the matcher strips the trailing `/**` and
+# treats what is left as a prefix, so the empty prefix matches anything starting
+# with "/". That covers paths outside the home directory too, e.g.
+# /Volumes/Documents/... -- which `~/**` silently did not.
+#
+# Rules apply ONLY to discovered/direct-path workspaces. A [[workspace]] entry
+# is unaffected -- attach the tab there explicitly with `tabs = ["Open workspace"]`.
+#
+# Layouts run when a workspace is *created*; selecting an existing workspace just
+# focuses it, so this does not touch tabs you already have open.
+[[rule]]
+path_glob = "/**"
+tabs = ["Open workspace"]

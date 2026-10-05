@@ -1,0 +1,300 @@
+#!/usr/bin/env bash
+# File-only telescope: an fzf picker over the files in ONE directory tree,
+# scoped to the Herdr workspace you invoked it from.
+#
+# Why this exists: herdr-telescope's `palette` entrypoint always opens in action
+# mode -- file mode is only reachable by typing `@` inside the popup, and there
+# is no argv flag for it (src/main.rs matches only open|palette|at-switch|
+# at-back|list-files|rg-files|preview). Rather than fork the Rust plugin, this
+# calls the file-listing half it already ships (`list-files`) and drives fzf
+# itself, so the chord lands straight in a filename list.
+#
+# It does NOT reuse telescope's plugin:palette pane, on purpose. A plugin pane
+# does not inherit the invoking pane's environment (verified: an action reading
+# $HERDR_ACTIVE_PANE_CWD sees the value only for `shell`/`popup`-type custom
+# commands), so the origin cwd could not reach it.
+#
+# cwd resolution, in order:
+#   1. $HERDR_ACTIVE_PANE_CWD  -- set by herdr for `popup` custom commands
+#   2. `herdr pane current`'s cwd -- works when invoked by hand
+#   3. $PWD -- last resort
+#
+# Uses `list-files` only for its fd/git/find engine and its 10k cap
+# (src/files.rs). Its TSV row shape is not consumed: rows are re-derived here so
+# the display stays relative to cwd and fzf matches on the path.
+#
+# ponytail: the file -> open step reimplements telescope's
+# files::confirm_and_open (pane|window choice, then `herdr pane run`). Upgrade
+# path if that ever drifts: add a `files` argv mode to the Rust plugin and exec
+# it instead.
+#
+# Open policy (Fresh only; other editors keep the split behaviour):
+#   Enter  -> the Fresh pane in THIS tab, if there is one. Otherwise a new tab
+#             laid out like cmd+t (Fresh left, pi right) with the file in Fresh.
+#   ctrl-o -> always the new-tab path, even when a Fresh pane exists.
+# See the `--- open ---` section for how a running Fresh is reached.
+set -euo pipefail
+
+herdr="${HERDR_BIN_PATH:-herdr}"
+editor="${EDITOR:-${VISUAL:-}}"
+# Prefer fresh (this machine's editor), then vim -- both resolve under a minimal
+# PATH.
+[ -n "$editor" ] || { command -v fresh >/dev/null 2>&1 && editor=fresh || editor=vim; }
+
+# telescope's binary. The install directory is content-hashed, so glob for it
+# rather than hardcoding a hash that moves on every plugin update.
+# Prefer the locally-linked checkout, then any GitHub install, then PATH. The
+# local copy is where the actions-only build lives; the glob is kept so this
+# still works if telescope is reinstalled from GitHub.
+telescope_bin="${TELESCOPE_BIN:-}"
+[ -n "$telescope_bin" ] || telescope_bin="$(command -v herdr-telescope 2>/dev/null || true)"
+if [ -z "$telescope_bin" ] || [ ! -x "$telescope_bin" ]; then
+	printf 'telescope-files: herdr-telescope binary not found; set TELESCOPE_BIN.\n' >&2
+	"$herdr" notification show "File finder" --body "herdr-telescope binary not found" --sound none >/dev/null 2>&1 || true
+	exit 1
+fi
+
+# --- origin cwd -----------------------------------------------------------------
+cwd="${HERDR_ACTIVE_PANE_CWD:-}"
+if [ -z "$cwd" ] || [ ! -d "$cwd" ]; then
+	cwd="$("$herdr" pane current 2>/dev/null |
+		sed -n 's/.*"foreground_cwd":"\([^"]*\)".*/\1/p' | head -n 1)"
+fi
+[ -n "$cwd" ] && [ -d "$cwd" ] || cwd="$PWD"
+
+if [ ! -d "$cwd" ]; then
+	printf 'telescope-files: no usable directory: %s\n' "$cwd" >&2
+	exit 1
+fi
+
+# --- file list (fd, then git, then a capped find -- telescope's own engines) ----
+# `fd` MUST be reachable here. It used to live only at ~/.pi/agent/bin/fd, a
+# directory Pi injects into its own process PATH and nothing else has, so panes
+# could not see it. Without fd, telescope's fallbacks both fail under a pane:
+#   - `git ls-files` needs a repo, and a pane cwd of ~ is not one (exit 128);
+#   - `find` exits non-zero on macOS-protected dirs ("Operation not permitted"
+#     under ~/Library) and collect_files discards its output unless
+#     status.success(), throwing away every valid path it printed.
+# Result: an empty list -> an empty popup, which is exactly what cmd+p did.
+# fd is now installed via Homebrew; this lookup is the belt-and-braces guard.
+if ! command -v fd >/dev/null 2>&1; then
+	printf 'telescope-files: fd not found; file search needs it.\n' >&2
+	"$herdr" notification show "File finder" --body "fd not found" --sound none >/dev/null 2>&1 || true
+fi
+
+rows="$(TELESCOPE_CWD="$cwd" "$telescope_bin" list-files 2>/dev/null || true)"
+
+# Re-shape telescope's TSV into "rel<TAB>abs", so the field fzf DISPLAYS is the
+# cwd-relative path and the absolute path (needed by the bat preview and by
+# `pane run`) stays in field 2. Field 2 of telescope's rows is the absolute
+# path, field 3 the cwd-relative one. Both are kept full-width, never padded or
+# right-aligned, because fzf still matches on this text.
+list="$(printf '%s\n' "$rows" | awk -F'\t' -v cwd="$cwd" '
+	NF < 3 { next }
+	{
+		abs = $2
+		rel = $3
+		if (rel == "") { rel = abs }
+		printf "%s\t%s\n", rel, abs
+	}')"
+
+if [ -z "$list" ]; then
+	# Say WHY, in the popup and in a toast. A silent empty picker is
+	# indistinguishable from a broken keybinding -- the original bug report.
+	why="no files under $cwd"
+	[ -d "$cwd" ] || why="not a directory: $cwd"
+	printf 'telescope-files: %s\n' "$why" >&2
+	"$herdr" notification show "File finder" --body "$why" --sound none >/dev/null 2>&1 || true
+	exit 0
+fi
+
+count="$(printf '%s\n' "$list" | wc -l | tr -d ' ')"
+
+# --- pick ----------------------------------------------------------------------
+# --with-nth=1 DISPLAYS field 1 (the cwd-relative path) while --nth=1 makes fzf
+# match only that text, so a query never matches the absolute prefix. Both
+# fields stay in the line: the dispatcher and the preview read field 2.
+selection="$(printf '%s\n' "$list" | fzf \
+	--delimiter='\t' \
+	--with-nth=1 \
+	--nth=1 \
+	--prompt="files ▸  ($count) " \
+	--header='enter open in fresh · ctrl-o force new tab · esc cancel' \
+	--preview="bat --style=numbers --color=always --line-range=:200 {2}" \
+	--preview-window='right,60%,border-left,wrap' \
+	--expect=ctrl-o \
+	--reverse \
+	--no-multi \
+	--tiebreak=begin,index \
+	--info=inline || true)"
+
+[ -n "$selection" ] || exit 0
+
+# --expect prints the key on line 1 and the selection on line 2.
+key="$(printf '%s\n' "$selection" | sed -n '1p')"
+line="$(printf '%s\n' "$selection" | sed -n '2p')"
+[ -n "$line" ] || exit 0
+
+abs="$(printf '%s' "$line" | awk -F'\t' '{print $2}')"
+[ -n "$abs" ] || exit 0
+
+# --- open ----------------------------------------------------------------------
+# Reaching an ALREADY RUNNING Fresh takes its daemon socket, not typed input:
+# `fresh --cmd daemon open-file <session> <file>` adds a buffer to that instance
+# and prints "Opened N file(s) in the daemon." Sending the path with `pane run`
+# instead would just type it into the TUI.
+#
+# The session name is `local-<pid>-<hash>`, where <pid> is the Fresh process
+# Herdr reports for that pane, so pane -> instance is resolved exactly. `fresh`
+# alone is ambiguous: several panes run it, and the hash is part of the name.
+#
+# Fresh-only. The daemon and the Fresh+pi layout have no meaning for another
+# editor, so anything else keeps the previous behaviour.
+#
+pane_id() { sed -n 's/.*"pane_id":"\([^"]*\)".*/\1/p' | head -n 1; }
+
+editor_name="${editor##*/}"
+origin="${HERDR_ACTIVE_PANE_ID:-}"
+[ -n "$origin" ] || origin="$("$herdr" pane current 2>/dev/null | pane_id)"
+
+# Only the split/new-tab fallbacks below need this; the Fresh paths quote $abs.
+target="$(printf '%s' "$abs" | sed "s/'/'\\\\''/g")"
+
+# First JSON string value for a key, or empty. `|| true` because pipefail would
+# otherwise abort the script through `set -e` when the key is absent.
+jstr() { grep -o "\"$1\":\"[^\"]*\"" | head -n 1 | sed 's/.*:"//; s/"$//' || true; }
+
+# Echo $1's Fresh pid, or return 1 when that pane's foreground is not Fresh.
+pane_fresh_pid() {
+	info="$("$herdr" pane process-info --pane "$1" 2>/dev/null || true)"
+	[ "$(printf '%s' "$info" | jstr name)" = "fresh" ] || return 1
+	pid="$(printf '%s' "$info" | grep -o '"pid":[0-9]*' | head -n 1 | sed 's/.*://' || true)"
+	[ -n "$pid" ] || return 1
+	printf '%s' "$pid"
+}
+
+# Wait for a freshly launched Fresh to come up, then echo its pid. The new-tab
+# path needs this because it must not pass the file on the command line.
+wait_for_fresh_pid() {
+	i=0
+	while [ "$i" -lt 60 ]; do
+		if pid="$(pane_fresh_pid "$1")" && [ -n "$pid" ]; then
+			printf '%s' "$pid"
+			return 0
+		fi
+		i=$((i + 1))
+		sleep 0.25
+	done
+	return 1
+}
+
+# Echo "<pane_id> <pid>" for the first Fresh pane in the invoking tab. The
+# invoking pane is checked first, so cmd+p pressed inside Fresh reuses that same
+# instance. Pane ids come from the tab's layout, which is scoped to the tab.
+fresh_pane_in_tab() {
+	[ -n "$origin" ] || return 1
+	ids="$("$herdr" pane layout --pane "$origin" 2>/dev/null |
+		grep -o '"pane_id":"[^"]*"' | sed 's/.*:"//; s/"$//' || true)"
+	[ -n "$ids" ] || return 1
+	ordered=""
+	for id in $ids; do
+		[ "$id" = "$origin" ] && ordered="$origin $ordered" || ordered="$ordered $id"
+	done
+	for id in $ordered; do
+		if pid="$(pane_fresh_pid "$id")" && [ -n "$pid" ]; then
+			printf '%s %s\n' "$id" "$pid"
+			return 0
+		fi
+	done
+	return 1
+}
+
+# Open $1 in the Fresh instance whose daemon pid is $2.
+open_in_running_fresh() {
+	session="$("$editor" --cmd daemon info 2>/dev/null |
+		grep -o "local-$2-[A-Za-z0-9]*" | head -n 1 || true)"
+	[ -n "$session" ] || return 1
+	"$editor" --cmd daemon open-file "$session" "$1" >/dev/null 2>&1
+}
+
+# Route right-clicks in $1 to $1 itself rather than Herdr's menu. Pane-scoped
+# and runtime-only: absent from session.json, so it does not survive a server
+# restart. Applied at each point that leaves a Fresh pane behind, including the
+# reuse path, since this is exactly the pane the user is about to right-click.
+pane_rightclick_to_fresh() {
+	[ -n "$1" ] || return 0
+	"$herdr" pane input --pane "$1" --right-click pane >/dev/null 2>&1 || true
+}
+
+# New tab shaped like cmd+t (bin/herdr-new-dev-tab): Fresh left at 60%, pi right.
+# --ratio 0.6 is Herdr's own split ratio, i.e. the EXISTING pane's share.
+#
+# Fresh is launched as `fresh .`, NOT bare and NOT with the file, and the file
+# goes in over the daemon afterwards. Both halves are load-bearing:
+#
+#   - A FILE argument sets Fresh's `opened_files`, and
+#     apply_fresh_session_explorer_default bails out when it or
+#     `workspace_restored` is set --
+#       fn apply_fresh_session_explorer_default(&mut self, opened_files: bool, workspace_restored: bool) {
+#           if opened_files || workspace_restored { return; }
+#           self.file_explorer_visible = true;
+#     -- so `fresh <file>` opens with the explorer closed.
+#   - BARE `fresh` is no better: the directory must arrive as a CLI argument for
+#     Fresh to consider the launch a directory open (main.rs sets
+#     show_file_explorer only when file_locations is exactly one path that
+#     is_dir), so a brand-new directory opens with no explorer. `fresh .` is what
+#     bin/herdr-new-dev-tab uses for the same reason.
+#
+# The tab is created with the dev-tab plugin's sentinel label so its tab.created
+# hook skips it deterministically. Without it this races that hook: both would
+# want to lay out the same tab, and only dev-tab's late pane_count re-read keeps
+# it from adding a third pane. The label is renamed away at the end so Herdr
+# resumes auto-naming from the Fresh pane.
+open_in_new_dev_tab() {
+	created="$("$herdr" tab create --label "herdr-tab-launcher-telescope" \
+		${HERDR_ACTIVE_WORKSPACE_ID:+--workspace "$HERDR_ACTIVE_WORKSPACE_ID"} \
+		--cwd "$cwd" --focus)"
+	left="$(printf '%s' "$created" | pane_id)"
+	tab="$(printf '%s' "$created" | sed -n 's/.*"tab_id":"\([^"]*\)".*/\1/p' | head -n 1)"
+	[ -n "$left" ] || return 1
+	right="$("$herdr" pane split "$left" --direction right --ratio 0.6 \
+		--cwd "$cwd" --no-focus | pane_id)"
+	[ -n "$right" ] || return 1
+	"$herdr" pane run "$left" 'herdr-fresh-pane .'
+	"$herdr" pane run "$right" pi
+	[ -n "$tab" ] && "$herdr" tab rename "$tab" "" || true
+	# The wrapper sets routing itself; this only covers the case where it is not
+	# on PATH, so the pane is still routed either way. A reused Fresh pane (the
+	# other branch) never goes through the wrapper at all.
+	pane_rightclick_to_fresh "$left"
+	# Blocking on purpose: the popup's process must outlive this, or the
+	# background job dies with the pane before it can open anything. Costs a
+	# fraction of a second of extra popup time.
+	if pid="$(wait_for_fresh_pid "$left")"; then
+		open_in_running_fresh "$abs" "$pid" || true
+	fi
+}
+
+if [ "$editor_name" = "fresh" ]; then
+	fresh_info="$(fresh_pane_in_tab || true)"
+	if [ "$key" != "ctrl-o" ] && [ -n "$fresh_info" ]; then
+		set -- $fresh_info
+		# A Fresh that exited between detection and open-file falls through.
+		if open_in_running_fresh "$abs" "${2:-}"; then
+			pane_rightclick_to_fresh "$1"
+			exit 0
+		fi
+	fi
+	open_in_new_dev_tab || exit 1
+elif [ "$key" = "ctrl-o" ]; then
+	new="$("$herdr" tab create \
+		${HERDR_ACTIVE_WORKSPACE_ID:+--workspace "$HERDR_ACTIVE_WORKSPACE_ID"} \
+		--cwd "$cwd" --focus | pane_id)"
+	[ -n "$new" ] || exit 1
+	"$herdr" pane run "$new" "$editor" "$target"
+else
+	[ -n "$origin" ] || exit 1
+	new="$("$herdr" pane split "$origin" --direction right --ratio 0.6 --cwd "$cwd" --no-focus | pane_id)"
+	[ -n "$new" ] || exit 1
+	"$herdr" pane run "$new" "$editor" "$target"
+fi

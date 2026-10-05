@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=https://json.schemastore.org/lazydocker.json
+
+gui:
+  # Keep layout and density close to the Lazygit setup.
+  border: rounded
+  sidePanelWidth: 0.3
+  showBottomLine: false
+  expandFocusedSidePanel: true
+  wrapMainPanel: true
+  containerStatusHealthStyle: short
+
+  theme:
+    # Lazygit branch/palette colors translated to Lazydocker's global UI theme.
+    activeBorderColor:
+      - "#5fd7ff"
+      - bold
+    inactiveBorderColor:
+      - "#5c6370"
+    selectedLineBgColor:
+      - "#243d2f"
+    optionsTextColor:
+      - "#61afef"
+
+logs:
+  timestamps: false
+  since: "60m"
+  tail: ""
+
+stats:
+  graphs:
+    - caption: CPU (%)
+      statPath: DerivedStats.CPUPercentage
+      color: blue
+    - caption: Memory (%)
+      statPath: DerivedStats.MemoryPercentage
+      color: green

@@ -1,0 +1,127 @@
+# Layout profiles for zackshen/herdr-workspace (patched fork at
+# the bundled herdr-workspace plugin).
+#
+# Bound in Mash's Herdr config:
+#   cmd+ctrl+n        -> herdr-workspace.open      (new workspace)
+#   cmd+ctrl+shift+n  -> herdr-workspace.worktree  (new worktree)
+#
+# These mirror the tab launchers in the bundled helpers, so a new workspace opens
+# with the same layout the equivalent new-tab chord gives:
+#
+#   dev    <- herdr-new-dev-tab     (cmd+t / cmd+shift+n)
+#   pi     <- herdr-new-pi-tab      (cmd+alt+t / cmd+alt+n)
+#   shell  <- herdr-new-plain-tab   (cmd+shift+t, native new_tab)
+#
+# CARD ORDER is this file's order -- the plugin does not sort. `dev` is first so
+# it is the default selection.
+#
+# TAB NAMES ARE OMITTED on purpose. A `name:` here becomes an explicit
+# `herdr tab rename`, which the auto-title plugin treats as a MANUAL rename and
+# then refuses to touch (its manual-rename protection). Leaving it off keeps
+# Herdr auto-naming the tab from its focused pane, e.g.
+# "1 · fresh › AGENTS.md — app". Omitting `name` requires the local patch;
+# upstream v0.1.2 rejects a tab without one.
+#
+# RATIO SEMANTICS -- the upstream docs are wrong about this. docs/profiles.md
+# says "ratio is the NEW pane's share", but Herdr's `pane split --ratio` gives
+# the share to the EXISTING pane being split. Verified against herdr 0.9.1:
+# splitting right with --ratio 0.8 on a 179-column pane left the original at
+# 143 columns (80%) and gave the new right pane 36 (20%).
+#
+# So `ratio: 0.6` below means fresh (the pane being split) keeps 60% and pi
+# gets 40% -- matching FRESH_RATIO=0.6 in herdr-new-dev-tab. Do not "fix" this
+# to 0.4 on the strength of the upstream wording.
+#
+# The agent panes use `agent:` + `kind: pi` rather than `command: pi` so the
+# pane is a tracked Herdr agent: it gets a live agent name and shows real
+# idle/working/blocked status in the sidebar, and `herdr agent prompt` can
+# target it. The live name is prefixed with a slug of the workspace label,
+# e.g. workspace "app" -> agent "app-pi".
+
+# CARD COLORS (optional). Without this block the cards inherit Herdr's theme
+# tokens -- accent for the focused border, yellow for the selected one, overlay
+# for the rest -- so restyling them used to mean restyling the whole Herdr UI.
+# Each key below overrides exactly one card color and nothing else; omit a key
+# to keep inheriting it. Accepts "#rgb", "#rrggbb", "rgb(r, g, b)", a named
+# color, or "reset". An unparsable value falls back to the inherited color.
+#
+# Your Herdr accent is a near-grey (#cccccc), which is why the focused card
+# reads as washed out. Uncomment and adjust:
+#
+# colors:
+#   card_focused: "#7aa2f7"    # border of the card under the cursor
+#   card_selected: "#9ece6a"   # border of the chosen card when focus moved on
+#   card_idle: "#555555"       # border of the other cards
+#   card_title: "#ffffff"      # card title text
+#   card_text: "#999999"       # card description text
+
+profiles:
+  - id: dev
+    name: Dev (fresh + pi)
+    description: |
+      fresh left 60%, pi right 40%.
+      Same as cmd+t.
+    tabs:
+      - panes:
+          - id: fresh
+            name: fresh
+            # herdr-fresh-pane, not a bare `fresh .`: the wrapper is what routes
+            # right-clicks to Fresh instead of Herdr, and reports the pane's
+            # resume command so it survives a Herdr server restart. cmd+t goes
+            # through the same wrapper (bin/herdr-dev-tab-fill), so this profile
+            # matches that chord exactly instead of launching Fresh directly.
+            #
+            # The trailing `.` is load-bearing, not redundant with the pane's
+            # cwd. Fresh shows its file explorer for a directory launch only
+            # when the directory is a CLI argument; a bare `fresh` in the right
+            # cwd passes opened_files=true internally and suppresses the
+            # fresh-session explorer default, so a directory with no persisted
+            # workspace file opens with NO explorer. `fresh .` (or an absolute
+            # path) is what triggers it. Verified against fresh 0.5.1: bare
+            # `fresh` -> 0 "explorer initialized" log lines in a new dir;
+            # `fresh .` and `fresh <abspath>` -> 1 each. Directories that have a
+            # persisted workspace still honour their recorded visibility, so a
+            # deliberately-closed explorer stays closed.
+            #
+            # `herdr-fresh-pane` is resolved by name, so it must be on PATH in
+            # the pane's shell -- it is symlinked into ~/.local/bin (confirmed
+            # reachable from both `sh -lc` and `zsh -lic`), and the wrapper's own
+            # resume command requires a plain command name rather than a path
+            # for the same reason.
+            command: herdr-fresh-pane .
+          - id: pi
+            name: pi
+            split_from: fresh
+            direction: right
+            ratio: 0.6
+            agent: pi
+            kind: pi
+
+  - id: pi
+    name: Agent (pi)
+    description: |
+      One tab, one pi agent.
+      Same as cmd+alt+t.
+    tabs:
+      - panes:
+          - id: pi
+            name: pi
+            agent: pi
+            kind: pi
+
+  - id: shell
+    name: Shell
+    description: |
+      One tab, one plain shell.
+      Same as cmd+shift+t.
+    tabs:
+      - panes:
+          - id: shell
+            name: shell
+            # Prints the Mash logo + keybinding quick-reference, then execs the
+            # real shell -- the shell distribution's equivalent of what pi's
+            # header shows for fresh+pi / pi-only (single source of truth:
+            # the bundled keybinding list, same file custom-header.ts
+            # reads). Without this, `command` is absent and the pane runs
+            # Herdr's default shell directly with no greeting at all.
+            command: herdr-shell-greeting

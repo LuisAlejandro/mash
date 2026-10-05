@@ -1,0 +1,7 @@
+# Choose: "inquirerpy" or "fzf"
+# Default: auto-detect (InquirerPy → fzf)
+search_engine = "fzf"
+
+# Extra CLI args for fzf (array of strings).
+# Appended after our defaults. Provide a non-empty list to omit defaults.
+# fzf_args = ["--multi", "--preview", "echo {}"]

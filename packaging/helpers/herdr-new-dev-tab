@@ -1,0 +1,33 @@
+#!/bin/sh
+# Open a Herdr tab with two vertical panes: fresh (left) and pi (right).
+# Bound to cmd+t in ~/.config/herdr/config.toml as a `shell` custom command.
+set -eu
+
+herdr="${HERDR_BIN_PATH:-herdr}"
+cwd="${HERDR_ACTIVE_PANE_CWD:-$HOME}"
+here="$(dirname "$0")"
+
+# The two-pane layout itself (fresh on the left, tracked pi agent on the right,
+# split ratio, the load-bearing `.` argument that makes Fresh show its explorer)
+# lives in bin/herdr-dev-tab-fill, shared with the "+" tab button's tab.created
+# hook -- see that script. FRESH_RATIO passes through to it via the environment.
+pane_id() {
+	# tab create returns .result.root_pane.pane_id, pane split returns .result.pane.pane_id
+	sed -n 's/.*"pane_id":"\([^"]*\)".*/\1/p' | head -n 1
+}
+
+# --label marks this tab for the dev-tab plugin's tab.created hook, which must
+# skip it: this script builds its own layout, and letting the hook enrich the
+# same tab too would produce four panes. The label is cleared at the end so
+# Herdr resumes auto-naming the tab from its focused pane, e.g.
+# "4 · fresh › MIGRATION.md — app".
+created="$("$herdr" tab create --label "herdr-tab-launcher-dev" \
+	${HERDR_ACTIVE_WORKSPACE_ID:+--workspace "$HERDR_ACTIVE_WORKSPACE_ID"} \
+	--cwd "$cwd" --focus)"
+tab="$(printf '%s' "$created" | sed -n 's/.*"tab_id":"\([^"]*\)".*/\1/p' | head -n 1)"
+left="$(printf '%s' "$created" | pane_id)"
+
+# Build the two-pane layout (see the note above).
+"$here/herdr-dev-tab-fill" "$left"
+
+[ -n "$tab" ] && "$herdr" tab rename "$tab" "" || true

@@ -1,0 +1,40 @@
+#!/bin/sh
+# Greeting for the "shell" workspace distribution (herdr-workspace's shell
+# profile, config.yaml under `herdr plugin config-dir herdr-workspace`).
+#
+# herdr-workspace's shell profile pane runs this instead of a bare shell: it
+# prints the Mash logo + a keybinding quick-reference (the same content pi's
+# header shows for the fresh+pi / pi-only distributions -- single source of
+# truth, the keybinding list shipped with Mash) and then hands over to the
+# real shell, so it is a transient login-banner-style print that scrolls away
+# as the session continues, not persistent screen furniture.
+#
+# keybindings-quickref.txt is a static snapshot, not generated from
+# ~/.config/herdr/config.toml at render time -- it WILL go stale if a chord
+# there changes and this file is not updated to match. Re-copy the relevant
+# sections there after any keybinding change you want reflected here and in
+# pi's header (custom-header.ts reads the same file).
+set -eu
+
+agent="${PI_CODING_AGENT_DIR:-}"
+logo=""
+quickref=""
+if [ -n "$agent" ]; then
+	logo="$agent/extensions/header-art.ansi"
+	quickref="$agent/extensions/keybindings-quickref.txt"
+fi
+
+if [ -f "$logo" ]; then
+	cat "$logo"
+	echo
+fi
+if [ -f "$quickref" ]; then
+	cat "$quickref"
+	echo
+fi
+
+# Hand over to the user's real shell. Same pattern herdr-landing-render used
+# (before that plugin was retired in favor of this approach) -- `exec` so
+# closing this pane kills exactly one process (the shell), not a wrapper
+# left behind.
+exec "${SHELL:-/bin/sh}"

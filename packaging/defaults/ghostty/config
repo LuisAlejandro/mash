@@ -1,0 +1,216 @@
+auto-update = off
+title = "Mash"
+
+theme = Monokai Cursor
+
+# Release cmd+t so Herdr's own cmd+t (new dev tab: fresh + pi) receives it.
+# Ghostty's own tabs/windows are unused here; Herdr manages both.
+keybind = super+t=unbind
+
+# Release cmd+shift+[ / cmd+shift+] so Herdr uses them for prev/next tab,
+# part of the tab family's cmd+shift modifier. Ghostty's own tab cycling is
+# still on cmd+alt+left/right.
+keybind = super+shift+[=unbind
+keybind = super+shift+]=unbind
+
+# Release cmd+[ / cmd+] so Fresh's prev/next buffer can move onto them,
+# freed by previous_tab/next_tab's move onto cmd+shift+[ / cmd+shift+] above.
+# Ghostty gives up goto_split:previous/next; Ghostty's own splits are unused
+# here (same reasoning as the cmd+alt+arrow goto_split release below). Fresh's
+# stock dedent_selection/insert_tab on these keys become redundant, not lost:
+# bare Tab / Shift+Tab already perform the same actions unconditionally in
+# the stock macOS keymap (`when: normal`), confirmed in source
+# (handle_insert_tab / handle_dedent_selection).
+keybind = super+[=unbind
+keybind = super+]=unbind
+
+# Release cmd+n and cmd+1..9 so Herdr owns workspace create/select,
+# matching Orca's bindings. Ghostty tabs/windows are managed by Herdr here.
+# cmd+alt+r (Herdr's own resize_mode) was already unbound in Ghostty.
+keybind = super+n=unbind
+keybind = super+1=unbind
+keybind = super+2=unbind
+keybind = super+3=unbind
+keybind = super+4=unbind
+keybind = super+5=unbind
+keybind = super+6=unbind
+keybind = super+7=unbind
+keybind = super+8=unbind
+keybind = super+9=unbind
+
+# Ghostty also ships physical-key aliases `super+digit_N` for the same action.
+# Unbinding `super+N` alone leaves these live, so they must be released too.
+keybind = super+digit_1=unbind
+keybind = super+digit_2=unbind
+keybind = super+digit_3=unbind
+keybind = super+digit_4=unbind
+keybind = super+digit_5=unbind
+keybind = super+digit_6=unbind
+keybind = super+digit_7=unbind
+keybind = super+digit_8=unbind
+
+# Release cmd+shift+t (Ghostty `undo`, i.e. undo-close-tab/split) so Herdr
+# uses it for new_tab. Ghostty's tabs are unused here, so undo has nothing
+# meaningful to restore. cmd+alt+t needs no unbind: Ghostty never bound it.
+keybind = super+shift+t=unbind
+
+# Release cmd+w so Fresh can own it as Close tab. Herdr claims nothing on
+# this chord any more -- close_tab moved to cmd+shift+w, released below -- but
+# the unbind is still required: in Ghostty, cmd+w is `close_surface`, which
+# would close the surface hosting the whole Herdr client (every workspace and
+# tab at once) instead of letting the key reach the pane.
+keybind = super+w=unbind
+
+# Release cmd+shift+p so Herdr's pet list popup receives it instead of
+# Ghostty's command palette.
+keybind = super+shift+p=unbind
+
+# Release cmd+shift+g so Herdr's goto (session navigator) receives it instead
+# of Ghostty's navigate_search:previous. Fresh also released this chord, so the
+# key now means "go to" here rather than "find previous match".
+keybind = super+shift+g=unbind
+
+# Copy: let Ghostty and Fresh share cmd+c by state.
+# `performable:` means "only consume the input if the action can run". Ghostty's
+# copy_to_clipboard needs Ghostty's OWN terminal selection, so:
+#   - Ghostty has a selection (mouse-dragged in a plain pane) -> Ghostty copies it
+#   - no selection -> Ghostty behaves as if unbound, the chord falls through to
+#     Herdr and then Fresh, and Fresh's own `copy` action runs
+# Without this, cmd+c was consumed unconditionally and copied nothing whenever
+# there was no Ghostty selection -- which is why copy did nothing inside Fresh.
+# cmd+v is deliberately NOT given this treatment: paste_from_clipboard is always
+# performable, so it would never fall through.
+# Side effect: a performable keybind is not shown as a shortcut label in the
+# Ghostty application menu.
+keybind = performable:super+c=copy_to_clipboard:mixed
+
+# Release macOS search/edit/navigation chords so Fresh can own them in Herdr
+# panes. Copy/paste remain Ghostty-owned intentionally: cmd+c/cmd+v should work
+# in shells and agent panes too.
+#
+# cmd+backspace is deliberately NOT released. Ghostty's default
+# `super+backspace=text:\x15` sends Ctrl-U, and that translation is what makes
+# cmd+backspace delete to line start in every pane -- Fresh (ctrl+u in its stock
+# macOS keymap), Pi, shells, and OpenCode alike. Unbinding it breaks all of them
+# for no gain, because Fresh already handles the Ctrl-U it forwards.
+keybind = super+g=unbind
+
+# Release cmd+e so Fresh can use it to bounce focus between the buffer and the
+# file explorer. Ghostty owns cmd+e as `search_selection` and never released it,
+# so the chord would stop at Ghostty and never reach the pane.
+# This is the last surviving search chord: cmd+f (start_search), cmd+g and
+# cmd+shift+g (navigate_search) were already released, so Ghostty's search UI is
+# unreachable here anyway and giving up `search_selection` costs nothing.
+keybind = super+e=unbind
+keybind = super+f=unbind
+
+# Release cmd+a so Fresh's select_all receives it. Ghostty's own binding is
+# `select_all` (terminal scrollback selection). NOTE: cmd+a inside a Fresh pane
+# now selects the BUFFER, not the terminal scrollback. Mouse-drag or the Herdr
+# copy-mode still select terminal text.
+keybind = super+a=unbind
+
+# Release cmd+shift+f so Fresh's project-wide search-and-replace receives it.
+# Ghostty's own binding is `end_search`, which only acts while a search is
+# active -- not worth keeping at the cost of the chord.
+keybind = super+shift+f=unbind
+keybind = super+z=unbind
+keybind = super+shift+z=unbind
+keybind = super+arrow_up=unbind
+keybind = super+arrow_down=unbind
+
+# Release cmd+shift+up/down so Herdr uses them for previous/next workspace.
+# Costs nothing: Ghostty binds `jump_to_prompt` to BOTH cmd+arrow and
+# cmd+shift+arrow, and the unshifted cmd+up / cmd+down pair is left bound.
+keybind = super+shift+arrow_up=unbind
+keybind = super+shift+arrow_down=unbind
+
+# Release cmd+shift+w so Herdr's close_tab receives it, moved off
+# cmd+shift+x. Ghostty gives up its own close_window; Ghostty's windows are
+# unused here, every workspace/tab/pane lives inside the one Herdr client.
+keybind = super+shift+w=unbind
+
+# Release cmd+alt+w so Herdr uses it for close_pane, part of the pane
+# family's cmd+alt modifier alongside split_vertical, split_horizontal,
+# focus_pane_left/right/up/down, cycle_pane_previous/next, resize_mode,
+# copy_mode, and zoom. Ghostty gives up `close_tab:this`; its tabs are unused
+# here.
+keybind = super+alt+w=unbind
+
+# Release cmd+d so Fresh receives it. Ghostty owns the chord as
+# new_split:right, so it never reached the pane -- which meant Fresh's own
+# cmd+d (add_cursor_next_match) was unreachable. Ghostty's splits are unused
+# here (Herdr manages panes, on cmd+alt+backslash / cmd+alt+minus), so giving
+# this one up costs nothing.
+#
+# cmd+shift+d (new_split:down) stays bound: Fresh binds nothing on cmd+shift+d,
+# so unlike cmd+d there was never anything downstream being shadowed. Release
+# it too only if some future chord there is actually wanted.
+#
+# (An earlier revision of this comment said "no unbind needed since nothing
+# downstream wants either chord now" -- true when written, false once Fresh
+# bound cmd+d.)
+keybind = super+d=unbind
+
+# Release all FOUR cmd+alt+arrow chords so Herdr's
+# focus_pane_left/right/up/down receive them. The up/down pair moved off
+# cmd+alt+k / cmd+alt+j onto the arrow keys to complete the arrow set, but
+# left/right were already on arrows and were being swallowed: Ghostty binds
+# goto_split to ALL FOUR arrows by default, and only the up/down unbinds had
+# been added, so horizontal focus never reached Herdr. goto_split is not
+# `performable:`, so it consumes the chord unconditionally even with no
+# Ghostty splits to move between. Ghostty's own splits are unused here, same
+# reasoning as every other goto_split release in this file. Releasing up/down
+# also orphans Fresh's add_cursor_above/add_cursor_below, which were on this
+# chord -- reassigned to ctrl+alt+up/down below, reclaiming Fresh's own
+# stock-keymap fallback for the same actions.
+keybind = super+alt+arrow_left=unbind
+keybind = super+alt+arrow_right=unbind
+keybind = super+alt+arrow_up=unbind
+keybind = super+alt+arrow_down=unbind
+
+# Release cmd+shift+backspace so Herdr uses it for close_workspace, matching
+# Orca's workspace.delete (also Backspace-based). Was never bound in Ghostty.
+keybind = super+shift+backspace=unbind
+
+# Release cmd+k so Herdr's annotate.capture receives it. Ghostty gives up
+# clear_screen; ctrl+l (terminal-native) still clears the screen.
+keybind = super+k=unbind
+
+# Release cmd+shift+v so Fresh's markdown compose/preview toggle receives it.
+# Ghostty gives up `paste_from_selection` (paste the selection clipboard).
+# Plain cmd+v -- `paste_from_clipboard` -- is untouched, so paste still works
+# in every shell and agent pane; only the shift variant changes hands. That is
+# the one deliberate exception to the copy/paste-stays-Ghostty rule stated
+# above, and it is narrow on purpose: the selection-clipboard paste lost most
+# of its value here once Herdr took over selection copy.
+keybind = super+shift+v=unbind
+
+# Font: match the Cursor IDE's integrated terminal so the same shell looks the
+# same in both places.
+#   Cursor terminal : "terminal.integrated.fontFamily": "MesloLGS NF"
+#                     (size untouched -> its default, which resolves to 14 on
+#                     macOS: the schema is `default: uLp` and `uLp = ki?12:14`)
+#   Ghostty default : JetBrains Mono 13 (bundled; font-family was unset)
+# MesloLGS NF is installed at Mash and Ghostty resolves it (checked
+# with `ghostty +list-fonts`), so naming it is enough -- no fallback needed.
+# This font has no ligatures of its own, and font-feature below disables the
+# feature classes anyway, so Ghostty and Cursor's terminal match here too.
+font-family = "MesloLGS NF"
+font-size = 14
+
+# Belt-and-braces only. MesloLGS NF ships NO ligature features (its GSUB has a
+# lone `rtla`; no liga/calt/dlig, and no morx/mort), so nothing is substituted
+# today and this line changes no glyph. It is a forward-guard: some fonts DO
+# ligate (JetBrains Mono, which Ghostty used before this, and the installed
+# "DejaVu Sans Mono ... Nerd Font Complete Mono"), so if font-family changes
+# later this keeps `->`, `=>`, `!=` as separate characters to match Cursor's
+# terminal, where terminal.integrated.fontLigatures defaults to false.
+font-feature = -liga, -calt, -dlig
+
+
+
+# custom
+window-padding-x = 0
+window-padding-y = 0
+window-padding-balance = true

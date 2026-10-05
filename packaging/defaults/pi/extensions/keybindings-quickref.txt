@@ -1,0 +1,45 @@
+── Workspaces ──
+  ⌘⌃N        New workspace (layout profile picker)
+  ⌘⌃⇧N       New worktree (layout profile picker)
+  ⌘⌃R        Rename workspace
+  ⌘⌃W        Close workspace
+  ⌘⌃⌫        Remove worktree
+  ⌘⌃[ / ⌘⌃]  Previous / next workspace
+  ⌘⌃1-9      Switch to workspace N
+  ⌘⌃G        Goto (session navigator)
+  ⌘⌃O        Sesh picker (session / workspace switcher)
+
+── Tabs ──
+  ⌘T / ⌘⇧N   New dev tab (fresh + pi)
+  ⌘⌥T / ⌘⌥N  New pi-only tab
+  ⌘⇧R        New Reviewr + pi tab
+  ⌘⇧T        New plain shell tab
+  ⌘⇧[ / ⌘⇧]  Previous / next tab
+  ⌘⇧1-9      Switch to tab N
+  ⌘⇧M        Rename tab
+  ⌘⇧W        Close tab
+
+── Panes ──
+  ⌘⌥← ↓ ↑ →  Focus pane left / down / up / right
+  ⌘⌥[ / ⌘⌥]  Cycle pane previous / next
+  ⌘⌥\ ⌘⌥-    Split vertical / horizontal
+  ⌘⌥W        Close pane
+  ⌘⌥Z        Zoom pane
+  ⌘⌥R        Resize mode
+  ⌘⌥C        Copy mode
+
+── Agents ──
+  ⌃⇧↑ / ⌃⇧↓  Previous / next agent
+  ⌃⇧1-9      Focus agent N
+
+── Addons ──
+  ⌃⇧G        Lazygit
+  ⌘⇧O        Lazydocker
+  ⌘⌥P        Pet (snippet executor)
+  ⌘P         Telescope -- file finder
+  ⌘⇧P        Telescope -- actions
+  ⌘K / ⌘L    Annotate -- capture / paste & archive
+  ⌘⇧L        Annotate -- manage
+  ⌥G         Fingers
+  ⌘⇧X        Plugin manager
+  ⌘⌥M        Fork agent from message

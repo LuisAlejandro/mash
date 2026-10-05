@@ -1,0 +1,69 @@
+# herdr-plugin.toml — create a workspace and apply a layout profile.
+#
+# Action `herdr-workspace.open` runs on the herdr server with no TTY and opens
+# the centered `form` popup. The popup is a real terminal: a ratatui form for
+# directory, name, and profile cards, then Cancel / Save.
+
+id = "herdr-workspace"
+name = "Herdr Workspace"
+version = "0.1.2"
+min_herdr_version = "0.8.0"
+description = "Create a workspace or Git worktree from a centered popup and apply a configured layout profile (tabs, pane splits, names, startup commands)."
+platforms = ["linux", "macos"]
+
+# On `herdr plugin install`, download the prebuilt binary for this platform
+# from the matching GitHub Release into bin/. Skipped by `herdr plugin link`.
+[[build]]
+command = ["bash", "herdr/install.sh"]
+
+# User-facing entry point, qualified as `herdr-workspace.open`.
+[[actions]]
+id = "open"
+title = "New workspace from layout profile"
+contexts = ["workspace"]
+command = ["bash", "-c", "exec \"$HERDR_PLUGIN_ROOT/bin/herdr-workspace\" open"]
+
+[[actions]]
+id = "worktree"
+title = "New worktree from layout profile"
+contexts = ["workspace"]
+command = ["bash", "-c", "exec \"$HERDR_PLUGIN_ROOT/bin/herdr-workspace\" open-worktree"]
+
+# Centered modal form. herdr actions have no TTY; this pane does.
+#
+# width 55% (was 70%): still comfortably fits one row of profile cards
+# (CARD_WIDTH=22 x 3 cards + 2 single-column gaps = 68 columns minimum for
+# the 3 shipped profiles) on an ordinarily-sized window; the card grid
+# reflows to fewer columns on anything narrower (cards_area_height in
+# form.rs), so there is no hard-wrap failure at the smaller width, just a
+# taller card block if it ever comes to that.
+[[panes]]
+id = "form"
+title = "New workspace"
+placement = "popup"
+width = "55%"
+height = "48%"
+command = ["bash", "-c", "exec \"$HERDR_PLUGIN_ROOT/bin/herdr-workspace\" form"]
+
+[[panes]]
+id = "worktree"
+title = "New worktree"
+placement = "popup"
+width = "55%"
+height = "48%"
+command = ["bash", "-c", "exec \"$HERDR_PLUGIN_ROOT/bin/herdr-workspace\" worktree"]
+
+# herdr does NOT bind keys declared in a plugin manifest. Bind a key in
+# ~/.config/herdr/config.toml, then `herdr server reload-config`:
+#
+#   [[keys.command]]
+#   key = "prefix+shift+n"
+#   type = "plugin_action"
+#   command = "herdr-workspace.open"
+#   description = "New workspace from layout profile"
+#
+#   [[keys.command]]
+#   key = "prefix+shift+w"
+#   type = "plugin_action"
+#   command = "herdr-workspace.worktree"
+#   description = "New worktree from layout profile"

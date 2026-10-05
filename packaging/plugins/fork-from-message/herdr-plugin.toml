@@ -1,0 +1,39 @@
+id = "fork-from-message"
+name = "Fork from Message"
+version = "0.1.0"
+min_herdr_version = "0.8.0"
+description = "Fork a focused agent session from a chosen earlier user message"
+platforms = ["macos", "linux"]
+
+# The picker splits from the source pane and writes the chosen message id to the
+# path named by HERDR_FORK_REQUEST, which the invoking action sets per run.
+# Overlay and popup plugin panes always target the active pane, which would open
+# the picker over whatever the user is working in.
+[[panes]]
+id = "picker"
+title = "Fork from Message"
+placement = "split"
+command = ["python3", "scripts/picker.py"]
+
+# One action serves every supported agent; the focused pane's agent decides which
+# backend forks the conversation.
+[[actions]]
+id = "fork"
+title = "Fork agent from message"
+description = "Fork the focused Pi or OpenCode session from a chosen earlier user message"
+contexts = ["pane"]
+command = ["python3", "scripts/fork_from_message.py"]
+
+[[actions]]
+id = "fork-pane"
+title = "Fork agent beside current pane"
+description = "Fork the focused agent session into a split pane"
+contexts = ["pane"]
+command = ["python3", "scripts/fork_from_message.py", "--destination", "pane"]
+
+[[actions]]
+id = "fork-workspace"
+title = "Fork agent into new workspace"
+description = "Fork the focused agent session into a new Herdr workspace"
+contexts = ["pane"]
+command = ["python3", "scripts/fork_from_message.py", "--destination", "workspace"]

@@ -1,0 +1,12 @@
+#!/bin/bash
+# Herdr's pane shell. Re-applies Mash's socket, then starts the account's shell
+# without login so the user's startup files and the system path helper do not run.
+set -euo pipefail
+# shellcheck source=lib.sh
+source "$(dirname "$0")/lib.sh"
+home="$(mash_real_home)"
+export MASH_BIN="$(cd "$(dirname "$0")" && pwd):$home/.mash/bin"
+mash_isolate "$home"
+export MASH_PANE=1
+user_shell="$(dscl . -read "/Users/$(id -un)" UserShell | awk '{print $2}')"
+exec "$user_shell"

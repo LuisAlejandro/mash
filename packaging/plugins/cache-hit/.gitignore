@@ -1,0 +1,9 @@
+# Development/build markdown files (not shipped with the release)
+/RELEASE_READINESS.md
+/RELEASE_REVIEW_REMARKS.md
+
+# Local/runtime artifacts
+.DS_Store
+*.log
+__pycache__/
+*.pyc

@@ -1,0 +1,13 @@
+#!/bin/bash
+# Remove Mash preference domains, saved state, and caches.
+# Leaves ~/.mash in place. Does not touch Ghostty, Herdr, Fresh, or pi.
+set -euo pipefail
+home="$(dscl . -read "/Users/$(id -un)" NFSHomeDirectory | awk '{print $2}')"
+for domain in app.mash app.mash.ghostty app.mash.notify; do
+    defaults delete "$domain" >/dev/null 2>&1 || true
+    rm -f "$home/Library/Preferences/${domain}.plist"
+    rm -rf "$home/Library/Saved Application State/${domain}.savedState"
+    rm -rf "$home/Library/Caches/${domain}"
+done
+echo "Removed Mash preferences for app.mash, app.mash.ghostty, and app.mash.notify."
+echo "~/.mash was left in place."

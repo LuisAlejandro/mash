@@ -1,0 +1,90 @@
+#!/bin/bash
+# Mash.app entry point. Opens the bundled Ghostty and Herdr.
+# Does not export HOME and does not talk to the personal Herdr socket.
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=lib.sh
+source "$ROOT/Resources/bin/lib.sh"
+
+home="$(mash_real_home)"
+d="$home/.mash"
+mkdir -p \
+    "$d/.config/herdr" "$d/.config/ghostty" "$d/.config/git" "$d/.config/gh" \
+    "$d/.config/fresh" "$d/.config/zsh" "$d/.config/pet" "$d/.config/atuin" \
+    "$d/.config/lazygit" "$d/.config/lazydocker" \
+    "$d/.local/state" "$d/.local/share/fresh" "$d/.local/share/zoxide" \
+    "$d/.cache" "$d/.pi/agent" "$d/run" "$d/bin"
+
+cp "$ROOT/Resources/bin/lib.sh" "$d/bin/lib.sh"
+cp "$ROOT/Resources/bin/mash-shell" "$d/bin/mash-shell"
+chmod 755 "$d/bin/mash-shell"
+
+if [ ! -f "$d/.config/herdr/config.toml" ]; then
+    sed -e "s#__MASH_SHELL__#$d/bin/mash-shell#g" \
+        -e "s#__MASH_CONFIG__#$d/.config#g" \
+        "$ROOT/Resources/defaults/herdr/config.toml" \
+        >"$d/.config/herdr/config.toml"
+fi
+if [ ! -f "$d/.config/herdr/plugins.json" ] && [ -f "$ROOT/Resources/defaults/herdr/plugins.json" ]; then
+    cp "$ROOT/Resources/defaults/herdr/plugins.json" "$d/.config/herdr/plugins.json"
+fi
+if [ ! -f "$d/.config/ghostty/config" ]; then
+    cp "$ROOT/Resources/defaults/ghostty/config" "$d/.config/ghostty/config"
+fi
+if [ ! -f "$d/.config/zsh/.zshenv" ]; then
+    cp "$ROOT/Resources/defaults/zsh/.zshenv" "$d/.config/zsh/.zshenv"
+fi
+if [ ! -f "$d/.config/git/config" ]; then
+    cp "$ROOT/Resources/defaults/git/config" "$d/.config/git/config"
+fi
+if [ ! -f "$d/.config/pet/snippet.toml" ]; then
+    sed "s#__MASH_PET_SNIPPET__#$d/.config/pet/snippet.toml#" \
+        "$ROOT/Resources/defaults/pet/config.toml" \
+        >"$d/.config/pet/config.toml"
+    cp "$ROOT/Resources/defaults/pet/snippet.toml" "$d/.config/pet/snippet.toml"
+fi
+
+# Copy each carried seed only when that destination file is missing.
+mash_seed_missing() {
+    local src="$1"
+    local dest="$2"
+    local f rel target
+    [ -d "$src" ] || return 0
+    while IFS= read -r f; do
+        rel="${f#"$src"/}"
+        target="$dest/$rel"
+        if [ ! -e "$target" ]; then
+            mkdir -p "$(dirname "$target")"
+            cp "$f" "$target"
+        fi
+    done < <(find "$src" -type f)
+}
+mash_seed_missing "$ROOT/Resources/defaults/ghostty/themes" "$d/.config/ghostty/themes"
+mash_seed_missing "$ROOT/Resources/defaults/fresh" "$d/.config/fresh"
+mash_seed_missing "$ROOT/Resources/defaults/pi" "$d/.pi/agent"
+mash_seed_missing "$ROOT/Resources/defaults/plugins" "$d/.config/herdr/plugins/config"
+mash_seed_missing "$ROOT/Resources/defaults/atuin" "$d/.config/atuin"
+mash_seed_missing "$ROOT/Resources/defaults/lazydocker" "$d/.config/lazydocker"
+
+mash_force_updates "$home"
+export MASH_BIN="$ROOT/Resources/bin:$ROOT/Resources/node/bin:$ROOT/Resources/python/bin:$d/bin"
+mash_isolate "$home"
+
+exec /usr/bin/open -na "$ROOT/Resources/Ghostty.app" \
+    --env "XDG_CONFIG_HOME=$XDG_CONFIG_HOME" \
+    --env "XDG_STATE_HOME=$XDG_STATE_HOME" \
+    --env "XDG_DATA_HOME=$XDG_DATA_HOME" \
+    --env "XDG_CACHE_HOME=$XDG_CACHE_HOME" \
+    --env "HERDR_CONFIG_PATH=$HERDR_CONFIG_PATH" \
+    --env "HERDR_SOCKET_PATH=$HERDR_SOCKET_PATH" \
+    --env "HERDR_CLIENT_SOCKET_PATH=$HERDR_CLIENT_SOCKET_PATH" \
+    --env "PI_CODING_AGENT_DIR=$PI_CODING_AGENT_DIR" \
+    --env "GIT_CONFIG_GLOBAL=$GIT_CONFIG_GLOBAL" \
+    --env "GH_CONFIG_DIR=$GH_CONFIG_DIR" \
+    --env "_ZO_DATA_DIR=$_ZO_DATA_DIR" \
+    --env "ZDOTDIR=$ZDOTDIR" \
+    --env "MASH_FRESH_CONFIG_DIR=$MASH_FRESH_CONFIG_DIR" \
+    --env "MASH_FRESH_DATA_DIR=$MASH_FRESH_DATA_DIR" \
+    --env "MASH_BIN=$MASH_BIN" \
+    --env "PATH=$PATH" \
+    --args -e "$ROOT/Resources/bin/herdr-pane"

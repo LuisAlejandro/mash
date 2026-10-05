@@ -1,0 +1,91 @@
+//! herdr-telescope — an fzf command telescope for herdr, implemented in Rust.
+//!
+//! Two modes, driven by the manifest:
+//!   `open`    — the `telescope.open` ACTION. Runs on the herdr server with no
+//!               TTY. Captures the origin pane/tab/workspace/cwd from herdr's
+//!               injected context, forwards it to the popup as TELESCOPE_CTX,
+//!               and opens the centered `palette` popup pane.
+//!   `palette` — the `telescope.palette` PANE. Runs inside the popup with a real
+//!               TTY. Builds the merged fzf list (native actions, installed
+//!               plugin actions, file finder) and dispatches the selection.
+
+mod context;
+mod files;
+mod herdr;
+mod keys;
+mod native;
+mod palette;
+mod search;
+mod tty;
+
+use std::process::ExitCode;
+
+use context::OriginContext;
+
+fn main() -> ExitCode {
+    let mode = std::env::args().nth(1).unwrap_or_default();
+    match mode.as_str() {
+        "open" => open_action(),
+        "open-actions" => open_action(),
+        "list-actions-only" => {
+            std::env::set_var("TELESCOPE_ACTIONS_ONLY", "1");
+            ExitCode::from(palette::run() as u8)
+        }
+        "palette" => ExitCode::from(palette::run() as u8),
+        "at-switch" | "at-back" => ExitCode::from(palette::run_at_helper() as u8),
+        "list-files" => ExitCode::from(files::run_list_files() as u8),
+        "rg-files" => ExitCode::from(search::run_rg_files() as u8),
+        "rg-preview" | "preview" => ExitCode::from(search::run_rg_preview() as u8),
+        _ => {
+            eprintln!("telescope: usage: herdr-telescope (open|palette)");
+            ExitCode::from(2)
+        }
+    }
+}
+
+/// The `telescope.open` action: forward origin context and open the popup pane.
+fn open_action() -> ExitCode {
+    let ctx = OriginContext::capture_from_herdr_context();
+
+    // `open-actions` is the same popup with the file finder and content search
+    // disabled. Forwarded as an env var because the pane is a separate process
+    // and herdr gives it no argv of its own.
+    let actions_only = std::env::args().nth(1).as_deref() == Some("open-actions");
+
+    let mut args: Vec<String> = vec![
+        "plugin".into(),
+        "pane".into(),
+        "open".into(),
+        "--plugin".into(),
+        "telescope".into(),
+        "--entrypoint".into(),
+        "palette".into(),
+        "--focus".into(),
+        "--env".into(),
+        format!("TELESCOPE_CTX={}", ctx.to_env()),
+    ];
+
+    if actions_only {
+        args.push("--env".into());
+        args.push("TELESCOPE_ACTIONS_ONLY=1".into());
+    }
+
+    // Forward --cwd only when it's a real directory; otherwise the popup
+    // resolves relative to the plugin root (harmless for palette mode, which
+    // reads only TELESCOPE_CTX and $HERDR_PLUGIN_ROOT).
+    if !ctx.cwd.is_empty() && std::path::Path::new(&ctx.cwd).is_dir() {
+        args.push("--cwd".into());
+        args.push(ctx.cwd.clone());
+    }
+
+    let arg_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
+    let out = herdr::run(&arg_refs);
+    if !out.status.success() {
+        eprintln!(
+            "telescope: failed to open popup: {}",
+            String::from_utf8_lossy(&out.stderr).trim()
+        );
+        return ExitCode::from(1);
+    }
+    ExitCode::SUCCESS
+}

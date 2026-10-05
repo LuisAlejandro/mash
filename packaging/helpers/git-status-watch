@@ -1,0 +1,235 @@
+#!/usr/bin/env python3
+#
+# git-status-watch — ahead/behind counts per Herdr workspace, reported as a
+# CUSTOM $git_ahead / $git_behind token instead of Herdr's built-in
+# "git_status" row token.
+#
+# Why a custom token for something Herdr already computes natively: Herdr's
+# sidebar renders a middle-dot separator between every pair of tokens within
+# the SAME $-custom-metadata family (confirmed: it appears between
+# $pr_blocked/$pr_waiting/$pr_ready), but not at the boundary between a
+# $-custom token and the built-in "git_status" token in the same row array --
+# even when both sides have a real, non-empty value (observed on a workspace
+# that was ahead, both $pr_* and git_status populated, no separator
+# appeared). That boundary behavior is undocumented and the cause is not
+# visible from the Herdr binary's exported symbols. Reporting ahead/behind as
+# $git_ahead / $git_behind puts it in the same token family as the PR buckets,
+# which is the one combination confirmed to render the separator correctly.
+#
+# This DISABLES Herdr's native git_status token for the row it replaces (see
+# the config comment in ~/.config/herdr/config.toml) rather than running
+# alongside it -- showing the same ahead/behind number twice, from two
+# sources, would be confusing.
+#
+# Unlike pr-watch-repo, this fetches before computing (git fetch, not pull):
+# a bare `rev-list --left-right --count branch...upstream` only reflects
+# whatever was last fetched by something else, which could be hours stale.
+# `git fetch` updates remote-tracking refs only -- it never touches the
+# working tree, the index, or HEAD, and is unrelated to `git pull` (fetch +
+# merge) or `git push`. Confirmed by direct test: HEAD was identical before
+# and after a `git fetch` in a real repo during this script's development.
+#
+# This script never runs `git pull` or `git push`, and never will -- fetch
+# only.
+#
+# Repos with no upstream configured for the current branch are skipped
+# silently: there is
+# nothing to diff against, and that is not an error condition worth a
+# notification every poll.
+#
+# Run as a child of Mash, same cadence as pr-watch-repo, plus the
+# workspace.focused hook in the pr-watch-focus plugin (shared
+# with pr-watch-repo; see --workspace below).
+#
+# Usage:
+#   git-status-watch                  poll every workspace
+#   git-status-watch --workspace ID   poll one workspace, for the focus hook
+#   git-status-watch --no-fetch       skip the fetch step (debugging only)
+
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+SOURCE = "git-status-watch"
+TOKEN = "git"
+_state_root = os.environ.get("XDG_STATE_HOME", "")
+if "/.mash/" not in _state_root:
+    raise SystemExit("git-status-watch: Mash state directory is not set")
+STATE = Path(_state_root) / "git-status-watch" / "state.json"
+
+# Nerd Font up/down arrows (nf-oct-arrow_up / nf-oct-arrow_down). Matches the
+# PR_ICON convention in pr-watch-repo: baked into the reported string, since
+# Herdr's styled-token config has no prefix/suffix field (fg/bold/dim/rules
+# only restyle an existing value).
+AHEAD_ICON = "\uf062"  # nf-fa-arrow_up
+BEHIND_ICON = "\uf063"  # nf-fa-arrow_down
+
+# Fetch must not hang a poll indefinitely on a dead remote (VPN down, revoked
+# SSH key prompting interactively, etc). macOS ships no `timeout` or
+# `gtimeout` by default, so this uses subprocess's own timeout rather than
+# shelling out to one.
+FETCH_TIMEOUT_S = 20
+
+if "--help" in sys.argv or "-h" in sys.argv:
+    print("\n".join(l[2:] if l.startswith("# ") else l[1:]
+                    for l in Path(__file__).read_text().splitlines()[2:]
+                    if l.startswith("#")))
+    raise SystemExit(0)
+
+NO_FETCH = "--no-fetch" in sys.argv
+ONLY = None
+if "--workspace" in sys.argv:
+    i = sys.argv.index("--workspace")
+    ONLY = sys.argv[i + 1] if i + 1 < len(sys.argv) else None
+
+# Same reasoning as pr-watch-repo: a stale/invalid GITHUB_TOKEN makes every
+# `git fetch` over https fail as though unauthenticated. This repo set uses
+# SSH remotes, but scrub it anyway for consistency and in case a repo is ever
+# added over https.
+GIT_ENV = {k: v for k, v in os.environ.items() if k != "GITHUB_TOKEN"}
+# Never prompt. A dead/misconfigured remote must fail fast (caught below), not
+# hang on a username/password or passphrase prompt that nothing is there to
+# answer.
+GIT_ENV["GIT_TERMINAL_PROMPT"] = "0"
+
+
+def herdr(*args):
+    out = subprocess.run(["herdr", *args], capture_output=True, text=True)
+    if out.returncode != 0:
+        return None
+    try:
+        return json.loads(out.stdout)["result"]
+    except (json.JSONDecodeError, KeyError):
+        return None
+
+
+def repo_root(path):
+    r = subprocess.run(["git", "-C", path, "rev-parse", "--show-toplevel"],
+                        capture_output=True, text=True)
+    return r.stdout.strip() if r.returncode == 0 else None
+
+
+def current_branch(root):
+    r = subprocess.run(["git", "-C", root, "rev-parse", "--abbrev-ref", "HEAD"],
+                        capture_output=True, text=True)
+    name = r.stdout.strip()
+    # A detached HEAD prints the literal string "HEAD", not empty -- excluded
+    # explicitly rather than relying on a later git call to fail on it, since
+    # "HEAD" alone also happens to be a technically-parseable ref name.
+    if r.returncode != 0 or not name or name == "HEAD":
+        return None
+    return name
+
+
+def upstream_of(root, branch):
+    r = subprocess.run(
+        ["git", "-C", root, "rev-parse", "--abbrev-ref", "--symbolic-full-name",
+         f"{branch}@{{u}}"],
+        capture_output=True, text=True)
+    return r.stdout.strip() if r.returncode == 0 else None
+
+
+FETCH_FAILED = "fetch-failed"
+
+
+def fetch(root, branch):
+    """Update branch's remote-tracking ref. Does not touch the working tree,
+    the index, or HEAD -- see the module docstring. Returns None on success,
+    FETCH_FAILED on any failure (offline, auth, timeout)."""
+    if NO_FETCH:
+        return None
+    try:
+        r = subprocess.run(
+            ["git", "-C", root, "fetch", "--quiet", "origin", branch],
+            capture_output=True, text=True, env=GIT_ENV, timeout=FETCH_TIMEOUT_S)
+    except subprocess.TimeoutExpired:
+        return FETCH_FAILED
+    return None if r.returncode == 0 else FETCH_FAILED
+
+
+def ahead_behind(root, branch, upstream):
+    """(ahead, behind) counts, or None if git itself could not compute them."""
+    r = subprocess.run(
+        ["git", "-C", root, "rev-list", "--left-right", "--count",
+         f"{branch}...{upstream}"],
+        capture_output=True, text=True)
+    if r.returncode != 0:
+        return None
+    try:
+        left, right = r.stdout.split()
+        return int(left), int(right)
+    except ValueError:
+        return None
+
+
+def main():
+    panes = herdr("pane", "list")
+    if not panes:
+        return 1
+    dirs = {}
+    for p in panes["panes"]:
+        dirs.setdefault(p["workspace_id"], p.get("foreground_cwd") or p.get("cwd"))
+
+    try:
+        previous = json.loads(STATE.read_text())
+    except (OSError, json.JSONDecodeError):
+        previous = {}
+
+    current = {}
+    for ws, path in dirs.items():
+        if ONLY and ws != ONLY:
+            if ws in previous:
+                current[ws] = previous[ws]
+            continue
+        if not path or not os.path.isdir(path):
+            continue
+        root = repo_root(path)
+        if not root:
+            continue
+
+        branch = current_branch(root)
+        if not branch:
+            continue
+        upstream = upstream_of(root, branch)
+        if not upstream:
+            # No upstream configured -- nothing to diff against. Not an error.
+            continue
+
+        if fetch(root, branch) == FETCH_FAILED:
+            # Carry the previous reading forward: a failed fetch is not
+            # evidence the ahead/behind count changed, same policy as
+            # pr-watch-repo's LIST_FAILED handling.
+            if ws in previous:
+                current[ws] = previous[ws]
+            continue
+
+        counts = ahead_behind(root, branch, upstream)
+        if counts is None:
+            if ws in previous:
+                current[ws] = previous[ws]
+            continue
+
+        ahead, behind = counts
+        current[ws] = {"ahead": ahead, "behind": behind}
+
+        args = ["workspace", "report-metadata", ws, "--source", SOURCE]
+        if ahead > 0:
+            args += ["--token", f"{TOKEN}_ahead={AHEAD_ICON}{ahead}"]
+        else:
+            args += ["--clear-token", f"{TOKEN}_ahead"]
+        if behind > 0:
+            args += ["--token", f"{TOKEN}_behind={BEHIND_ICON}{behind}"]
+        else:
+            args += ["--clear-token", f"{TOKEN}_behind"]
+        herdr(*args)
+
+    STATE.parent.mkdir(parents=True, exist_ok=True)
+    STATE.write_text(json.dumps(current, indent=1))
+    print(f"{len(current)} workspace(s) polled" + (f" (refreshed {ONLY})" if ONLY else ""))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

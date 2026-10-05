@@ -1,0 +1,24 @@
+#!/bin/bash
+# What Ghostty runs. Starts the bundled herdr on Mash's socket.
+set -euo pipefail
+# shellcheck source=lib.sh
+source "$(dirname "$0")/lib.sh"
+home="$(mash_real_home)"
+bin_dir="$(cd "$(dirname "$0")" && pwd)"
+res="$(cd "$bin_dir/.." && pwd)"
+export MASH_BIN="$bin_dir:$res/node/bin:$res/python/bin:$home/.mash/bin"
+mash_isolate "$home"
+case "$HERDR_SOCKET_PATH" in
+    "$home/.mash/run/"*) ;;
+    *)
+        echo "Mash refused to start." >&2
+        exit 1
+        ;;
+esac
+# A leftover socket is removed only here, and only when nothing is using it.
+if [ -S "$HERDR_SOCKET_PATH" ] && command -v lsof >/dev/null 2>&1; then
+    if ! lsof "$HERDR_SOCKET_PATH" >/dev/null 2>&1; then
+        rm -f "$HERDR_SOCKET_PATH"
+    fi
+fi
+exec "$(dirname "$0")/herdr"

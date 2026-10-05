@@ -1,0 +1,13 @@
+Fresh 0.5.1
+
+This download includes fresh-0.5.1-patched.tar.gz: the Fresh 0.5.1 source
+with Mash's config-directory patch. Fresh is free software. Its LICENSE file
+is the GNU General Public License, version 2, June 1991. The upstream
+Cargo.toml names that license GPL-2.0. The license text's "How to Apply"
+section says version 2 or, at your option, any later version.
+
+Homebrew and the Mash plan describe Fresh as GPL-3.0-or-later. The license
+that applies is the LICENSE file inside the archive, not that description.
+
+This notice covers Fresh only. It does not license Herdr, Ghostty, pi, or
+the rest of Mash under the GPL.

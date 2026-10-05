@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "$0")" && pwd)"
+PLUGIN_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+
+# shellcheck source=lib/view.sh
+. "$PLUGIN_ROOT/lib/view.sh"
+
+action="${1:-toggle}"
+
+case "$action" in
+  toggle|cycle)
+    toggle_sort_mode
+    ;;
+  set)
+    target="${2:-}"
+    [[ -n "$target" ]] || { echo "Usage: herdr-cache-view set <expiry|native>" >&2; exit 1; }
+    set_sort_mode "$target"
+    ;;
+  get)
+    get_sort_mode
+    ;;
+  restore)
+    restore_sort_mode
+    ;;
+  *)
+    echo "Usage: herdr-cache-view [toggle|set <expiry|native>|get|restore]" >&2
+    exit 1
+    ;;
+esac

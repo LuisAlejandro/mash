@@ -1,0 +1,30 @@
+#!/bin/sh
+# Open a plain shell tab.
+# Bound to cmd+shift+t in ~/.config/herdr/config.toml.
+#
+# Why this exists: Herdr's native new_tab action -- the one the `+` tab button
+# runs -- is enriched into a fresh+pi split by the dev-tab plugin's tab.created
+# hook, and Herdr cannot tell the button apart from a chord. A chord that should
+# open a plain shell tab therefore has to create one itself and mark it: the
+# herdr-tab-launcher-* label is set at creation, so the hook reads it from the
+# event payload and skips the tab. The label is then cleared so Herdr resumes
+# auto-naming the tab from its pane.
+#
+# Runs the same greeting as herdr-workspace's `shell` profile (which its own
+# config.yaml documents as "Same as cmd+shift+t" -- this chord is that
+# profile's other entry point): Mash logo + keybinding quick-reference,
+# then hands over to the real shell. Single source of truth for the text:
+# the keybinding list shipped with Mash.
+set -eu
+
+herdr="${HERDR_BIN_PATH:-herdr}"
+cwd="${HERDR_ACTIVE_PANE_CWD:-$HOME}"
+
+created="$("$herdr" tab create --label "herdr-tab-launcher-plain" \
+	${HERDR_ACTIVE_WORKSPACE_ID:+--workspace "$HERDR_ACTIVE_WORKSPACE_ID"} \
+	--cwd "$cwd" --focus)"
+tab="$(printf '%s' "$created" | sed -n 's/.*"tab_id":"\([^"]*\)".*/\1/p' | head -n 1)"
+pane="$(printf '%s' "$created" | sed -n 's/.*"pane_id":"\([^"]*\)".*/\1/p' | head -n 1)"
+
+[ -n "$tab" ] && "$herdr" tab rename "$tab" "" || true
+[ -n "$pane" ] && "$herdr" pane run "$pane" "herdr-shell-greeting" >/dev/null 2>&1 || true

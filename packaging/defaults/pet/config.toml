@@ -1,0 +1,5 @@
+[General]
+snippetfile = "__MASH_PET_SNIPPET__"
+editor = "vim"
+column = 40
+selectcmd = "fzf"
