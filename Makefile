@@ -1,4 +1,4 @@
-# >>> rosey-maintainer:ops-docker BEGIN
+# >>> maintainer-tools:ops-docker BEGIN
 # Managed by maintainer-tools 0.4.4. Do not edit directly.
 
 PROJECT_NAME ?= mash
@@ -44,9 +44,9 @@ cataplum:
 	@docker compose -p $(PROJECT_NAME) -f docker-compose.yml down \
 		--rmi all --remove-orphans --volumes
 	@docker system prune -a -f --volumes
-# <<< rosey-maintainer:ops-docker END
+# <<< maintainer-tools:ops-docker END
 
-# >>> rosey-maintainer:ops-release BEGIN
+# >>> maintainer-tools:ops-release BEGIN
 # Managed by maintainer-tools 0.4.4. Do not edit directly.
 
 release:
@@ -66,4 +66,4 @@ release-major:
 undo-release:
 	@: "$${VERSION:?Set VERSION=x.y.z before running make undo-release}"
 	@VERSION=$${VERSION} ./scripts/rollback.sh release
-# <<< rosey-maintainer:ops-release END
+# <<< maintainer-tools:ops-release END
