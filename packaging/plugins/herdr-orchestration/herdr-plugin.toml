@@ -1,0 +1,12 @@
+id = "herdr-orchestration"
+name = "Herdr Orchestration"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+description = "Local supervised loop: Pi workers in sibling panes, an inbox for questions, and settlement only on worker_done."
+platforms = ["macos", "linux"]
+
+# The server tells us a process is gone. Idle and a wait timeout are not that
+# fact, so the store learns about a missing worker_done only from this event.
+[[events]]
+on = "pane.exited"
+command = ["python3", "orchestration.py", "pane-exited"]

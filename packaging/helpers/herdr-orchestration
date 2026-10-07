@@ -1,0 +1,9 @@
+#!/bin/bash
+# Resources/bin and packaging/helpers both sit beside plugins/.
+here=$(cd "$(dirname "$0")" && pwd)
+script="$here/../plugins/herdr-orchestration/orchestration.py"
+if [ ! -f "$script" ]; then
+    echo "herdr-orchestration: plugin script missing" >&2
+    exit 1
+fi
+exec python3 "$script" "$@"

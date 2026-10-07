@@ -38,6 +38,7 @@
   ⌘⌥P        Pet (snippet executor)
   ⌘P         Telescope -- file finder
   ⌘⇧P        Telescope -- actions
+  ⌘⌥L        Session search
   ⌘K / ⌘L    Annotate -- capture / paste & archive
   ⌘⇧L        Annotate -- manage
   ⌥G         Fingers

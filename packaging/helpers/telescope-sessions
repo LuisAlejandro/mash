@@ -1,0 +1,530 @@
+#!/usr/bin/env bash
+# Session telescope: an fzf picker over Pi transcripts.
+#
+# Bound to cmd+alt+l as a popup custom command, the same shape as
+# telescope-files (cmd+p). It does not share that popup: files stay files.
+#
+# Transcripts are the *.jsonl files under $PI_CODING_AGENT_DIR/sessions.
+# Mash points PI_CODING_AGENT_DIR at ~/.mash/.pi/agent. Each row is open or
+# closed, the workspace label when one is known, the date, and a title from
+# the first user message. A hidden field carries a chunk of message text so
+# the query matches the conversation.
+#
+# Open is a real-path match against a live Pi pane (`herdr pane list`,
+# agent_session kind "path"). Enter focuses that pane's workspace and tab.
+# Closed is everything else. A closed tab cannot be restored, so Enter starts
+# a new single-pane Pi tab on the file (`pi --session`). The new tab is
+# created in the one live workspace whose pane cwd matches the transcript
+# directory, or in the invoking workspace when that match is not unique.
+# If the pane or workspace list fails, every row stays closed and unlabeled.
+#
+#   telescope-sessions                         the picker
+#   telescope-sessions rows [live.json]        TSV, no fzf
+#   telescope-sessions preview PATH [live.json]
+#
+# live.json is {"workspaces":[...], "panes":[...]}, the same objects Herdr
+# returns. TSV fields: display, path, search, cwd, state, workspace_id, tab_id.
+set -euo pipefail
+
+herdr="${HERDR_BIN_PATH:-herdr}"
+# $0 is the bare command name when Herdr runs this from PATH. herdr-agent-name
+# sits in that same directory.
+src="$0"
+case "$src" in
+	*/*) ;;
+	*) src="$(command -v "$src" 2>/dev/null || printf '%s' "$src")" ;;
+esac
+here="$(dirname "$src")"
+
+toast() {
+	printf 'telescope-sessions: %s\n' "$1" >&2
+	"$herdr" notification show "Session search" --body "$1" --sound none >/dev/null 2>&1 || true
+}
+
+# Print TSV rows, or the preview for one file. argv: rows | preview <path>
+session_py() {
+	python3 - "$@" <<'PY'
+import datetime
+import json
+import os
+import sys
+
+SEARCH_CAP = 4000
+TITLE_CAP = 72
+PREVIEW_MESSAGES = 6
+PREVIEW_CAP = 500
+READ_CAP = 512 * 1024
+
+
+def squash(text):
+    return " ".join(text.split())
+
+
+def clip(text, limit):
+    text = squash(text)
+    if len(text) <= limit:
+        return text
+    return text[: limit - 1] + "…"
+
+
+def text_of(content):
+    if isinstance(content, str):
+        return content
+    if not isinstance(content, list):
+        return ""
+    parts = []
+    for part in content:
+        if isinstance(part, str):
+            parts.append(part)
+        elif isinstance(part, dict) and part.get("type") == "text":
+            piece = part.get("text")
+            if isinstance(piece, str):
+                parts.append(piece)
+    return "\n".join(parts)
+
+
+def when_of(raw, mtime):
+    if isinstance(raw, (int, float)):
+        sec = raw / 1000.0 if raw > 10_000_000_000 else float(raw)
+        try:
+            dt = datetime.datetime.fromtimestamp(sec).astimezone()
+        except (OverflowError, OSError, ValueError):
+            dt = None
+        if dt is not None:
+            return dt.strftime("%Y-%m-%d %H:%M"), sec
+    if isinstance(raw, str) and raw:
+        try:
+            dt = datetime.datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        except ValueError:
+            dt = None
+        if dt is not None:
+            if dt.tzinfo is not None:
+                dt = dt.astimezone()
+            return dt.strftime("%Y-%m-%d %H:%M"), dt.timestamp()
+    dt = datetime.datetime.fromtimestamp(mtime).astimezone()
+    return dt.strftime("%Y-%m-%d %H:%M"), mtime
+
+
+def read_session(path):
+    cwd = ""
+    raw_when = None
+    title = ""
+    texts = []
+    preview = []
+    parsed = False
+    try:
+        mtime = os.path.getmtime(path)
+    except OSError:
+        return None
+    try:
+        handle = open(path, "r", encoding="utf-8", errors="replace")
+    except OSError:
+        return None
+    try:
+        read = 0
+        for line in handle:
+            read += len(line)
+            if read > READ_CAP and (title or texts):
+                break
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(obj, dict):
+                continue
+            parsed = True
+            kind = obj.get("type")
+            if kind == "session":
+                if isinstance(obj.get("cwd"), str):
+                    cwd = obj["cwd"]
+                if raw_when is None and obj.get("timestamp") is not None:
+                    raw_when = obj["timestamp"]
+                continue
+            if kind != "message":
+                continue
+            message = obj.get("message")
+            if not isinstance(message, dict):
+                continue
+            role = message.get("role")
+            if role not in ("user", "assistant"):
+                continue
+            text = text_of(message.get("content"))
+            if not squash(text):
+                continue
+            if raw_when is None and obj.get("timestamp") is not None:
+                raw_when = obj["timestamp"]
+            if role == "user" and not title:
+                title = clip(text, TITLE_CAP)
+            if sum(len(piece) for piece in texts) < SEARCH_CAP:
+                texts.append(squash(text))
+            if len(preview) < PREVIEW_MESSAGES:
+                preview.append((role, clip(text, PREVIEW_CAP)))
+    finally:
+        handle.close()
+    if not parsed:
+        return None
+    shown, sort_key = when_of(raw_when, mtime)
+    if not title:
+        title = "(no message)"
+    search = clip(" ".join(texts), SEARCH_CAP)
+    return {
+        "shown": shown,
+        "sort": sort_key,
+        "title": title,
+        "path": path,
+        "search": search,
+        "cwd": cwd if os.path.isabs(cwd) else "",
+        "preview": preview,
+    }
+
+
+def field(text):
+    return text.replace("\t", " ").replace("\n", " ").replace("\r", " ")
+
+
+def real(path):
+    try:
+        return os.path.realpath(path)
+    except (OSError, ValueError):
+        return path
+
+
+def load_live(path):
+    if not path:
+        return [], []
+    try:
+        with open(path, encoding="utf-8") as handle:
+            doc = json.load(handle)
+    except (OSError, json.JSONDecodeError):
+        return [], []
+    if not isinstance(doc, dict):
+        return [], []
+    workspaces = doc.get("workspaces")
+    panes = doc.get("panes")
+    if not isinstance(workspaces, list):
+        workspaces = []
+    if not isinstance(panes, list):
+        panes = []
+    return workspaces, panes
+
+
+def pi_session_path(pane):
+    session = pane.get("agent_session")
+    if not isinstance(session, dict) or session.get("kind") != "path":
+        return ""
+    agent = session.get("agent") or pane.get("agent")
+    if agent != "pi":
+        return ""
+    value = session.get("value")
+    if not isinstance(value, str) or not value:
+        return ""
+    return value
+
+
+def index_live(workspaces, panes):
+    labels = {}
+    for workspace in workspaces:
+        if not isinstance(workspace, dict):
+            continue
+        wid = workspace.get("workspace_id")
+        if not isinstance(wid, str) or not wid:
+            continue
+        label = workspace.get("label")
+        labels[wid] = label if isinstance(label, str) and label else wid
+
+    by_session = {}
+    dirs = {}
+    for pane in panes:
+        if not isinstance(pane, dict):
+            continue
+        wid = pane.get("workspace_id")
+        cwd = pane.get("cwd")
+        if isinstance(wid, str) and wid and isinstance(cwd, str) and os.path.isabs(cwd):
+            dirs.setdefault(wid, set()).add(real(cwd))
+        session_path = pi_session_path(pane)
+        if not session_path:
+            continue
+        key = real(session_path)
+        prev = by_session.get(key)
+        if prev is None or (pane.get("focused") is True and prev.get("focused") is not True):
+            by_session[key] = pane
+    return labels, by_session, dirs
+
+
+def match_cwd(cwd, dirs, labels):
+    if not cwd:
+        return "", ""
+    target = real(cwd)
+    hits = [wid for wid, paths in dirs.items() if target in paths]
+    if len(hits) != 1:
+        return "", ""
+    wid = hits[0]
+    return wid, labels.get(wid) or wid
+
+
+def attach(item, labels, by_session, dirs):
+    pane = by_session.get(real(item["path"]))
+    if pane is not None:
+        wid = pane.get("workspace_id") if isinstance(pane.get("workspace_id"), str) else ""
+        tab = pane.get("tab_id") if isinstance(pane.get("tab_id"), str) else ""
+        item["state"] = "open"
+        item["workspace_id"] = wid
+        item["tab_id"] = tab
+        item["label"] = labels.get(wid) or wid
+        return
+    item["state"] = "closed"
+    item["tab_id"] = ""
+    wid, label = match_cwd(item["cwd"], dirs, labels)
+    item["workspace_id"] = wid
+    item["label"] = label
+
+
+def display_of(item):
+    label = item["label"] or "-"
+    return field(f"{item['state']}  {label}  {item['shown']}  {item['title']}")
+
+
+def rows(root, live_path=""):
+    labels, by_session, dirs = index_live(*load_live(live_path))
+    found = []
+    for dirpath, _dirs, names in os.walk(root):
+        for name in names:
+            if not name.endswith(".jsonl"):
+                continue
+            item = read_session(os.path.join(dirpath, name))
+            if item is None:
+                continue
+            attach(item, labels, by_session, dirs)
+            found.append(item)
+    found.sort(key=lambda item: (0 if item["state"] == "open" else 1, -item["sort"]))
+    for item in found:
+        sys.stdout.write(
+            "\t".join(
+                [
+                    display_of(item),
+                    field(item["path"]),
+                    field(item["search"]),
+                    field(item["cwd"]),
+                    item["state"],
+                    field(item["workspace_id"]),
+                    field(item["tab_id"]),
+                ]
+            )
+            + "\n"
+        )
+
+
+def preview(path, live_path=""):
+    item = read_session(path)
+    if item is None:
+        sys.stdout.write("not a session file\n")
+        return
+    labels, by_session, dirs = index_live(*load_live(live_path))
+    attach(item, labels, by_session, dirs)
+    if item["label"]:
+        sys.stdout.write(f"{item['state']} · {item['label']}\n")
+    else:
+        sys.stdout.write(f"{item['state']}\n")
+    if item["cwd"]:
+        sys.stdout.write(f"{item['cwd']}\n")
+    sys.stdout.write(f"{item['shown']}  {item['title']}\n")
+    if not item["preview"]:
+        sys.stdout.write("\n(no messages)\n")
+        return
+    for role, text in item["preview"]:
+        who = "you" if role == "user" else "pi"
+        sys.stdout.write(f"\n{who}\n{text}\n")
+
+
+mode = sys.argv[1]
+if mode == "rows":
+    rows(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else "")
+elif mode == "preview":
+    preview(
+        sys.argv[2] if len(sys.argv) > 2 else "",
+        sys.argv[3] if len(sys.argv) > 3 else "",
+    )
+else:
+    sys.stderr.write(f"telescope-sessions: unknown mode {mode}\n")
+    sys.exit(2)
+PY
+}
+
+if [ "${1:-}" = "preview" ]; then
+	session_py preview "${2:-}" "${3:-}"
+	exit 0
+fi
+
+if [ "${1:-}" = "rows" ]; then
+	dir="${PI_CODING_AGENT_DIR:-}"
+	if [ -z "$dir" ] || [ ! -d "$dir/sessions" ]; then
+		exit 0
+	fi
+	session_py rows "$dir/sessions" "${2:-}"
+	exit 0
+fi
+
+if ! command -v python3 >/dev/null 2>&1; then
+	toast "python3 not found"
+	exit 1
+fi
+if ! command -v fzf >/dev/null 2>&1; then
+	toast "fzf not found"
+	exit 1
+fi
+
+sessions="${PI_CODING_AGENT_DIR:-}"
+if [ -z "$sessions" ] || [ ! -d "$sessions/sessions" ]; then
+	why="no session directory"
+	[ -n "$sessions" ] && why="no sessions under $sessions/sessions"
+	toast "$why"
+	exit 0
+fi
+
+# A failed pane or workspace list leaves every row closed and unlabeled.
+# The transcripts still show.
+live_file=""
+cleanup() {
+	[ -n "${live_file:-}" ] && rm -f "$live_file"
+}
+trap cleanup EXIT
+write_live() {
+	dest="$1"
+	panes_file="$(mktemp)"
+	workspaces_file="$(mktemp)"
+	status=0
+	"$herdr" pane list >"$panes_file" 2>/dev/null || status=1
+	if [ "$status" -eq 0 ]; then
+		"$herdr" workspace list >"$workspaces_file" 2>/dev/null || status=1
+	fi
+	if [ "$status" -eq 0 ]; then
+		python3 - "$panes_file" "$workspaces_file" "$dest" <<'PY' || status=1
+import json, sys
+
+def load(path, key):
+    try:
+        with open(path, encoding="utf-8") as handle:
+            doc = json.load(handle)
+    except (OSError, json.JSONDecodeError):
+        return None
+    if isinstance(doc, dict) and isinstance(doc.get(key), list):
+        return doc[key]
+    result = doc.get("result") if isinstance(doc, dict) else None
+    if isinstance(result, dict) and isinstance(result.get(key), list):
+        return result[key]
+    return None
+
+panes = load(sys.argv[1], "panes")
+workspaces = load(sys.argv[2], "workspaces")
+if panes is None or workspaces is None:
+    sys.exit(1)
+with open(sys.argv[3], "w", encoding="utf-8") as handle:
+    json.dump({"panes": panes, "workspaces": workspaces}, handle)
+PY
+	fi
+	rm -f "$panes_file" "$workspaces_file"
+	return "$status"
+}
+live_file="$(mktemp)"
+if ! write_live "$live_file"; then
+	rm -f "$live_file"
+	live_file=""
+fi
+
+if [ -n "$live_file" ]; then
+	list="$(session_py rows "$sessions/sessions" "$live_file" || true)"
+else
+	list="$(session_py rows "$sessions/sessions" || true)"
+fi
+if [ -z "$list" ]; then
+	toast "no sessions under $sessions/sessions"
+	exit 0
+fi
+
+count="$(printf '%s\n' "$list" | wc -l | tr -d ' ')"
+self="$(printf '%s' "$src" | sed "s/'/'\\\\''/g")"
+preview_cmd="'${self}' preview {2}"
+if [ -n "$live_file" ]; then
+	live_q="$(printf '%s' "$live_file" | sed "s/'/'\\\\''/g")"
+	preview_cmd="'${self}' preview {2} '${live_q}'"
+fi
+
+# Field 1 is the row the user sees (state, workspace, date, title). Field 3
+# is message text, matched but not shown. Field 2 is the transcript path,
+# field 4 the directory it was recorded in, then state, workspace id, tab id.
+selection="$(printf '%s\n' "$list" | fzf \
+	--delimiter='\t' \
+	--with-nth=1 \
+	--nth='1,3' \
+	--prompt="sessions ▸  ($count) " \
+	--header='enter focus open · new pi tab if closed · esc cancel' \
+	--preview="$preview_cmd" \
+	--preview-window='right,60%,border-left,wrap' \
+	--reverse \
+	--no-multi \
+	--tiebreak=index \
+	--info=inline || true)"
+
+[ -n "$selection" ] || exit 0
+
+path="$(printf '%s' "$selection" | awk -F'\t' '{print $2}')"
+recorded="$(printf '%s' "$selection" | awk -F'\t' '{print $4}')"
+state="$(printf '%s' "$selection" | awk -F'\t' '{print $5}')"
+workspace_id="$(printf '%s' "$selection" | awk -F'\t' '{print $6}')"
+tab_id="$(printf '%s' "$selection" | awk -F'\t' '{print $7}')"
+[ -n "$path" ] && [ -f "$path" ] || {
+	toast "session file is gone"
+	exit 0
+}
+
+# An open transcript is already running. Focus it. If that tab has gone
+# away since the list was built, fall through and start a new one.
+if [ "$state" = "open" ] && [ -n "$workspace_id" ] && [ -n "$tab_id" ]; then
+	if "$herdr" workspace focus "$workspace_id" >/dev/null 2>&1 &&
+		"$herdr" tab focus "$tab_id" >/dev/null 2>&1; then
+		exit 0
+	fi
+fi
+
+cwd="$recorded"
+if [ -z "$cwd" ] || [ ! -d "$cwd" ]; then
+	cwd="${HERDR_ACTIVE_PANE_CWD:-}"
+fi
+if [ -z "$cwd" ] || [ ! -d "$cwd" ]; then
+	cwd="$("$herdr" pane current 2>/dev/null |
+		sed -n 's/.*"foreground_cwd":"\([^"]*\)".*/\1/p' | head -n 1)"
+fi
+[ -n "$cwd" ] && [ -d "$cwd" ] || cwd="$PWD"
+if [ ! -d "$cwd" ]; then
+	toast "no usable directory: $cwd"
+	exit 1
+fi
+
+# A unique cwd match lands the new tab in that workspace. Otherwise it stays
+# in the workspace the popup was invoked from. Never create a workspace.
+target="$workspace_id"
+if [ -z "$target" ]; then
+	target="${HERDR_ACTIVE_WORKSPACE_ID:-}"
+fi
+
+# Same shape as herdr-new-pi-tab: one Pi pane, marked so the dev-tab hook does
+# not split Fresh in beside it. The label is cleared so Herdr names the tab.
+created="$("$herdr" tab create --label "herdr-tab-launcher-pi" \
+	${target:+--workspace "$target"} \
+	--cwd "$cwd" --focus)"
+tab="$(printf '%s' "$created" | sed -n 's/.*"tab_id":"\([^"]*\)".*/\1/p' | head -n 1)"
+pane="$(printf '%s' "$created" | sed -n 's/.*"pane_id":"\([^"]*\)".*/\1/p' | head -n 1)"
+[ -n "$pane" ] || {
+	toast "could not create a pi tab"
+	exit 1
+}
+
+name="$("$here/herdr-agent-name" pi "$target" "$cwd" 2>/dev/null || true)"
+if [ -z "$name" ] || ! "$herdr" agent start "$name" --kind pi --pane "$pane" -- --session "$path" >/dev/null 2>&1; then
+	quoted="$(printf '%s' "$path" | sed "s/'/'\\\\''/g")"
+	"$herdr" pane run "$pane" "pi --session '$quoted'"
+fi
+[ -n "$tab" ] && "$herdr" tab rename "$tab" "" || true

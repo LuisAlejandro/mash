@@ -46,3 +46,4 @@ persiyanov.reviewr 0.39.0
 herdr-workspace 0.1.2
 telescope 0.1.2
 ray.plugin-manager 0.5.0
+mash-programming-skills 0.5.14

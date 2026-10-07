@@ -607,3 +607,13 @@ key = "cmd+alt+m"
 type = "plugin_action"
 command = "fork-from-message.fork"
 description = "Fork agent from message"
+
+# Session transcripts. Own popup, same size as the file finder (cmd+p).
+# cmd+alt+l is free in Ghostty and Fresh, so no unbind is required.
+[[keys.command]]
+key = "cmd+alt+l"
+type = "popup"
+command = "telescope-sessions"
+description = "Session search"
+width = "70%"
+height = "70%"

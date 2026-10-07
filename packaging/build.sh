@@ -26,10 +26,12 @@ ship_helpers=(
     herdr-fresh-pane
     herdr-agent-name
     telescope-files
+    telescope-sessions
     git-status-watch
     pr-watch-repo
     herdr-shell-greeting
     herdr-dev-tab-fill
+    herdr-orchestration
 )
 
 for name in "${ship_helpers[@]}"; do
@@ -42,6 +44,7 @@ for cmd in curl tar unzip hdiutil shasum install_name_tool codesign ditto file p
     command -v "$cmd" >/dev/null 2>&1 || { echo "missing $cmd" >&2; exit 1; }
 done
 mash_require_sources
+mash_require_skills
 mash_pins_check
 if ps -ax -o command= | grep -F "$dest/" | grep -v grep >/dev/null; then
     echo "Mash.app is running from $dest; leaving it in place." >&2
@@ -434,6 +437,7 @@ env HOME="$work/home" \
     @krfantasy/pi-monokai-pro@0.2.0 \
     pi-plan-mode@0.4.8 \
     pi-web-search@1.6.0
+mash_install_skills
 # Sign git before the plugin clones use it. install_name_tool breaks its signature.
 sign_downloaded() {
     local f
@@ -525,6 +529,7 @@ if ps -ax -o command= | grep -F "$dest/" | grep -v grep >/dev/null; then
 fi
 rm -rf "$dest"
 mv "$app" "$dest"
+mash_finish_skill_venv "$dest" "$work/Mash.app"
 mash_link_plugins "$dest" "$home"
 codesign --force --deep --sign - "$dest/Contents/Resources/Ghostty.app"
 codesign --force --sign - "$dest"
