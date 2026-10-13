@@ -1,0 +1,86 @@
+name: Push
+
+# Gate every push to a long-lived branch.
+#
+# This exists because scripts/release.sh waits for it. release_wait_for_branch_ci
+# polls `gh run list --workflow push.yml --branch release/<version>` before the
+# release is merged, and RELEASE_CI_WORKFLOW defaults to exactly this filename.
+# Without it that wait polls for 45 minutes and then fails the release, which is
+# what happened before this was added.
+#
+# Keep the filename: the release scripts key on it.
+
+on:
+  push:
+    branches:
+      - develop
+      - master
+      - "release/**"
+  # Manual runs are useful when a gate is suspected of being flaky.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Supersede an in-flight run for the same branch, but never cancel one on
+  # master: a release may be waiting on that exact run.
+  group: push-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
+jobs:
+  gate:
+    name: Gate
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # Same script the release workflow runs, so the two cannot disagree about
+      # what "ready" means.
+      - name: Verify version, release inputs and shell syntax
+        run: ./scripts/preflight.sh
+
+  tests:
+    name: Tests
+    # Run on macOS rather than Linux: the suite is verified there, and these
+    # are shell helpers for a macOS-only product. Moving them to Linux needs
+    # them proven portable first, which has not been done.
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Run the helper and packaging tests
+        run: |
+          set -euo pipefail
+          failed=0
+
+          for t in \
+            packaging/tests/test_mash_isolate.sh \
+            packaging/tests/test_mash_force_updates.sh \
+            packaging/helpers/tests/test-annotate-paste-target.sh \
+            packaging/helpers/tests/test-telescope-files-path.sh
+          do
+            if (cd "$(dirname "$t")" && bash "$(basename "$t")"); then
+              echo "PASS $t"
+            else
+              echo "FAIL $t"
+              failed=1
+            fi
+          done
+
+          for t in \
+            packaging/tests/test_migrate_layout.py \
+            packaging/tests/test_design_pi_sync.py \
+            packaging/tests/test_penpot_account_setup.py
+          do
+            if python3 "$t"; then
+              echo "PASS $t"
+            else
+              echo "FAIL $t"
+              failed=1
+            fi
+          done
+
+          exit "$failed"
