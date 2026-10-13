@@ -36,12 +36,13 @@ env:
   # whenever the fork gains a commit.
   GHOSTTY_FORK_COMMIT: "a3f0c0b79665f26b0b3c705aaa4362b2ccca2db1"
   # Mash Programming Skills, whose skills and agents are copied into the app.
-  # The build refuses any other version. That repo is private, so its checkout
-  # needs SKILLS_TOKEN (a PAT with read access); there is no v0.5.14 tag, so the
-  # commit is pinned instead of a branch.
+  # The build refuses any other version. The repo is public, so this clones
+  # anonymously; there is no v0.5.14 tag, so the commit is pinned instead of a
+  # branch. That commit is the tip of develop after its history was rewritten
+  # to purge a leaked credential, so it is not the SHA any older clone has.
   SKILLS_VERSION: "0.5.14"
   SKILLS_REPO: "LuisAlejandro/mash-programming-skills"
-  SKILLS_COMMIT: "8b75686"
+  SKILLS_COMMIT: "86fd93ae999786dadb150d36b4a46d896ef28664"
 
 jobs:
   setup:
@@ -152,7 +153,6 @@ jobs:
         with:
           repository: ${{ env.SKILLS_REPO }}
           ref: ${{ env.SKILLS_COMMIT }}
-          token: ${{ secrets.SKILLS_TOKEN }}
           path: skills
 
       - name: Verify the skills version

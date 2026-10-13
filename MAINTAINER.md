@@ -65,7 +65,10 @@ branch is not automatically checked before `release.sh` waits on CI.
 | `APPLE_ID` | notarization |
 | `APPLE_APP_SPECIFIC_PASSWORD` | notarization |
 | `APPLE_TEAM_ID` | notarization, and the signing identity name |
-| `SKILLS_TOKEN` | PAT with read access to the private `mash-programming-skills` repo |
+
+No secret is needed to read `mash-programming-skills`: that repo is public, so
+CI clones it anonymously. It was made public only after its history was
+rewritten to purge a leaked credential — see the pin in `artifacts.yml`.
 
 Nothing here is checked in. This repo is public: keep credentials in these
 secrets and in the gitignored `.env` for local runs, never in a tracked file.
