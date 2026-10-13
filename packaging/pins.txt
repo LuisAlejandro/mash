@@ -1,7 +1,7 @@
 ghostty 1.3.1
 herdr 0.9.3
 fresh 0.5.1
-pi 0.99.1
+pi 1.1.0
 node 24.16.0
 python 3.13.16
 git 2.56.0
@@ -30,11 +30,10 @@ svelte-language-server 0.18.4
 vscode-langservers-extracted 4.10.0
 python-lsp-server 1.15.0
 pi-subagents 0.76.0
-pi-mcp-adapter 5.0.0
 pi-ask-user 0.16.0
 pi-monokai-pro 0.2.0
-pi-plan-mode 0.4.8
 pi-web-search 1.6.0
+typebox 1.3.36
 shfmt 3.14.1
 prettier 3.9.9
 prettier-plugin-svelte 4.1.1
@@ -47,3 +46,10 @@ herdr-workspace 0.1.2
 telescope 0.1.2
 ray.plugin-manager 0.5.0
 mash-programming-skills 0.5.14
+mash-design-skills 0.1.0
+sentrux 0.5.7
+hindsight-embed 0.8.3
+hindsight-api 0.8.3
+cua-driver 0.33.3
+agent-browser 0.38.2
+chrome-devtools-mcp 1.10.1
