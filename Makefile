@@ -67,3 +67,8 @@ undo-release:
 	@: "$${VERSION:?Set VERSION=x.y.z before running make undo-release}"
 	@VERSION=$${VERSION} ./scripts/rollback.sh release
 # <<< maintainer-tools:ops-release END
+
+# Not managed by maintainer-tools: this repo's release gate. It runs the same
+# script as .github/workflows/release.yml, so local and CI cannot drift apart.
+release-preflight:
+	@./scripts/preflight.sh

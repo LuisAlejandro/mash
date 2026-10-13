@@ -1,42 +1,90 @@
 # Maintainer Guide
 
-Quick reminders for Mash. Procedures live in `.cursor/skills/`; fleet
-setup lives in **maintainer-tools**.
+Quick reminders for Mash. The workflow skills live in the agent's global skill
+directory (`mash-*`), not in this repo; fleet setup lives in **maintainer-tools**.
 
 ## Feature work
 
-1. `rosey-lfg-code` — brainstorm → plan → implement.
-2. `rosey-lfg-quality` — QA, lint/build, open/update PR to `develop`.
+`mash-brainstorm` → `mash-plan` → `mash-work` → `mash-qa` → `mash-pr`. Repeat
+until ready to ship. `mash-lint` runs lint/format/type-check scoped to the
+session's changed files.
 
-Repeat until ready to ship.
+## Version
+
+`VERSION` at the repo root is the **only** place the app version lives.
+`packaging/build.sh` reads it into the bundle's `CFBundleShortVersionString` and
+`CFBundleVersion`. `bumpversion` is its only writer — never edit it by hand, or
+`.bumpversion.cfg` and `VERSION` will disagree and the release gate will fail.
 
 ## Release
 
-From **clean** `develop`:
+From a **clean** `develop`:
 
 | Step | Command / skill |
 |------|-----------------|
-| Interactive | `rosey-release` (default **patch**; `minor` / `major` when needed) |
+| Interactive | `mash-release` (default **patch**; `minor` / `major` when needed) |
 | Manual | `make release-preflight` then `make release-patch` (or `-minor` / `-major`) |
 | Rollback | `VERSION=<version> make undo-release` |
 
-Preflight: `make format`, `make lint`, `make test`.
-Gate details, milestones, and workflow verification: `.cursor/skills/rosey-release/`.
-Post-bump hooks: `.bumpversion.cfg` → `[maintainer-tools]`.
+`make release-preflight` runs `scripts/preflight.sh`, which checks that every
+shipped script parses, that `VERSION`/.bumpversion.cfg/the tag agree, and that
+the release inputs are all present. The same script is the CI gate, so the two
+cannot drift. It needs no Apple tooling, no Docker and no network.
 
-## PR CI (pointers)
-
-- **Pull Request** — `.github/workflows/pr.yml` on PRs to `develop`.
-- **Cursor CI fixes** — **maintainer-tools** `docs/cursor-pr-ci-automation.md`. `rosey-lfg-quality` / `rosey-pr` do not merge or fix CI.
+**The release carries no artifacts yet.** The GH release publishes the tag and
+the changelog only; nothing builds or attaches `Mash.dmg` (see below).
 
 ## Before `make release-*`
 
-- Tools: `git`, git-flow, Docker (running), `make`, `gh`, bumpversion, GPG (`user.signingkey`).
-- Clean working tree (release stops if format mutates files).
+- Tools: `git`, git-flow, `make`, `gh`, `bumpversion`, and a GPG signing key
+  (`git config user.signingkey` — the bump commit is signed).
+  Docker is **not** required: there is no `docker-compose.yml` here.
+- Clean working tree. Both `scripts/release.sh` and `bumpversion` refuse to run
+  otherwise.
+- Post-bump hooks: `.bumpversion.cfg` → `[maintainer-tools]`. Mash has none —
+  nothing else embeds the version.
+
+## CI
+
+| Workflow | Trigger | Does |
+|---|---|---|
+| `release.yml` | release published | Runs `scripts/preflight.sh <tag>` at that tag, then dispatches `artifacts.yml`. |
+| `artifacts.yml` | dispatched by `release.yml` | Builds, signs, notarizes and staples `Mash.dmg` on a GitHub-hosted `macos-26` runner, checks the artifact, and attaches it to the release with checksums. |
+| `keepalive.yml` | schedule | Keeps the repo's scheduled workflows alive. |
+
+There is no `pr.yml` / `push.yml`: nothing gates pull requests yet, so a release
+branch is not automatically checked before `release.sh` waits on CI.
+
+### Required secrets
+
+| Secret | Used for |
+|---|---|
+| `MACOS_CERT_P12` | base64 of the Developer ID Application `.p12`, imported into a throwaway keychain |
+| `MACOS_CERT_PASSWORD` | its password |
+| `MASH_KEYCHAIN_PASSWORD` | any value; guards that throwaway keychain |
+| `APPLE_ID` | notarization |
+| `APPLE_APP_SPECIFIC_PASSWORD` | notarization |
+| `APPLE_TEAM_ID` | notarization, and the signing identity name |
+| `SKILLS_TOKEN` | PAT with read access to the private `mash-programming-skills` repo |
+
+Nothing here is checked in. This repo is public: keep credentials in these
+secrets and in the gitignored `.env` for local runs, never in a tracked file.
+
+### What the build pulls in
+
+`artifacts.yml` pins all of it, so a release is reproducible: Zig `0.16.0`, the
+Ghostty fork at a fixed commit, the skills checkout at a fixed commit, and the
+Metal Toolchain (downloaded per run, ~840 MB).
+
+## Not built yet
+
+The DMG pipeline runs in CI as above. `packaging/release.sh` can also be run by
+hand on a maintainer machine with Xcode, the Metal toolchain, the Ghostty fork,
+Zig and Apple credentials in `.env`.
 
 ## One-time GitHub setup
 
-- `develop` — PR + checks from `pr.yml`; `maintainer-tools protect-github --apply`.
 - `master` — restrict pushes.
-- `release/*` — `push.yml` lists `release/**` and ends with **Release Gate** (manual patch).
 - Tags — restrict creation to maintainers.
+- Secret scanning and push protection are worth enabling: this repo is public
+  and the build consumes Apple credentials.

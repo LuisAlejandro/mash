@@ -1,0 +1,268 @@
+name: Artifacts
+
+# Builds and publishes the release DMG, at an exact tag.
+#
+# Mirrors wholmaster's shape: `release.yml` verifies the tag, then dispatches
+# this at that tag, and only this workflow touches the release's assets. It is
+# only ever started that way, so it cannot publish on a branch push.
+#
+# Mash is much smaller than wholmaster here: one platform (macOS arm64), one
+# artifact (Mash.dmg), and no auto-updater manifest, because Mash ships none.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to build, e.g. 1.2.3"
+        required: true
+        type: string
+
+permissions:
+  contents: write # required to upload release assets
+
+concurrency:
+  group: artifacts-${{ github.event.inputs.tag }}
+  cancel-in-progress: false
+
+env:
+  # Both are pinned because neither is free to drift. Ghostty upstream pins a
+  # Zig version and fails compilation on a mismatch, and the fork requires
+  # 0.16.0; the fork commit is what makes a release reproducible.
+  ZIG_VERSION: "0.16.0"
+  GHOSTTY_FORK: "LuisAlejandro/ghostty"
+  GHOSTTY_FORK_REF: "fork-main"
+  # Full SHA, compared exactly: a short prefix could collide, and this pin is
+  # what makes a released DMG traceable to a specific terminal build. Move it
+  # whenever the fork gains a commit.
+  GHOSTTY_FORK_COMMIT: "a3f0c0b79665f26b0b3c705aaa4362b2ccca2db1"
+  # Mash Programming Skills, whose skills and agents are copied into the app.
+  # The build refuses any other version. That repo is private, so its checkout
+  # needs SKILLS_TOKEN (a PAT with read access); there is no v0.5.14 tag, so the
+  # commit is pinned instead of a branch.
+  SKILLS_VERSION: "0.5.14"
+  SKILLS_REPO: "LuisAlejandro/mash-programming-skills"
+  SKILLS_COMMIT: "8b75686"
+
+jobs:
+  setup:
+    name: Setup
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+      tag: ${{ steps.get-version.outputs.tag }}
+    steps:
+      - name: Resolve the tag
+        id: get-version
+        run: |
+          TAG="${{ github.event.inputs.tag }}"
+          # The release workflow passes the tag it verified. `v` is tolerated
+          # because tags are written without it here.
+          TAG="${TAG#v}"
+          [ -n "$TAG" ] || { echo "a release tag is required" >&2; exit 1; }
+          echo "tag=${TAG}" >>"$GITHUB_OUTPUT"
+          echo "version=${TAG}" >>"$GITHUB_OUTPUT"
+          echo "building version ${TAG}"
+
+  build-macos:
+    name: Build Mash.dmg
+    needs: [setup]
+    runs-on: macos-26
+    timeout-minutes: 90
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.setup.outputs.tag }}
+
+      # The runner's Xcode is the one input this workflow cannot pin here: the
+      # path and name vary by image, and Ghostty's build is Xcode-sensitive.
+      # Print it so the first failure is diagnosable instead of mysterious.
+      - name: Report the toolchain
+        run: |
+          sw_vers
+          xcode-select -p
+          xcodebuild -version
+
+      # The build wants a "Developer ID Application" identity in the keychain
+      # and notarization credentials in the environment. Everything after this
+      # step is unchanged from what runs locally.
+      - name: Import signing certificate
+        env:
+          MACOS_CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+          MASH_KEYCHAIN_PASSWORD: ${{ secrets.MASH_KEYCHAIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          [ -n "${MACOS_CERT_P12:-}" ] || { echo "MACOS_CERT_P12 is not set" >&2; exit 1; }
+          keychain="$RUNNER_TEMP/mash-signing.keychain-db"
+          echo "MASH_KEYCHAIN=$keychain" >>"$GITHUB_ENV"
+          echo "MASH_KEYCHAIN_PASSWORD=$MASH_KEYCHAIN_PASSWORD" >>"$GITHUB_ENV"
+          security create-keychain -p "$MASH_KEYCHAIN_PASSWORD" "$keychain"
+          security set-keychain-settings -lut 3600 "$keychain"
+          security unlock-keychain -p "$MASH_KEYCHAIN_PASSWORD" "$keychain"
+          echo "$MACOS_CERT_P12" | base64 --decode >"$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$keychain" \
+            -P "$MACOS_CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$MASH_KEYCHAIN_PASSWORD" "$keychain" >/dev/null
+          rm -f "$RUNNER_TEMP/cert.p12"
+          security find-identity -v -p codesigning "$keychain"
+
+      # Xcode ships the Metal compiler as a separate component. Ghostty's build
+      # needs it, and its stub stays broken until TOOLCHAINS names it, so the
+      # identifier is read back rather than hardcoded: it changes with Xcode.
+      - name: Install Metal Toolchain
+        run: |
+          set -euo pipefail
+          xcodebuild -downloadComponent MetalToolchain
+          tc="$(xcodebuild -showComponent MetalToolchain | sed -n 's/^Toolchain Identifier: //p')"
+          [ -n "$tc" ] || { echo "could not read the Metal toolchain identifier" >&2; exit 1; }
+          echo "MASH_METAL_TOOLCHAIN=$tc" >>"$GITHUB_ENV"
+          echo "Metal toolchain: $tc"
+
+      - name: Install Zig
+        run: |
+          set -euo pipefail
+          dest="$RUNNER_TEMP/zig-$ZIG_VERSION"
+          mkdir -p "$dest"
+          curl -fL --retry 3 --max-time 900 -o "$RUNNER_TEMP/zig.tar.xz" \
+            "https://ziglang.org/download/${ZIG_VERSION}/zig-aarch64-macos-${ZIG_VERSION}.tar.xz"
+          tar -xJf "$RUNNER_TEMP/zig.tar.xz" -C "$dest" --strip-components=1
+          echo "MASH_ZIG=$dest/zig" >>"$GITHUB_ENV"
+          "$dest/zig" version
+
+      - name: Clone the Ghostty fork
+        run: |
+          set -euo pipefail
+          dest="$RUNNER_TEMP/ghostty"
+          git clone --depth 1 --branch "$GHOSTTY_FORK_REF" \
+            "https://github.com/${GHOSTTY_FORK}.git" "$dest"
+          actual="$(git -C "$dest" rev-parse HEAD)"
+          # The pin is what makes a release reproducible, so a branch that moved
+          # has to stop the build rather than quietly ship something else.
+          if [ "$actual" != "$GHOSTTY_FORK_COMMIT" ]; then
+            echo "fork $GHOSTTY_FORK_REF is at $actual, expected $GHOSTTY_FORK_COMMIT" >&2
+            exit 1
+          fi
+          echo "MASH_GHOSTTY_SRC=$dest" >>"$GITHUB_ENV"
+          git -C "$dest" log --oneline -1
+
+      - name: Clone the pinned skills checkout
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ env.SKILLS_REPO }}
+          ref: ${{ env.SKILLS_COMMIT }}
+          token: ${{ secrets.SKILLS_TOKEN }}
+          path: skills
+
+      - name: Verify the skills version
+        run: |
+          set -euo pipefail
+          # The build pins this exact version and refuses anything else, so fail
+          # here rather than deep inside the packaging pipeline.
+          got="$(tr -d '[:space:]' <skills/VERSION)"
+          [ "$got" = "$SKILLS_VERSION" ] || {
+            echo "skills checkout is $got, want $SKILLS_VERSION" >&2
+            exit 1
+          }
+          echo "MASH_SKILLS_SRC=$GITHUB_WORKSPACE/skills" >>"$GITHUB_ENV"
+          echo "skills $got from $SKILLS_REPO@$SKILLS_COMMIT"
+
+      # packaging/release.sh builds, signs, notarizes and staples. It needs no
+      # change for CI: it already takes credentials from the environment, and
+      # the ZIG/MASH_* variables above are the same knobs used locally.
+      - name: Build, sign and notarize
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        run: |
+          set -euo pipefail
+          ./packaging/release.sh
+
+      # Prove the artifact is what we claim before it is published: the same
+      # checks a user's Gatekeeper would make, run on the file being shipped.
+      - name: Verify the DMG
+        run: |
+          set -euo pipefail
+          dmg="$PWD/dist/Mash.dmg"
+          [ -f "$dmg" ] || { echo "dist/Mash.dmg was not produced" >&2; exit 1; }
+          xcrun stapler validate "$dmg"
+          spctl --assess --type open --context context:primary-signature -v "$dmg"
+          hdiutil attach -nobrowse -readonly "$dmg" >/tmp/attach.txt
+          mnt="$(awk -F'	' '/\/Volumes\//{print $NF}' /tmp/attach.txt | tail -1)"
+          codesign --verify --deep --strict "$mnt/Mash.app"
+          # Gatekeeper's own verdict on the app a user will actually launch.
+          spctl --assess --type execute -vv "$mnt/Mash.app"
+          hdiutil detach "$mnt" >/dev/null
+
+      - name: Stage release artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p release-artifacts
+          cp dist/Mash.dmg "release-artifacts/Mash-${VERSION}-mac-arm64.dmg"
+          cd release-artifacts
+          shasum -a 256 ./*.dmg >checksums-sha256.txt
+          cat checksums-sha256.txt
+        env:
+          VERSION: ${{ needs.setup.outputs.version }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v5
+        with:
+          name: macos-release-artifacts
+          path: release-artifacts/
+          retention-days: 7
+
+  finalize-release:
+    name: Publish release
+    needs: [setup, build-macos]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v5
+        with:
+          pattern: "*-release-artifacts"
+          path: artifacts/
+          merge-multiple: true
+
+      - name: Attach artifacts to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.setup.outputs.tag }}
+        run: |
+          set -euo pipefail
+          cd artifacts
+          for f in *; do
+            [ -f "$f" ] || continue
+            echo "uploading $f"
+            gh release upload "$TAG" "$f" --clobber --repo "$GITHUB_REPOSITORY"
+          done
+
+      - name: Note the download in the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.setup.outputs.tag }}
+          VERSION: ${{ needs.setup.outputs.version }}
+        run: |
+          set -euo pipefail
+          body="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json body -q .body)"
+          note="
+
+          ## Download
+
+          - \`Mash-${VERSION}-mac-arm64.dmg\` — macOS, Apple silicon
+          - \`checksums-sha256.txt\` — SHA-256 checksums
+
+          Signed with a Developer ID certificate and notarized by Apple, so it
+          opens without the Gatekeeper bypass. Verify a download with:
+
+          \`\`\`sh
+          shasum -a 256 -c checksums-sha256.txt
+          spctl --assess --type open --context context:primary-signature -v Mash-${VERSION}-mac-arm64.dmg
+          \`\`\`"
+          if printf '%s' "$body" | grep -q '## Download'; then
+            echo "download section already present, leaving the notes alone"
+          else
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --notes "${body}${note}"
+          fi

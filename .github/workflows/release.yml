@@ -1,5 +1,16 @@
 name: Publish Release
 
+# Runs when a release is published, at that exact tag.
+#
+# Mirrors wholmaster's two-workflow shape: this one gates the tag, then hands
+# off to artifacts.yml, which is the only thing that touches the release's
+# assets. Keeping them separate means the long, credential-using macOS build
+# is a dispatch at a known tag rather than a side effect of publishing.
+#
+# The gate is deliberately the same script a maintainer runs locally via
+# `make release-preflight`, told which version the tag claims, so the two paths
+# cannot disagree about what "ready" means.
+
 on:
   release:
     types: [published]
@@ -7,6 +18,10 @@ on:
 concurrency:
   group: publish-release-${{ github.event.release.tag_name }}
   cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: write # to dispatch artifacts.yml
 
 jobs:
   verify-release-tag:
@@ -18,19 +33,26 @@ jobs:
         with:
           ref: ${{ github.event.release.tag_name }}
 
+      - name: Verify tag, version and release inputs
+        run: ./scripts/preflight.sh "${{ github.event.release.tag_name }}"
 
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-
-      - name: Install dependencies
+  dispatch-artifacts:
+    name: Dispatch Artifacts
+    needs: verify-release-tag
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Trigger exact-tag Artifacts workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
         run: |
-          python3 -m pip install -r requirements-dev.txt
-
-      - name: Run lint
-        run: tox -e lint
-
-      - name: Run unit tests
-        run: tox -e coverage
-
+          set -euo pipefail
+          # The gate above already proved the tag matches VERSION; read it back
+          # at that exact ref so the built app carries the released version.
+          version="$(gh api "repos/$GITHUB_REPOSITORY/contents/VERSION?ref=$TAG" \
+            -q .content | base64 --decode | tr -d '[:space:]')"
+          echo "dispatching Artifacts for $TAG (VERSION=$version)"
+          gh workflow run artifacts.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref "$TAG" \
+            -f tag="$TAG"
