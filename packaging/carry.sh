@@ -968,19 +968,22 @@ PY
 # ~/.cursor/mcp.json and a manifest, and Mash ships neither.
 mash_require_design_skills() {
   local src ver
-  src="$home/Development/mash-design-skills"
+  src="$(mash_design_src)"
   if [ ! -f "$src/VERSION" ]; then
-    echo "Design skills checkout is missing. Leaving dist/Mash.app in place." >&2
+    echo "Design skills checkout is missing at $src." >&2
+    echo "Set MASH_DESIGN_SRC to a checkout of the pinned release." >&2
     exit 1
   fi
   ver="$(tr -d '[:space:]' <"$src/VERSION")"
   if [ "$ver" != "0.1.0" ]; then
-    echo "Design skills VERSION is $ver, want 0.1.0. Leaving dist/Mash.app in place." >&2
+    echo "Design skills VERSION is $ver, want 0.1.0." >&2
     exit 1
   fi
 }
 
-mash_design_src() { printf '%s\n' "$home/Development/mash-design-skills"; }
+# Overridable so CI can point at its own clone, the way MASH_SKILLS_SRC is.
+# Without this the path is pinned to a maintainer's home, which no runner has.
+mash_design_src() { printf '%s\n' "${MASH_DESIGN_SRC:-$home/Development/mash-design-skills}"; }
 
 # npm from the staged bundle, never the host's. HOME and the npm cache stay in
 # the build workdir so nothing is written to the user's account.

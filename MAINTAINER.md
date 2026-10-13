@@ -76,8 +76,9 @@ secrets and in the gitignored `.env` for local runs, never in a tracked file.
 ### What the build pulls in
 
 `artifacts.yml` pins all of it, so a release is reproducible: Zig `0.16.0`, the
-Ghostty fork at a fixed commit, the skills checkout at a fixed commit, and the
-Metal Toolchain (downloaded per run, ~840 MB).
+Ghostty fork at a fixed commit, **two** skills checkouts at fixed commits
+(`mash-programming-skills` and `mash-design-skills`, both required by the build),
+and the Metal Toolchain (downloaded per run, ~840 MB).
 
 ## Not built yet
 

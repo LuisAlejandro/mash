@@ -43,6 +43,11 @@ env:
   SKILLS_VERSION: "0.5.14"
   SKILLS_REPO: "LuisAlejandro/mash-programming-skills"
   SKILLS_COMMIT: "86fd93ae999786dadb150d36b4a46d896ef28664"
+  # The design toolkit, a second required checkout: the build copies its skills
+  # and agents and builds its headless MCP server. Public too, so no token.
+  DESIGN_SKILLS_VERSION: "0.1.0"
+  DESIGN_SKILLS_REPO: "LuisAlejandro/mash-design-skills"
+  DESIGN_SKILLS_COMMIT: "4e4d0ecf13883b4a88d14cba1107ca6b82d8dfda"
 
 jobs:
   setup:
@@ -167,6 +172,26 @@ jobs:
           }
           echo "MASH_SKILLS_SRC=$GITHUB_WORKSPACE/skills" >>"$GITHUB_ENV"
           echo "skills $got from $SKILLS_REPO@$SKILLS_COMMIT"
+
+      # The build refuses to continue without this checkout, and it lives at a
+      # maintainer's home path by default, so CI has to supply it explicitly.
+      - name: Clone the pinned design-skills checkout
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ env.DESIGN_SKILLS_REPO }}
+          ref: ${{ env.DESIGN_SKILLS_COMMIT }}
+          path: design-skills
+
+      - name: Verify the design-skills version
+        run: |
+          set -euo pipefail
+          got="$(tr -d '[:space:]' <design-skills/VERSION)"
+          [ "$got" = "$DESIGN_SKILLS_VERSION" ] || {
+            echo "design skills are $got, want $DESIGN_SKILLS_VERSION" >&2
+            exit 1
+          }
+          echo "MASH_DESIGN_SRC=$GITHUB_WORKSPACE/design-skills" >>"$GITHUB_ENV"
+          echo "design skills $got from $DESIGN_SKILLS_REPO@$DESIGN_SKILLS_COMMIT"
 
       # packaging/release.sh builds, signs, notarizes and staples. It needs no
       # change for CI: it already takes credentials from the environment, and
