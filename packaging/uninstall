@@ -3,11 +3,14 @@
 # Leaves ~/.mash in place. Does not touch Ghostty, Herdr, Fresh, or pi.
 set -euo pipefail
 home="$(dscl . -read "/Users/$(id -un)" NFSHomeDirectory | awk '{print $2}')"
-for domain in app.mash app.mash.ghostty app.mash.notify; do
+# app.mash.ghostty.menutest is written by the menu-bar patcher while it works
+# out the Ghostty menu strings. It is a separate domain from app.mash.ghostty,
+# so it survives unless it is listed here.
+for domain in app.mash app.mash.ghostty app.mash.ghostty.menutest app.mash.notify; do
     defaults delete "$domain" >/dev/null 2>&1 || true
     rm -f "$home/Library/Preferences/${domain}.plist"
     rm -rf "$home/Library/Saved Application State/${domain}.savedState"
     rm -rf "$home/Library/Caches/${domain}"
 done
-echo "Removed Mash preferences for app.mash, app.mash.ghostty, and app.mash.notify."
+echo "Removed Mash preferences for app.mash, app.mash.ghostty, app.mash.ghostty.menutest, and app.mash.notify."
 echo "~/.mash was left in place."

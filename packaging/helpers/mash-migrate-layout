@@ -1,0 +1,155 @@
+#!/usr/bin/env python3
+"""Move Mash's old hidden subdirectories to its fixed visible layout, and drop
+setup Mash no longer ships from the files it seeds once."""
+
+import json
+import os
+import shutil
+import stat
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+NAMES = ("config", "cache", "local", "pi", "setup")
+
+
+def rewrite(path: Path, changes: tuple[tuple[bytes, bytes], ...]) -> None:
+    if path.is_symlink() or not path.is_file():
+        return
+    original = path.read_bytes()
+    if b"\0" in original:
+        return
+    updated = original
+    for old, new in changes:
+        updated = updated.replace(old, new)
+    if updated == original:
+        return
+    fd, temp = tempfile.mkstemp(dir=path.parent)
+    try:
+        with os.fdopen(fd, "wb") as out:
+            out.write(updated)
+        shutil.copystat(path, temp)
+        os.replace(temp, path)
+    finally:
+        if os.path.exists(temp):
+            os.unlink(temp)
+
+
+def migrate_pi_settings(root: Path) -> None:
+    """Drop the MCP adapter the bundle stopped shipping.
+
+    An earlier Mash bundled `pi-mcp-adapter` and seeded it into the agent's
+    `packages`. The adapter, once loaded, wrote `-builtin:mcp` into
+    `extensions` so pi's own MCP support would stand down. The bundle now ships
+    pi's built-in MCP instead, but `settings.json` is seeded only when missing,
+    so an existing install keeps both entries: the package declaration loads the
+    adapter again, and the extension exclusion switches the built-in support
+    off. Removing both is what makes the seeded settings and the running agent
+    agree. Idempotent, and a no-op on a fresh install.
+    """
+    path = root / "pi" / "agent" / "settings.json"
+    if path.is_symlink() or not path.is_file():
+        return
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return
+    if not isinstance(data, dict):
+        return
+
+    changed = False
+    packages = data.get("packages")
+    if isinstance(packages, list):
+        kept = [name for name in packages if "pi-mcp-adapter" not in str(name)]
+        if kept != packages:
+            data["packages"] = kept
+            changed = True
+    extensions = data.get("extensions")
+    if isinstance(extensions, list) and "-builtin:mcp" in extensions:
+        kept = [name for name in extensions if name != "-builtin:mcp"]
+        if kept:
+            data["extensions"] = kept
+        else:
+            data.pop("extensions", None)
+        changed = True
+
+    if changed:
+        path.write_text(json.dumps(data, indent=2))
+
+
+def migrate(root: Path) -> None:
+    if root.name != ".mash" or root.is_symlink() or not root.is_dir():
+        raise ValueError("expected a real ~/.mash directory")
+
+    # Check every destination before moving anything. Never merge trees: that
+    # could silently overwrite an existing Pi login, history, or setup state.
+    for name in NAMES:
+        old, new = root / f".{name}", root / name
+        if old.is_symlink() or new.is_symlink():
+            raise ValueError(f"refusing a symlink at {old} or {new}")
+        if old.exists() and new.exists():
+            raise ValueError(f"both {old} and {new} exist; resolve the collision before launch")
+
+    if any((root / f".{name}").exists() for name in NAMES):
+        socket = root / "run" / "herdr.sock"
+        if socket.is_socket():
+            lsof = shutil.which("lsof")
+            if not lsof or subprocess.run([lsof, "-nP", str(socket)], stdout=subprocess.DEVNULL,
+                                          stderr=subprocess.DEVNULL).returncode == 0:
+                raise ValueError("Mash is still running; close it before migrating")
+        for name in NAMES:
+            old = root / f".{name}"
+            if old.exists():
+                old.rename(root / name)
+
+    # Runs every launch, unlike the layout rewrite below, because settings.json
+    # is never re-seeded once it exists.
+    migrate_pi_settings(root)
+
+    marker = root / "setup" / "layout-v2"
+    if marker.exists() or not any((root / name).exists() for name in NAMES):
+        return
+
+    changes = tuple(
+        (f"{prefix}/.{name}".encode(), f"{prefix}/{name}".encode())
+        for prefix in (str(root), "~/.mash") for name in NAMES
+    )
+    files = [
+        root / "config/herdr/config.toml",
+        root / "config/pet/config.toml",
+        root / "pi/agent/AGENTS.md",
+        root / "pi/agent/APPEND_SYSTEM.md",
+        root / "config/mash/venvs/mash-parallel/pyvenv.cfg",
+    ]
+    for folder in (
+        root / "pi/agent/skills",
+        root / "pi/agent/agents",
+        root / "config/mash/references",
+        root / "config/mash/venvs/mash-parallel/bin",
+    ):
+        if folder.is_dir():
+            for directory, subdirs, names in os.walk(folder):
+                subdirs[:] = [name for name in subdirs if name not in ("node_modules", ".venv", "__pycache__")]
+                files.extend(Path(directory) / name for name in names)
+    for path in files:
+        rewrite(path, changes)
+
+    # Mash's existing skill link is absolute; moving its venv breaks it.
+    link = root / "pi/agent/skills/mash-parallel/.venv"
+    old_venv = root / ".config/mash/venvs/mash-parallel"
+    new_venv = root / "config/mash/venvs/mash-parallel"
+    if link.is_symlink() and link.readlink() == old_venv:
+        link.unlink()
+        link.symlink_to(new_venv)
+
+    marker.parent.mkdir(exist_ok=True)
+    marker.write_text("2\n")
+
+
+if __name__ == "__main__":
+    try:
+        migrate(Path(sys.argv[1]))
+    except (IndexError, OSError, ValueError) as error:
+        print(f"Mash layout migration: {error}", file=sys.stderr)
+        sys.exit(1)

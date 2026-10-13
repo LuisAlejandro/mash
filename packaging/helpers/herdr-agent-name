@@ -24,6 +24,8 @@ workspace_id="${2:-${HERDR_ACTIVE_WORKSPACE_ID:-${HERDR_WORKSPACE_ID:-}}}"
 fallback_cwd="${3:-${HERDR_ACTIVE_PANE_CWD:-$PWD}}"
 
 herdr="${HERDR_BIN_PATH:-herdr}"
+# The bundle's own python3, not whatever PATH resolves. See mash-bin.
+py="$(mash-bin python3 2>/dev/null || printf '%s' python3)"
 
 # Max name length Herdr accepts. The role and any "-N" suffix must fit inside
 # it, so the slug is truncated rather than the suffix.
@@ -40,7 +42,7 @@ slugify() {
 workspace_label() {
 	[ -n "$workspace_id" ] || return 0
 	"$herdr" workspace list 2>/dev/null |
-		python3 -c '
+		"$py" -c '
 import json, sys
 want = sys.argv[1]
 try:
@@ -56,7 +58,7 @@ for ws in data.get("result", {}).get("workspaces", []):
 
 live_names() {
 	"$herdr" agent list 2>/dev/null |
-		python3 -c '
+		"$py" -c '
 import json, sys
 try:
     data = json.load(sys.stdin)

@@ -58,10 +58,13 @@ fi
 #
 # Unlike the refuse() failures above, a failed agent start is NOT fatal: the
 # reviewr pane is already up and useful, so fall back to the old untracked
-# `pane run` and keep the tab.
+# `pane run` and keep the tab. That fallback names the bundled pi by absolute
+# path -- `pane run` hands the string to the pane, where a bare `pi` resolves
+# through a PATH that may hold Homebrew's copy first. See mash-bin.
+pi_cmd="$(mash-bin pi 2>/dev/null || printf '%s' pi)"
 agent_name="$("$(dirname "$0")/herdr-agent-name" pi 2>/dev/null || true)"
 if [[ -z "$agent_name" ]] ||
 	! "$herdr" agent start "$agent_name" --kind pi --pane "$right" >/dev/null 2>&1; then
-	"$herdr" pane run "$right" pi
+	"$herdr" pane run "$right" "$pi_cmd"
 fi
 "$herdr" tab focus "$tab"

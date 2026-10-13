@@ -1,0 +1,146 @@
+#!/bin/sh
+# Paste the saved annotations into the agent pane of the current tab.
+#
+# Why this wrapper exists: cmd+l is bound to annotate's paste-archive action,
+# which targets the FOCUSED pane. Mash's fresh pane reports itself to Herdr as
+# an agent named "fresh" -- that report is what makes Herdr store the pane's
+# resume command, so a Fresh pane survives a server restart as Fresh instead of
+# coming back as a shell. The annotate plugin only asks whether the target pane
+# has a non-empty agent label, so it accepts the fresh pane and writes the
+# annotations into the Fresh buffer instead of the pi prompt beside it.
+#
+# This wrapper picks the tab's real agent pane (a pane whose agent is not the
+# fresh pseudo-agent), then runs the same plugin action with the invocation
+# context pointed at it, so the plugin keeps its own readiness checks, delivery,
+# and archiving.
+set -eu
+
+herdr="${HERDR_BIN_PATH:-herdr}"
+active="${HERDR_ACTIVE_PANE_ID:-}"
+
+# A `type = "shell"` custom command runs under /bin/sh -lc, and the login
+# shell's PATH puts the system directories first, so a bare `python3` is the
+# system one -- a stub on a Mac without the developer tools. Mash's own python
+# sits beside the running Herdr.
+python3="python3"
+case "$herdr" in
+*/*)
+	if [ -x "${herdr%/*}/python3" ]; then
+		python3="${herdr%/*}/python3"
+	fi
+	;;
+esac
+
+notify() {
+	"$herdr" notification show "$1" --body "$2" --sound none >/dev/null 2>&1 || true
+}
+
+[ -n "$active" ] || exit 0
+
+# The focused pane when it runs a real agent, else the real agent sharing its
+# tab (the fresh+pi layout), else the real agent sharing its workspace.
+target="$(
+	"$herdr" pane list 2>/dev/null | "$python3" -c '
+import json, sys
+
+active = sys.argv[1]
+try:
+    panes = json.load(sys.stdin)["result"]["panes"]
+except Exception:
+    sys.exit(0)
+
+def is_agent(pane):
+    agent = pane.get("agent") or ""
+    # "fresh" is the Mash pseudo-agent label for the resume report, not a
+    # pane that can take a prompt.
+    return bool(agent) and agent != "fresh"
+
+by_id = {pane.get("pane_id"): pane for pane in panes}
+current = by_id.get(active)
+if current and is_agent(current):
+    print(current["pane_id"])
+    sys.exit(0)
+tab = (current or {}).get("tab_id")
+for pane in panes:
+    if tab and pane.get("tab_id") == tab and is_agent(pane):
+        print(pane["pane_id"])
+        sys.exit(0)
+workspace = (current or {}).get("workspace_id")
+for pane in panes:
+    if workspace and pane.get("workspace_id") == workspace and is_agent(pane):
+        print(pane["pane_id"])
+        sys.exit(0)
+' "$active" 2>/dev/null || true
+)"
+if [ -z "$target" ]; then
+	notify "No agent to paste into" "This tab has no agent pane; annotations are still active."
+	exit 0
+fi
+
+# The installed annotate plugin, as the registry Herdr itself uses. Its command
+# is relative to plugin_root, and the two shipped manifests differ: the lite one
+# points at ../bin, the full one at ./bin.
+root="$(
+	"$herdr" plugin list --plugin annotate --json 2>/dev/null | "$python3" -c '
+import json, sys
+
+try:
+    plugins = json.load(sys.stdin)["result"]["plugins"]
+except Exception:
+    sys.exit(0)
+for plugin in plugins:
+    if plugin.get("plugin_id") == "annotate":
+        print(plugin.get("plugin_root") or "")
+        break
+' 2>/dev/null || true
+)"
+if [ -z "$root" ]; then
+	notify "Annotate is not installed" "Install the annotate plugin to paste annotations."
+	exit 0
+fi
+
+binary=""
+for candidate in "$root/bin/herdr-annotate.exe" "$root/../bin/herdr-annotate.exe"; do
+	if [ -x "$candidate" ]; then
+		binary="$candidate"
+		break
+	fi
+done
+[ -n "$binary" ] || exit 0
+
+context="$(
+	"$herdr" pane get "$target" 2>/dev/null | "$python3" -c '
+import json, sys
+
+try:
+    pane = json.load(sys.stdin)["result"]["pane"]
+except Exception:
+    sys.exit(0)
+context = {
+    "workspace_id": pane.get("workspace_id"),
+    "tab_id": pane.get("tab_id"),
+    "focused_pane_id": pane.get("pane_id"),
+    "focused_pane_cwd": pane.get("cwd"),
+    "focused_pane_agent": pane.get("agent"),
+}
+print(json.dumps({key: value for key, value in context.items() if value}))
+' 2>/dev/null || true
+)"
+[ -n "$context" ] || exit 0
+
+# The plugin reads its store directory from the environment Herdr would have
+# given a plugin action. Recreate the three path variables and the context, and
+# let it run its own paste-archive path against the agent pane.
+state="${XDG_STATE_HOME:-$HOME/.local/state}/herdr/plugins/annotate"
+config="${XDG_CONFIG_HOME:-$HOME/.config}/herdr/plugins/config/annotate"
+
+exec env \
+	HERDR_ENV=1 \
+	HERDR_BIN_PATH="$herdr" \
+	HERDR_PLUGIN_ID=annotate \
+	HERDR_PLUGIN_ROOT="$root" \
+	HERDR_PLUGIN_CONFIG_DIR="$config" \
+	HERDR_PLUGIN_STATE_DIR="$state" \
+	HERDR_PLUGIN_ACTION_ID=paste-archive \
+	HERDR_PLUGIN_CONTEXT_JSON="$context" \
+	"$binary" paste-archive

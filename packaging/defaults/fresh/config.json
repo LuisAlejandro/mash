@@ -1,5 +1,7 @@
 {
   "theme": "https://github.com/lucasoskorep/fresh-monokai#monokai",
+  "check_for_updates": false,
+  "self_update": false,
   "file_explorer": {
     "width": "30",
     "follow_active_buffer": true,

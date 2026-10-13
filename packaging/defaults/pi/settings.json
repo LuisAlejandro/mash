@@ -1,13 +1,12 @@
 {
   "packages": [
     "npm:pi-subagents",
-    "npm:pi-mcp-adapter",
     "npm:pi-ask-user",
     "npm:@krfantasy/pi-monokai-pro",
-    "npm:pi-plan-mode",
     "npm:pi-web-search"
   ],
-  "lastChangelogVersion": "0.99.1",
+  "lastChangelogVersion": "1.1.0",
+  "defaultThinkingLevel": "medium",
   "theme": "Monokai Pro (CE)",
   "defaultTools": [
     "+grep",

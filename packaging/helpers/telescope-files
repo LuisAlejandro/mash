@@ -36,18 +36,49 @@
 set -euo pipefail
 
 herdr="${HERDR_BIN_PATH:-herdr}"
+# The bundle's own python3, not whatever PATH resolves: this script prepends
+# Homebrew ahead of Mash's directories below, for its own fzf, fd and bat. See
+# mash-bin.
+py="$(mash-bin python3 2>/dev/null || printf '%s' python3)"
+# Herdr custom commands have a minimal PATH; restore its binary directory and
+# Homebrew's standard macOS prefixes so host tools (fzf, fd, bat, Fresh) resolve.
+PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+case "$herdr" in
+	/*) PATH="$(dirname "$herdr"):$PATH" ;;
+esac
+export PATH
+
 editor="${EDITOR:-${VISUAL:-}}"
 # Prefer fresh (this machine's editor), then vim -- both resolve under a minimal
 # PATH.
 [ -n "$editor" ] || { command -v fresh >/dev/null 2>&1 && editor=fresh || editor=vim; }
 
-# telescope's binary. The install directory is content-hashed, so glob for it
-# rather than hardcoding a hash that moves on every plugin update.
-# Prefer the locally-linked checkout, then any GitHub install, then PATH. The
-# local copy is where the actions-only build lives; the glob is kept so this
-# still works if telescope is reinstalled from GitHub.
+# telescope's binary. It is not on PATH: Herdr resolves a plugin's command
+# against its plugin root, and a GitHub install directory is content-hashed. So
+# look where the plugin actually is, in the order above: the locally linked
+# checkout beside the running Herdr, then any GitHub install, then PATH. Without
+# this the popup opened and closed with "binary not found".
 telescope_bin="${TELESCOPE_BIN:-}"
 [ -n "$telescope_bin" ] || telescope_bin="$(command -v herdr-telescope 2>/dev/null || true)"
+if [ -z "$telescope_bin" ] || [ ! -x "$telescope_bin" ]; then
+	plugins=""
+	case "$herdr" in
+	/*) plugins="$(dirname "$herdr")/../plugins" ;;
+	esac
+	config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/herdr/plugins"
+	for candidate in \
+		"$plugins/telescope/bin/herdr-telescope" \
+		"$plugins/telescope/lite/bin/herdr-telescope" \
+		"${HERDR_PLUGIN_ROOT:-}/bin/herdr-telescope" \
+		"$HOME/.local/bin/herdr-telescope" \
+		"$config_dir"/github/telescope*/bin/herdr-telescope \
+		"$config_dir"/github/telescope*/lite/bin/herdr-telescope; do
+		if [ -x "$candidate" ]; then
+			telescope_bin="$candidate"
+			break
+		fi
+	done
+fi
 if [ -z "$telescope_bin" ] || [ ! -x "$telescope_bin" ]; then
 	printf 'telescope-files: herdr-telescope binary not found; set TELESCOPE_BIN.\n' >&2
 	"$herdr" notification show "File finder" --body "herdr-telescope binary not found" --sound none >/dev/null 2>&1 || true
@@ -261,7 +292,10 @@ open_in_new_dev_tab() {
 		--cwd "$cwd" --no-focus | pane_id)"
 	[ -n "$right" ] || return 1
 	"$herdr" pane run "$left" 'herdr-fresh-pane .'
-	"$herdr" pane run "$right" pi
+	# Absolute, because this function is reached from a process whose PATH leads
+	# with Homebrew: a bare `pi` would run that copy. See mash-bin.
+	pi_cmd="$(mash-bin pi 2>/dev/null || printf '%s' pi)"
+	"$herdr" pane run "$right" "$pi_cmd"
 	[ -n "$tab" ] && "$herdr" tab rename "$tab" "" || true
 	# The wrapper sets routing itself; this only covers the case where it is not
 	# on PATH, so the pane is still routed either way. A reused Fresh pane (the

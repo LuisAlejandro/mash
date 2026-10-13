@@ -1,0 +1,121 @@
+#!/bin/bash
+# First-launch install of Hindsight into Mash's data folder.
+#
+# Mash never moves HOME, and hindsight resolves every path through
+# Path.home(), so the environment is built inside the data folder and every
+# hindsight process is later run with HOME pointed there by the warm-start
+# script. Nothing here writes to the real ~/.hindsight, ~/.pg0 or ~/.local.
+#
+# The launcher starts this in the background, so it must be safe to run twice,
+# safe to interrupt, and safe to re-run after a failure. Progress goes to
+# <data>/setup/hindsight-install.log.
+#
+#   mash-hindsight-install [DATA_DIR]
+set -uo pipefail
+
+self="$(cd "$(dirname "$0")" && pwd)"
+py="$self/../python/bin/python3"
+# The wizard runs this before mash_isolate, so PATH is whatever launched the
+# app. Mash's own interpreters go first: the shims use `env python3` and
+# `env node`.
+PATH="$(cd "$self/../python/bin" && pwd):$(cd "$self/../node/bin" && pwd):$PATH"
+export PATH
+
+# The launcher passes the data folder. The warm-start path derives it from the
+# agent directory instead, which is the same tree two levels up.
+data="${1:-${MASH_DATA_DIR:-}}"
+if [ -z "$data" ] && [ -n "${PI_CODING_AGENT_DIR:-}" ]; then
+  data="$(cd "$PI_CODING_AGENT_DIR/../.." 2>/dev/null && pwd)"
+fi
+[ -n "$data" ] || data="$HOME/.mash"
+
+pin="0.8.3"
+[ -f "$data/config/mash/hindsight-pin" ] &&
+  pin="$(tr -d '[:space:]' <"$data/config/mash/hindsight-pin")"
+
+setup="$data/setup"
+log="$setup/hindsight-install.log"
+lock="$setup/hindsight-install.lock"
+venv="$data/local/share/mash/hindsight"
+bindir="$data/.local/bin"
+
+mkdir -p "$setup" "$bindir" "$data/.hindsight" "$data/.pg0" \
+  "$data/cache/huggingface" "$data/cache/flashrank"
+
+say() { printf '%s %s\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$*" >>"$log"; }
+
+# The entry point answering is the whole readiness test.
+if [ -x "$venv/bin/hindsight-embed" ] && "$venv/bin/hindsight-embed" --help >/dev/null 2>&1; then
+  say "hindsight-embed $pin already installed; nothing to do"
+  exit 0
+fi
+
+# One install at a time. A lock older than two hours belongs to a run that died
+# with the machine.
+if ! mkdir "$lock" 2>/dev/null; then
+  if [ -n "$(find "$lock" -maxdepth 0 -mmin +120 2>/dev/null)" ]; then
+    say "removing a stale install lock"
+    rm -rf "$lock"
+    mkdir "$lock" 2>/dev/null || exit 0
+  else
+    say "an install is already running; leaving it alone"
+    exit 0
+  fi
+fi
+trap 'rm -rf "$lock"' EXIT
+
+[ -x "$py" ] || {
+  say "the bundled python is missing at $py"
+  exit 1
+}
+
+say "installing hindsight-embed $pin (the first run downloads about 900 MB)"
+if [ -x "$venv/bin/python" ]; then
+  say "reusing the environment already on disk"
+else
+  rm -rf "$venv"
+  mkdir -p "$(dirname "$venv")"
+  "$py" -m venv "$venv" >>"$log" 2>&1 || {
+    say "could not create the environment"
+    exit 1
+  }
+fi
+
+# hindsight-api is hindsight-api-slim[all], and [all] is exactly what pulls in
+# torch, mlx and mlx-lm: 1.8 GB instead of 0.9 GB. Mash installs the slim core
+# with only the two extras the embedded daemon needs. flashrank is in neither
+# of them (only in `all` and `local-ml`), so it is named explicitly.
+pkgs=(
+  "hindsight-embed==$pin"
+  "hindsight-api-slim[embedded-db,local-onnx]==$pin"
+  "flashrank"
+)
+if ! env HOME="$data" PYTHONNOUSERSITE=1 PIP_DISABLE_PIP_VERSION_CHECK=1 \
+  "$venv/bin/python" -m pip install --upgrade "${pkgs[@]}" >>"$log" 2>&1; then
+  say "pip install failed; see the log above, then let Mash retry"
+  exit 1
+fi
+
+[ -x "$venv/bin/hindsight-embed" ] || {
+  say "hindsight-embed did not appear in the environment"
+  exit 1
+}
+
+# $HOME is the data folder for every hindsight process, so $HOME/.local/bin is
+# where the tool looks for its own shims.
+mkdir -p "$bindir"
+ln -sfn "$venv/bin/hindsight-embed" "$bindir/hindsight-embed"
+
+# The optional client CLI. Best effort only: retain and recall work without it.
+if [ ! -x "$bindir/hindsight" ]; then
+  if env HOME="$data" HINDSIGHT_CLI_VERSION="$pin" \
+    bash -c "curl -fsSL https://hindsight.vectorize.io/get-cli | bash" >>"$log" 2>&1 &&
+    [ -x "$bindir/hindsight" ]; then
+    say "installed the hindsight CLI"
+  else
+    say "the hindsight CLI did not install; memory works without it"
+  fi
+fi
+
+say "hindsight-embed $pin is ready; the warm-start script starts the daemon"
+exit 0

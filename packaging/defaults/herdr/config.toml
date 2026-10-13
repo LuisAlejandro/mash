@@ -294,10 +294,10 @@ height = "70%"
 
 # Lazygit over focused pane. Same popup shape as the lazydocker binding above:
 # a `popup` custom command, 90% x 85%, cd'd to the active pane's cwd so it
-# opens the repo you are looking at. Pinned to lazygit rather
-# than a bare `lazygit` because custom commands get a minimal PATH; lazydocker
-# needs no such pin (it is on the server PATH). LazyGit reads Mash's lazygit config
-# on its own, so no CONFIG_DIR is needed.
+# opens the repo you are looking at. The bare `lazygit` here and the bare
+# `lazydocker` below both resolve to the copies Mash ships: the launcher puts
+# Mash's own bin first on the pane PATH. LazyGit reads Mash's lazygit config on
+# its own, so no CONFIG_DIR is needed.
 # ctrl+shift+g is the agent-panel modifier, free in Ghostty live and default,
 # and free in Fresh.
 [[keys.command]]
@@ -475,11 +475,20 @@ description = "annotate text"
 
 # Moved from prefix+ctrl+v to cmd+l. Free in Ghostty and Fresh; no unbind
 # required.
+#
+# A shell command, not `plugin_action annotate.paste-archive`: that action
+# targets the focused pane, and Mash's fresh pane reports itself to Herdr as an
+# agent named "fresh" (that report is what makes Herdr store its resume
+# command, so the pane survives a server restart as Fresh). The annotate plugin
+# only checks that the target pane has an agent label, so the action accepted
+# the fresh pane and pasted the annotations into the Fresh buffer instead of the
+# pi prompt beside it. herdr-annotate-paste picks the tab's real agent and runs
+# the same action with the invocation context pointed at it.
 [[keys.command]]
 key = "cmd+l"
-type = "plugin_action"
-command = "annotate.paste-archive"
-description = "paste annotations into the agent's prompt and archive them"
+type = "shell"
+command = "herdr-annotate-paste"
+description = "paste annotations into this tab's agent and archive them"
 
 [[keys.command]]
 key = "cmd+shift+l"

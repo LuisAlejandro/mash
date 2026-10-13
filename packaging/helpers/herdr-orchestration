@@ -6,4 +6,4 @@ if [ ! -f "$script" ]; then
     echo "herdr-orchestration: plugin script missing" >&2
     exit 1
 fi
-exec python3 "$script" "$@"
+exec "$(mash-bin python3 2>/dev/null || printf '%s' python3)" "$script" "$@"

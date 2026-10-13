@@ -21,6 +21,10 @@ set -eu
 herdr="${HERDR_BIN_PATH:-herdr}"
 ratio="${FRESH_RATIO:-0.6}"
 here="$(cd "$(dirname "$0")" && pwd)"
+# The bundle's own python3, not whatever PATH resolves: a host 3.x can be a
+# different minor or a different build, and Mash pins and tests the one it
+# ships. See mash-bin.
+py="$(mash-bin python3 2>/dev/null || printf '%s' python3)"
 
 left="${1:?usage: herdr-dev-tab-fill <left-pane-id>}"
 
@@ -40,14 +44,14 @@ pane_id() {
 # directory) and name the agent after it -- observed producing `dev-tab-pi`
 # instead of a workspace-derived name before this was fixed.
 pane_json="$("$herdr" pane get "$left" 2>/dev/null || true)"
-read_cwd="$(printf '%s' "$pane_json" | python3 -c '
+read_cwd="$(printf '%s' "$pane_json" | "$py" -c '
 import json, sys
 try:
     print(json.load(sys.stdin)["result"]["pane"].get("cwd") or "")
 except Exception:
     print("")
 ' 2>/dev/null || true)"
-workspace_id="$(printf '%s' "$pane_json" | python3 -c '
+workspace_id="$(printf '%s' "$pane_json" | "$py" -c '
 import json, sys
 try:
     print(json.load(sys.stdin)["result"]["pane"].get("workspace_id") or "")
@@ -96,4 +100,8 @@ start_agent() {
 # have a persisted workspace still honours its recorded visibility, so a
 # deliberately-closed explorer stays closed.
 "$herdr" pane run "$left" 'herdr-fresh-pane .'
-start_agent "$right" pi pi pi
+# Absolute, because `pane run` hands the string to the pane and a bare `pi`
+# there resolves through PATH, where Homebrew's pi sits unless Mash's own
+# directories lead it. See mash-bin.
+pi_cmd="$(mash-bin pi 2>/dev/null || printf '%s' pi)"
+start_agent "$right" pi pi "$pi_cmd"

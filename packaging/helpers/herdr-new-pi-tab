@@ -21,6 +21,11 @@ here="$(dirname "$0")"
 # agent start is best-effort: it waits for the agent to become interactive and
 # fails if the name is taken or pi never gets ready. A failure there must not
 # cost the user the tab, so fall back to the old untracked `pane run`.
+#
+# The fallback command is the absolute path of the bundled pi, not the bare
+# name: `pane run` hands the string to the pane, so a bare `pi` there resolves
+# through the pane's PATH, where Homebrew's pi sits unless Mash's own
+# directories lead it. See mash-bin.
 start_agent() {
 	_pane="$1" _role="$2" _kind="$3" _cmd="$4"
 	_name="$("$here/herdr-agent-name" "$_role" 2>/dev/null || true)"
@@ -37,5 +42,6 @@ created="$("$herdr" tab create --label "herdr-tab-launcher-pi" \
 tab="$(printf '%s' "$created" | sed -n 's/.*"tab_id":"\([^"]*\)".*/\1/p' | head -n 1)"
 pane="$(printf '%s' "$created" | sed -n 's/.*"pane_id":"\([^"]*\)".*/\1/p' | head -n 1)"
 
-start_agent "$pane" pi pi pi
+pi_cmd="$(mash-bin pi 2>/dev/null || printf '%s' pi)"
+start_agent "$pane" pi pi "$pi_cmd"
 [ -n "$tab" ] && "$herdr" tab rename "$tab" "" || true

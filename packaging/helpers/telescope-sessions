@@ -5,7 +5,7 @@
 # telescope-files (cmd+p). It does not share that popup: files stay files.
 #
 # Transcripts are the *.jsonl files under $PI_CODING_AGENT_DIR/sessions.
-# Mash points PI_CODING_AGENT_DIR at ~/.mash/.pi/agent. Each row is open or
+# Mash points PI_CODING_AGENT_DIR at ~/.mash/pi/agent. Each row is open or
 # closed, the workspace label when one is known, the date, and a title from
 # the first user message. A hidden field carries a chunk of message text so
 # the query matches the conversation.
@@ -35,6 +35,10 @@ case "$src" in
 	*) src="$(command -v "$src" 2>/dev/null || printf '%s' "$src")" ;;
 esac
 here="$(dirname "$src")"
+# The bundle's own python3, not whatever PATH resolves: a host 3.x can be a
+# different minor or a different build, and Mash pins and tests the one it
+# ships. See mash-bin.
+py="$(mash-bin python3 2>/dev/null || printf '%s' python3)"
 
 toast() {
 	printf 'telescope-sessions: %s\n' "$1" >&2
@@ -43,7 +47,7 @@ toast() {
 
 # Print TSV rows, or the preview for one file. argv: rows | preview <path>
 session_py() {
-	python3 - "$@" <<'PY'
+	"$py" - "$@" <<'PY'
 import datetime
 import json
 import os
@@ -367,7 +371,7 @@ if [ "${1:-}" = "rows" ]; then
 	exit 0
 fi
 
-if ! command -v python3 >/dev/null 2>&1; then
+if [ ! -x "$py" ]; then
 	toast "python3 not found"
 	exit 1
 fi
@@ -401,7 +405,7 @@ write_live() {
 		"$herdr" workspace list >"$workspaces_file" 2>/dev/null || status=1
 	fi
 	if [ "$status" -eq 0 ]; then
-		python3 - "$panes_file" "$workspaces_file" "$dest" <<'PY' || status=1
+		"$py" - "$panes_file" "$workspaces_file" "$dest" <<'PY' || status=1
 import json, sys
 
 def load(path, key):
@@ -525,6 +529,10 @@ pane="$(printf '%s' "$created" | sed -n 's/.*"pane_id":"\([^"]*\)".*/\1/p' | hea
 name="$("$here/herdr-agent-name" pi "$target" "$cwd" 2>/dev/null || true)"
 if [ -z "$name" ] || ! "$herdr" agent start "$name" --kind pi --pane "$pane" -- --session "$path" >/dev/null 2>&1; then
 	quoted="$(printf '%s' "$path" | sed "s/'/'\\\\''/g")"
-	"$herdr" pane run "$pane" "pi --session '$quoted'"
+	# Absolute, because `pane run` hands this string to the pane and a bare `pi`
+	# there resolves through PATH, where Homebrew's pi sits unless Mash's own
+	# directories lead it. See mash-bin.
+	pi_cmd="$(mash-bin pi 2>/dev/null || printf '%s' pi)"
+	"$herdr" pane run "$pane" "$pi_cmd --session '$quoted'"
 fi
 [ -n "$tab" ] && "$herdr" tab rename "$tab" "" || true

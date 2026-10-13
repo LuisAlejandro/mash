@@ -8,86 +8,84 @@ source "$ROOT/Resources/bin/lib.sh"
 
 home="$(mash_real_home)"
 d="$home/.mash"
+mkdir -p "$d"
+# Migrate before seeding or launching anything; never merge with a new tree.
+"$ROOT/Resources/python/bin/python3" "$ROOT/Resources/bin/mash-migrate-layout" "$d"
 mkdir -p \
-    "$d/.config/herdr" "$d/.config/ghostty" "$d/.config/git" "$d/.config/gh" \
-    "$d/.config/fresh" "$d/.config/zsh" "$d/.config/pet" "$d/.config/atuin" \
-    "$d/.config/lazygit" "$d/.config/lazydocker" "$d/.config/mash" \
-    "$d/.local/state" "$d/.local/share/fresh" "$d/.local/share/zoxide" \
-    "$d/.cache" "$d/.pi/agent" "$d/run" "$d/bin"
+  "$d/config/herdr" "$d/config/ghostty" "$d/config/git" "$d/config/gh" \
+  "$d/config/fresh" "$d/config/zsh" "$d/config/pet" "$d/config/atuin" \
+  "$d/config/lazygit" "$d/config/lazydocker" "$d/config/mash" \
+  "$d/local/state" "$d/local/share/fresh" "$d/local/share/zoxide" \
+  "$d/cache" "$d/pi/agent" "$d/run" "$d/bin"
 
 cp "$ROOT/Resources/bin/lib.sh" "$d/bin/lib.sh"
 cp "$ROOT/Resources/bin/mash-shell" "$d/bin/mash-shell"
-chmod 755 "$d/bin/mash-shell"
+cp "$ROOT/Resources/bin/mash-design-pi-sync" "$d/bin/mash-design-pi-sync"
+chmod 755 "$d/bin/mash-shell" "$d/bin/mash-design-pi-sync"
 
-if [ ! -f "$d/.config/herdr/config.toml" ]; then
-    sed -e "s#__MASH_SHELL__#$d/bin/mash-shell#g" \
-        -e "s#__MASH_CONFIG__#$d/.config#g" \
-        "$ROOT/Resources/defaults/herdr/config.toml" \
-        >"$d/.config/herdr/config.toml"
+if [ ! -f "$d/config/herdr/config.toml" ]; then
+  sed -e "s#__MASH_SHELL__#$d/bin/mash-shell#g" \
+    -e "s#__MASH_CONFIG__#$d/config#g" \
+    "$ROOT/Resources/defaults/herdr/config.toml" \
+    >"$d/config/herdr/config.toml"
 fi
-if [ ! -f "$d/.config/herdr/plugins.json" ] && [ -f "$ROOT/Resources/defaults/herdr/plugins.json" ]; then
-    cp "$ROOT/Resources/defaults/herdr/plugins.json" "$d/.config/herdr/plugins.json"
+if [ ! -f "$d/config/ghostty/config" ]; then
+  cp "$ROOT/Resources/defaults/ghostty/config" "$d/config/ghostty/config"
 fi
-if [ ! -f "$d/.config/ghostty/config" ]; then
-    cp "$ROOT/Resources/defaults/ghostty/config" "$d/.config/ghostty/config"
+if [ ! -f "$d/config/zsh/.zshenv" ]; then
+  cp "$ROOT/Resources/defaults/zsh/.zshenv" "$d/config/zsh/.zshenv"
 fi
-if [ ! -f "$d/.config/zsh/.zshenv" ]; then
-    cp "$ROOT/Resources/defaults/zsh/.zshenv" "$d/.config/zsh/.zshenv"
+if [ ! -f "$d/config/git/config" ]; then
+  cp "$ROOT/Resources/defaults/git/config" "$d/config/git/config"
 fi
-if [ ! -f "$d/.config/git/config" ]; then
-    cp "$ROOT/Resources/defaults/git/config" "$d/.config/git/config"
-fi
-if [ ! -f "$d/.config/pet/snippet.toml" ]; then
-    sed "s#__MASH_PET_SNIPPET__#$d/.config/pet/snippet.toml#" \
-        "$ROOT/Resources/defaults/pet/config.toml" \
-        >"$d/.config/pet/config.toml"
-    cp "$ROOT/Resources/defaults/pet/snippet.toml" "$d/.config/pet/snippet.toml"
+if [ ! -f "$d/config/pet/snippet.toml" ]; then
+  sed "s#__MASH_PET_SNIPPET__#$d/config/pet/snippet.toml#" \
+    "$ROOT/Resources/defaults/pet/config.toml" \
+    >"$d/config/pet/config.toml"
+  cp "$ROOT/Resources/defaults/pet/snippet.toml" "$d/config/pet/snippet.toml"
 fi
 
 # Copy each carried seed only when that destination file is missing.
 mash_seed_missing() {
-    local src="$1"
-    local dest="$2"
-    local f rel target
-    [ -d "$src" ] || return 0
-    while IFS= read -r f; do
-        rel="${f#"$src"/}"
-        target="$dest/$rel"
-        if [ ! -e "$target" ]; then
-            mkdir -p "$(dirname "$target")"
-            cp "$f" "$target"
-        fi
-    done < <(find "$src" -type f)
+  local src="$1"
+  local dest="$2"
+  [ -d "$src" ] || return 0
+  mkdir -p "$dest"
+  # One process, not one mkdir+cp per file. defaults/pi is 52k files, and the
+  # per-file loop made the first open look like a hang. --ignore-existing
+  # keeps whatever the user already has, and skips what it must skip without
+  # failing the way `cp -n` does.
+  rsync -a --ignore-existing "$src/" "$dest/"
 }
 
-# References and the mash-parallel venv live under ~/.mash/.config/mash.
+# References and the mash-parallel venv live under ~/.mash/config/mash.
 # The venv's Python symlink is retargeted at this bundle. Existing files stay.
 mash_seed_programming_skills() {
-    local src venv py cfg current script
-    src="$ROOT/Resources/defaults/mash-config"
-    [ -d "$src" ] || return 0
-    mash_seed_missing "$src/references" "$d/.config/mash/references"
-    if [ ! -f "$d/.config/mash/hindsight-pin" ] && [ -f "$src/hindsight-pin" ]; then
-        cp "$src/hindsight-pin" "$d/.config/mash/hindsight-pin"
+  local src venv py cfg current script
+  src="$ROOT/Resources/defaults/mash-config"
+  [ -d "$src" ] || return 0
+  mash_seed_missing "$src/references" "$d/config/mash/references"
+  if [ ! -f "$d/config/mash/hindsight-pin" ] && [ -f "$src/hindsight-pin" ]; then
+    cp "$src/hindsight-pin" "$d/config/mash/hindsight-pin"
+  fi
+  venv="$d/config/mash/venvs/mash-parallel"
+  if [ -d "$src/venvs/mash-parallel" ] && [ ! -e "$venv/pyvenv.cfg" ]; then
+    mkdir -p "$d/config/mash/venvs"
+    cp -a "$src/venvs/mash-parallel" "$venv"
+  fi
+  py="$ROOT/Resources/python/bin/python3"
+  if [ -d "$venv/bin" ] && [ -x "$py" ]; then
+    current="$(readlink "$venv/bin/python" 2>/dev/null || true)"
+    [ "$current" = "$py" ] || ln -sfn "$py" "$venv/bin/python"
+    current="$(readlink "$venv/bin/python3" 2>/dev/null || true)"
+    [ "$current" = "python" ] || ln -sfn python "$venv/bin/python3"
+    if [ -L "$venv/bin/python3.13" ]; then
+      current="$(readlink "$venv/bin/python3.13" 2>/dev/null || true)"
+      [ "$current" = "python" ] || ln -sfn python "$venv/bin/python3.13"
     fi
-    venv="$d/.config/mash/venvs/mash-parallel"
-    if [ -d "$src/venvs/mash-parallel" ] && [ ! -e "$venv/pyvenv.cfg" ]; then
-        mkdir -p "$d/.config/mash/venvs"
-        cp -a "$src/venvs/mash-parallel" "$venv"
-    fi
-    py="$ROOT/Resources/python/bin/python3"
-    if [ -d "$venv/bin" ] && [ -x "$py" ]; then
-        current="$(readlink "$venv/bin/python" 2>/dev/null || true)"
-        [ "$current" = "$py" ] || ln -sfn "$py" "$venv/bin/python"
-        current="$(readlink "$venv/bin/python3" 2>/dev/null || true)"
-        [ "$current" = "python" ] || ln -sfn python "$venv/bin/python3"
-        if [ -L "$venv/bin/python3.13" ]; then
-            current="$(readlink "$venv/bin/python3.13" 2>/dev/null || true)"
-            [ "$current" = "python" ] || ln -sfn python "$venv/bin/python3.13"
-        fi
-        cfg="$venv/pyvenv.cfg"
-        if [ -f "$cfg" ]; then
-            awk -v homebin="$ROOT/Resources/python/bin" -v exe="$py" '
+    cfg="$venv/pyvenv.cfg"
+    if [ -f "$cfg" ]; then
+      awk -v homebin="$ROOT/Resources/python/bin" -v exe="$py" '
                 BEGIN { h = 0; e = 0 }
                 /^home[[:space:]]*=/ { print "home = " homebin; h = 1; next }
                 /^executable[[:space:]]*=/ { print "executable = " exe; e = 1; next }
@@ -97,13 +95,13 @@ mash_seed_programming_skills() {
                     if (!e) print "executable = " exe
                 }
             ' "$cfg" >"$cfg.tmp"
-            if cmp -s "$cfg.tmp" "$cfg"; then
-                rm -f "$cfg.tmp"
-            else
-                mv "$cfg.tmp" "$cfg"
-            fi
-        fi
-        PYTHONNOUSERSITE=1 "$py" - "$venv" <<'PY'
+      if cmp -s "$cfg.tmp" "$cfg"; then
+        rm -f "$cfg.tmp"
+      else
+        mv "$cfg.tmp" "$cfg"
+      fi
+    fi
+    PYTHONNOUSERSITE=1 "$py" - "$venv" <<'PY'
 import os, sys
 venv = sys.argv[1]
 bindir = os.path.join(venv, "bin")
@@ -122,40 +120,177 @@ for name in os.listdir(bindir):
         with open(path, "wb") as fh:
             fh.write(updated)
 PY
-    fi
-    script="$d/.pi/agent/skills/mash-parallel"
-    if [ -d "$script" ] && [ -d "$venv" ] && [ ! -e "$script/.venv" ]; then
-        ln -s "$venv" "$script/.venv"
-    fi
+  fi
+  script="$d/pi/agent/skills/mash-parallel"
+  if [ -d "$script" ] && [ -d "$venv" ] && [ ! -e "$script/.venv" ]; then
+    ln -s "$venv" "$script/.venv"
+  fi
 }
 
-mash_seed_missing "$ROOT/Resources/defaults/ghostty/themes" "$d/.config/ghostty/themes"
-mash_seed_missing "$ROOT/Resources/defaults/fresh" "$d/.config/fresh"
-mash_seed_missing "$ROOT/Resources/defaults/pi" "$d/.pi/agent"
-mash_seed_missing "$ROOT/Resources/defaults/plugins" "$d/.config/herdr/plugins/config"
-mash_seed_missing "$ROOT/Resources/defaults/atuin" "$d/.config/atuin"
-mash_seed_missing "$ROOT/Resources/defaults/lazydocker" "$d/.config/lazydocker"
+# Hindsight keeps its state under the data folder: its warm-start re-exports
+# HOME for its process tree alone, so Path.home() resolves here. The config is
+# seeded once, and the owner's provider key is added in place — never shipped.
+mash_seed_hindsight() {
+  local src="$ROOT/Resources/defaults/mash-config/hindsight-embed.env"
+  [ -f "$src" ] || return 0
+  mkdir -p "$d/.hindsight" "$d/.local/bin" "$d/.pg0" "$d/setup"
+  [ -f "$d/.hindsight/embed" ] || cp "$src" "$d/.hindsight/embed"
+}
+
+mash_seed_missing "$ROOT/Resources/defaults/ghostty/themes" "$d/config/ghostty/themes"
+mash_seed_missing "$ROOT/Resources/defaults/fresh" "$d/config/fresh"
+mash_seed_missing "$ROOT/Resources/defaults/pi" "$d/pi/agent"
+mash_seed_missing "$ROOT/Resources/defaults/plugins" "$d/config/herdr/plugins/config"
+mash_seed_missing "$ROOT/Resources/defaults/atuin" "$d/config/atuin"
+mash_seed_missing "$ROOT/Resources/defaults/lazydocker" "$d/config/lazydocker"
 mash_seed_programming_skills
+
+# The design stack: payload, dependency stores, the skill symlinks, and the
+# penpot-local MCP entry. Env values come from penpot.env, which `mds setup`
+# writes. Before that they are empty and the server reports it.
+mash_seed_design_stack() {
+  local src="$ROOT/Resources/defaults/design-stack"
+  local cfg="$d/config/mash"
+  local stack="$d/local/share/mash/design"
+  local py="$ROOT/Resources/python/bin/python3"
+  local node="$ROOT/Resources/node/bin/node"
+  local name target
+
+  [ -d "$src" ] || return 0
+  mkdir -p "$stack" "$cfg/node_modules" "$cfg/venvs"
+  rsync -a --ignore-existing "$src/" "$stack/"
+  mash_seed_missing "$ROOT/Resources/defaults/mash-config/headless" "$cfg/headless"
+  mash_seed_missing "$ROOT/Resources/defaults/mash-config/node_modules" "$cfg/node_modules"
+  for name in "$ROOT/Resources/defaults/mash-config/venvs"/*; do
+    [ -d "$name" ] || continue
+    target="$cfg/venvs/$(basename "$name")"
+    [ -e "$target/pyvenv.cfg" ] && continue
+    cp -a "$name" "$target"
+  done
+  chmod 755 "$stack/bin/mds" 2>/dev/null || true
+  chmod 755 "$stack/lib/od_daemon.sh" 2>/dev/null || true
+  # On PATH as `mds`. ~/.mash/bin is already in MASH_BIN; the user's own
+  # ~/.local/bin is never written to.
+  mkdir -p "$d/bin"
+  [ -e "$d/bin/mds" ] || ln -s "$stack/bin/mds" "$d/bin/mds"
+
+  # Each installed design skill reaches its dependency store here. The design
+  # installer does the same for the IDE copies it writes.
+  for name in "$cfg/node_modules"/*; do
+    [ -d "$name/node_modules" ] || continue
+    target="$d/pi/agent/skills/$(basename "$name")/node_modules"
+    [ -d "$(dirname "$target")" ] || continue
+    [ -e "$target" ] || ln -s "$name/node_modules" "$target"
+  done
+  for name in "$cfg/venvs"/*; do
+    [ -x "$name/bin/python" ] || continue
+    target="$d/pi/agent/skills/$(basename "$name")/.venv"
+    [ -d "$(dirname "$target")" ] || continue
+    [ -e "$target" ] || ln -s "$name" "$target"
+  done
+
+  [ -x "$py" ] && [ -f "$cfg/headless/dist/server.js" ] || return 0
+  "$py" - "$d/pi/agent/mcp.json" "$node" "$cfg/headless/dist/server.js" "$stack/penpot.env" <<'PY'
+import json, sys
+from pathlib import Path
+
+dest, node, server, env_file = sys.argv[1:5]
+values = {}
+source = Path(env_file)
+if source.is_file():
+    for line in source.read_text(encoding="utf-8").splitlines():
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        values[key] = value
+
+entry = {
+    "command": node,
+    "args": [server],
+    "env": {
+        "PENPOT_BASE_URL": "http://localhost:9001",
+        "PENPOT_ACCESS_TOKEN": values.get("PENPOT_ACCESS_TOKEN", ""),
+        "PENPOT_LOGIN_EMAIL": values.get("PENPOT_LOCAL_EMAIL", ""),
+    },
+}
+path = Path(dest)
+if path.is_symlink():
+    raise SystemExit("Mash refused a symlink for Pi MCP config")
+data = {}
+if path.is_file():
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        raise SystemExit(0)
+    if isinstance(loaded, dict):
+        data = loaded
+servers = data.get("mcpServers")
+if not isinstance(servers, dict):
+    servers = {}
+    data["mcpServers"] = servers
+if servers.get("penpot-local") != entry:
+    servers["penpot-local"] = entry
+    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+path.chmod(0o600)
+PY
+}
+mash_seed_design_stack
+mash_seed_hindsight
 
 mash_force_updates "$home"
 export MASH_BIN="$ROOT/Resources/bin:$ROOT/Resources/node/bin:$ROOT/Resources/python/bin:$d/bin"
 mash_isolate "$home"
 
+# Credentials can be saved while Docker is down. Retry account creation on
+# later launches without delaying the Mash window.
+if [ -f "$d/local/share/mash/design/penpot.env" ] &&
+  [ -x "$ROOT/Resources/bin/mash-penpot-account-setup" ]; then
+  nohup "$ROOT/Resources/bin/mash-penpot-account-setup" "$d" >/dev/null 2>&1 &
+fi
+
+# Herdr's plugin registry records absolute paths, so a registry linked while
+# the bundle was being built only resolves on the machine that built it -- and
+# the bundle's own copy is seeded before the app is installed anywhere. Link
+# the carried plugins in place whenever the registry does not already point at
+# this copy of the app. link updates the entries it is handed and leaves every
+# other entry alone, so plugins the user installed stay registered.
+# Runs after mash_isolate: it inherits XDG_CONFIG_HOME and HERDR_CONFIG_PATH
+# from there, and only the sockets are taken away, so a running Herdr is never
+# disturbed.
+mash_link_plugins() {
+  local dir listed
+  [ -d "$ROOT/Resources/plugins" ] || return 0
+  listed="$XDG_CONFIG_HOME/herdr/plugins.json"
+  if [ -f "$listed" ] && grep -q "$ROOT/Resources/plugins" "$listed"; then
+    return 0
+  fi
+  for dir in "$ROOT/Resources/plugins"/*; do
+    [ -f "$dir/lite/herdr-plugin.toml" ] && dir="$dir/lite"
+    [ -f "$dir/herdr-plugin.toml" ] || continue
+    env -u HERDR_SOCKET_PATH -u HERDR_CLIENT_SOCKET_PATH \
+      "$ROOT/Resources/bin/herdr" plugin link "$dir" >/dev/null
+  done
+}
+mash_link_plugins
+
 exec /usr/bin/open -na "$ROOT/Resources/Ghostty.app" \
-    --env "XDG_CONFIG_HOME=$XDG_CONFIG_HOME" \
-    --env "XDG_STATE_HOME=$XDG_STATE_HOME" \
-    --env "XDG_DATA_HOME=$XDG_DATA_HOME" \
-    --env "XDG_CACHE_HOME=$XDG_CACHE_HOME" \
-    --env "HERDR_CONFIG_PATH=$HERDR_CONFIG_PATH" \
-    --env "HERDR_SOCKET_PATH=$HERDR_SOCKET_PATH" \
-    --env "HERDR_CLIENT_SOCKET_PATH=$HERDR_CLIENT_SOCKET_PATH" \
-    --env "PI_CODING_AGENT_DIR=$PI_CODING_AGENT_DIR" \
-    --env "GIT_CONFIG_GLOBAL=$GIT_CONFIG_GLOBAL" \
-    --env "GH_CONFIG_DIR=$GH_CONFIG_DIR" \
-    --env "_ZO_DATA_DIR=$_ZO_DATA_DIR" \
-    --env "ZDOTDIR=$ZDOTDIR" \
-    --env "MASH_FRESH_CONFIG_DIR=$MASH_FRESH_CONFIG_DIR" \
-    --env "MASH_FRESH_DATA_DIR=$MASH_FRESH_DATA_DIR" \
-    --env "MASH_BIN=$MASH_BIN" \
-    --env "PATH=$PATH" \
-    --args -e "$ROOT/Resources/bin/herdr-pane"
+  --env "XDG_CONFIG_HOME=$XDG_CONFIG_HOME" \
+  --env "XDG_STATE_HOME=$XDG_STATE_HOME" \
+  --env "XDG_DATA_HOME=$XDG_DATA_HOME" \
+  --env "XDG_CACHE_HOME=$XDG_CACHE_HOME" \
+  --env "HERDR_CONFIG_PATH=$HERDR_CONFIG_PATH" \
+  --env "HERDR_SOCKET_PATH=$HERDR_SOCKET_PATH" \
+  --env "HERDR_CLIENT_SOCKET_PATH=$HERDR_CLIENT_SOCKET_PATH" \
+  --env "PI_CODING_AGENT_DIR=$PI_CODING_AGENT_DIR" \
+  --env "GIT_CONFIG_GLOBAL=$GIT_CONFIG_GLOBAL" \
+  --env "GH_CONFIG_DIR=$GH_CONFIG_DIR" \
+  --env "_ZO_DATA_DIR=$_ZO_DATA_DIR" \
+  --env "ZDOTDIR=$ZDOTDIR" \
+  --env "MASH_FRESH_CONFIG_DIR=$MASH_FRESH_CONFIG_DIR" \
+  --env "MASH_FRESH_DATA_DIR=$MASH_FRESH_DATA_DIR" \
+  --env "MASH_CONFIG_DIR=$MASH_CONFIG_DIR" \
+  --env "MASH_DESIGN_STACK=$MASH_DESIGN_STACK" \
+  --env "PLAYWRIGHT_BROWSERS_PATH=$PLAYWRIGHT_BROWSERS_PATH" \
+  --env "MASH_BIN=$MASH_BIN" \
+  --env "PATH=$PATH" \
+  --args -e "$ROOT/Resources/bin/herdr-pane"

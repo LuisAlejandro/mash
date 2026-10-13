@@ -4,9 +4,34 @@
 set -euo pipefail
 # shellcheck source=lib.sh
 source "$(dirname "$0")/lib.sh"
+here="$(cd "$(dirname "$0")" && pwd)"
 home="$(mash_real_home)"
-export MASH_BIN="$(cd "$(dirname "$0")" && pwd):$home/.mash/bin"
-mash_isolate "$home"
+# MASH_BIN is AUGMENTED, never replaced. Herdr starts this script with the
+# environment herdr-pane built, and that value names every Mash program
+# directory: Resources/bin, Resources/node/bin, Resources/python/bin. Setting it
+# to this script's own directory alone dropped the bundle from the variable, so
+# the bundled pi, node and python3 stayed on PATH only because the inherited
+# PATH still happened to hold them -- while mash_isolate pins MASH_BIN to the
+# front, where losing it means a host twin wins instead.
+export MASH_BIN="${MASH_BIN:+$MASH_BIN:}$here:$home/.mash/bin"
+mash_isolate "$home" pane
 export MASH_PANE=1
-user_shell="$(dscl . -read "/Users/$(id -un)" UserShell | awk '{print $2}')"
-exec "$user_shell"
+# MASH_USER_SHELL stands in for the account's shell in tests, so the branch
+# below can be exercised without a pty or a second account.
+user_shell="${MASH_USER_SHELL:-$(dscl . -read "/Users/$(id -un)" UserShell | awk '{print $2}')}"
+# The account's shell startup is not read, the same way zsh panes already ignore
+# it: a ~/.bashrc that prepends ~/.local/bin or /opt/homebrew/bin runs after
+# isolation and puts a host pi back in front of the bundled one. zsh needs
+# nothing here (ZDOTDIR already points at Mash's config directory, which ships
+# no .zshrc, and an interactive zsh reads $ZDOTDIR/.zshrc; /etc/zshrc still
+# runs). bash has no ZDOTDIR equivalent, so it starts with --norc. fish reads
+# $XDG_CONFIG_HOME/fish/config.fish, and XDG_CONFIG_HOME already points at
+# Mash's tree.
+# ponytail: the cost is the account's aliases, prompt and atuin init for bash
+# panes. Upgrade path if that matters: ship $d/config/bash/bashrc mirroring
+# .zshenv (prepend MASH_BIN, `eval "$(atuin init bash)"`) and start bash with
+# --rcfile instead.
+case "$(basename -- "$user_shell")" in
+bash) exec "$user_shell" --norc ;;
+*) exec "$user_shell" ;;
+esac

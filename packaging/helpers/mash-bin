@@ -1,0 +1,47 @@
+#!/bin/sh
+# Print the absolute path of a program Mash ships, resolved through Mash's own
+# program directories rather than through PATH.
+#
+#   command="$(mash-bin pi)"
+#   "$command" --session "$session"
+#
+# Why this exists: almost every program Mash ships has a twin a user may have
+# installed. /opt/homebrew/bin carries pi, herdr, node, npm, npx, python3,
+# fresh, lazygit, lazydocker and pet, and a helper that prepends Homebrew's
+# prefixes for its own host tools (telescope-files does, for fzf, fd and bat)
+# moves those twins ahead of the bundle for everything it then runs. A launcher
+# that execs such a program by bare name therefore runs whichever copy is first
+# on PATH, which is exactly the drift that made a Mash pane start Homebrew's pi
+# 0.99.1 instead of the pinned 1.1.0.
+#
+# MASH_BIN is the authority: herdr-pane and mash-shell export it, it names
+# Mash's directories only, and mash_isolate pins it to the front of PATH in
+# order. Resolving through it means the copy Mash was built and tested with is
+# the copy that runs, whatever PATH looks like at the call site.
+#
+# Falls back to `command -v`, then to the bare name, so a helper run outside a
+# Mash session still works -- and so a failure to resolve is visible as the
+# program-not-found it is, instead of silently becoming a different version.
+set -eu
+
+name="${1:?usage: mash-bin <program>}"
+
+# `tr` plus `read` rather than `for dir in $(...)`: MASH_BIN is a colon list of
+# absolute paths, and word-splitting it would break on a Mash installed under a
+# path with spaces and would glob-expand any element containing *. lib.sh splits
+# the same list the same way, for the same reason.
+resolved="$(
+	printf '%s\n' "${MASH_BIN:-}" | tr ':' '\n' |
+		while IFS= read -r dir; do
+			[ -n "$dir" ] || continue
+			[ -x "$dir/$name" ] || continue
+			printf '%s\n' "$dir/$name"
+			break
+		done
+)"
+if [ -n "$resolved" ]; then
+	printf '%s\n' "$resolved"
+	exit 0
+fi
+
+command -v "$name" 2>/dev/null || printf '%s\n' "$name"
