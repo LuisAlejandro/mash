@@ -51,8 +51,8 @@ persiyanov.reviewr 0.39.0
 herdr-workspace 0.1.2
 telescope 0.1.2
 ray.plugin-manager 0.5.0
-mash-programming-skills 0.5.14
-mash-design-skills 0.1.0
+mash-programming-skills 0.5.15
+mash-design-skills 0.1.1
 sentrux 0.5.7
 hindsight-embed 0.8.3
 hindsight-api 0.8.3
@@ -391,8 +391,8 @@ mash_require_skills() {
     exit 1
   fi
   ver="$(tr -d '[:space:]' <"$src/VERSION")"
-  if [ "$ver" != "0.5.14" ]; then
-    echo "Mash Programming Skills VERSION is $ver, want 0.5.14." >&2
+  if [ "$ver" != "0.5.15" ]; then
+    echo "Mash Programming Skills VERSION is $ver, want 0.5.15." >&2
     exit 1
   fi
 }
@@ -975,8 +975,8 @@ mash_require_design_skills() {
     exit 1
   fi
   ver="$(tr -d '[:space:]' <"$src/VERSION")"
-  if [ "$ver" != "0.1.0" ]; then
-    echo "Design skills VERSION is $ver, want 0.1.0." >&2
+  if [ "$ver" != "0.1.1" ]; then
+    echo "Design skills VERSION is $ver, want 0.1.1." >&2
     exit 1
   fi
 }

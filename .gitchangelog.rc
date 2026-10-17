@@ -19,6 +19,10 @@ ignore_regexps = [
     r'^.*:github:.*$',
     r'^.*:changelog:.*$',
     r'^Git-svn-id',
+    # A bare "update" commit carries no information for a reader, and the old
+    # history has many of them. Filter only the empty subject; "update the docs"
+    # and "update: fix X" still describe what changed, so they stay.
+    r'^(.{3,3}\s*:)?\s*(\[[A-Z]+\]\s*)?(update|updating)[.:]?\s*$',
     r'^$',
 ]
 

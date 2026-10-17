@@ -17,6 +17,16 @@ print_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 source "$SCRIPT_DIR/lib.sh"
 
+# Not managed by maintainer-tools: this repo's release gate. lib.sh is managed
+# and its release_run_preflight is a no-op placeholder, so Mash replaces it here
+# rather than editing that file. Overriding after the `source` keeps the
+# generated file untouched while making `make release-*` run the same gate as
+# .github/workflows/release.yml, so local and CI cannot drift apart.
+release_run_preflight() {
+    print_step "Running release preflight"
+    "$SCRIPT_DIR/preflight.sh"
+}
+
 if [[ ! "$VERSION_TYPE" =~ ^(major|minor|patch)$ ]]; then
     print_error "Invalid version type: $VERSION_TYPE"
     print_error "Valid options are: major, minor, patch"
