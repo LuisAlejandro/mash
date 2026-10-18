@@ -64,6 +64,49 @@ class LayoutMigrationTest(unittest.TestCase):
         self.assertTrue((self.root / ".pi").is_dir())
         self.assertFalse((self.root / "pi").exists())
 
+    def test_keeps_the_hindsight_shim_directory(self):
+        """`.local/bin` is the shim home, not the old data directory.
+
+        Mash's Hindsight shim lives in `$data/.local/bin` and the agent
+        extension re-exports HOME to the data folder, so this directory is
+        current and permanent. The launcher creates `local/` and the installer
+        creates `.local/bin`, so a second launch used to find both and refuse to
+        start — Mash was unopenable after the first wizard run.
+        """
+        (self.root / "local" / "state").mkdir(parents=True)
+        shim = self.root / ".local" / "bin"
+        shim.mkdir(parents=True)
+        (shim / "hindsight-embed").write_text("#!/bin/sh\n")
+
+        result = self.migrate()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue((shim / "hindsight-embed").is_file())
+        self.assertFalse((self.root / ".local" / "state").exists())
+        self.assertTrue((self.root / "local" / "state").is_dir())
+        # Idempotent: the next launch must not start refusing either.
+        self.assertEqual(self.migrate().returncode, 0)
+
+    def test_moves_an_old_local_directory_that_holds_more_than_the_shim(self):
+        """A `.local` with anything besides `bin` is the old data directory."""
+        (self.root / ".local" / "bin").mkdir(parents=True)
+        (self.root / ".local" / "share").mkdir()
+        (self.root / ".local" / "history.db").write_bytes(b"\x00history")
+
+        result = self.migrate()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse((self.root / ".local").exists())
+        self.assertEqual(
+            (self.root / "local" / "history.db").read_bytes(), b"\x00history"
+        )
+        self.assertTrue((self.root / "local" / "bin").is_dir())
+
+    def test_still_refuses_a_local_collision_with_real_data(self):
+        (self.root / ".local" / "share").mkdir(parents=True)
+        (self.root / "local").mkdir()
+        result = self.migrate()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("both", result.stderr)
+
 
 class PiSettingsMigrationTest(unittest.TestCase):
     """The seeded settings must stop declaring the adapter Mash no longer ships."""

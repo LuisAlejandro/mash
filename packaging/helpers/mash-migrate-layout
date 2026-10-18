@@ -11,7 +11,16 @@ import sys
 import tempfile
 from pathlib import Path
 
-NAMES = ("config", "cache", "local", "pi", "setup")
+# `.local` is not a legacy name for `local`, whatever the other four are for.
+# Mash's Hindsight shim lives in `$data/.local/bin` and the agent extension
+# re-exports HOME to the data folder, so `~/.mash/.local/bin` is its permanent
+# home — the same `~/.local/bin` convention the owner's own shell uses. The
+# launcher and the installer both create it, so a second launch found both
+# `.local` and `local` and refused to start, which left Mash unopenable after
+# the first wizard run. It is migrated only when it really is the old data
+# directory, which `migrate` decides by what it holds.
+LEGACY_DIRS = ("config", "cache", "pi", "setup")
+LOCAL = "local"
 
 
 def rewrite(path: Path, changes: tuple[tuple[bytes, bytes], ...]) -> None:
@@ -84,36 +93,60 @@ def migrate(root: Path) -> None:
 
     # Check every destination before moving anything. Never merge trees: that
     # could silently overwrite an existing Pi login, history, or setup state.
-    for name in NAMES:
+    for name in LEGACY_DIRS:
         old, new = root / f".{name}", root / name
         if old.is_symlink() or new.is_symlink():
             raise ValueError(f"refusing a symlink at {old} or {new}")
         if old.exists() and new.exists():
             raise ValueError(f"both {old} and {new} exist; resolve the collision before launch")
 
-    if any((root / f".{name}").exists() for name in NAMES):
+    # `.local` is judged by its contents, not by its name. Only `bin` in it
+    # means the Hindsight shim directory, which is current and stays put. Any
+    # other entry means the old data directory and it is moved like the rest.
+    old_local, new_local = root / f".{LOCAL}", root / LOCAL
+    if old_local.is_symlink() or new_local.is_symlink():
+        raise ValueError(f"refusing a symlink at {old_local} or {new_local}")
+    shim_only = old_local.is_dir() and all(entry == "bin" for entry in os.listdir(old_local))
+    if not shim_only:
+        if old_local.exists() and new_local.exists():
+            raise ValueError(
+                f"both {old_local} and {new_local} exist; resolve the collision before launch"
+            )
+        move_local = old_local.exists()
+    else:
+        # The shim directory is not legacy data: nothing to move and nothing
+        # to collide with.
+        move_local = False
+
+    if any((root / f".{name}").exists() for name in LEGACY_DIRS) or move_local:
         socket = root / "run" / "herdr.sock"
         if socket.is_socket():
             lsof = shutil.which("lsof")
             if not lsof or subprocess.run([lsof, "-nP", str(socket)], stdout=subprocess.DEVNULL,
                                           stderr=subprocess.DEVNULL).returncode == 0:
                 raise ValueError("Mash is still running; close it before migrating")
-        for name in NAMES:
+        for name in LEGACY_DIRS:
             old = root / f".{name}"
             if old.exists():
                 old.rename(root / name)
+        if move_local:
+            old_local.rename(new_local)
 
     # Runs every launch, unlike the layout rewrite below, because settings.json
     # is never re-seeded once it exists.
     migrate_pi_settings(root)
 
     marker = root / "setup" / "layout-v2"
-    if marker.exists() or not any((root / name).exists() for name in NAMES):
+    if marker.exists() or not any((root / name).exists() for name in LEGACY_DIRS):
         return
 
     changes = tuple(
         (f"{prefix}/.{name}".encode(), f"{prefix}/{name}".encode())
-        for prefix in (str(root), "~/.mash") for name in NAMES
+        # `.local` is rewritten only when it really was the old data directory:
+        # when it holds just `bin`, it is the Hindsight shim directory and a
+        # reference to it must keep pointing there.
+        for prefix in (str(root), "~/.mash")
+        for name in LEGACY_DIRS + ((LOCAL,) if move_local else ())
     )
     files = [
         root / "config/herdr/config.toml",

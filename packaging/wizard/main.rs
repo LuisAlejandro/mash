@@ -1,5 +1,7 @@
 mod penpot_page;
 mod provider_page;
+mod voice;
+mod voice_page;
 
 use ratatui::{
     backend::{Backend, CrosstermBackend},
@@ -264,6 +266,12 @@ fn setup_is_done() -> bool {
     load_state(&state_dir()).completed
 }
 
+// Exit status when the wizard ends without finishing setup. herdr-pane treats
+// anything but 0 as "setup is not done" and keeps Herdr closed, so a stray Esc
+// can no longer drop the user into an unconfigured Mash. 0 is reserved for a
+// finished setup.
+const EXIT_NOT_DONE: i32 = 3;
+
 fn run() -> Result<i32, String> {
     // Every later launch runs this binary again; a finished setup only checks
     // its own state file and leaves the terminal untouched.
@@ -286,13 +294,15 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>) -> Result<i32, String> {
     let mut app = App::new();
     let mut providers = provider_page::ProviderPage::new();
     let mut penpot = penpot_page::PenpotPage::new(app.email.clone());
+    let mut voice = voice_page::VoicePage::new();
     let mut page = 0;
     loop {
         terminal
             .draw(|frame| match page {
                 0 => draw_choices(frame, &app),
                 1 => providers.draw(frame),
-                _ => penpot.draw(frame),
+                2 => penpot.draw(frame),
+                _ => voice.draw(frame),
             })
             .map_err(|e| e.to_string())?;
         let Event::Key(key) = event::read().map_err(|e| e.to_string())? else {
@@ -303,18 +313,30 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>) -> Result<i32, String> {
         }
         match page {
             0 => match app.on_key(key.code, key.modifiers) {
-                Some(Outcome::Cancel) => return Ok(0),
+                Some(Outcome::Cancel) => {
+                    if confirm_quit(terminal)? {
+                        return Ok(EXIT_NOT_DONE);
+                    }
+                }
                 Some(Outcome::Next) => page = 1,
                 None => {}
             },
             1 => match providers.on_key(key.code, key.modifiers) {
-                Some(provider_page::Decision::Cancel) => return Ok(0),
+                Some(provider_page::Decision::Cancel) => {
+                    if confirm_quit(terminal)? {
+                        return Ok(EXIT_NOT_DONE);
+                    }
+                }
                 Some(provider_page::Decision::Back) => page = 0,
                 Some(provider_page::Decision::Save) if providers.validate() => page = 2,
                 _ => {}
             },
-            _ => match penpot.on_key(key.code, key.modifiers) {
-                Some(penpot_page::Decision::Cancel) => return Ok(0),
+            2 => match penpot.on_key(key.code, key.modifiers) {
+                Some(penpot_page::Decision::Cancel) => {
+                    if confirm_quit(terminal)? {
+                        return Ok(EXIT_NOT_DONE);
+                    }
+                }
                 Some(penpot_page::Decision::Back) => page = 1,
                 Some(penpot_page::Decision::Save) if penpot.validate() => {
                     if let Err(error) = penpot
@@ -323,15 +345,27 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>) -> Result<i32, String> {
                     {
                         penpot.show_error(error);
                     } else {
-                        break;
+                        page = 3;
                     }
                 }
+                _ => {}
+            },
+            _ => match voice.on_key(key.code, key.modifiers) {
+                Some(voice_page::Decision::Cancel) => {
+                    if confirm_quit(terminal)? {
+                        return Ok(EXIT_NOT_DONE);
+                    }
+                }
+                Some(voice_page::Decision::Back) => page = 2,
+                Some(voice_page::Decision::Skip) => break,
+                Some(voice_page::Decision::Save) if voice.validate() => break,
                 _ => {}
             },
         }
     }
 
-    let plan = install_plan(app.selections);
+    let mut plan = install_plan(app.selections);
+    plan.voice = voice.choice();
     let identity = app.identity();
     match review_and_apply(terminal, &plan, &identity) {
         Ok(()) => {
@@ -342,6 +376,67 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>) -> Result<i32, String> {
         }
         Err(ApplyError::Failed(message)) => Err(message),
     }
+}
+
+// Esc, `q` and Ctrl+C all land here instead of leaving the wizard. Quitting
+// half-way used to drop the user into Herdr with nothing configured, and Esc
+// is the key people press to back out of a field, so one keystroke must never
+// be enough. Only an explicit `y` quits; any other key returns to the page
+// exactly as it was. Returns Ok(true) to quit.
+fn confirm_quit<B: Backend>(terminal: &mut Terminal<B>) -> Result<bool, String> {
+    loop {
+        terminal
+            .draw(draw_confirm_quit)
+            .map_err(|e| e.to_string())?;
+        let Event::Key(key) = event::read().map_err(|e| e.to_string())? else {
+            continue;
+        };
+        if key.kind != KeyEventKind::Press {
+            continue;
+        }
+        return Ok(confirm_quit_answer(key.code));
+    }
+}
+
+// Kept apart from the event loop so the rule is testable without a terminal.
+fn confirm_quit_answer(code: KeyCode) -> bool {
+    matches!(code, KeyCode::Char('y') | KeyCode::Char('Y'))
+}
+
+fn draw_confirm_quit(frame: &mut Frame) {
+    let text = vec![
+        Line::from(Span::styled(
+            "Quit Mash setup?",
+            Style::default().add_modifier(Modifier::BOLD),
+        )),
+        Line::from(""),
+        Line::from("Setup is not finished, so Mash will not open yet."),
+        Line::from("Open Mash again to start setup from the beginning."),
+        Line::from(""),
+        Line::from(vec![
+            Span::styled("y", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+            Span::raw(" quit setup    "),
+            Span::styled(
+                "any other key",
+                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+            ),
+            Span::raw(" keep going"),
+        ]),
+    ];
+    let area = frame.area();
+    let [_, middle, _] = Layout::vertical([
+        Constraint::Fill(1),
+        Constraint::Length(text.len() as u16 + 2),
+        Constraint::Fill(1),
+    ])
+    .areas(area);
+    frame.render_widget(
+        Paragraph::new(text)
+            .alignment(Alignment::Center)
+            .wrap(Wrap { trim: true })
+            .block(Block::default().borders(Borders::ALL).title(" Mash setup ")),
+        middle,
+    );
 }
 
 enum ApplyError {
@@ -1169,6 +1264,8 @@ struct Plan {
     apple: Vec<&'static str>,
     installer: Vec<&'static str>,
     tools: Vec<&'static str>,
+    /// The dictation model to download, from the last wizard page.
+    voice: Option<voice::VoiceChoice>,
 }
 
 fn install_plan(selections: [bool; 2]) -> Plan {
@@ -1331,6 +1428,49 @@ mod tests {
             app.on_key(KeyCode::Esc, KeyModifiers::NONE),
             Some(Outcome::Cancel)
         ));
+    }
+
+    // Esc only asks; the wizard quits on an explicit `y`. Every other key,
+    // Esc and Enter included, must keep the user in setup, because a stray
+    // Esc used to drop them into an unconfigured Mash.
+    #[test]
+    fn only_y_confirms_quitting_setup() {
+        assert!(confirm_quit_answer(KeyCode::Char('y')));
+        assert!(confirm_quit_answer(KeyCode::Char('Y')));
+        for key in [
+            KeyCode::Esc,
+            KeyCode::Enter,
+            KeyCode::Char('n'),
+            KeyCode::Char('q'),
+            KeyCode::Char(' '),
+            KeyCode::Backspace,
+            KeyCode::Tab,
+        ] {
+            assert!(!confirm_quit_answer(key), "{key:?} must not quit setup");
+        }
+    }
+
+    // herdr-pane opens Herdr only on a zero exit. Quitting must never report
+    // success, or Mash would open with nothing configured.
+    #[test]
+    fn quitting_setup_never_reports_success() {
+        assert_ne!(EXIT_NOT_DONE, 0);
+    }
+
+    #[test]
+    fn the_quit_prompt_says_mash_will_not_open() {
+        let mut terminal =
+            ratatui::Terminal::new(ratatui::backend::TestBackend::new(80, 24)).unwrap();
+        terminal.draw(draw_confirm_quit).unwrap();
+        let rendered = terminal
+            .backend()
+            .buffer()
+            .content()
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(rendered.contains("Quit Mash setup?"));
+        assert!(rendered.contains("will not open"));
     }
 
     #[test]

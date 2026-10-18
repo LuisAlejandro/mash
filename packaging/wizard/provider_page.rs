@@ -25,6 +25,17 @@ enum Choice {
     Compatible,
 }
 
+/// One dot per typed character, so the field shows how long a secret is
+/// without revealing it. A fixed run of dots told the user nothing: they could
+/// not tell a typo from a correct entry, and could not see whether the value
+/// was still there after editing another field. The count is what matters.
+/// Length is mildly sensitive for a password, and the terminal already shows
+/// the value as it is typed in the owner's own shell, so this leaks less than
+/// the input echo in most terminals.
+pub fn masked(value: &str) -> String {
+    "•".repeat(value.chars().count())
+}
+
 const PI_CHOICES: &[Choice] = &[
     Choice::Keep,
     Choice::OpenAi,
@@ -69,6 +80,89 @@ impl Choice {
     }
 }
 
+// Web search picks only from the providers pi-web-search can actually drive.
+// Its getProviderKind() accepts google, xai, the Responses APIs (openai,
+// openai-codex, azure-openai-responses, and github-copilot, opencode and
+// opencode-go models on openai-responses) and anthropic-messages. OpenRouter
+// and openai-completions are absent on purpose: writing one here would save a
+// config that fails on the first search instead of on the screen that made it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum SearchChoice {
+    Keep,
+    Google,
+    OpenAi,
+    Anthropic,
+    Xai,
+    OpenAiCodex,
+    Azure,
+    Copilot,
+    OpenCode,
+    OpenCodeGo,
+}
+
+const SEARCH_CHOICES: &[SearchChoice] = &[
+    SearchChoice::Keep,
+    SearchChoice::Google,
+    SearchChoice::OpenAi,
+    SearchChoice::Anthropic,
+    SearchChoice::Xai,
+    SearchChoice::OpenAiCodex,
+    SearchChoice::Azure,
+    SearchChoice::Copilot,
+    SearchChoice::OpenCode,
+    SearchChoice::OpenCodeGo,
+];
+
+impl SearchChoice {
+    fn label(self) -> &'static str {
+        match self {
+            SearchChoice::Keep => "Keep existing / use the chat model",
+            SearchChoice::Google => "Google Gemini",
+            SearchChoice::OpenAi => "OpenAI",
+            SearchChoice::Anthropic => "Anthropic",
+            SearchChoice::Xai => "xAI Grok",
+            SearchChoice::OpenAiCodex => "OpenAI Codex",
+            SearchChoice::Azure => "Azure OpenAI",
+            SearchChoice::Copilot => "GitHub Copilot",
+            SearchChoice::OpenCode => "OpenCode Zen",
+            SearchChoice::OpenCodeGo => "OpenCode Go",
+        }
+    }
+
+    fn provider_id(self) -> &'static str {
+        match self {
+            SearchChoice::Keep => "",
+            SearchChoice::Google => "google",
+            SearchChoice::OpenAi => "openai",
+            SearchChoice::Anthropic => "anthropic",
+            SearchChoice::Xai => "xai",
+            SearchChoice::OpenAiCodex => "openai-codex",
+            SearchChoice::Azure => "azure-openai-responses",
+            SearchChoice::Copilot => "github-copilot",
+            SearchChoice::OpenCode => "opencode",
+            SearchChoice::OpenCodeGo => "opencode-go",
+        }
+    }
+
+    fn configured(self) -> bool {
+        !matches!(self, SearchChoice::Keep)
+    }
+}
+
+// pi-web-search holds no key of its own: it reads the Pi credential and the
+// provider environment. So this section only ever names a provider and a model.
+#[derive(Default)]
+struct SearchInput {
+    choice: Option<SearchChoice>,
+    model: String,
+}
+
+impl SearchInput {
+    fn choice(&self) -> SearchChoice {
+        self.choice.unwrap_or(SearchChoice::Keep)
+    }
+}
+
 #[derive(Default)]
 struct Input {
     choice: Option<Choice>,
@@ -91,6 +185,8 @@ enum Field {
     PiUrl,
     PiModel,
     PiKey,
+    WebSearchProvider,
+    WebSearchModel,
     HindsightProvider,
     HindsightUrl,
     HindsightModel,
@@ -107,6 +203,7 @@ pub enum Decision {
 
 pub struct ProviderPage {
     pi: Input,
+    search: SearchInput,
     hindsight: Input,
     focus: Field,
     error: Option<String>,
@@ -116,6 +213,7 @@ impl ProviderPage {
     pub fn new() -> Self {
         Self {
             pi: Input::default(),
+            search: SearchInput::default(),
             hindsight: Input::default(),
             focus: Field::PiProvider,
             error: None,
@@ -129,6 +227,10 @@ impl ProviderPage {
         }
         if self.pi.choice().configured() {
             fields.extend([Field::PiModel, Field::PiKey]);
+        }
+        fields.push(Field::WebSearchProvider);
+        if self.search.choice().configured() {
+            fields.push(Field::WebSearchModel);
         }
         fields.push(Field::HindsightProvider);
         if self.hindsight.choice() == Choice::Compatible {
@@ -171,12 +273,28 @@ impl ProviderPage {
         }
     }
 
+    fn cycle_search(&mut self, direction: isize) {
+        let current = SEARCH_CHOICES
+            .iter()
+            .position(|choice| *choice == self.search.choice())
+            .unwrap_or(0);
+        let next = SEARCH_CHOICES
+            [(current as isize + direction).rem_euclid(SEARCH_CHOICES.len() as isize) as usize];
+        if next != self.search.choice() {
+            self.search.choice = Some(next);
+            // A model ID belongs to one provider's catalog, so switching
+            // providers makes the old one wrong rather than merely stale.
+            self.search.model.clear();
+        }
+    }
+
     fn text_mut(&mut self) -> Option<&mut String> {
         match self.focus {
             Field::PiId => Some(&mut self.pi.id),
             Field::PiUrl => Some(&mut self.pi.url),
             Field::PiModel => Some(&mut self.pi.model),
             Field::PiKey => Some(&mut self.pi.key),
+            Field::WebSearchModel => Some(&mut self.search.model),
             Field::HindsightUrl => Some(&mut self.hindsight.url),
             Field::HindsightModel => Some(&mut self.hindsight.model),
             Field::HindsightKey => Some(&mut self.hindsight.key),
@@ -207,12 +325,17 @@ impl ProviderPage {
                 }
             },
             KeyCode::Left | KeyCode::Right | KeyCode::Char(' ')
-                if matches!(self.focus, Field::PiProvider | Field::HindsightProvider) =>
+                if matches!(
+                    self.focus,
+                    Field::PiProvider | Field::HindsightProvider | Field::WebSearchProvider
+                ) =>
             {
-                self.cycle(
-                    self.focus == Field::PiProvider,
-                    if code == KeyCode::Left { -1 } else { 1 },
-                );
+                let direction = if code == KeyCode::Left { -1 } else { 1 };
+                match self.focus {
+                    Field::PiProvider => self.cycle(true, direction),
+                    Field::HindsightProvider => self.cycle(false, direction),
+                    _ => self.cycle_search(direction),
+                }
                 self.error = None;
                 None
             }
@@ -235,8 +358,9 @@ impl ProviderPage {
     }
 
     pub fn validate(&mut self) -> bool {
-        let result =
-            validate_input(&self.pi, true).and_then(|()| validate_input(&self.hindsight, false));
+        let result = validate_input(&self.pi, true)
+            .and_then(|()| validate_input(&self.hindsight, false))
+            .and_then(|()| validate_search(&self.search));
         self.error = result.err();
         self.error.is_none()
     }
@@ -244,6 +368,7 @@ impl ProviderPage {
     pub fn save(&self, root: &Path) -> Result<(), String> {
         validate_input(&self.pi, true)?;
         validate_input(&self.hindsight, false)?;
+        validate_search(&self.search)?;
         if self.pi.choice().configured() {
             let id = if self.pi.choice() == Choice::Compatible {
                 self.pi.id.trim().to_ascii_lowercase()
@@ -293,6 +418,25 @@ impl ProviderPage {
             save_json(&agent.join("settings.json"), &settings)?;
         }
 
+        if self.search.choice().configured() {
+            // The agent directory may not exist yet when Pi itself was left
+            // alone, and an existing file may carry keys this page never shows.
+            let path = root.join("pi/agent/web-search.json");
+            let mut config = read_json_object(&path)?;
+            config.insert(
+                "provider".into(),
+                Value::String(self.search.choice().provider_id().into()),
+            );
+            config.insert(
+                "model".into(),
+                Value::String(self.search.model.trim().into()),
+            );
+            // pi-web-search accepts `modelId` as an alias, but leaving both
+            // would let a later hand-edit of one silently disagree with the other.
+            config.remove("modelId");
+            save_json(&path, &config)?;
+        }
+
         if self.hindsight.choice() != Choice::Keep {
             let choice = self.hindsight.choice();
             let model = choice.configured().then_some(self.hindsight.model.trim());
@@ -321,7 +465,7 @@ impl ProviderPage {
         ])
         .split(frame.area());
         frame.render_widget(
-            Paragraph::new("Mash provider setup — page 2/3")
+            Paragraph::new("Mash provider setup — page 2/4")
                 .alignment(Alignment::Center)
                 .block(Block::default().borders(Borders::ALL)),
             parts[0],
@@ -338,10 +482,14 @@ impl ProviderPage {
             if matches!(field, Field::Back | Field::Save) {
                 continue;
             }
-            if field == Field::HindsightProvider {
+            if field == Field::HindsightProvider || field == Field::WebSearchProvider {
                 lines.push(Line::from(""));
                 lines.push(Line::from(Span::styled(
-                    "Hindsight",
+                    if field == Field::WebSearchProvider {
+                        "Web search"
+                    } else {
+                        "Hindsight"
+                    },
                     Style::default().add_modifier(Modifier::BOLD),
                 )));
             }
@@ -351,6 +499,8 @@ impl ProviderPage {
                 Field::PiUrl => ("Base URL", self.pi.url.as_str(), false),
                 Field::PiModel => ("Model ID", self.pi.model.as_str(), false),
                 Field::PiKey => ("API key", self.pi.key.as_str(), true),
+                Field::WebSearchProvider => ("Provider", self.search.choice().label(), false),
+                Field::WebSearchModel => ("Model ID", self.search.model.as_str(), false),
                 Field::HindsightProvider => {
                     ("Provider", self.hindsight.choice().label(false), false)
                 }
@@ -360,9 +510,9 @@ impl ProviderPage {
                 _ => unreachable!(),
             };
             let shown = if secret && !value.is_empty() {
-                "••••••"
+                masked(value)
             } else {
-                value
+                value.to_string()
             };
             lines.push(Line::from(vec![
                 Span::styled(
@@ -373,7 +523,7 @@ impl ProviderPage {
                     format!("{label}: "),
                     Style::default().add_modifier(Modifier::BOLD),
                 ),
-                Span::raw(shown.to_string()),
+                Span::raw(shown),
                 Span::styled(
                     if self.focus == field { "_" } else { "" },
                     Style::default().fg(Color::Yellow),
@@ -412,6 +562,16 @@ impl ProviderPage {
             parts[2],
         );
     }
+}
+
+fn validate_search(input: &SearchInput) -> Result<(), String> {
+    if !input.choice().configured() {
+        return Ok(());
+    }
+    if input.model.trim().is_empty() || input.model.contains(['\n', '\r']) {
+        return Err("Web search: enter an exact model ID".into());
+    }
+    Ok(())
 }
 
 fn validate_input(input: &Input, pi: bool) -> Result<(), String> {
@@ -681,6 +841,7 @@ mod tests {
             page.fields(),
             vec![
                 Field::PiProvider,
+                Field::WebSearchProvider,
                 Field::HindsightProvider,
                 Field::Back,
                 Field::Save
@@ -705,5 +866,131 @@ mod tests {
             .collect::<String>();
         assert!(rendered.contains("••••••"));
         assert!(!rendered.contains("secret"));
+        // One dot per typed character, so the field shows how long the key is
+        // without revealing it. Six fixed dots made a truncated or mistyped key
+        // look like a correct one.
+        assert!(
+            rendered.contains(&"•".repeat("secret".chars().count())),
+            "expected one dot per character, got: {rendered:?}"
+        );
+    }
+
+    #[test]
+    fn web_search_model_field_appears_only_after_a_provider_is_chosen() {
+        let mut page = ProviderPage::new();
+        assert!(page.fields().contains(&Field::WebSearchProvider));
+        assert!(!page.fields().contains(&Field::WebSearchModel));
+        page.focus = Field::WebSearchProvider;
+        page.on_key(KeyCode::Right, KeyModifiers::NONE);
+        assert_eq!(page.search.choice(), SearchChoice::Google);
+        assert!(page.fields().contains(&Field::WebSearchModel));
+        // Back to Keep is the way to leave an existing file untouched.
+        page.on_key(KeyCode::Left, KeyModifiers::NONE);
+        assert_eq!(page.search.choice(), SearchChoice::Keep);
+        assert!(!page.fields().contains(&Field::WebSearchModel));
+    }
+
+    #[test]
+    fn cycling_web_search_providers_clears_a_model_from_the_previous_one() {
+        let mut page = ProviderPage::new();
+        page.search.choice = Some(SearchChoice::OpenAi);
+        page.search.model = "gpt-5.1".into();
+        page.focus = Field::WebSearchProvider;
+        page.on_key(KeyCode::Right, KeyModifiers::NONE);
+        assert_eq!(page.search.model, "");
+    }
+
+    #[test]
+    fn every_web_search_choice_maps_to_a_distinct_pi_provider() {
+        // A duplicate id would silently write the wrong provider, and an empty
+        // one would write a config pi-web-search rejects.
+        let mut ids = Vec::new();
+        for choice in SEARCH_CHOICES.iter().filter(|c| c.configured()) {
+            let id = choice.provider_id();
+            assert!(!id.is_empty(), "{choice:?} has no provider id");
+            assert!(!ids.contains(&id), "{id} is offered twice: {choice:?}");
+            ids.push(id);
+        }
+    }
+
+    #[test]
+    fn web_search_saves_provider_and_model_without_dropping_other_keys() {
+        let root = root();
+        let path = root.join("pi/agent/web-search.json");
+        fs::write(&path, r#"{"modelId":"old-alias","temperature":0.2}"#).unwrap();
+        let mut page = ProviderPage::new();
+        page.search.choice = Some(SearchChoice::OpenAiCodex);
+        page.search.model = "gpt-5.6-sol".into();
+        assert!(page.validate(), "{:?}", page.error);
+        page.save(&root).unwrap();
+        let config = read_json_object(&path).unwrap();
+        assert_eq!(config["provider"], "openai-codex");
+        assert_eq!(config["model"], "gpt-5.6-sol");
+        // The alias is folded into `model` so the two cannot disagree later.
+        assert!(config.get("modelId").is_none());
+        assert_eq!(config["temperature"], 0.2);
+        assert_eq!(
+            fs::metadata(&path).unwrap().permissions().mode() & 0o777,
+            0o600
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn keeping_the_existing_web_search_config_writes_nothing() {
+        let root = root();
+        let mut page = ProviderPage::new();
+        assert!(page.validate());
+        page.save(&root).unwrap();
+        assert!(!root.join("pi/agent/web-search.json").exists());
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn web_search_needs_an_exact_model_id() {
+        let mut page = ProviderPage::new();
+        page.search.choice = Some(SearchChoice::Google);
+        assert!(!page.validate());
+        assert!(page
+            .error
+            .as_deref()
+            .unwrap_or_default()
+            .contains("Web search"));
+        page.search.model = "gemini-3.1-flash-lite".into();
+        assert!(page.validate());
+        page.search.model = "two\nlines".into();
+        assert!(!page.validate());
+    }
+
+    #[test]
+    fn web_search_refuses_a_symlinked_config() {
+        let root = root();
+        let path = root.join("pi/agent/web-search.json");
+        std::os::unix::fs::symlink(root.join("pi/agent/auth.json"), &path).unwrap();
+        let mut page = ProviderPage::new();
+        page.search.choice = Some(SearchChoice::Anthropic);
+        page.search.model = "claude-sonnet-4-5".into();
+        assert!(page.save(&root).is_err());
+        assert!(!root.join("pi/agent/auth.json").exists());
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn web_search_section_is_labelled_on_page_two() {
+        let mut page = ProviderPage::new();
+        page.search.choice = Some(SearchChoice::Copilot);
+        page.search.model = "gpt-5.6-sol".into();
+        let mut terminal =
+            ratatui::Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+        terminal.draw(|frame| page.draw(frame)).unwrap();
+        let rendered = terminal
+            .backend()
+            .buffer()
+            .content()
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(rendered.contains("Web search"));
+        assert!(rendered.contains("GitHub Copilot"));
     }
 }

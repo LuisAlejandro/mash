@@ -1,4 +1,4 @@
-use crate::provider_page::write_private;
+use crate::provider_page::{masked, write_private};
 use ratatui::{
     crossterm::event::{KeyCode, KeyModifiers},
     layout::{Alignment, Constraint, Layout},
@@ -203,7 +203,7 @@ impl PenpotPage {
         ])
         .split(frame.area());
         frame.render_widget(
-            Paragraph::new("Local Penpot account — page 3/3")
+            Paragraph::new("Local Penpot account — page 3/4")
                 .alignment(Alignment::Center)
                 .block(Block::default().borders(Borders::ALL)),
             parts[0],
@@ -224,9 +224,9 @@ impl PenpotPage {
             ),
         ] {
             let shown = if secret && !value.is_empty() {
-                "••••••"
+                masked(value)
             } else {
-                value
+                value.to_string()
             };
             lines.push(Line::from(vec![
                 Span::styled(
@@ -237,7 +237,7 @@ impl PenpotPage {
                     format!("{label}: "),
                     Style::default().add_modifier(Modifier::BOLD),
                 ),
-                Span::raw(shown.to_string()),
+                Span::raw(shown),
                 Span::styled(
                     if self.focus == field { "_" } else { "" },
                     Style::default().fg(Color::Yellow),
@@ -269,7 +269,7 @@ impl PenpotPage {
             Paragraph::new(Line::from(vec![
                 button(Field::Back, " Back "),
                 Span::raw("    "),
-                button(Field::Save, " Save and install "),
+                button(Field::Save, " Save and continue "),
             ]))
             .alignment(Alignment::Center)
             .block(Block::default().borders(Borders::ALL)),
@@ -383,5 +383,28 @@ mod tests {
             .collect::<String>();
         assert!(rendered.contains("••••••"));
         assert!(!rendered.contains("fake-secret-12"));
+        // One dot per typed character: the length is visible, the value is not.
+        // A fixed run of six dots made a typo indistinguishable from a good
+        // entry, which is why the count is what the field shows.
+        assert!(
+            rendered.contains(&"•".repeat("fake-secret-12".chars().count())),
+            "expected one dot per character, got: {rendered:?}"
+        );
+    }
+
+    #[test]
+    fn empty_passwords_show_no_dots() {
+        let page = PenpotPage::new("dev@example.com".into());
+        let mut terminal =
+            ratatui::Terminal::new(ratatui::backend::TestBackend::new(90, 24)).unwrap();
+        terminal.draw(|frame| page.draw(frame)).unwrap();
+        let rendered = terminal
+            .backend()
+            .buffer()
+            .content()
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(!rendered.contains('•'));
     }
 }

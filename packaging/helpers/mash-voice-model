@@ -1,0 +1,185 @@
+#!/bin/bash
+# Download the dictation model the wizard chose and write Pi Voice's settings.
+#
+#   mash-voice-model <DATA_DIR> <MODEL_ID> <LANG[,LANG...]> <detector:0|1>
+#   mash-voice-model --plan <DATA_DIR> <MODEL_ID> <LANGS>
+#
+# The wizard runs this before mash_isolate, so HF_HOME is unset here. Pi Voice
+# resolves its model cache from HF_HOME at runtime ($data/cache/huggingface, set
+# by lib.sh), so this script computes that path itself instead of trusting the
+# environment, and records the absolute file path in pi-voice.json. Downloading
+# anywhere else would leave the extension re-downloading on first use.
+#
+# Safe to re-run: a file of the right size is left alone, and a download that
+# fails leaves settings untouched so Pi Voice's own onboarding can finish the
+# job. --plan prints what it would do and touches nothing, which is what
+# packaging/helpers/tests exercises.
+#
+# Progress goes to <data>/setup/voice-model.log for the wizard's progress pane.
+set -uo pipefail
+
+self="$(cd "$(dirname "$0")" && pwd)"
+node="$self/../node/bin/node"
+catalog="$self/../defaults/pi/catalog/catalog.json"
+
+plan_only=0
+if [ "${1:-}" = "--plan" ]; then
+  plan_only=1
+  shift
+fi
+
+data="${1:-${MASH_DATA_DIR:-$HOME/.mash}}"
+model_id="${2:?model id required}"
+langs="${3:-en}"
+detector="${4:-0}"
+
+case "$data" in
+"$HOME/.mash" | "$HOME/.mash"/*) ;;
+*)
+  echo "voice model setup refused a data path outside ~/.mash" >&2
+  exit 1
+  ;;
+esac
+
+[ -x "$node" ] || {
+  echo "the bundled node is missing" >&2
+  exit 1
+}
+[ -f "$catalog" ] || {
+  echo "catalog.json is missing from the bundle" >&2
+  exit 1
+}
+
+hub="$data/cache/huggingface/hub"
+
+# One tab-separated line per model: repo, revision, filename, bytes, sha256.
+# The wizard embedded the same file, so the two cannot disagree about a model.
+meta() {
+  "$node" -e '
+    const fs = require("fs");
+    const catalog = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+    const id = process.argv[2];
+    const model = catalog.models.find((m) => m.id === id) ||
+      (catalog.languageDetector.id === id ? catalog.languageDetector : undefined);
+    if (!model) process.exit(1);
+    process.stdout.write(
+      [model.repository, model.revision, model.filename, model.size, model.sha256].join("	"));
+  ' "$catalog" "$1"
+}
+
+destination() { # repo filename revision -> absolute snapshot path
+  printf '%s/models--%s/snapshots/%s/%s' "$hub" "${1//\//--}" "$3" "$2"
+}
+
+if [ "$plan_only" = "1" ]; then
+  IFS=$'\t' read -r repo revision file bytes sha <<<"$(meta "$model_id")" ||
+    {
+      echo "unknown model $model_id" >&2
+      exit 1
+    }
+  printf '%s\t%s\t%s\n' "$(destination "$repo" "$file" "$revision")" "$bytes" "$sha"
+  exit 0
+fi
+
+setup="$data/setup"
+log="$setup/voice-model.log"
+mkdir -p "$setup"
+umask 077
+say() { printf '%s %s\n' "$(date -u +%FT%TZ)" "$*" >>"$log"; }
+
+download() { # repo revision filename bytes sha label
+  local repo="$1" revision="$2" file="$3" bytes="$4" sha="$5" label="$6"
+  local dest partial url pid now
+  dest="$(destination "$repo" "$file" "$revision")"
+  partial="$dest.partial"
+  if [ -f "$dest" ] && [ "$(/usr/bin/stat -f%z "$dest" 2>/dev/null)" = "$bytes" ]; then
+    say "$label already present"
+    printf '%s' "$dest"
+    return 0
+  fi
+  mkdir -p "$(dirname "$dest")"
+  rm -f "$partial"
+  url="https://huggingface.co/$repo/resolve/$revision/$file"
+  say "downloading $label ($((bytes / 1048576)) MiB)"
+  /usr/bin/curl -fL --retry 2 -C - -sS -o "$partial" "$url" >>"$log" 2>&1 &
+  pid=$!
+  # The wizard shows the log's last line, so report bytes from the file the
+  # download is filling instead of curl's carriage-return progress bar, which
+  # would land inside a rendered ratatui line.
+  while kill -0 "$pid" 2>/dev/null; do
+    now="$(/usr/bin/stat -f%z "$partial" 2>/dev/null || echo 0)"
+    say "downloading $label: $((now / 1048576)) / $((bytes / 1048576)) MiB"
+    sleep 2
+  done
+  if ! wait "$pid"; then
+    say "$label download failed"
+    return 1
+  fi
+  if [ "$(/usr/bin/stat -f%z "$partial" 2>/dev/null || echo 0)" != "$bytes" ]; then
+    say "$label is not $bytes bytes; removed"
+    rm -f "$partial"
+    return 1
+  fi
+  # Pi Voice never re-hashes a file it did not download, so a truncated one
+  # would only fail later, inside the native recognizer.
+  if ! echo "$sha  $partial" | /usr/bin/shasum -a 256 -c - >>"$log" 2>&1; then
+    say "$label failed its checksum; removed"
+    rm -f "$partial"
+    return 1
+  fi
+  mv "$partial" "$dest"
+  say "$label ready"
+  printf '%s' "$dest"
+}
+
+IFS=$'\t' read -r repo revision file bytes sha <<<"$(meta "$model_id")" ||
+  {
+    say "unknown model $model_id"
+    exit 1
+  }
+path="$(download "$repo" "$revision" "$file" "$bytes" "$sha" "$file")" || exit 1
+
+if [ "$detector" = "1" ]; then
+  IFS=$'\t' read -r d_repo d_revision d_file d_bytes d_sha <<<"$(meta voxlingua107-ecapa-q8)" ||
+    {
+      say "the language detector is missing from the catalog"
+      exit 1
+    }
+  download "$d_repo" "$d_revision" "$d_file" "$d_bytes" "$d_sha" "the language detector" >/dev/null ||
+    exit 1
+fi
+
+agent="$data/pi/agent"
+mkdir -p "$agent"
+# The settings file is generated rather than templated so preferredLanguages
+# and transcriptionLanguage are the exact codes Pi Voice validates against.
+"$node" -e '
+  const fs = require("fs");
+  const [catalogPath, agentDir, modelId, langs, modelPath, detector] = process.argv.slice(1);
+  const catalog = JSON.parse(fs.readFileSync(catalogPath, "utf8"));
+  const model = catalog.models.find((m) => m.id === modelId);
+  if (!model) { console.error("unknown model " + modelId); process.exit(1); }
+  const base = (l) => l.trim().toLowerCase().split("-")[0];
+  const wanted = [...new Set(langs.split(",").filter(Boolean).map(base))];
+  const exact = (l) => model.languages.find((c) => c.toLowerCase() === l) ||
+    model.languages.find((c) => base(c) === l) || l;
+  const locale = (Intl.DateTimeFormat().resolvedOptions().locale || "en").toLowerCase().split("-");
+  const chineseOutput = (locale.includes("hk") || locale.includes("mo"))
+    ? "traditional-hong-kong"
+    : (locale.includes("tw") || locale.includes("hant") ? "traditional-taiwan" : "simplified");
+  const settings = {
+    version: 1,
+    backend: { type: "transcribe-cpp" },
+    shortcut: "ctrl+alt+z",
+    preferredLanguages: wanted,
+    transcriptionLanguage: detector === "1" ? "auto" : exact(wanted[0] || "en"),
+    chineseOutput,
+    microphone: { type: "system-default" },
+    voiceActivityDetection: true,
+    longformChunking: true,
+    model: { source: "catalog", id: modelId, path: modelPath },
+  };
+  fs.writeFileSync(agentDir + "/pi-voice.json", JSON.stringify(settings, null, 2) + "\n");
+' "$catalog" "$agent" "$model_id" "$langs" "$path" "$detector" || exit 1
+
+say "wrote $agent/pi-voice.json"

@@ -7,10 +7,26 @@ home="$(mash_real_home)"
 bin_dir="$(cd "$(dirname "$0")" && pwd)"
 res="$(cd "$bin_dir/.." && pwd)"
 export MASH_BIN="$bin_dir:$res/node/bin:$res/python/bin:$home/.mash/bin"
-# First-open setup. A missing terminal, a declined setup, or an installer
-# failure must never stop Mash from starting.
+# First-open setup. It is the only way to reach Herdr until it finishes: an
+# unfinished setup leaves no providers, no Penpot account and no git identity,
+# and Herdr would then open on top of that as if Mash were ready. The wizard
+# exits 0 once setup is done, and on every later launch it returns 0 at once
+# without touching the terminal.
+#
+# Exit 3 means the user chose to quit setup: Herdr stays closed. Any other
+# failure (no terminal, an installer error, a wizard bug) still opens Mash, as
+# it always did, so a broken wizard can never lock the user out; the setup
+# reopens on the next launch because it never recorded completion.
 if [ -x "$bin_dir/mash-wizard" ]; then
-  "$bin_dir/mash-wizard" || true
+  status=0
+  "$bin_dir/mash-wizard" || status=$?
+  if [ "$status" = 3 ]; then
+    printf '\n  Mash setup is not finished, so Mash did not open.\n'
+    printf '  Open Mash again to start setup from the beginning.\n\n'
+    printf '  Press Enter to close this window. '
+    read -r _ || true
+    exit 0
+  fi
 fi
 mash_isolate "$home"
 case "$HERDR_SOCKET_PATH" in
