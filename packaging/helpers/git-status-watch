@@ -17,7 +17,7 @@
 # which is the one combination confirmed to render the separator correctly.
 #
 # This DISABLES Herdr's native git_status token for the row it replaces (see
-# the config comment in ~/.config/herdr/config.toml) rather than running
+# the config comment in Mash's Herdr config (config/herdr/config.toml)) rather than running
 # alongside it -- showing the same ahead/behind number twice, from two
 # sources, would be confusing.
 #

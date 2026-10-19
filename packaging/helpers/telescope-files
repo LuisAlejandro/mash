@@ -55,9 +55,10 @@ editor="${EDITOR:-${VISUAL:-}}"
 
 # telescope's binary. It is not on PATH: Herdr resolves a plugin's command
 # against its plugin root, and a GitHub install directory is content-hashed. So
-# look where the plugin actually is, in the order above: the locally linked
-# checkout beside the running Herdr, then any GitHub install, then PATH. Without
-# this the popup opened and closed with "binary not found".
+# look where Mash and Herdr keep it: the bundled plugin beside the running
+# Herdr, then Herdr's own plugin root, then any plugin Herdr installed. The
+# owner's personal directories are deliberately never searched. Without this
+# the popup opened and closed with "binary not found".
 telescope_bin="${TELESCOPE_BIN:-}"
 [ -n "$telescope_bin" ] || telescope_bin="$(command -v herdr-telescope 2>/dev/null || true)"
 if [ -z "$telescope_bin" ] || [ ! -x "$telescope_bin" ]; then
@@ -70,7 +71,6 @@ if [ -z "$telescope_bin" ] || [ ! -x "$telescope_bin" ]; then
 		"$plugins/telescope/bin/herdr-telescope" \
 		"$plugins/telescope/lite/bin/herdr-telescope" \
 		"${HERDR_PLUGIN_ROOT:-}/bin/herdr-telescope" \
-		"$HOME/.local/bin/herdr-telescope" \
 		"$config_dir"/github/telescope*/bin/herdr-telescope \
 		"$config_dir"/github/telescope*/lite/bin/herdr-telescope; do
 		if [ -x "$candidate" ]; then

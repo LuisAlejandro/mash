@@ -204,7 +204,7 @@ close_workspace = "cmd+ctrl+w"
 
 # Toggle pane zoom (fullscreen the focused pane within its tab). Orca has no
 # analog (its "zoom" is font size), so this chord is freely chosen; cmd+alt+z
-# was unbound in Ghostty. Legacy key name `fullscreen` is an accepted alias.
+# was unbound in Ghostty. `fullscreen` is an accepted key alias.
 # REPLACES ctrl+b z.
 zoom = "cmd+alt+z"
 

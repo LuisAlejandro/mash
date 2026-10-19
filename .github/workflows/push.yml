@@ -71,7 +71,7 @@ jobs:
           done
 
           for t in \
-            packaging/tests/test_migrate_layout.py \
+            packaging/tests/test_first_launch_layout.py \
             packaging/tests/test_design_pi_sync.py \
             packaging/tests/test_penpot_account_setup.py
           do

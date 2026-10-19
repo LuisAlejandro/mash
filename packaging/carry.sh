@@ -745,10 +745,9 @@ fi
 [ -n "$data" ] && [ -d "$data" ] || exit 0
 export HOME="$data"
 # HF_HOME is not implied by HOME. HuggingFace resolves its cache from
-# $HOME/.cache/huggingface unless this is set. The daemon used to write a
-# second copy of the model under ~/.mash/.cache; pin it to Mash's current
-# cache directory rather than relying on a startup migration. The wizard and
-# lib.sh both export HF_HOME; this warm-start runs outside both.
+# $HOME/.cache/huggingface unless this is set. The daemon otherwise writes a
+# second copy of the model outside Mash's cache; pin it to the cache directory
+# the wizard and lib.sh both use. This warm-start runs outside both.
 HF_HOME="$HOME/cache/huggingface"
 HUGGINGFACE_HUB_CACHE="$HF_HOME/hub"
 export HF_HOME HUGGINGFACE_HUB_CACHE

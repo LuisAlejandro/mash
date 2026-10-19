@@ -10,7 +10,7 @@
 # as the session continues, not persistent screen furniture.
 #
 # keybindings-quickref.txt is a static snapshot, not generated from
-# ~/.config/herdr/config.toml at render time -- it WILL go stale if a chord
+# Mash's Herdr config (config/herdr/config.toml) at render time -- it WILL go stale if a chord
 # there changes and this file is not updated to match. Re-copy the relevant
 # sections there after any keybinding change you want reflected here and in
 # pi's header (custom-header.ts reads the same file).

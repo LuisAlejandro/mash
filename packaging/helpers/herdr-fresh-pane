@@ -31,10 +31,9 @@ if pane="$("$herdr" pane current 2>/dev/null |
 	# to reopen, and Fresh is not an agent, so without this the pane is restored
 	# from session.json, which records only cwd and label for non-agent panes.
 	#
-	# Needs Herdr 0.9.2+ -- the `-- <command>` form and the server-side resume
-	# support arrive there. On an older server the report is refused; it is
-	# swallowed here because the pane still runs Fresh either way, it just comes
-	# back as a shell after a restart.
+	# The `-- <command>` form is why this must go through Herdr 0.9.3, the
+	# version Mash pins. A report failure is swallowed here: the pane still runs
+	# Fresh either way, it just comes back as a shell after a restart.
 	#
 	# The command must start with a plain PATH command name (not a path), which is
 	# why this script is symlinked into ~/.local/bin. `.` is the pane's directory:

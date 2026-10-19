@@ -1,6 +1,6 @@
 #!/bin/sh
 # Open a Herdr tab running pi in a single pane.
-# Bound to cmd+alt+t in ~/.config/herdr/config.toml as a `shell` custom command.
+# Bound to cmd+alt+t in Mash's Herdr config (config/herdr/config.toml) as a `shell` custom command.
 #
 # --label marks this tab for the dev-tab plugin's tab.created hook, which must
 # skip it: this script wants a single pi pane, and the hook would otherwise

@@ -50,10 +50,11 @@ mash_isolate() {
   # `pi install` run in a Mash pane lands here and not in ~/.pi/agent: this is
   # writable, outside the signed bundle, and survives an app update.
   #
-  # PI_HOME is the older name for the same directory and is what a plugin that
-  # cannot call pi's getAgentDir() has to use. pi-omniroute-sync defaults to
-  # ~/.pi/agent when it is unset, which would put a Mash plugin's settings and
-  # API key into the owner's own pi and write their models.json.
+  # PI_HOME is pi's package-integration environment variable and is what a
+  # plugin that cannot call pi's getAgentDir() uses to find its agent directory.
+  # pi-omniroute-sync defaults to ~/.pi/agent when it is unset, which would put
+  # a Mash plugin's settings and API key into the owner's own pi and write their
+  # models.json.
   export PI_HOME="$d/pi/agent"
   # pi checks pi.dev for a newer release on startup. Mash ships and pins one pi,
   # and `pi update` would replace it inside the signed bundle, so the check only
@@ -163,7 +164,7 @@ mash_isolate() {
   esac
   case "$HERDR_CONFIG_PATH" in
   "$home/.config/herdr/"*)
-    echo "Mash refused to use the personal Herdr config." >&2
+    echo "Mash refused to use a non-Mash Herdr config." >&2
     exit 1
     ;;
   esac

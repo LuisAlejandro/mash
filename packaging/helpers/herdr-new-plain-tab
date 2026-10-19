@@ -1,6 +1,6 @@
 #!/bin/sh
 # Open a plain shell tab.
-# Bound to cmd+shift+t in ~/.config/herdr/config.toml.
+# Bound to cmd+shift+t in Mash's Herdr config (config/herdr/config.toml).
 #
 # Why this exists: Herdr's native new_tab action -- the one the `+` tab button
 # runs -- is enriched into a fresh+pi split by the dev-tab plugin's tab.created

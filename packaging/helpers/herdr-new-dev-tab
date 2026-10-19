@@ -1,6 +1,6 @@
 #!/bin/sh
 # Open a Herdr tab with two vertical panes: fresh (left) and pi (right).
-# Bound to cmd+t in ~/.config/herdr/config.toml as a `shell` custom command.
+# Bound to cmd+t in Mash's Herdr config (config/herdr/config.toml) as a `shell` custom command.
 set -eu
 
 herdr="${HERDR_BIN_PATH:-herdr}"
