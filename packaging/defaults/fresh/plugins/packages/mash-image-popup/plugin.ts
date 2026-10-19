@@ -13,15 +13,18 @@
  * Sixel / iTerm sequences do not pass through Fresh's text-buffer API.
  *
  * The handoff is one command:
- *   herdr plugin pane open --plugin image-popup --entrypoint view-split \
- *     --placement split --target-pane <this pane> --direction down \
+ *   herdr plugin pane open --plugin image-popup --entrypoint view \
+ *     --placement split --target-pane <this pane> --direction right \
  *     --env IMAGE_POPUP_FILE=<file>
  *
- * `--placement split` rather than `popup` on purpose: popup and overlay panes
- * always target the *active* pane, and the active pane is whatever the user is
- * working in when the image arrives. A split of the editor's own pane lands
- * beside the editor and returns its pane id, which is what fork-from-message
- * already does for its picker.
+ * `--placement split` rather than `popup` on purpose: a popup is a CLIENT-side
+ * surface, rendered by the terminal window, and only a keybinding can open one
+ * -- `plugin pane open --placement popup` from a helper returns ok and draws
+ * nothing, and a plugin action runs its command without opening a manifest
+ * pane. A split is server-side and works from anywhere.
+ *
+ * `--direction right` is a VERTICAL split: the image lands beside the editor,
+ * not under it. `down` would stack them.
  *
  * The buffer is closed only after the popup is on its way, so a failure never
  * costs the user the file.
@@ -89,10 +92,10 @@ async function openInPopup(bufferId: number, path: string): Promise<boolean> {
 		const run = await editor.spawnProcess(herdrBin, [
 			"plugin", "pane", "open",
 			"--plugin", "image-popup",
-			"--entrypoint", "view-split",
+			"--entrypoint", "view",
 			"--placement", "split",
 			"--target-pane", selfPane,
-			"--direction", "down",
+			"--direction", "right",
 			"--env", `IMAGE_POPUP_FILE=${path}`,
 			"--focus",
 		], editor.getCwd());
