@@ -1,0 +1,14 @@
+{
+  "$schema": "https://raw.githubusercontent.com/sinelaw/fresh/main/crates/fresh-editor/plugins/schemas/package.schema.json",
+  "name": "mash-image-popup",
+  "version": "0.1.0",
+  "description": "Show an image file in a Herdr popup with real pixels instead of a hex dump.",
+  "type": "plugin",
+  "author": "Mash",
+  "license": "MIT",
+  "fresh": {
+    "entry": "plugin.ts",
+    "min_version": "0.5.1",
+    "min_api_version": 2
+  }
+}

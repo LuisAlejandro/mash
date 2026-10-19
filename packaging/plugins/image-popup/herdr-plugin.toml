@@ -1,0 +1,36 @@
+# Show an image file in a Herdr popup with real pixels (Kitty graphics), instead
+# of the hex dump a text editor shows for a binary file.
+#
+# Two halves, because neither the editor nor a terminal can do both jobs:
+#   - this Herdr plugin owns the popup pane and draws the image in it
+#   - the Fresh plugin (packaging/defaults/fresh/plugins/image-preview/) notices
+#     an image file being opened in the editor and hands it here
+#
+# The pane is an ordinary terminal pane, so it needs no image support in Herdr or
+# in the editor. `viu` in the pane detects that the terminal speaks the Kitty
+# graphics protocol and draws real pixels. No Fresh plugin can do this: a Fresh
+# plugin can only write text and colours into a buffer.
+id = "image-popup"
+name = "Image Popup"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+description = "Show an image with real pixels in a popup, via the Kitty graphics protocol"
+platforms = ["macos", "linux"]
+
+# popup/overlay panes always target the active pane, which is the wrong target
+# when the opener is an editor in another pane. The Fresh plugin therefore opens
+# this as a split of its own pane; the popup placement is kept for a manual
+# `herdr plugin pane open` from a focused pane, which is what it is for.
+[[panes]]
+id = "view"
+title = "Image"
+placement = "popup"
+width = "80%"
+height = "80%"
+command = ["bash", "view.sh"]
+
+[[panes]]
+id = "view-split"
+title = "Image"
+placement = "split"
+command = ["bash", "view.sh"]
