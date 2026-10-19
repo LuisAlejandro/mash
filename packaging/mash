@@ -266,20 +266,70 @@ fi
 # from there, and only the sockets are taken away, so a running Herdr is never
 # disturbed.
 mash_link_plugins() {
-  local dir listed
+  local dir listed py data_dir plan
   [ -d "$ROOT/Resources/plugins" ] || return 0
   listed="$XDG_CONFIG_HOME/herdr/plugins.json"
-  for dir in "$ROOT/Resources/plugins"/*; do
-    [ -f "$dir/lite/herdr-plugin.toml" ] && dir="$dir/lite"
-    [ -f "$dir/herdr-plugin.toml" ] || continue
-    # Checked per plugin, not per registry. The old shortcut skipped the whole
-    # loop as soon as any entry pointed into the bundle, so a single stale
-    # entry -- image-popup, registered from a source checkout -- stayed stale
-    # for as long as the other thirteen looked right.
-    [ -f "$listed" ] && grep -qF "$dir" "$listed" && continue
+  py="$ROOT/Resources/python/bin/python3"
+  [ -x "$py" ] || py="/usr/bin/python3"
+  data_dir="$XDG_DATA_HOME/herdr/plugins"
+  # Which carried plugins the registry still points somewhere else. A root
+  # under this bundle is already right, and so is one under Herdr's own plugin
+  # data directory, where a copy the owner installed from GitHub lives and
+  # keeps winning. Anything else is a build path -- a previous tree, an
+  # external volume -- that resolves on no other machine. That is how
+  # image-popup came to be registered from /Volumes/Documents/... while the
+  # other thirteen looked correct.
+  plan="$("$py" -P - "$ROOT/Resources/plugins" "$listed" "$data_dir" <<'PY'
+import json, os, re, sys
+src, listed, data_dir = sys.argv[1:4]
+roots = {}
+
+
+def collect(node):
+    if isinstance(node, dict):
+        pid, root = node.get("plugin_id"), node.get("plugin_root")
+        if isinstance(pid, str) and isinstance(root, str):
+            roots[pid] = root
+        for value in node.values():
+            collect(value)
+    elif isinstance(node, list):
+        for value in node:
+            collect(value)
+
+
+try:
+    collect(json.load(open(listed, encoding="utf-8")))
+except (OSError, ValueError):
+    pass
+
+for name in sorted(os.listdir(src)):
+    path = os.path.join(src, name)
+    if os.path.isfile(os.path.join(path, "lite", "herdr-plugin.toml")):
+        path = os.path.join(path, "lite")
+    manifest = os.path.join(path, "herdr-plugin.toml")
+    if not os.path.isfile(manifest):
+        continue
+    pid = None
+    for line in open(manifest, encoding="utf-8"):
+        found = re.match(r'\s*id\s*=\s*"([^"]+)"', line)
+        if found:
+            pid = found.group(1)
+            break
+    if pid is None:
+        continue
+    root = roots.get(pid)
+    if isinstance(root, str) and (
+        root.startswith(src + "/") or root.startswith(data_dir + "/")
+    ):
+        continue
+    print(path)
+PY
+)"
+  while read -r dir; do
+    [ -n "$dir" ] || continue
     env -u HERDR_SOCKET_PATH -u HERDR_CLIENT_SOCKET_PATH \
       "$ROOT/Resources/bin/herdr" plugin link "$dir" >/dev/null
-  done
+  done <<<"$plan"
 }
 mash_link_plugins
 
