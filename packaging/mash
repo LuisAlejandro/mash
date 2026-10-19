@@ -272,24 +272,27 @@ mash_link_plugins() {
   py="$ROOT/Resources/python/bin/python3"
   [ -x "$py" ] || py="/usr/bin/python3"
   data_dir="$XDG_DATA_HOME/herdr/plugins"
-  # Which carried plugins the registry still points somewhere else. A root
-  # under this bundle is already right, and so is one under Herdr's own plugin
-  # data directory, where a copy the owner installed from GitHub lives and
-  # keeps winning. Anything else is a build path -- a previous tree, an
-  # external volume -- that resolves on no other machine. That is how
-  # image-popup came to be registered from /Volumes/Documents/... while the
-  # other thirteen looked correct.
+  # Which carried plugins need linking. Herdr keeps a copy of each manifest in
+  # the registry and starts a plugin's [[startup]] processes from that copy at
+  # server boot, never from the file on disk: the bundle's pr-watch-focus had
+  # carried its startup block for weeks while the registry held an older copy
+  # without one, so the hourly poll simply never ran. A root under Herdr's own
+  # plugin data directory is the owner's own install and keeps winning. Any
+  # other root that is not this bundle is a build path -- a previous tree, an
+  # external volume -- which is how image-popup came to be registered from
+  # /Volumes/Documents/... . A root that is this bundle is right, but its
+  # recorded version and startup section may not be, so those are compared too.
   plan="$("$py" -P - "$ROOT/Resources/plugins" "$listed" "$data_dir" <<'PY'
 import json, os, re, sys
 src, listed, data_dir = sys.argv[1:4]
-roots = {}
+entries = {}
 
 
 def collect(node):
     if isinstance(node, dict):
-        pid, root = node.get("plugin_id"), node.get("plugin_root")
-        if isinstance(pid, str) and isinstance(root, str):
-            roots[pid] = root
+        pid = node.get("plugin_id")
+        if isinstance(pid, str) and "plugin_root" in node:
+            entries[pid] = node
         for value in node.values():
             collect(value)
     elif isinstance(node, list):
@@ -309,19 +312,21 @@ for name in sorted(os.listdir(src)):
     manifest = os.path.join(path, "herdr-plugin.toml")
     if not os.path.isfile(manifest):
         continue
-    pid = None
-    for line in open(manifest, encoding="utf-8"):
-        found = re.match(r'\s*id\s*=\s*"([^"]+)"', line)
-        if found:
-            pid = found.group(1)
-            break
-    if pid is None:
+    text = open(manifest, encoding="utf-8").read()
+    found_id = re.search(r'^id\s*=\s*"([^"]+)"', text, re.M)
+    if not found_id:
         continue
-    root = roots.get(pid)
-    if isinstance(root, str) and (
-        root.startswith(src + "/") or root.startswith(data_dir + "/")
-    ):
+    pid = found_id.group(1)
+    version = re.search(r'^version\s*=\s*"([^"]+)"', text, re.M)
+    version = version.group(1) if version else None
+    startup = bool(re.search(r'^\[\[startup\]\]', text, re.M))
+    entry = entries.get(pid)
+    root = entry.get("plugin_root") if entry else None
+    if isinstance(root, str) and root.startswith(data_dir + "/"):
         continue
+    if isinstance(root, str) and root.startswith(src + "/"):
+        if entry.get("version") == version and bool(entry.get("startup")) == startup:
+            continue
     print(path)
 PY
 )"
