@@ -117,6 +117,17 @@ assert_unset "$launch" HERDR_TAB_ID
 assert_value "$launch" HERDR_SOCKET_PATH "$home/.mash/run/herdr.sock"
 assert_value "$launch" HERDR_CONFIG_PATH "$home/.mash/config/herdr/config.toml"
 
+# pi packages the user installs belong to Mash, never to the owner's own pi.
+# pi installs under PI_CODING_AGENT_DIR, and a plugin that cannot call pi's
+# getAgentDir() falls back to PI_HOME, defaulting to ~/.pi/agent: without it a
+# plugin installed in Mash would read and write the owner's own pi. npm caches
+# under HOME, which Mash never changes, so the cache is pinned here too.
+for out in "$pane" "$launch"; do
+	assert_value "$out" PI_CODING_AGENT_DIR "$home/.mash/pi/agent"
+	assert_value "$out" PI_HOME "$home/.mash/pi/agent"
+	assert_value "$out" npm_config_cache "$home/.mash/cache/npm"
+done
+
 # The host directories the wizard's Homebrew tools live in must be on the
 # session PATH even when the app was started with a GUI's minimal PATH; the
 # sesh preview runs `sh -lc` on that path and fails with exit status 127

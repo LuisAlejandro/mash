@@ -597,10 +597,12 @@ Customizing Pi inside Mash means writing to its agent directory
 `extensions/` for TypeScript extensions, `mcp.json` for MCP servers, `skills/`
 for skills. Edits persist; the launcher seeds a file only when it is missing.
 
-Installed pi packages are part of the build, not something to add at runtime:
-pi resolves every `npm:` package from its own location inside the signed bundle,
-so `pi install` has nowhere writable to put one. Add it to the build and
-rebuild instead.
+Packages install at runtime. `pi install npm:<name>` run in a Mash pane puts the
+package in `~/.mash/pi/agent/npm/node_modules` and adds it to Mash's own
+`settings.json`: pi installs user packages under its agent directory, which Mash
+points at `~/.mash/pi/agent`, never at the signed bundle and never at the user's
+own `$HOME/.pi/agent`. Downloads cache under `~/.mash/cache/npm`. Packages Mash ships
+for everyone live in the bundle and are added through the build instead.
 
 For the full map — every config path, how to author an extension or skill, how
 to install a package, which machine tools Mash borrows, and what must go through

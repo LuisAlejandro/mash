@@ -45,6 +45,16 @@ mash_isolate() {
   export HERDR_SOCKET_PATH="$d/run/herdr.sock"
   export HERDR_CLIENT_SOCKET_PATH="$d/run/herdr-client.sock"
   export PI_CODING_AGENT_DIR="$d/pi/agent"
+  # pi packages the user installs, like pi's own agent directory. pi resolves
+  # them from `<agentDir>/npm/node_modules` (getManagedNpmInstallPath), so
+  # `pi install` run in a Mash pane lands here and not in ~/.pi/agent: this is
+  # writable, outside the signed bundle, and survives an app update.
+  #
+  # PI_HOME is the older name for the same directory and is what a plugin that
+  # cannot call pi's getAgentDir() has to use. pi-omniroute-sync defaults to
+  # ~/.pi/agent when it is unset, which would put a Mash plugin's settings and
+  # API key into the owner's own pi and write their models.json.
+  export PI_HOME="$d/pi/agent"
   # pi checks pi.dev for a newer release on startup. Mash ships and pins one pi,
   # and `pi update` would replace it inside the signed bundle, so the check only
   # advertises an update that must not be taken. Any non-empty value disables
@@ -73,6 +83,11 @@ mash_isolate() {
   # Playwright downloads a browser per install. Keep it in the data folder so
   # Mash never shares or disturbs the user's own Playwright cache.
   export PLAYWRIGHT_BROWSERS_PATH="$d/cache/ms-playwright"
+  # `pi install` runs npm, and HOME is never changed, so npm would cache every
+  # download in the owner's real ~/.npm. A Mash install should write only under
+  # ~/.mash, so the cache goes here. Nothing is lost if it is empty: it is a
+  # cache, and the same packages reinstall from the registry.
+  export npm_config_cache="$d/cache/npm"
   # PATH is rebuilt explicitly, in three tiers: Mash's own program
   # directories, then the host directories the shipped configs name, then
   # whatever was inherited. Mash's own programs are never resolved by bare name

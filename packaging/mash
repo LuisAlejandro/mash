@@ -282,6 +282,8 @@ exec /usr/bin/open -na "$ROOT/Resources/Ghostty.app" \
   --env "HERDR_SOCKET_PATH=$HERDR_SOCKET_PATH" \
   --env "HERDR_CLIENT_SOCKET_PATH=$HERDR_CLIENT_SOCKET_PATH" \
   --env "PI_CODING_AGENT_DIR=$PI_CODING_AGENT_DIR" \
+  --env "PI_HOME=$PI_HOME" \
+  --env "npm_config_cache=$npm_config_cache" \
   --env "GIT_CONFIG_GLOBAL=$GIT_CONFIG_GLOBAL" \
   --env "GH_CONFIG_DIR=$GH_CONFIG_DIR" \
   --env "_ZO_DATA_DIR=$_ZO_DATA_DIR" \

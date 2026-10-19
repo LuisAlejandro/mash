@@ -62,28 +62,48 @@ to pick up the new seed.
 
 ## Customizing Pi
 
-`pi` resolves packages from its own install location, which in Mash is inside
-the signed bundle, and `pi install` computes the same prefix from that location.
-So an installed package cannot be added at runtime: there is nowhere writable
-for it to go, and writing into `Contents/` would break the signature.
-
-What is editable at runtime, under `~/.mash/pi/agent/`: `settings.json`,
-`mcp.json`, `extensions/`, `skills/`, `prompts/`, `themes/`. Mash seeds a file
-only when it is missing, so edits persist across rebuilds. Use
-`$HOME/.pi/agent` and nothing here will touch the user's own Pi.
+Everything a user changes lives under `~/.mash/pi/agent/`: `settings.json`,
+`mcp.json`, `extensions/`, `skills/`, `prompts/`, `themes/`, and installed
+packages under `npm/`. Mash seeds a file only when it is missing, so edits
+persist across rebuilds. Never write to `$HOME/.pi/agent`: that is the user's
+own Pi, outside Mash.
 
 ### Packages
 
-Not a runtime operation. To add one, edit two files in the repository and
-rebuild:
+Two kinds, and they are added in different places.
+
+**Installed by the user, at runtime.** In a Mash pane:
+
+```sh
+pi install npm:<name>
+```
+
+pi installs user packages under its agent directory, so this lands in
+`~/.mash/pi/agent/npm/node_modules` and adds `npm:<name>` to Mash's
+`settings.json`. It never writes into the signed bundle and never into
+`$HOME/.pi/agent`. `pi remove npm:<name>` undoes it. npm caches downloads in
+`~/.mash/cache/npm`. Restart pi to load a new package.
+
+Mash sets both `PI_CODING_AGENT_DIR` and `PI_HOME` to `~/.mash/pi/agent`.
+Packages that find their home through pi's `getAgentDir()` or through `PI_HOME`
+are fully isolated. A package that hard-codes `$HOME/.pi/agent` cannot be, because
+Mash never changes `HOME`; such a package would read and write the user's own
+Pi, so check one before installing it.
+
+A package resolves `@earendil-works/pi-coding-agent`, `pi-tui`, `pi-ai` and
+`typebox` to Mash's bundled copies through pi's extension loader, so a package
+that only peer-depends on pi installs small and runs against the pi Mash ships.
+
+**Shipped with Mash for everyone, at build time.** Edit two files in the
+repository and rebuild:
 
 1. `packaging/build.sh` — the `npm install --global --prefix` list, with an
    exact version.
 2. `packaging/defaults/pi/settings.json` — add `npm:<name>` to `packages`.
 
-Mash ships `pi-subagents`, `pi-ask-user`, `@krfantasy/pi-monokai-pro` and
-`pi-web-search`. A package may bundle extensions, skills, prompts and themes
-together.
+Mash ships `pi-subagents`, `pi-ask-user`, `@krfantasy/pi-monokai-pro`,
+`pi-web-search` and `@earendil-works/pi-voice`. A package may bundle extensions,
+skills, prompts and themes together.
 
 `packaging/defaults/pi/node_modules` deliberately holds **one** package:
 `typebox`, imported at runtime by `extensions/herdr-orchestration.ts`. Node
