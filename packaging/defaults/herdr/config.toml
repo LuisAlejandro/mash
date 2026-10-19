@@ -608,11 +608,13 @@ description = "Telescope (actions only)"
 
 # Fork the focused agent's session from an earlier user message. The plugin
 # resolves Pi or OpenCode from the focused pane, so one chord covers both.
-# Was cmd+alt+f, moved to cmd+alt+m (M for "Message") because that chord now
-# belongs to Fresh's start_search_replace -- Herdr's resolver checks custom
-# commands before the pane sees a key, so the two could not coexist.
+# Was cmd+alt+f (Fresh's start_search_replace), then cmd+alt+m -- which
+# minimized the window, because macOS owns plain cmd+m as Minimize and the
+# chord's Option never reached Herdr. cmd+alt+y is free in Fresh, Herdr and
+# Ghostty and has no macOS menu equivalent, so it cannot be swallowed by an
+# OS shortcut the way m/h/q are.
 [[keys.command]]
-key = "cmd+alt+m"
+key = "cmd+alt+y"
 type = "plugin_action"
 command = "fork-from-message.fork"
 description = "Fork agent from message"
