@@ -1,0 +1,132 @@
+--- a/crates/fresh-editor/src/app/types/context_menu.rs
++++ b/crates/fresh-editor/src/app/types/context_menu.rs
+@@ -315,6 +315,7 @@
+     Delete,
+     CopyFullPath,
+     CopyRelativePath,
++    RevealInFinder,
+ }
+ 
+ impl FileExplorerContextMenuItem {
+@@ -335,10 +336,14 @@
+             Self::Duplicate,
+             Self::CopyFullPath,
+             Self::CopyRelativePath,
++            Self::RevealInFinder,
+         ]
+     }
+ 
+     pub fn multi_selection() -> &'static [Self] {
++        // RevealInFinder is absent on purpose: the platform verbs take one
++        // path, so the multi-selection menu would open one file-manager
++        // window per selected entry.
+         &[
+             Self::Cut,
+             Self::Copy,
+@@ -371,6 +376,7 @@
+             Self::Delete => t!("explorer.context.delete").to_string(),
+             Self::CopyFullPath => t!("explorer.context.copy_full_path").to_string(),
+             Self::CopyRelativePath => t!("explorer.context.copy_relative_path").to_string(),
++            Self::RevealInFinder => t!("explorer.context.reveal_in_finder").to_string(),
+         }
+     }
+ }
+--- a/crates/fresh-editor/src/app/file_explorer.rs
++++ b/crates/fresh-editor/src/app/file_explorer.rs
+@@ -1648,6 +1648,70 @@
+             t!("clipboard.copied_paths_n", count = rendered.len()).to_string()
+         };
+         self.set_status_message(msg);
++    }
++
++    /// Hand the selected node to the platform's file manager, selected.
++    ///
++    /// Single-selection by construction: the multi-selection menu does not
++    /// carry this row (see `FileExplorerContextMenuItem::multi_selection`),
++    /// because the reveal verbs take one path and looping would open one
++    /// window per selected entry. `effective_selection` still returns a list,
++    /// so the first entry is taken rather than assuming a single element.
++    ///
++    /// macOS only. The row is compiled in everywhere so the menu item list and
++    /// the dispatch stay exhaustive, but a non-macOS build reports that it is
++    /// unsupported rather than silently doing nothing.
++    pub fn file_explorer_reveal_in_finder(&mut self) {
++        let Some(explorer) = self.file_explorer() else {
++            return;
++        };
++        let path = explorer
++            .effective_selection()
++            .iter()
++            .find_map(|&id| explorer.tree().get_node(id).map(|n| n.entry.path.clone()));
++        let Some(path) = path else {
++            self.set_status_message(t!("clipboard.no_file_path").to_string());
++            return;
++        };
++
++        #[cfg(target_os = "macos")]
++        {
++            use crate::services::process_hidden::HideWindow;
++
++            // `output()`, not `spawn()`: a dropped `Child` is never reaped, so
++            // a long-lived editor would accumulate zombies. `open -R` hands the
++            // path to LaunchServices and returns in milliseconds, well inside
++            // what the git calls elsewhere in this module already cost
++            // synchronously.
++            let failure = match std::process::Command::new("open")
++                .arg("-R")
++                .arg(&path)
++                .hide_window()
++                .output()
++            {
++                Ok(output) if output.status.success() => None,
++                Ok(output) => {
++                    let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
++                    Some(if stderr.is_empty() {
++                        output.status.to_string()
++                    } else {
++                        stderr
++                    })
++                }
++                Err(error) => Some(error.to_string()),
++            };
++            // A success is silent: revealing raises the file manager over the
++            // editor, so the result is its own confirmation. Only the failure
++            // would otherwise be invisible.
++            if let Some(detail) = failure {
++                self.set_status_message(t!("explorer.reveal_failed", error = &detail).to_string());
++            }
++        }
++        #[cfg(not(target_os = "macos"))]
++        {
++            let _ = &path;
++            self.set_status_message(t!("explorer.reveal_unsupported").to_string());
++        }
+     }
+ }
+ 
+--- a/crates/fresh-editor/src/app/chrome/file_explorer.rs
++++ b/crates/fresh-editor/src/app/chrome/file_explorer.rs
+@@ -435,6 +435,7 @@
+             FileExplorerContextMenuItem::Delete => self.file_explorer_delete(),
+             FileExplorerContextMenuItem::CopyFullPath => self.file_explorer_copy_path(false),
+             FileExplorerContextMenuItem::CopyRelativePath => self.file_explorer_copy_path(true),
++            FileExplorerContextMenuItem::RevealInFinder => self.file_explorer_reveal_in_finder(),
+         }
+     }
+ 
+--- a/crates/fresh-editor-core/locales/en.json
++++ b/crates/fresh-editor-core/locales/en.json
+@@ -1651,10 +1651,13 @@
+   "explorer.context.duplicate": "Duplicate",
+   "explorer.context.copy_full_path": "Copy Full Path",
+   "explorer.context.copy_relative_path": "Copy Relative Path",
++  "explorer.context.reveal_in_finder": "Reveal in Finder",
+   "explorer.context.new_directory": "New Directory",
+   "explorer.context.new_file": "New File",
+   "explorer.context.paste": "Paste",
+   "explorer.context.rename": "Rename",
++  "explorer.reveal_failed": "Could not reveal in Finder: %{error}",
++  "explorer.reveal_unsupported": "Revealing in the file manager is not supported on this platform",
+   "explorer.cannot_duplicate_root": "Cannot duplicate project root",
+   "explorer.duplicated": "Duplicated: %{name}",
+   "explorer.duplicated_n": "Duplicated %{count} items",
