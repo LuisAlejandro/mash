@@ -31,6 +31,10 @@ from agents import Agent, AgentError, SUPPORTED_KINDS, agent_for  # noqa: E402
 
 
 PLUGIN_ID = "fork-from-message"
+# dev-tab's tab.created hook skips this prefix. Without it, the hook races
+# agent start, launching a second pi on the right and typing Fresh's command
+# into the forked session in the root pane.
+FORK_TAB_SENTINEL = "herdr-tab-launcher-fork"
 ACTION_TITLE = "Fork agent from message"
 DESTINATIONS = ("tab", "pane", "workspace")
 COMMAND_TIMEOUT_SECONDS = 15
@@ -343,6 +347,10 @@ class ForkWorkflow:
         return self._create_tab_target(workspace_id, cwd)
 
     def _create_tab_target(self, workspace_id: str, cwd: str) -> ForkTarget:
+        # tab.created hooks run asynchronously. The sentinel is in the event
+        # payload before the hook starts, so dev-tab skips this tab even if its
+        # shell is still starting. A later pane-count check alone cannot stop
+        # the hook from racing agent start in the root pane.
         response = self.client.json(
             [
                 "tab",
@@ -352,7 +360,7 @@ class ForkWorkflow:
                 "--cwd",
                 cwd,
                 "--label",
-                _fork_label(self.context),
+                FORK_TAB_SENTINEL,
                 "--no-focus",
             ]
         )
@@ -362,10 +370,28 @@ class ForkWorkflow:
         tab_id = _nonempty_string(tab.get("tab_id"))
         if tab_id is not None:
             self.created_resource = ("tab", tab_id)
-        pane_id = _nonempty_string(root_pane.get("pane_id"))
-        if tab_id is None or pane_id is None:
+        left_pane_id = _nonempty_string(root_pane.get("pane_id"))
+        if tab_id is None or left_pane_id is None:
             raise ForkError("Herdr created a tab but did not return its tab and pane IDs.")
-        return ForkTarget("tab", workspace_id, tab_id, pane_id)
+
+        # Own the layout: Fresh runs in the root pane, while agent start must
+        # target the new RIGHT pane. --ratio is the existing pane's share, as
+        # with herdr-dev-tab-fill. Neither operation focuses the new tab.
+        response = self.client.json(
+            [
+                "pane", "split", left_pane_id, "--direction", "right",
+                "--ratio", "0.6", "--cwd", cwd, "--no-focus",
+            ]
+        )
+        right_pane = _object(
+            _object(response.get("result"), "pane split result").get("pane"), "right pane"
+        )
+        right_pane_id = _nonempty_string(right_pane.get("pane_id"))
+        if right_pane_id is None or right_pane_id == left_pane_id:
+            raise ForkError("Herdr split the fork tab but did not return a distinct right pane.")
+        # The trailing '.' makes Fresh show the directory's file explorer.
+        self.client.json(["pane", "run", left_pane_id, "herdr-fresh-pane ."])
+        return ForkTarget("tab", workspace_id, tab_id, right_pane_id)
 
     def _split_direction(self, source_pane_id: str) -> str:
         response = self.client.json(["pane", "layout", "--pane", source_pane_id])
@@ -443,6 +469,10 @@ class ForkWorkflow:
         elif target.destination == "workspace":
             self.client.json(["workspace", "focus", target.workspace_id])
         else:
+            # Rename only after the fork is running. The event hook already
+            # made its decision from the creation payload, so this restores
+            # the user's fork label without ever triggering dev-tab.
+            self.client.json(["tab", "rename", target.tab_id, _fork_label(self.context)])
             self.client.json(["tab", "focus", target.tab_id])
 
     def _start_fork_agent(self, pane_id: str, fork_session: str, agent: Agent) -> None:

@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import json
+import os
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -16,7 +18,8 @@ from agents import AgentError, agent_for  # noqa: E402
 
 
 SOURCE_PANE = "w1:p1"
-FORK_PANE = "w1:p2"
+FRESH_PANE = "w1:p2"
+FORK_PANE = "w1:p3"
 PICKER_PANE = "w1:p9"
 PI_SOURCE = "/tmp/sessions/source.jsonl"
 PI_FORK = "/tmp/sessions/fork.jsonl"
@@ -59,13 +62,14 @@ class FakeAgent:
 
 class FakeClient:
     def __init__(self, tmp: Path, *, choice: str | None, agent_kind: str, source_session: str,
-                 reported: str | None = None):
+                 reported: str | None = None, fail_on: tuple[str, ...] = ()):
         self.calls: list[list[str]] = []
         self.tmp = tmp
         self.choice = choice
         self.agent_kind = agent_kind
         self.source_session = source_session
         self.reported = reported
+        self.fail_on = fail_on
         self.picker_alive = True
 
     def _session(self, value):
@@ -75,6 +79,8 @@ class FakeClient:
 
     def json(self, args, timeout=None):
         self.calls.append(list(args))
+        if self.fail_on and tuple(args[:len(self.fail_on)]) == self.fail_on:
+            raise ffm.ForkError("simulated Herdr failure")
         head = " ".join(args[:2])
         if head == "pane get":
             if args[2] == PICKER_PANE:
@@ -100,7 +106,9 @@ class FakeClient:
             self.picker_alive = False
             return {"result": {"plugin_pane": {"pane": {"pane_id": PICKER_PANE}}}}
         if head == "tab create":
-            return {"result": {"tab": {"tab_id": "w1:t2"}, "root_pane": {"pane_id": FORK_PANE}}}
+            return {"result": {"tab": {"tab_id": "w1:t2"}, "root_pane": {"pane_id": FRESH_PANE}}}
+        if head == "pane split":
+            return {"result": {"pane": {"pane_id": FORK_PANE}}}
         if head == "agent get":
             value = self.reported if self.reported is not None else self.source_session
             return {"result": {"agent": {"agent_session": self._session(value)}}}
@@ -123,6 +131,30 @@ def _wire(monkeypatch_agent):
     return original
 
 
+def assert_fork_tab_layout(client: FakeClient, session: str) -> None:
+    """The tab.created hook must not launch its own fresh + empty pi."""
+    calls = client.calls
+    created = next(c for c in calls if c[:2] == ["tab", "create"])
+    assert created[created.index("--label") + 1] == ffm.FORK_TAB_SENTINEL, created
+    assert created[-1] == "--no-focus", created
+    split = next(c for c in calls if c[:2] == ["pane", "split"])
+    assert split[:3] == ["pane", "split", FRESH_PANE], split
+    assert split[split.index("--direction") + 1] == "right", split
+    assert split[split.index("--ratio") + 1] == "0.6", split
+    assert split[-1] == "--no-focus", split
+    run = next(c for c in calls if c[:2] == ["pane", "run"])
+    assert run == ["pane", "run", FRESH_PANE, "herdr-fresh-pane ."], run
+    start = next(c for c in calls if c[:2] == ["agent", "start"])
+    assert start[start.index("--pane") + 1] == FORK_PANE, start
+    assert start[-2:] == ["--session", session], start
+    assert len([c for c in calls if c[:2] == ["agent", "start"]]) == 1, calls
+    assert calls.index(run) < calls.index(start) < calls.index(["agent", "get", FORK_PANE]), calls
+    assert calls[-2:] == [
+        ["tab", "rename", "w1:t2", "Fork · agent - work"],
+        ["tab", "focus", "w1:t2"],
+    ], calls
+
+
 def test_pi_backend(tmp: Path) -> None:
     agent = FakeAgent("pi", "path", "Pi", PI_FORK)
     client = FakeClient(tmp, choice="e3", agent_kind="pi", source_session=PI_SOURCE,
@@ -140,7 +172,9 @@ def test_pi_backend(tmp: Path) -> None:
     start = next(c for c in client.calls if c[:2] == ["agent", "start"])
     assert start[2].startswith("pi_fork_"), start
     assert start[start.index("--kind") + 1] == "pi", start
+    assert start[start.index("--pane") + 1] == FORK_PANE, start
     assert start[-2:] == ["--session", PI_FORK], start
+    assert_fork_tab_layout(client, PI_FORK)
 
 
 def test_opencode_backend(tmp: Path) -> None:
@@ -159,7 +193,9 @@ def test_opencode_backend(tmp: Path) -> None:
     start = next(c for c in client.calls if c[:2] == ["agent", "start"])
     assert start[2].startswith("opencode_fork_"), start
     assert start[start.index("--kind") + 1] == "opencode", start
+    assert start[start.index("--pane") + 1] == FORK_PANE, start
     assert start[-2:] == ["--session", OC_FORK], start
+    assert_fork_tab_layout(client, OC_FORK)
 
 
 def test_source_pane_never_touched(tmp: Path) -> None:
@@ -192,6 +228,43 @@ def test_picker_splits_from_source_pane(tmp: Path) -> None:
     call = next(c for c in client.calls if c[:2] == ["plugin", "pane"])
     assert call[call.index("--placement") + 1] == "split", call
     assert call[call.index("--target-pane") + 1] == SOURCE_PANE, call
+
+
+def test_fork_label_skips_the_actual_dev_tab_event_hook(tmp: Path) -> None:
+    """Check the real hook, not a duplicate filter in the fake client."""
+    hook = Path(__file__).resolve().parents[2] / "dev-tab" / "dev-tab.sh"
+    calls = tmp / "herdr-calls"
+    herdr = tmp / "herdr"
+    herdr.write_text(f"#!/bin/sh\nprintf 'called\\n' >> '{calls}'\nexit 1\n")
+    herdr.chmod(0o755)
+    event = {"data": {"tab": {"tab_id": "w1:t2", "label": ffm.FORK_TAB_SENTINEL, "pane_count": 1}}}
+    env = {**os.environ, "HERDR_PLUGIN_EVENT_JSON": json.dumps(event), "HERDR_BIN_PATH": str(herdr)}
+    result = subprocess.run(["bash", str(hook)], env=env, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert not calls.exists(), "dev-tab touched a fork tab despite its sentinel label"
+    # Control: a regular one-pane tab should reach the hook's pane lookup.
+    event["data"]["tab"]["label"] = "Fork · agent - work"
+    env["HERDR_PLUGIN_EVENT_JSON"] = json.dumps(event)
+    subprocess.run(["bash", str(hook)], env=env, capture_output=True, text=True)
+    assert calls.exists(), "the hook stopped processing all tabs; the test is vacuous"
+
+
+def test_failed_fork_layout_closes_incomplete_tab(tmp: Path) -> None:
+    for command in (("pane", "split"), ("pane", "run")):
+        agent = FakeAgent("pi", "path", "Pi", PI_FORK)
+        client = FakeClient(tmp, choice="e2", agent_kind="pi", source_session=PI_SOURCE,
+                            fail_on=command)
+        original = _wire(agent)
+        try:
+            ffm.ForkWorkflow(client, _context(tmp)).execute()
+        except ffm.ForkError as exc:
+            assert "simulated Herdr failure" in str(exc), exc
+        else:
+            raise AssertionError("expected ForkError")
+        finally:
+            ffm.agent_for = original
+        assert ["tab", "close", "w1:t2"] in client.calls, client.calls
+        assert not any(c[:2] == ["agent", "start"] for c in client.calls), client.calls
 
 
 def test_cancel_creates_no_destination(tmp: Path) -> None:
@@ -338,6 +411,8 @@ def main() -> int:
         test_opencode_backend,
         test_source_pane_never_touched,
         test_picker_splits_from_source_pane,
+        test_fork_label_skips_the_actual_dev_tab_event_hook,
+        test_failed_fork_layout_closes_incomplete_tab,
         test_cancel_creates_no_destination,
         test_wrong_session_in_new_pane_is_rejected,
         test_backend_failure_closes_destination,
