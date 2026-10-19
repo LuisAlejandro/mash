@@ -19,8 +19,14 @@ from pathlib import Path
 # `.local` and `local` and refused to start, which left Mash unopenable after
 # the first wizard run. It is migrated only when it really is the old data
 # directory, which `migrate` decides by what it holds.
-LEGACY_DIRS = ("config", "cache", "pi", "setup")
+LEGACY_DIRS = ("config", "pi", "setup")
 LOCAL = "local"
+CACHE = "cache"
+
+# A cache is disposable: its contents are downloaded or generated, and the
+# paths inside it are rebuilt at the first read. `.cache` holding nothing but
+# a cache tree is a redundant copy, never the old data directory.
+CACHE_CONTENTS = ("huggingface", "flashrank", "ms-playwright", "npm", "pip", "uv")
 
 
 def rewrite(path: Path, changes: tuple[tuple[bytes, bytes], ...]) -> None:
@@ -103,6 +109,13 @@ def migrate(root: Path) -> None:
     # `.local` is judged by its contents, not by its name. Only `bin` in it
     # means the Hindsight shim directory, which is current and stays put. Any
     # other entry means the old data directory and it is moved like the rest.
+    for name in LOCAL, CACHE:
+        old, new = root / f".{name}", root / name
+        if old.is_symlink() or new.is_symlink():
+            raise ValueError(f"refusing a symlink at {old} or {new}")
+    # `.local` is judged by its contents, not by its name. Only `bin` in it
+    # means the Hindsight shim directory, which is current and stays put. Any
+    # other entry means the old data directory and it is moved like the rest.
     old_local, new_local = root / f".{LOCAL}", root / LOCAL
     if old_local.is_symlink() or new_local.is_symlink():
         raise ValueError(f"refusing a symlink at {old_local} or {new_local}")
@@ -118,14 +131,35 @@ def migrate(root: Path) -> None:
         # to collide with.
         move_local = False
 
-    if any((root / f".{name}").exists() for name in LEGACY_DIRS) or move_local:
+    # `.cache` is judged the same way. Anything it holds is a downloaded cache
+    # (HuggingFace models, Playwright browsers, npm), so when the current
+    # `cache` is there too the extra tree is dropped rather than blocking the
+    # launch. `move_cache` is True only when there is nothing to collide with.
+    old_cache, new_cache = root / ".cache", root / "cache"
+    cache_disposable = old_cache.is_dir() and (
+        not os.listdir(old_cache)
+        or all(entry in CACHE_CONTENTS for entry in os.listdir(old_cache))
+    )
+    if cache_disposable and new_cache.exists():
+        shutil.rmtree(old_cache)
+    if old_cache.exists() and new_cache.exists():
+        raise ValueError(
+            f"both {old_cache} and {new_cache} exist; resolve the collision before launch"
+        )
+    move_cache = old_cache.exists()
+
+    if (
+        any((root / f".{name}").exists() for name in LEGACY_DIRS)
+        or move_local
+        or move_cache
+    ):
         socket = root / "run" / "herdr.sock"
         if socket.is_socket():
             lsof = shutil.which("lsof")
             if not lsof or subprocess.run([lsof, "-nP", str(socket)], stdout=subprocess.DEVNULL,
                                           stderr=subprocess.DEVNULL).returncode == 0:
                 raise ValueError("Mash is still running; close it before migrating")
-        for name in LEGACY_DIRS:
+        for name in (CACHE,) + LEGACY_DIRS:
             old = root / f".{name}"
             if old.exists():
                 old.rename(root / name)
@@ -137,7 +171,9 @@ def migrate(root: Path) -> None:
     migrate_pi_settings(root)
 
     marker = root / "setup" / "layout-v2"
-    if marker.exists() or not any((root / name).exists() for name in LEGACY_DIRS):
+    if marker.exists() or not any(
+        (root / name).exists() for name in (CACHE,) + LEGACY_DIRS
+    ):
         return
 
     changes = tuple(

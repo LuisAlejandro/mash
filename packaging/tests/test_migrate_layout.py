@@ -18,7 +18,51 @@ class LayoutMigrationTest(unittest.TestCase):
     def migrate(self):
         return subprocess.run([sys.executable, str(MIGRATOR), str(self.root)], capture_output=True, text=True)
 
-    def test_moves_data_and_repairs_embedded_paths(self):
+    def test_drops_a_duplicate_cache_of_downloaded_data(self):
+        """A `.cache` that holds only caches is disposable when `cache` exists.
+
+        The Hindsight daemon runs with HOME set to the data folder, so its
+        HuggingFace downloads land in `~/.mash/.cache/huggingface` while
+        `HF_HOME` points `~/.mash/cache/huggingface` at the same place. The
+        second launch found both trees and refused to start, which left Mash
+        unopenable after the first Hindsight run. Nothing in such a directory
+        is unique: every file is a download or a generated cache.
+        """
+        blob = "models--intfloat--multilingual-e5-small/blobs/e0b1d18"
+        for base in (self.root / ".cache", self.root / "cache"):
+            (base / "huggingface" / "hub" / blob).parent.mkdir(parents=True)
+            (base / "huggingface" / "hub" / blob).write_bytes(b"model")
+
+        result = self.migrate()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse((self.root / ".cache").exists())
+        self.assertTrue((self.root / "cache" / "huggingface" / "hub" / blob).is_file())
+        # Idempotent: the next launch must not start refusing either.
+        self.assertEqual(self.migrate().returncode, 0)
+
+    def test_keeps_a_cache_that_is_the_only_copy(self):
+        """With no `cache` at all, `.cache` is the data and is moved over."""
+        old = self.root / ".cache" / "huggingface"
+        old.mkdir(parents=True)
+        (old / "hub").mkdir()
+
+        result = self.migrate()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse((self.root / ".cache").exists())
+        self.assertTrue((self.root / "cache" / "huggingface" / "hub").is_dir())
+
+    def test_refuses_a_cache_collision_with_real_data(self):
+        """A `.cache` holding anything else is data and still must not be merged."""
+        (self.root / ".cache" / "precious-not-a-cache").mkdir(parents=True)
+        (self.root / "cache").mkdir()
+
+        result = self.migrate()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("both", result.stderr)
+        self.assertTrue((self.root / ".cache" / "precious-not-a-cache").is_dir())
+        self.assertFalse((self.root / "cache" / "precious-not-a-cache").exists())
+
+    def test_moves_data_and_repairs_embedded_paths_without_the_cache(self):
         for name in (".config", ".cache", ".local", ".pi", ".setup"):
             (self.root / name).mkdir()
         config = self.root / ".config"
