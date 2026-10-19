@@ -477,6 +477,15 @@ mash_install_skills() {
     echo "APPEND_SYSTEM.md lost the distinction between Mash's Pi and the user's" >&2
     exit 1
   }
+  # The guidance ships to every user, so it must not name the machine that
+  # built it: a checkout path or a home directory is meaningless anywhere else
+  # and points the agent at a directory that does not exist. Checked on the
+  # staged tree so the build's own rewrite pass is covered too.
+  if grep -rlE '/Volumes/|/Users/' "$pi/APPEND_SYSTEM.md" "$pi/AGENTS.md" \
+    "$pi/skills/mash-customize" >/dev/null 2>&1; then
+    echo "Mash's pi guidance names a path on the build machine" >&2
+    exit 1
+  fi
   [ -d "$pi/agents" ] || {
     echo "agents were not staged" >&2
     exit 1
@@ -587,7 +596,8 @@ plus a writable data folder at `~/.mash`. Do not confuse the two.
 - **Everything Mash owns is under `~/.mash`**: config in `~/.mash/config`,
   Pi's agent directory at `~/.mash/pi/agent`, tool state in `~/.mash/local`.
 - **`Contents/` inside the bundle is signed and read-only.** Never write there.
-  Change the repository at `/Volumes/Documents/Software/mash` and rebuild.
+  A change to anything inside it is made in Mash's source repository
+  (https://github.com/LuisAlejandro/mash) and ships with a rebuild.
 - **Two exceptions to the flat layout**: `.hindsight` and `.pg0`, directly
   under `~/.mash`, keep their leading dots because Hindsight and its embedded
   Postgres name those directories themselves.

@@ -6,8 +6,8 @@ description: Map of the Mash app for customization work — how its isolation wo
 # Customizing Mash
 
 Mash is an isolated application: a signed bundle plus a writable data folder.
-Changing how it behaves means writing into the data folder, or changing the
-repository at `/Volumes/Documents/Software/mash` and rebuilding.
+Changing how it behaves means writing into the data folder, or changing Mash's
+source repository (https://github.com/LuisAlejandro/mash) and rebuilding.
 
 ## The isolation model
 
@@ -158,15 +158,26 @@ regenerable. Author permanent changes in the repo instead.
 ## Machine tools Mash borrows
 
 Mash bundles its own terminal, agents and helpers, but it deliberately borrows
-these from the host and prepends `/opt/homebrew/bin` to every pane's `PATH`:
+some tools from the host. `mash_isolate` in `Resources/bin/lib.sh` builds every
+pane's `PATH` in three tiers: Mash's own directories first, then these host
+directories (each only if it exists), then whatever was inherited:
 
-`git`, `gh`, `jq`, `fzf`, `fd`, `bat`, `rg`, `delta`, `eza`, `zoxide`,
-`sentrux`, `git-flow-next`, `gpg`, plus the language servers and formatters.
-`node@24` and `python@3.13` are needed because those servers' shebangs point at
-Homebrew's interpreters.
+| Directory | What Mash finds there |
+|---|---|
+| `~/.local/bin` | `cua-driver` and `agent-browser`, which Mash's wizard installs |
+| `~/.bun/bin` | `bun` and `bunx` — the bun installer puts them here, not Homebrew |
+| `/opt/homebrew/bin`, `/usr/local/bin` (and their `sbin`) | the Homebrew tools below |
 
-Mash's wizard installs `cua-driver` and `agent-browser` into `~/.local/bin`,
-which `lib.sh` also puts on the pane `PATH`.
+From Homebrew: `git`, `gh`, `jq`, `fzf`, `fd`, `bat`, `rg`, `delta`, `eza`,
+`zoxide`, `sentrux`, `git-flow-next`, `gpg`, plus the language servers and
+formatters. `node@24` and `python@3.13` are needed because those servers'
+shebangs point at Homebrew's interpreters.
+
+Mash's own directories always come first, so a program Mash ships (pi, node,
+python3, fresh, herdr, lazygit, ...) never resolves to a host copy of the same
+name. A tool installed somewhere else — another version manager's directory,
+say — is not on a pane's `PATH` unless it was already on the `PATH` Mash was
+started with.
 
 Removing a host tool does not stop Mash from starting; it breaks something later
 and quietly.
