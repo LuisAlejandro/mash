@@ -106,6 +106,7 @@ created with `herdr tab create --no-focus`.
 | `agent` | no | Live Herdr agent name. Requires `kind`. Mutually exclusive with `command`. |
 | `kind` | with `agent` | `herdr agent start --kind` value. |
 | `args` | no | Extra argv after `--` on `herdr agent start`. Only valid with `agent`. |
+| `focus` | no | Move focus to this pane instead of leaving it on the tab root. Agent panes only. |
 
 ## How splits work
 
@@ -188,6 +189,36 @@ Herdr-supported kind, for example:
 
 Run `herdr agent start --help` for the current list.
 
+### Focusing an agent pane
+
+`focus: true` on a pane makes it the focused pane once the layout is up, so
+an agent-first layout (fresh left, agent right) opens with the caret in the
+agent rather than in the editor. It is a **local patch**, not upstream.
+
+Only agent panes accept it, and the move happens **after** `herdr agent start`
+reports the agent ready -- not at split time. That ordering is the whole point:
+`agent start` types the agent command into the pane's shell, so a pane focused
+before then would receive anything typed in that window *concatenated with the
+agent's own launch command*. A pane with no agent has no readiness signal to
+wait for, which is why the flag is rejected there.
+
+```yaml
+      - panes:
+          - id: fresh
+            command: fresh .
+          - id: pi
+            split_from: fresh
+            direction: right
+            ratio: 0.6
+            agent: pi
+            kind: pi
+            focus: true
+```
+
+The focus follows the agent's **renamed** name (`demo-pi-2` if `demo-pi` was
+taken). Only one pane per profile should ask for focus; with several, the last
+one applied wins.
+
 `agent start` waits until Herdr detects the agent and considers it ready
 (default 30s). The plugin starts agents **after** the popup closes so Save
 does not hang the form.
@@ -201,7 +232,9 @@ For the chosen directory, workspace name, and profile:
 3. For each pane: split if needed, then `pane rename` when `name` is set
 4. For each `command` pane: `herdr pane run`
 5. Close the popup
-6. For each named agent: spawn `herdr agent start …` in the background
+6. For each named agent: spawn `herdr agent start …` in the background, and
+   `herdr agent focus …` for a pane that set `focus: true` once its start
+   reports the agent ready
 7. `herdr workspace focus` on the new workspace
 
 The worktree popup is the same from step 2, but step 1 is:
@@ -306,6 +339,7 @@ The plugin rejects the file (and the popup will not apply it) when:
 - `agent` is set without `kind`, or `kind` / `args` without `agent`
 - `agent` and `command` are both set
 - `agent` does not match `[a-z][a-z0-9_-]{0,31}`
+- `focus` is set on a pane with no `agent`
 
 ## See also
 

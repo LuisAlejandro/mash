@@ -132,7 +132,8 @@ except Exception:
 # instead of Fresh, no resume command so the pane did not survive a server
 # restart) and an untracked `pi` (no sidebar status, not addressable by
 # `herdr agent prompt`). bin/herdr-dev-tab-fill splits off the right pane,
-# runs fresh on the left through the herdr-fresh-pane wrapper, and starts a
-# tracked pi agent on the right.
+# runs fresh on the left through the herdr-fresh-pane wrapper, starts a
+# tracked pi agent on the right, and moves focus to pi once it is ready -- so
+# the "+" button lands the caret in pi exactly like cmd+t does.
 [ -x "$dev_tab_fill" ] || exit 0
 "$dev_tab_fill" "$pane"

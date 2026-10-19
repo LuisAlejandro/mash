@@ -12,7 +12,7 @@
 # --quiet suppresses the "PR buckets changed" notification pr-watch-repo
 # normally fires: a notification for every workspace switch where counts
 # happened to differ would be noise, not signal. git-status-watch has no
-# notification to suppress. The hourly LaunchAgent runs still notify (for
+# notification to suppress. The hourly poll (poll.sh) still notifies (for
 # pr-watch-repo) normally; only this on-focus trigger is silenced.
 set -eu
 

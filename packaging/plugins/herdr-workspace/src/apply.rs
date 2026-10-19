@@ -21,8 +21,9 @@ impl Runner for HerdrCli {
 }
 
 /// Layout was created. `agent_starts` are `herdr agent start …` argv lists
-/// that should run *after* the form popup closes — `agent start` waits until
-/// the agent is ready and would otherwise keep the popup open.
+/// (or `herdr agent start-focus …`: start, then focus that agent once it is
+/// ready) that should run *after* the form popup closes — `agent start` waits
+/// until the agent is ready and would otherwise keep the popup open.
 #[derive(Debug, Clone, Default)]
 pub struct ApplyResult {
     #[allow(dead_code)]
@@ -437,7 +438,20 @@ fn apply_tab<R: Runner>(
                 .ok_or_else(|| format!("pane {} agent needs kind", pane.id))?;
             let mut args = vec![
                 "agent".into(),
-                "start".into(),
+                // `start-focus` is `agent start` followed by `agent focus` for
+                // the same (possibly collision-renamed) name once the start
+                // reports the agent ready -- see main.rs::start_one_agent.
+                //
+                // It has to ride on the start job rather than being pushed as
+                // its own job: start-agents runs every job in its own thread,
+                // so a separate focus job races its own start and can reach
+                // `agent focus` before the name exists. See config.rs for why
+                // the focus is deferred to after readiness at all.
+                if pane.focus {
+                    "start-focus".into()
+                } else {
+                    "start".into()
+                },
                 prefixed_agent_name(workspace_name, agent),
                 "--kind".into(),
                 kind.to_string(),
@@ -776,6 +790,45 @@ mod tests {
         );
         assert!(joined.iter().any(|c| c == "workspace focus w1"));
         assert_eq!(fake.splits, 1);
+    }
+
+    /// A `focus: true` pane queues `agent start-focus …`, which main.rs turns
+    /// into `agent start` plus `agent focus` once the agent reports ready.
+    #[test]
+    fn focus_agent_pane_queues_a_start_focus_job() {
+        let dir = tempfile::tempdir().unwrap();
+        let profile = parse_yaml(
+            r#"
+profiles:
+  - id: dev
+    name: Dev
+    tabs:
+      - panes:
+          - id: fresh
+            command: fresh .
+          - id: pi
+            split_from: fresh
+            direction: right
+            ratio: 0.6
+            agent: pi
+            kind: pi
+            focus: true
+"#,
+        )
+        .unwrap()
+        .profiles
+        .remove(0);
+        let mut fake = Fake::new();
+        let result = apply_with(&mut fake, dir.path().to_str().unwrap(), "demo", &profile).unwrap();
+        assert_eq!(result.agent_starts.len(), 1);
+        assert_eq!(result.agent_starts[0][..2], ["agent", "start-focus"]);
+        assert_eq!(result.agent_starts[0][2], "demo-pi");
+        // The split itself stays unfocused: focus is applied by the queued job,
+        // after the agent is ready, never at layout time.
+        let joined: Vec<String> = fake.calls.iter().map(|c| c.join(" ")).collect();
+        assert!(joined
+            .iter()
+            .any(|c| c.contains("pane split") && c.contains("--no-focus")));
     }
 
     #[test]

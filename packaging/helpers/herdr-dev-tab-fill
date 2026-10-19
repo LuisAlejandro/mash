@@ -1,7 +1,8 @@
 #!/bin/sh
 # Shape an existing single-pane tab into the cmd+t layout: fresh on the left
 # (run through herdr-fresh-pane, which routes right-clicks to Fresh and reports
-# its resume command) and a tracked pi agent on the right.
+# its resume command) and a tracked pi agent on the right. Focus ends on pi,
+# once pi is ready -- see the focus notes on start_agent below.
 #
 #   herdr-dev-tab-fill <left-pane-id>
 #
@@ -74,14 +75,30 @@ right="$("$herdr" pane split "$left" --direction right --ratio "$ratio" \
 # agent start is best-effort: it waits for the agent to become interactive and
 # fails if the name is taken or pi never gets ready. A failure there must not
 # cost the user the tab, so fall back to the old untracked `pane run`.
+#
+# Returns 0 only when pi is both tracked AND focused. Every other outcome is
+# reported to the caller, which owns the geometric focus fallback.
 start_agent() {
 	_pane="$1" _role="$2" _kind="$3" _cmd="$4"
 	_name="$("$here/herdr-agent-name" "$_role" "$workspace_id" "$cwd" 2>/dev/null || true)"
 	if [ -n "$_name" ] &&
 		"$herdr" agent start "$_name" --kind "$_kind" --pane "$_pane" >/dev/null 2>&1; then
-		return 0
+		# Focus pi NOW, not at split time. agent start returns only after Herdr
+		# has seen the agent at an interactive prompt, so a character typed
+		# between the tab appearing and pi being ready cannot reach the shell
+		# pi is launched from. Dropping --no-focus from the split would have
+		# exactly that failure mode: the pane would be focused while `agent
+		# start` is still typing `pi` into that shell, and typed text would
+		# concatenate with it.
+		#
+		# agent focus rather than pane focus: it takes the live agent name, and
+		# Herdr marks the target seen. Best-effort -- if it fails, fall through
+		# to the caller's geometric fallback instead of leaving fresh focused.
+		"$herdr" agent focus "$_name" >/dev/null 2>&1 && return 0
+		return 1
 	fi
-	"$herdr" pane run "$_pane" "$_cmd"
+	"$herdr" pane run "$_pane" "$_cmd" || true
+	return 1
 }
 
 # The trailing `.` is load-bearing, NOT redundant with --cwd. Fresh only shows
@@ -104,4 +121,12 @@ start_agent() {
 # there resolves through PATH, where Homebrew's pi sits unless Mash's own
 # directories lead it. See mash-bin.
 pi_cmd="$(mash-bin pi 2>/dev/null || printf '%s' pi)"
-start_agent "$right" pi pi "$pi_cmd"
+if ! start_agent "$right" pi pi "$pi_cmd"; then
+	# Untracked (or unfocused) pi: there is no agent name to hand to `agent
+	# focus`, so fall back to the layout's own geometry -- pi's pane is the
+	# right-hand neighbor of the pane this layout split it from. Guarded:
+	# a failed focus must not cost the tab, and the chord's whole purpose is
+	# to land the caret in pi, so a silent no-op here is still better than
+	# aborting before the tab rename in the caller.
+	"$herdr" pane focus --pane "$left" --direction right >/dev/null 2>&1 || true
+fi

@@ -2,8 +2,14 @@ id = "pr-watch-focus"
 name = "PR Watch Focus"
 version = "0.2.0"
 min_herdr_version = "0.8.2"
-description = "Refresh pr-watch-repo's PR badges and git-status-watch's ahead/behind counts for a workspace the moment it is focused, instead of waiting for the hourly LaunchAgents"
+description = "Poll pr-watch-repo's PR badges and git-status-watch's ahead/behind counts every hour while Mash runs, and refresh one workspace the moment it is focused"
 platforms = ["macos", "linux"]
+
+# Hourly poll of every workspace, for as long as Mash's Herdr server runs.
+# Replaces the two hourly LaunchAgents of the personal setup; see poll.sh for
+# why it is a startup process and not a LaunchAgent.
+[[startup]]
+command = ["bash", "poll.sh"]
 
 # pr-watch-repo already supports `--workspace ID` to poll one workspace --
 # "for the focus hook" per its own usage comment -- but nothing called it that

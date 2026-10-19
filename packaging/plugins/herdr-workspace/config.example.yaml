@@ -11,6 +11,8 @@
 # Use YAML `|` for a multiline command.
 # To start a named Herdr agent (so `herdr agent prompt <name>` works), set
 # agent + kind instead of command. Extra flags go in args and are passed after `--`.
+# focus: true on an agent pane moves focus to it once the agent is ready, so a
+#   fresh-left / agent-right layout opens in the agent. Agent panes only.
 
 profiles:
   - id: solo

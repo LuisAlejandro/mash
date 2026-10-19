@@ -183,7 +183,14 @@ fn start_agents() -> ExitCode {
     ExitCode::SUCCESS
 }
 
-fn start_one_agent(args: &[String]) -> Result<(), String> {
+fn start_one_agent(job: &[String]) -> Result<(), String> {
+    // `agent start-focus …` (written by apply.rs when a pane sets `focus`) is
+    // `agent start` plus an `agent focus` for the same name once the start has
+    // reported the agent ready. The focus rides in the same job because jobs
+    // run concurrently, one thread each, so a separate focus job could reach
+    // `agent focus` before its own `agent start` had created the name.
+    let (args, focus_after) = start_job(job);
+
     // Wait until the form popup is gone, then give Codex time to come up.
     // Agent names are session-global; if the profile name is taken in another
     // workspace, try `name-2`, `name-3`, … so this pane still starts.
@@ -202,6 +209,14 @@ fn start_one_agent(args: &[String]) -> Result<(), String> {
                     eprintln!(
                         "herdr-workspace: started `{current}` because `{base}` was already used"
                     );
+                }
+                if focus_after {
+                    // Focus last, and follow the rename: `current`, not `base`.
+                    // A failure here is cosmetic (the agent is running), so log
+                    // it rather than reporting the start as failed.
+                    if let Err(e) = herdr::json(["agent", "focus", current.as_str()]) {
+                        eprintln!("herdr-workspace: agent focus `{current}` failed: {e}");
+                    }
                 }
                 return Ok(());
             }
@@ -225,6 +240,18 @@ fn start_one_agent(args: &[String]) -> Result<(), String> {
     } else {
         last
     })
+}
+
+/// Split a queued job into the argv to run and whether it should focus the
+/// agent it started. Only the `focus` form is special: everything else is
+/// passed through untouched.
+fn start_job(job: &[String]) -> (Vec<String>, bool) {
+    let focus_after = job.get(1).map(String::as_str) == Some("start-focus");
+    let mut args = job.to_vec();
+    if focus_after {
+        args[1] = "start".into();
+    }
+    (args, focus_after)
 }
 
 /// Profile name first, then `name-2` … `name-99`, truncated to 32 chars.
@@ -279,7 +306,29 @@ fn origin_workspace_id() -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::agent_name_candidates;
+    use super::{agent_name_candidates, start_job};
+
+    /// A `focus: true` pane queues `agent start-focus …`, which must reach
+    /// herdr as a plain `agent start …` with a focus follow-up flagged.
+    #[test]
+    fn start_focus_job_is_a_start_plus_a_focus() {
+        let job: Vec<String> = ["agent", "start-focus", "demo-pi", "--kind", "pi", "--pane"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let (args, focus) = start_job(&job);
+        assert!(focus);
+        assert_eq!(args[1], "start");
+        assert_eq!(args[2], "demo-pi");
+
+        let plain: Vec<String> = ["agent", "start", "demo-pi", "--kind", "pi", "--pane"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let (args, focus) = start_job(&plain);
+        assert!(!focus);
+        assert_eq!(args, plain);
+    }
 
     #[test]
     fn agent_name_candidates_keep_base_then_suffix() {

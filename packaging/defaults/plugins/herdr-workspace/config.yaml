@@ -19,8 +19,9 @@
 # `herdr tab rename`, which the auto-title plugin treats as a MANUAL rename and
 # then refuses to touch (its manual-rename protection). Leaving it off keeps
 # Herdr auto-naming the tab from its focused pane, e.g.
-# "1 · fresh › AGENTS.md — app". Omitting `name` requires the local patch;
-# upstream v0.1.2 rejects a tab without one.
+# "1 · pi › π - app" -- pi, not fresh, because the dev profile below sets
+# `focus: true` on the pi pane (see the note there). Omitting `name` requires
+# the local patch; upstream v0.1.2 rejects a tab without one.
 #
 # RATIO SEMANTICS -- the upstream docs are wrong about this. docs/profiles.md
 # says "ratio is the NEW pane's share", but Herdr's `pane split --ratio` gives
@@ -96,6 +97,16 @@ profiles:
             ratio: 0.6
             agent: pi
             kind: pi
+            # Focus pi, not fresh, once pi is ready. Matches what cmd+t does
+            # through herdr-dev-tab-fill, so all three fresh+pi paths (this
+            # profile, cmd+t / cmd+shift+n, the "+" button) leave the caret in
+            # pi. `focus` is a local patch -- see docs/profiles.md.
+            #
+            # Deferred to after `herdr agent start` reports pi ready, on
+            # purpose: focusing at split time would put the caret in the
+            # shell pi is being launched from, and anything typed in that
+            # window would concatenate with the `pi` command being sent to it.
+            focus: true
 
   - id: pi
     name: Agent (pi)

@@ -19,8 +19,9 @@ pane_id() {
 # --label marks this tab for the dev-tab plugin's tab.created hook, which must
 # skip it: this script builds its own layout, and letting the hook enrich the
 # same tab too would produce four panes. The label is cleared at the end so
-# Herdr resumes auto-naming the tab from its focused pane, e.g.
-# "4 · fresh › MIGRATION.md — app".
+# Herdr resumes auto-naming the tab from its focused pane -- which is pi, not
+# fresh, because herdr-dev-tab-fill focuses pi once it is ready, e.g.
+# "4 · pi › π - app".
 created="$("$herdr" tab create --label "herdr-tab-launcher-dev" \
 	${HERDR_ACTIVE_WORKSPACE_ID:+--workspace "$HERDR_ACTIVE_WORKSPACE_ID"} \
 	--cwd "$cwd" --focus)"

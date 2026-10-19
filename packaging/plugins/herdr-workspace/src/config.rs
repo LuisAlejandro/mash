@@ -88,6 +88,12 @@ pub struct PaneSpec {
     /// Extra argv passed after `--` to `herdr agent start`.
     #[serde(default)]
     pub args: Vec<String>,
+    /// Focus this pane once its agent is up, instead of leaving focus on the
+    /// tab root. Agent panes only: `herdr agent start` is the readiness signal
+    /// the focus waits on, so keystrokes typed the moment the layout appears
+    /// cannot land in the shell the agent is starting from. See apply.rs.
+    #[serde(default)]
+    pub focus: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -279,6 +285,12 @@ fn validate_tab(profile_id: &str, tab_name: &str, panes: &[PaneSpec]) -> Result<
 
 fn validate_agent(profile_id: &str, tab_name: &str, pane: &PaneSpec) -> Result<(), ConfigError> {
     let loc = format!("profile `{profile_id}` tab `{tab_name}` pane `{}`", pane.id);
+    if pane.focus && pane.agent.is_none() {
+        return Err(err(&format!(
+            "{loc} sets focus but has no agent; only agent panes can be focused, \
+             because `agent start` is what reports the pane ready for input"
+        )));
+    }
     match (pane.agent.as_deref(), pane.kind.as_deref()) {
         (None, None) => {
             if !pane.args.is_empty() {
@@ -542,6 +554,52 @@ profiles:
 "#;
         let err = parse_yaml(raw).unwrap_err();
         assert!(err.message.contains("direction"));
+    }
+
+    #[test]
+    fn rejects_focus_without_agent() {
+        let raw = r#"
+profiles:
+  - id: x
+    name: X
+    tabs:
+      - name: main
+        panes:
+          - id: a
+          - id: b
+            split_from: a
+            direction: right
+            focus: true
+"#;
+        let err = parse_yaml(raw).unwrap_err();
+        assert!(
+            err.message.contains("sets focus but has no agent"),
+            "{}",
+            err.message
+        );
+    }
+
+    /// The accepted shape of the flag, on the pane every launcher uses it for.
+    #[test]
+    fn accepts_focus_on_an_agent_pane() {
+        let raw = r#"
+profiles:
+  - id: x
+    name: X
+    tabs:
+      - name: main
+        panes:
+          - id: fresh
+          - id: pi
+            split_from: fresh
+            direction: right
+            agent: pi
+            kind: pi
+            focus: true
+"#;
+        let cfg = parse_yaml(raw).expect("focus on an agent pane");
+        assert!(cfg.profiles[0].tabs[0].panes[1].focus);
+        assert!(!cfg.profiles[0].tabs[0].panes[0].focus);
     }
 
     #[test]
