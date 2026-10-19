@@ -209,10 +209,16 @@ mash_build_fresh() {
   tar -xzf "$tarball" -C "$work"
   local src="$work/fresh-0.5.1"
   grep -q 'version = "0.5.1"' "$src/Cargo.toml"
-  if ! patch -p1 -d "$src" <"$root/packaging/patches/fresh-config-dir.patch"; then
-    echo "Fresh patch did not apply. Leaving dist/Mash.app in place." >&2
-    exit 1
-  fi
+  # Every patch here is Mash-owned and rebased onto the pinned tag, so a
+  # failure means upstream moved under it. Naming the patch in the message is
+  # what makes that a one-minute fix instead of a bisect. herdr-workspace's
+  # patch is deliberately absent: it targets a plugin, not Fresh.
+  for name in fresh-config-dir fresh-reveal-in-finder; do
+    if ! patch -p1 -d "$src" <"$root/packaging/patches/$name.patch"; then
+      echo "$name.patch did not apply. Leaving dist/Mash.app in place." >&2
+      exit 1
+    fi
+  done
   # liblzma-sys probes pkg-config and takes Homebrew's shared liblzma
   # whenever it finds one, which left libexec/fresh loading
   # /opt/homebrew/opt/xz/lib/liblzma.5.dylib at runtime. Inside the signed,
@@ -524,6 +530,13 @@ mash_install_skills() {
     echo "Hindsight warm-start does not isolate HOME" >&2
     exit 1
   fi
+  # HOME alone is not enough: HuggingFace resolves its cache from
+  # $HOME/.cache/huggingface unless HF_HOME says otherwise, so a warm-start
+  # without it re-creates ~/.mash/.cache and the next launch refuses to start.
+  if ! grep -q 'export HF_HOME HUGGINGFACE_HUB_CACHE' "$pi/scripts/ensure-hindsight-daemon.sh"; then
+    echo "Hindsight warm-start does not pin the HuggingFace cache" >&2
+    exit 1
+  fi
   # Both providers default to `local`, which needs sentence-transformers. Mash
   # installs the slim package, so the config has to name the providers it can
   # actually load. Without these the daemon boots and then dies.
@@ -730,6 +743,15 @@ if [ -z "$data" ] && [ -n "${PI_CODING_AGENT_DIR:-}" ]; then
 fi
 [ -n "$data" ] && [ -d "$data" ] || exit 0
 export HOME="$data"
+# HF_HOME is not implied by HOME. HuggingFace resolves its cache from
+# $HOME/.cache/huggingface unless this is set, so the daemon re-created the
+# dotted directory mash-migrate-layout treats as the old cache tree, and the
+# next launch refused to start: both ~/.mash/.cache and ~/.mash/cache existed,
+# each holding the same 470 MB model. The wizard and lib.sh both export
+# HF_HOME; this warm-start runs outside both, so it says so itself.
+HF_HOME="$HOME/cache/huggingface"
+HUGGINGFACE_HUB_CACHE="$HF_HOME/hub"
+export HF_HOME HUGGINGFACE_HUB_CACHE
 PATH="${HOME}/.local/bin:${PATH}"
 export PATH
 # Mash's own shim, by absolute path on purpose. The inherited PATH still holds
