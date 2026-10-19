@@ -9,8 +9,8 @@ source "$ROOT/Resources/bin/lib.sh"
 home="$(mash_real_home)"
 d="$home/.mash"
 mkdir -p "$d"
-# Migrate before seeding or launching anything; never merge with a new tree.
-"$ROOT/Resources/python/bin/python3" "$ROOT/Resources/bin/mash-migrate-layout" "$d"
+# New installs start directly in the final layout. Hindsight's .local/bin,
+# .hindsight and .pg0 are current paths and are left alone.
 mkdir -p \
   "$d/config/herdr" "$d/config/ghostty" "$d/config/git" "$d/config/gh" \
   "$d/config/fresh" "$d/config/zsh" "$d/config/pet" "$d/config/atuin" \

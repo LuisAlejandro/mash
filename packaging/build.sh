@@ -32,7 +32,6 @@ ship_helpers=(
   herdr-new-reviewr-tab
   herdr-fresh-pane
   herdr-agent-name
-  mash-migrate-layout
   telescope-files
   telescope-sessions
   git-status-watch

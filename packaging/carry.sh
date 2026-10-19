@@ -532,7 +532,7 @@ mash_install_skills() {
   fi
   # HOME alone is not enough: HuggingFace resolves its cache from
   # $HOME/.cache/huggingface unless HF_HOME says otherwise, so a warm-start
-  # without it re-creates ~/.mash/.cache and the next launch refuses to start.
+  # without it re-creates ~/.mash/.cache instead of using Mash's cache.
   if ! grep -q 'export HF_HOME HUGGINGFACE_HUB_CACHE' "$pi/scripts/ensure-hindsight-daemon.sh" ||
     ! grep -q 'export HINDSIGHT_API_RERANKER_FLASHRANK_CACHE_DIR' "$pi/scripts/ensure-hindsight-daemon.sh"; then
     echo "Hindsight warm-start does not pin the HuggingFace cache" >&2
@@ -745,11 +745,10 @@ fi
 [ -n "$data" ] && [ -d "$data" ] || exit 0
 export HOME="$data"
 # HF_HOME is not implied by HOME. HuggingFace resolves its cache from
-# $HOME/.cache/huggingface unless this is set, so the daemon re-created the
-# dotted directory mash-migrate-layout treats as the old cache tree, and the
-# next launch refused to start: both ~/.mash/.cache and ~/.mash/cache existed,
-# each holding the same 470 MB model. The wizard and lib.sh both export
-# HF_HOME; this warm-start runs outside both, so it says so itself.
+# $HOME/.cache/huggingface unless this is set. The daemon used to write a
+# second copy of the model under ~/.mash/.cache; pin it to Mash's current
+# cache directory rather than relying on a startup migration. The wizard and
+# lib.sh both export HF_HOME; this warm-start runs outside both.
 HF_HOME="$HOME/cache/huggingface"
 HUGGINGFACE_HUB_CACHE="$HF_HOME/hub"
 export HF_HOME HUGGINGFACE_HUB_CACHE
