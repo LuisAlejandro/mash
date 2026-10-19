@@ -10,7 +10,10 @@ lib="${1:-$(cd "$(dirname "$0")/.." && pwd)/lib.sh}"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 home="$tmp/home"
-mkdir -p "$home/.mash/run"
+# ~/.bun/bin must exist before any run_isolate call: mash_isolate skips host
+# directories that are not there, so creating it later would make the
+# assertions below pass only against a run that never saw it.
+mkdir -p "$home/.mash/run" "$home/.bun/bin"
 
 run_isolate() {
 	local mode="${1:-}" shape="${2:-default}" mashbin path
@@ -137,6 +140,14 @@ for dir in /opt/homebrew/bin /usr/local/bin; do
 	assert_on_path "$pane" "$dir"
 	assert_on_path "$launch" "$dir"
 done
+# ~/.bun/bin: bun is not a Homebrew package -- the bun installer puts bun and
+# bunx there -- so no entry in the hardcoded host list can reach it. A `bun
+# install` in a pane writes a program the pane then cannot run by name without
+# it. mash_isolate is run under the test's scratch HOME, so the directory it
+# must find is that HOME's, and the suite creates it: the assertion tests the
+# wiring, not the owner's machine.
+assert_on_path "$pane" "$home/.bun/bin"
+assert_on_path "$launch" "$home/.bun/bin"
 for dir in "$tmp/app/bin" "$tmp/app/node/bin" "$home/.mash/bin"; do
 	assert_on_path "$pane" "$dir"
 	assert_on_path "$launch" "$dir"
@@ -251,6 +262,17 @@ if [ -d "$res/node/bin" ]; then
 else
 	echo "no app bundle at $app; skipped the shipped-program audit"
 fi
+
+# mash_isolate must not reach outside the HOME it is given. The bun directory
+# is $HOME/.bun/bin, so a run under the test's scratch HOME must never pull in
+# the real one: the owner's installed programs would leak into a pane and the
+# test would pass for the wrong reason.
+case "$(printf '%s\n' "$pane" | sed -n 's/^PATH=//p')" in
+*"$HOME/.bun/bin"*)
+	printf 'mash_isolate leaked the real ~/.bun/bin into a scratch HOME run\n' >&2
+	exit 1
+	;;
+esac
 
 # mash-bin resolves through MASH_BIN, not PATH, and falls back when Mash's
 # directories do not hold the name.

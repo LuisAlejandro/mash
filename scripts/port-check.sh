@@ -193,7 +193,8 @@ survey() {
     keep "$h/.pg0" KEEP "embedded Postgres data behind your own Hindsight"
 
     # --- host tooling Mash borrows: deleting this breaks Mash -------------
-    keep "/opt/homebrew" HOST "git gh fzf fd bat rg jq delta eza zoxide sentrux uv bun gpg + language servers"
+    keep "/opt/homebrew" HOST "git gh fzf fd bat rg jq delta eza zoxide sentrux uv gpg + language servers"
+    keep "$h/.bun" HOST "bun and bunx live here, not in Homebrew; lib.sh puts ~/.bun/bin on every pane PATH"
     keep "$h/.gitconfig" HOST "your git identity; Mash uses its own git config"
     keep "$h/.gitignore-global" HOST "global excludes"
     keep "/Applications/Xcode.app" HOST "system git and make"

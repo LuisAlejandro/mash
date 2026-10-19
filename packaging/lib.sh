@@ -111,7 +111,12 @@ mash_isolate() {
   # and fzf, bat and rg for Fresh. The sesh picker runs its configured preview
   # through `sh -lc` on the inherited PATH, so without the tier it fails with
   # "exit status 127". ~/.local/bin leads the tier because the wizard puts
-  # agent-browser and CUA Driver there, not Homebrew.
+  # agent-browser and CUA Driver there, not Homebrew. ~/.bun/bin is next for
+  # the same reason: bun is not a Homebrew package, the bun installer puts
+  # bun and bunx there (and a Bash-it shim points the name at it), and nothing
+  # else in this file could reach them -- a `bun install` in a pane would write
+  # a program the pane cannot then run by name. Skipped when the directory is
+  # absent, like every other entry here.
   #
   # Elements are split with `read`, not by word-splitting, so a Mash installed
   # under a path with spaces still yields whole entries, and empty elements are
@@ -129,7 +134,7 @@ mash_isolate() {
     seen="$seen$dir:"
     pinned="$pinned$dir:"
   done < <(printf '%s\n' "${MASH_BIN:-}" | tr ':' '\n')
-  for dir in "$home/.local/bin" /opt/homebrew/bin /usr/local/bin /opt/homebrew/sbin /usr/local/sbin; do
+  for dir in "$home/.local/bin" "$home/.bun/bin" /opt/homebrew/bin /usr/local/bin /opt/homebrew/sbin /usr/local/sbin; do
     [ -d "$dir" ] || continue
     case "$seen" in *":$dir:"*) continue ;; esac
     seen="$seen$dir:"

@@ -13,7 +13,7 @@ when Mash already carries it. Everything else is reported and left alone.
 folder. Deletion is a separate, later, human decision. Do not add `rm -rf`,
 and do not empty the quarantine folder at the end of this runbook.
 
-## Preconditions — confirm all five, stop if any fails
+## Preconditions — confirm all four, stop if any fails
 
 1. **Mash is installed and has been used.**
    `test -d /Applications/Mash.app && test -d ~/.mash`
@@ -26,8 +26,6 @@ and do not empty the quarantine folder at the end of this runbook.
    empty.
 4. **A backup exists.** Time Machine snapshot, or a `tar` of `~/dotfiles`,
    `~/.pi`, `~/.agents` and `~/.config`. Ask the owner to confirm.
-5. **Two secrets are revoked** (see *Outstanding owner actions* below). The run
-   is safe either way, but do not report the task as complete until they are.
 
 ## Read-only first
 
@@ -131,8 +129,8 @@ done
 
 ### Mash relies on these — leave installed
 
-Mash has no bundled replacement, and `lib.sh` prepends `/opt/homebrew/bin` to
-every pane's `PATH`:
+Mash has no bundled replacement. `lib.sh` prepends `/opt/homebrew/bin` to every
+pane's `PATH` for the first group below, and `~/.bun/bin` for the last:
 
 - `git`, `gh`, `jq`, `fzf`, `fd`
 - `bat`, `ripgrep`, `git-delta`, `eza`, `zoxide`
@@ -144,6 +142,9 @@ every pane's `PATH`:
   `tailwindcss-language-server`, `vscode-langservers-extracted`, `python-lsp-server`
 - `node@24` and `python@3.13`, because those servers' shebangs point at
   Homebrew's node and at the `python-lsp-server` formula's own interpreter
+- `bun`, `bunx` — not a Homebrew formula: the bun installer put them in
+  `~/.bun/bin`, which Mash reaches through its own `PATH` entry rather than
+  through `/opt/homebrew/bin`
 
 Removing any of these does not stop Mash from starting. It breaks something
 later and silently — a language server, a Telescope preview, or the git pager.
@@ -178,9 +179,12 @@ Stop and report to the owner if:
 Left alone by design, and not listed as quarantine candidates:
 
 - The Homebrew packages Mash borrows — git, gh, fzf, fd, bat, rg, jq, delta,
-  eza, zoxide, sentrux, uv, bun, gpg, and the language servers. Mash prepends
+  eza, zoxide, sentrux, uv, gpg, and the language servers. Mash prepends
   `/opt/homebrew/bin` to every pane's `PATH`; removing those breaks Mash. See
   *Host programs* for the few packages in the same tree that are safe to remove.
+- `~/.bun` — the bun installer's directory, not Homebrew's and not part of
+  anything this runbook retires. `lib.sh` adds `~/.bun/bin` to every pane's
+  `PATH`, so `bun` and `bunx` keep working afterwards. Do not quarantine.
 - Xcode Command Line Tools, Docker Desktop, `/Applications/Ghostty.app`.
 - `~/.gitconfig` and `~/.gitignore-global` — the owner's identity, not a
   component. Mash uses its own `~/.mash/config/git/config`.
@@ -205,10 +209,16 @@ Left alone by design, and not listed as quarantine candidates:
 
 These are not script work. Report them as open items.
 
-1. **Revoke two live secrets.** A GitHub PAT is stored in plaintext in
-   `~/.pi/agent/settings.json`; an Apple app-specific password is in
-   `/Volumes/Documents/Software/mash/.env`. Both must be revoked at the source
-   regardless of what happens to the files.
+1. **No secret rotation is required here.** An earlier draft asked for it on
+   the grounds that a GitHub PAT sat in `~/.pi/agent/settings.json` and an Apple
+   app-specific password in `mash/.env`. Both grounds are gone:
+   `settings.json` holds no token at all (it lists packages, theme, provider
+   and tools), and a secret in a gitignored `.env` is the normal 12-factor way
+   to keep credentials out of a repository — the file has never been tracked
+   and the value appears in no blob of this repo's history. Nothing to do.
+   Note that `~/.pi/agent/auth.json` does hold a live Google API key in the
+   clear. It is the owner's own data, this runbook never touches it (see
+   *Never touch*), so it is neither a blocker nor something this task changes.
 2. **`~/.zshrc` now sources a quarantined atuin.** The owner decided to move
    `~/.atuin`, so line 113 (`. "$HOME/.atuin/bin/env"`) is broken by the time
    group 8 finishes. Edit by hand; the script never touches `~/.zshrc`. Mash
