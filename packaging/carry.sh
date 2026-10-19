@@ -533,7 +533,8 @@ mash_install_skills() {
   # HOME alone is not enough: HuggingFace resolves its cache from
   # $HOME/.cache/huggingface unless HF_HOME says otherwise, so a warm-start
   # without it re-creates ~/.mash/.cache and the next launch refuses to start.
-  if ! grep -q 'export HF_HOME HUGGINGFACE_HUB_CACHE' "$pi/scripts/ensure-hindsight-daemon.sh"; then
+  if ! grep -q 'export HF_HOME HUGGINGFACE_HUB_CACHE' "$pi/scripts/ensure-hindsight-daemon.sh" ||
+    ! grep -q 'export HINDSIGHT_API_RERANKER_FLASHRANK_CACHE_DIR' "$pi/scripts/ensure-hindsight-daemon.sh"; then
     echo "Hindsight warm-start does not pin the HuggingFace cache" >&2
     exit 1
   fi
@@ -752,6 +753,10 @@ export HOME="$data"
 HF_HOME="$HOME/cache/huggingface"
 HUGGINGFACE_HUB_CACHE="$HF_HOME/hub"
 export HF_HOME HUGGINGFACE_HUB_CACHE
+# Same for the reranker. flashrank falls back to /tmp when this is unset, and
+# lib.sh sets it for every pane -- but this warm-start runs outside lib.sh.
+HINDSIGHT_API_RERANKER_FLASHRANK_CACHE_DIR="$HOME/cache/flashrank"
+export HINDSIGHT_API_RERANKER_FLASHRANK_CACHE_DIR
 PATH="${HOME}/.local/bin:${PATH}"
 export PATH
 # Mash's own shim, by absolute path on purpose. The inherited PATH still holds
