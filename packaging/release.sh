@@ -47,6 +47,12 @@ if [ -z "${MASH_NOTARY_KEYCHAIN_PROFILE:-}" ] && { [ -z "${APPLE_ID:-}" ] || [ -
     echo "Run: xcrun notarytool store-credentials mash" >&2
     exit 1
 fi
+for cmd in SetFile; do
+    command -v "$cmd" >/dev/null 2>&1 || {
+        echo "$cmd is required to lay out the branded disk image." >&2
+        exit 1
+    }
+done
 
 # 1. Build the app bundle (ad-hoc signed inside; we re-sign below). Set
 # MASH_SKIP_BUILD=1 to repackage an already-built app after signing fixes.
@@ -83,7 +89,16 @@ sign_item() {
 candidates="$(mktemp)"
 machos="$(mktemp)"
 bundles="$(mktemp)"
-trap 'rm -f "$candidates" "$machos" "$bundles"' EXIT
+dmg_mnt=""
+scratch=""
+cleanup() {
+    if [ -n "$dmg_mnt" ]; then
+        hdiutil detach "$dmg_mnt" >/dev/null 2>&1 || true
+    fi
+    rm -f "$candidates" "$machos" "$bundles"
+    [ -z "$scratch" ] || rm -f "$scratch"
+}
+trap cleanup EXIT
 
 # -perm -u+x and the library extensions are a cheap prefilter; `file` then
 # confirms Mach-O, which also catches the .exe-named arm64 plugin binary.
@@ -167,8 +182,31 @@ done <"$bundles"
 codesign --verify --deep --strict --verbose=2 "$download/Mash.app"
 
 # 4. Build the DMG.
+#
+# The volume gets Mash's icon: Finder reads `.VolumeIcon.icns` at the root,
+# but only when the root also carries the `kHasCustomIcon` flag. The flag has
+# to be set on a mounted image, because `hdiutil create` drops the staged
+# folder's FinderInfo when it lays the filesystem out. So build read-write,
+# mount, set both, then convert to compressed.
+#
+# The window itself is deliberately plain. A background picture and fixed icon
+# positions live in a `.DS_Store`, which only Finder writes reliably, and
+# driving Finder from a release script needs Automation permission that CI
+# does not have. branding/dmg-background.png is kept for that future work.
 rm -f "$dist/Mash.dmg"
-hdiutil create -volname "Mash" -srcfolder "$download" -ov -format UDZO "$dist/Mash.dmg"
+cp "$root/packaging/Mash.icns" "$download/.VolumeIcon.icns"
+scratch="$dist/.mash-dmg.rw.dmg"
+rm -f "$scratch"
+hdiutil create -volname "Mash" -srcfolder "$download" -ov -format UDRW "$scratch" >/dev/null
+dmg_mnt="$(hdiutil attach -nobrowse "$scratch" | tail -1 | awk '{print $NF}')"
+SetFile -a C "$dmg_mnt/.VolumeIcon.icns"
+SetFile -a C "$dmg_mnt"
+sync
+hdiutil detach "$dmg_mnt" >/dev/null
+dmg_mnt=""
+hdiutil convert "$scratch" -format UDZO -o "$dist/Mash.dmg" >/dev/null
+rm -f "$scratch"
+scratch=""
 
 # 5. Sign the disk image itself.
 codesign --force --timestamp --sign "$identity" "$dist/Mash.dmg"

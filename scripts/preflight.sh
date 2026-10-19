@@ -93,6 +93,11 @@ inputs=(
     packaging/herdr-pane
     packaging/uninstall
     packaging/Mash.icns
+    branding/logo-solid.png
+    branding/render_header_art.py
+    branding/build_icns.py
+    branding/dmg-background.png
+    branding/build_dmg_background.py
     packaging/entitlements.plist
     packaging/entitlements-ghostty.plist
     packaging/entitlements-python.plist

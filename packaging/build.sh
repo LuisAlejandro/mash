@@ -53,7 +53,7 @@ for name in "${ship_helpers[@]}"; do
     exit 1
   }
 done
-for cmd in cargo git curl tar unzip hdiutil shasum install_name_tool codesign ditto file patch xcodebuild xcrun; do
+for cmd in cargo git curl tar unzip hdiutil shasum install_name_tool codesign ditto file patch python3 xcodebuild xcrun; do
   command -v "$cmd" >/dev/null 2>&1 || {
     echo "missing $cmd" >&2
     exit 1
@@ -74,6 +74,25 @@ chmod -R u+w "$work" 2>/dev/null || true
 rm -rf "$work"
 mkdir -p "$work/home" "$work/npm-cache" "$work/pip-cache"
 
+# Branding is generated from header-art.ansi. Keep the committed preview and
+# the .icns in lock-step with it, or a release could show one logo in Pi and a
+# different one in Finder. Generate into the disposable work tree and compare;
+# never rewrite tracked files as a side effect of building.
+python3 "$root/branding/render_header_art.py" "$work/logo-solid.png" >/dev/null
+cmp -s "$work/logo-solid.png" "$root/branding/logo-solid.png" || {
+  echo "branding/logo-solid.png is stale; run branding/render_header_art.py" >&2
+  exit 1
+}
+python3 "$root/branding/build_icns.py" "$work/Mash.icns" >/dev/null
+cmp -s "$work/Mash.icns" "$root/packaging/Mash.icns" || {
+  echo "packaging/Mash.icns is stale; run branding/build_icns.py" >&2
+  exit 1
+}
+python3 "$root/branding/build_dmg_background.py" "$work/dmg-background.png" >/dev/null
+cmp -s "$work/dmg-background.png" "$root/branding/dmg-background.png" || {
+  echo "branding/dmg-background.png is stale; run branding/build_dmg_background.py" >&2
+  exit 1
+}
 # The first-open wizard. Built here so the bundle never ships a stale binary.
 wizard_bin="$root/dist/.cargo-target/wizard/release/mash-wizard"
 mash_cargo "$root/packaging/wizard/Cargo.toml" wizard
