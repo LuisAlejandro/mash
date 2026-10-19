@@ -25,7 +25,7 @@
  * agent_settled handler.
  *
  * The credentials are read from the agent directory pi itself resolves
- * (getAgentDir(): ~/.mash/pi/agent inside Mash), never from ~/.pi/agent, so a
+ * (getAgentDir(): ~/.mash/pi/agent inside Mash), never from $HOME/.pi/agent, so a
  * Mash pane can never pick up the owner's own pi configuration.
  *
  * Model: ollama-cloud/gemma4:31b — about 1.1–1.5s against this gateway, the
