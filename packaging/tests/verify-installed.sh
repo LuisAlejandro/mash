@@ -71,6 +71,15 @@ echo "--- live copies the launcher re-copies from the bundle"
 compare "$root/packaging/lib.sh" "$home/.mash/bin/lib.sh" "~/.mash/bin/lib.sh"
 compare "$root/packaging/mash-shell" "$home/.mash/bin/mash-shell" "~/.mash/bin/mash-shell"
 
+echo "--- code signature"
+if codesign --verify --deep --strict "$app" >/dev/null 2>&1; then
+	printf 'sealed    %s\n' "$app"
+else
+	printf 'SEAL BROKEN  %s -- the bundle grew files after signing\n' "$app"
+	codesign --verify --deep --strict "$app" 2>&1 | sed -n '2,6p'
+	functional=$((functional + 1))
+fi
+
 echo
 printf 'functional drift: %d   cosmetic: %d\n' "$functional" "$cosmetic"
 [ "$functional" -eq 0 ] || exit 1

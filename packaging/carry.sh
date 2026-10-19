@@ -269,7 +269,12 @@ mash_build_plugins() {
   local src="$root/packaging/plugins"
   mkdir -p "$plugins" "$work/src"
   local name
-  for name in cache-hit dev-tab fingers fork-from-message herdr-orchestration pr-watch-focus; do
+  # image-popup belongs here: the Fresh-side package that ships in
+  # defaults/fresh/plugins/packages/mash-image-popup opens a Herdr pane with
+  # `--plugin image-popup`, so leaving the Herdr half out registered that pane
+  # from the build machine's source checkout and broke show_file anywhere else.
+  for name in cache-hit dev-tab fingers fork-from-message herdr-orchestration \
+    image-popup pr-watch-focus; do
     mash_copy_tree "$src/$name" "$plugins/$name"
   done
 

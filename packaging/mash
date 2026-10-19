@@ -9,6 +9,14 @@ source "$ROOT/Resources/bin/lib.sh"
 home="$(mash_real_home)"
 d="$home/.mash"
 mkdir -p "$d"
+# Nothing may grow inside the bundle after it is signed. The bundled
+# interpreter is on every pane's PATH, and Python writes __pycache__ next to
+# the module it imports -- the Hindsight daemon alone laid down 34 files in
+# Resources/python/lib that way, which breaks the seal and fails
+# `codesign --verify`. build.sh strips the bytecode the build itself creates;
+# this stops it coming back. Forwarded to the panes below, which is where the
+# long-lived interpreters actually run.
+export PYTHONDONTWRITEBYTECODE=1
 # New installs start directly in the final layout. Hindsight's .local/bin,
 # .hindsight and .pg0 are current paths and are left alone.
 mkdir -p \
@@ -261,12 +269,14 @@ mash_link_plugins() {
   local dir listed
   [ -d "$ROOT/Resources/plugins" ] || return 0
   listed="$XDG_CONFIG_HOME/herdr/plugins.json"
-  if [ -f "$listed" ] && grep -q "$ROOT/Resources/plugins" "$listed"; then
-    return 0
-  fi
   for dir in "$ROOT/Resources/plugins"/*; do
     [ -f "$dir/lite/herdr-plugin.toml" ] && dir="$dir/lite"
     [ -f "$dir/herdr-plugin.toml" ] || continue
+    # Checked per plugin, not per registry. The old shortcut skipped the whole
+    # loop as soon as any entry pointed into the bundle, so a single stale
+    # entry -- image-popup, registered from a source checkout -- stayed stale
+    # for as long as the other thirteen looked right.
+    [ -f "$listed" ] && grep -qF "$dir" "$listed" && continue
     env -u HERDR_SOCKET_PATH -u HERDR_CLIENT_SOCKET_PATH \
       "$ROOT/Resources/bin/herdr" plugin link "$dir" >/dev/null
   done
@@ -294,5 +304,6 @@ exec /usr/bin/open -na "$ROOT/Resources/Ghostty.app" \
   --env "MASH_DESIGN_STACK=$MASH_DESIGN_STACK" \
   --env "PLAYWRIGHT_BROWSERS_PATH=$PLAYWRIGHT_BROWSERS_PATH" \
   --env "MASH_BIN=$MASH_BIN" \
+  --env "PYTHONDONTWRITEBYTECODE=$PYTHONDONTWRITEBYTECODE" \
   --env "PATH=$PATH" \
   --args -e "$ROOT/Resources/bin/herdr-pane"

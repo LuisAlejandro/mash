@@ -198,7 +198,19 @@ cp "$root/packaging/Mash.icns" "$download/.VolumeIcon.icns"
 scratch="$dist/.mash-dmg.rw.dmg"
 rm -f "$scratch"
 hdiutil create -volname "Mash" -srcfolder "$download" -ov -format UDRW "$scratch" >/dev/null
-dmg_mnt="$(hdiutil attach -nobrowse "$scratch" | tail -1 | awk '{print $NF}')"
+# hdiutil prints tab-separated columns, and the mount point is the last one.
+# Splitting on whitespace loses it the moment the volume is named "/Volumes/Mash
+# 1" -- which happens whenever another "Mash" volume is already mounted -- and
+# leaves dmg_mnt holding just "1".
+dmg_mnt="$(hdiutil attach -nobrowse "$scratch" |
+    awk -F'	' 'NF > 2 && $NF ~ /^\// { print $NF }' | tail -1)"
+case "$dmg_mnt" in
+/*) ;;
+*)
+    echo "could not read the mount point of $scratch" >&2
+    exit 1
+    ;;
+esac
 SetFile -a C "$dmg_mnt/.VolumeIcon.icns"
 SetFile -a C "$dmg_mnt"
 sync

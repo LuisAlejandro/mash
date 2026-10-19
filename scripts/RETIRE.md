@@ -15,15 +15,21 @@ and do not empty the quarantine folder at the end of this runbook.
 
 ## Preconditions — confirm all four, stop if any fails
 
-1. **Mash is installed and has been used.**
+1. **Mash is installed, has been used, and still verifies.**
    `test -d /Applications/Mash.app && test -d ~/.mash`
+   then `codesign --verify --deep --strict /Applications/Mash.app`. A bundle
+   that fails here grew files after it was signed — Python bytecode is the usual
+   cause — and is not a trustworthy base for retiring the launcher it replaces.
+   `packaging/tests/verify-installed.sh` reports the same check in one command.
 2. **This shell is inside Mash, not the personal setup.**
    `echo "$HERDR_SOCKET_PATH"` must contain `/.mash/run/`.
    If it contains `/.config/herdr`, stop — `port-check.sh` refuses anyway.
 3. **The personal Herdr and its Ghostty windows are quit.** Otherwise moving
    `~/.config/herdr` pulls the config out from under a live server. Ask the
-   owner to close them, then confirm `pgrep -f /opt/homebrew/bin/herdr` is
-   empty.
+   owner to close them, then confirm
+   `ps -ax -o command= | grep -F /opt/homebrew/bin/herdr` prints nothing but the
+   grep itself. Use `ps`: `pgrep` does not show the ancestors of your own shell
+   on macOS, so a live server started from it looks absent.
 4. **A backup exists.** Time Machine snapshot, or a `tar` of `~/dotfiles`,
    `~/.pi`, `~/.agents` and `~/.config`. Ask the owner to confirm.
 
@@ -39,11 +45,26 @@ Report the summary to the owner, then continue. An `UNVERIFIED` entry has no Mas
 counterpart on disk and must not be touched. Stop and ask if one is not
 accounted for below.
 
-Expected `UNVERIFIED` before Mash is reinstalled: the three Hindsight paths
-(`~/.local/bin/hindsight`, `~/.local/bin/hindsight-embed`,
-`~/.local/share/uv/tools/hindsight-embed`). They resolve to `SHARED` on their own
-once the rebuilt app is installed, because their evidence is the config Mash
-ships. Anything else `UNVERIFIED` is a real gap.
+On the current app the expected result is **zero `UNVERIFIED`**. The three
+Hindsight paths (`~/.local/bin/hindsight`, `~/.local/bin/hindsight-embed`,
+`~/.local/share/uv/tools/hindsight-embed`) resolve to `SHARED` on their own,
+because their evidence is `defaults/mash-config/hindsight-embed.env` in the
+bundle. The design stack resolves the same way once `defaults/pi/skills/mash-design-setup`
+is present. An `UNVERIFIED` entry anywhere is a real gap.
+
+Those three Hindsight paths are also staged under the group named **`keep`**, and
+`--groups` therefore prints `keep` with three items in it. Never pass
+`--group keep`, and never run a bare `--apply` or `--apply --include-shared`
+without a group filter: both would move them out of the staged order, and the
+1.8 GB one is an environment the owner's own Hindsight would miss. Before moving
+it, confirm no daemon runs from it:
+
+```sh
+ps -ax -o command= | grep 'uv/tools/hindsight-embed'
+```
+
+Mash's own daemon runs from `~/.mash/local/share/mash/hindsight` on
+`~/.mash/.pg0`, so an empty result here is the expected, safe state.
 
 ## The loop — one group, one verification
 
@@ -52,14 +73,19 @@ works before moving on. Do not batch all groups into one command.
 
 | # | Group | What leaves | Verify after |
 |---|---|---|---|
-| 1 | `1-launch` | `~/Applications/Herdr.app` | Mash still launches |
-| 2 | `2-watchers` | the two LaunchAgents | `launchctl list \| grep luisalejandro` is empty; Mash panes still show git/PR badges |
+| 1 | `1-launch` | `~/Applications/Herdr.app` | Mash still launches — **owner-run**, it ends this session |
+| 2 | `2-watchers` | the two LaunchAgents | `launchctl list \| grep -E 'git-status-watch\|pr-watch-repo'` is empty (`com.luisalejandro.obsidian-bridge` is not part of this and stays); `herdr plugin log list` carries a `startup` entry running `poll.sh`; Mash panes still show git/PR badges |
 | 3 | `3-helpers` | `~/dotfiles/bin` helpers | new dev / pi / reviewr tabs open; Telescope (cmd+p) opens |
 | 4 | `4-plugins` | `~/dotfiles/plugins/herdr/*` | plugin manager (cmd+shift+x) lists plugins from Mash's bundle |
 | 5 | `5-fonts` | MesloLGS NF from `~/Library/Fonts` | glyphs still render in Mash panes |
-| 6 | `6-config` | `~/.config/{herdr,fresh}` plus, with `--include-shared`, `~/.config/{ghostty,pet,lazydocker,atuin}` | Herdr restarts in Mash and keeps its theme and keys; `/Applications/Ghostty.app` now opens with stock defaults |
+| 6 | `6-config` | `~/.config/{herdr,fresh}` plus, with `--include-shared`, `~/.config/{ghostty,pet,lazydocker,atuin}` | Herdr restarts in Mash and keeps its theme and keys — **owner-run**, the restart ends this session; `/Applications/Ghostty.app` now opens with stock defaults |
 | 7 | `7-pi` | pi extensions, plus the skills and agents Mash carries | `pi` starts in a Mash pane; skills and agents are present. The count grows once the rebuilt app is installed, because it also carries the design-stack skills and agents; use `--groups` rather than a fixed number |
 | 8 | `8-shell` | `~/.atuin` (with `--include-shared`) | the owner's own shell reports the missing `~/.atuin/bin/env` until `~/.zshrc` is edited; Mash panes are unaffected |
+
+Two verifications cannot be done by an agent inside Mash. Group 1 asks whether
+the app launches and group 6 whether Herdr restarts — both require quitting the
+app the runbook is running in. Hand those two to the owner, or apply groups
+1 and 6 last and let one relaunch cover both.
 
 ```sh
 ./scripts/port-check.sh --group 3-helpers --apply
@@ -145,6 +171,9 @@ pane's `PATH` for the first group below, and `~/.bun/bin` for the last:
 - `bun`, `bunx` — not a Homebrew formula: the bun installer put them in
   `~/.bun/bin`, which Mash reaches through its own `PATH` entry rather than
   through `/opt/homebrew/bin`
+- `viu` — `plugins/image-popup/view.sh` draws the image `show_file` hands it,
+  and prints `brew install viu` when it is missing. Mash does not bundle it, so
+  the feature degrades on any machine without the formula.
 
 Removing any of these does not stop Mash from starting. It breaks something
 later and silently — a language server, a Telescope preview, or the git pager.
@@ -168,9 +197,17 @@ counts are unchanged: this section must not alter what the groups see.
 
 Stop and report to the owner if:
 
+- `codesign --verify --deep --strict /Applications/Mash.app` fails. The bundle
+  grew files after signing, and every move below assumes the app is the
+  artifact it claims to be.
 - `UNVERIFIED` covers anything other than the three expected Hindsight paths
   described above.
 - The `PORTED` count drops between the read-only run and the applicant run.
+- Any `plugin_root` in `~/.mash/config/herdr/plugins.json` points outside
+  `/Applications/Mash.app`. A plugin registered from a source checkout means
+  the bundle is incomplete, and the same goes for any plugin whose `[[startup]]`
+  section is missing from the registry — the watchers in group 2 are replaced by
+  one such startup process.
 - Any verification in the table above fails after a group is applied.
 - Something in the quarantine folder turns out to be needed.
 
@@ -204,6 +241,12 @@ Left alone by design, and not listed as quarantine candidates:
 - `~/.local/bin/cua-driver` is a **HOST** dependency, not a leftover: the
   wizard installs it and Mash's bundled `mcp.json` calls it. Never quarantine
   it.
+- `~/.local/bin/herdr-reviewr` is a symlink into
+  `~/.config/herdr/plugins/github/persiyanov.reviewr-…/bin/herdr-reviewr`, so it
+  dangles once group 6 moves that directory. `port-check.sh` does not list it —
+  it only walks the paths in its plan. Harmless, since Mash nests its own
+  reviewr, but remove the dead link by hand if a broken entry on `PATH` bothers
+  you.
 
 ## Outstanding owner actions
 
@@ -219,10 +262,12 @@ These are not script work. Report them as open items.
    Note that `~/.pi/agent/auth.json` does hold a live Google API key in the
    clear. It is the owner's own data, this runbook never touches it (see
    *Never touch*), so it is neither a blocker nor something this task changes.
-2. **`~/.zshrc` now sources a quarantined atuin.** The owner decided to move
-   `~/.atuin`, so line 113 (`. "$HOME/.atuin/bin/env"`) is broken by the time
-   group 8 finishes. Edit by hand; the script never touches `~/.zshrc`. Mash
-   panes are unaffected, because they run with `ZDOTDIR=~/.mash/config/zsh`.
+2. **`~/.zshrc` now sources a quarantined atuin, in two places.** The owner
+   decided to move `~/.atuin`, so line 113 (`. "$HOME/.atuin/bin/env"`) is
+   broken by the time group 8 finishes, and so is line 115
+   (`eval "$(atuin init zsh)"`), because `atuin` itself lives under `~/.atuin`.
+   Fix both by hand; the script never touches `~/.zshrc`. Mash panes are
+   unaffected, because they run with `ZDOTDIR=~/.mash/config/zsh`.
 3. **The owner's own Ghostty returns to stock defaults** after group 6: no
    `Monokai Cursor` theme, default font, and none of the 49 keybindings, because
    all of that lived in the single config file that moved. Mash is unaffected.
@@ -237,6 +282,16 @@ These are not script work. Report them as open items.
    git config --file ~/.mash/config/git/config --get user.name
    git config --file ~/.mash/config/git/config --get user.email
    ```
+
+5. **Group 7 moves a `settings.json` whose package list is not Mash's — and
+   that is settled.** `port-check.sh` calls it `PORTED` because a Mash-side
+   settings file exists, which is a filename check rather than an equivalence
+   check. The only difference that mattered was `npm:pi-mcp-adapter` in the
+   personal file: `pi-mcp-adapter` is discarded, because pi now reads MCP
+   servers natively from `~/.mash/pi/agent/mcp.json`, which Mash already ships
+   populated (`context7`, `sentrux`, `cua-driver`, …). Nothing has to be added
+   to Mash and nothing has to be preserved from the personal file. `~/.config/mcp`
+   stays `UNPORTED` and untouched — it holds only `{}`.
 
 ## Rollback
 
