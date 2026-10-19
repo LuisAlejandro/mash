@@ -1,13 +1,35 @@
 Fresh 0.5.1
 
-This download includes fresh-0.5.1-patched.tar.gz: the Fresh 0.5.1 source
-with Mash's config-directory patch. Fresh is free software. Its LICENSE file
-is the GNU General Public License, version 2, June 1991. The upstream
-Cargo.toml names that license GPL-2.0. The license text's "How to Apply"
-section says version 2 or, at your option, any later version.
+This download includes fresh-0.5.1-patched.tar.gz: the complete corresponding
+source of the Fresh 0.5.1 binary shipped in Mash.app, under the GNU General
+Public License, version 2.
+
+Mash changes two things in that source, and both patches are in the archive
+and in Mash's public repository (packaging/patches/):
+
+  - fresh-config-dir.patch     take the config and data directories from
+                               MASH_FRESH_CONFIG_DIR and MASH_FRESH_DATA_DIR
+                               so Mash can isolate them
+  - fresh-reveal-in-finder.patch
+                               add "Reveal in Finder" to the file explorer
+                               context menu
+
+GPL-2.0 section 2(a) asks that modified files state that they were changed.
+The three patched Rust files carry a dated "Modified by Mash on 2026-10-19"
+comment for that reason. The remaining patched file,
+crates/fresh-editor-core/locales/en.json, is JSON and cannot carry a comment;
+the patch in the archive is the record of that change.
+
+The archive is the exact source the binary was built from, patches included,
+together with the build files Mash used, so it needs no separate offer.
+
+Fresh's own LICENSE file is the GNU General Public License, version 2, June
+1991, and the upstream Cargo.toml names that license GPL-2.0. The license
+text's "How to Apply" section offers version 2 or, at your option, any later
+version.
 
 Homebrew and the Mash plan describe Fresh as GPL-3.0-or-later. The license
 that applies is the LICENSE file inside the archive, not that description.
 
-This notice covers Fresh only. It does not license Herdr, Ghostty, pi, or
-the rest of Mash under the GPL.
+This notice covers Fresh only. It does not license Herdr, Ghostty, pi, or the
+rest of Mash under the GPL.
