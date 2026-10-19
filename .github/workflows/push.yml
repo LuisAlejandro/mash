@@ -51,6 +51,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Run the wizard tests
+        # The wizard picks the dictation model from a vendored catalog, so a
+        # refreshed pi-voice that drifts from packaging/wizard/data must fail
+        # here rather than at a user's first launch.
+        run: cargo test --locked --manifest-path packaging/wizard/Cargo.toml
+
       - name: Run the helper and packaging tests
         run: |
           set -euo pipefail
@@ -60,7 +66,8 @@ jobs:
             packaging/tests/test_mash_isolate.sh \
             packaging/tests/test_mash_force_updates.sh \
             packaging/helpers/tests/test-annotate-paste-target.sh \
-            packaging/helpers/tests/test-telescope-files-path.sh
+            packaging/helpers/tests/test-telescope-files-path.sh \
+            packaging/helpers/tests/test-mash-voice-model.sh
           do
             if (cd "$(dirname "$t")" && bash "$(basename "$t")"); then
               echo "PASS $t"

@@ -44,6 +44,7 @@ ship_helpers=(
   mash-design-deps
   mash-design-pi-sync
   mash-penpot-account-setup
+  mash-voice-model
 )
 
 for name in "${ship_helpers[@]}"; do
@@ -243,6 +244,7 @@ env HOME="$work/home" \
   "$app/Contents/Resources/node/bin/npm" install --global \
   --prefix "$app/Contents/Resources/node" \
   @earendil-works/pi-coding-agent@1.1.0 \
+  @earendil-works/pi-voice@0.2.0 \
   pi-subagents@0.76.0 \
   pi-ask-user@0.16.0 \
   @krfantasy/pi-monokai-pro@0.2.0 \
@@ -347,6 +349,24 @@ chmod 755 "$app/Contents/MacOS/mash" \
   "$app/Contents/Resources/bin/mash-wizard"
 cp "$root/packaging/Mash.icns" "$app/Contents/Resources/Mash.icns"
 cp -R "$root/packaging/defaults" "$app/Contents/Resources/defaults"
+# The wizard embeds this catalog at compile time and mash-voice-model reads it
+# at runtime from Resources/defaults/pi/catalog. Both have to match the pi-voice
+# the bundle actually ships, or the wizard would offer a model the extension
+# cannot resolve. Refreshing pi-voice therefore means refreshing the vendored
+# copy under packaging/wizard/data first.
+pi_voice_catalog="$app/Contents/Resources/node/lib/node_modules/@earendil-works/pi-voice/catalog"
+[ -d "$pi_voice_catalog" ] || {
+  echo "the bundled pi-voice has no catalog directory" >&2
+  exit 1
+}
+mkdir -p "$app/Contents/Resources/defaults/pi/catalog"
+for catalog_file in catalog.json recommendations.json; do
+  diff -q "$pi_voice_catalog/$catalog_file" "$root/packaging/wizard/data/$catalog_file" >/dev/null || {
+    echo "packaging/wizard/data/$catalog_file is stale; refresh it from the bundled pi-voice" >&2
+    exit 1
+  }
+  cp "$pi_voice_catalog/$catalog_file" "$app/Contents/Resources/defaults/pi/catalog/$catalog_file"
+done
 cp "$root/packaging/uninstall" "$app/Contents/Resources/uninstall"
 chmod 755 "$app/Contents/Resources/uninstall"
 # The agent directory needs its own node_modules for exactly one thing: the
