@@ -1,0 +1,15 @@
+# Mash's global excludes, read by git inside Mash panes.
+#
+# Mash pins XDG_CONFIG_HOME to ~/.mash/config, so git's default global excludes
+# file resolves here -- ~/.mash/config/git/ignore -- without any core.excludesFile
+# entry. It applies to every repository a pane works in.
+#
+# .mash/ holds the working directories the Mash Programming Skills write
+# (brainstorms, plans, solutions, insights, qa, parallel, ...). They are working
+# state, not project source, so they stay out of every repository. A directory
+# pattern matches at any depth, so a nested repo is covered too.
+#
+# Seeded once by the launcher; this file is yours after that. The host's own
+# global gitignore (~/.gitignore-global) is deliberately not touched: Mash keeps
+# its git configuration separate from the account's.
+.mash/

@@ -46,6 +46,12 @@ fi
 if [ ! -f "$d/config/git/config" ]; then
   cp "$ROOT/Resources/defaults/git/config" "$d/config/git/config"
 fi
+# git's default global excludes file under the XDG directory Mash pins to
+# ~/.mash/config, so no core.excludesFile entry is needed for it to be read.
+# Seeded only when missing: from then on it is the user's file to extend.
+if [ ! -f "$d/config/git/ignore" ]; then
+  cp "$ROOT/Resources/defaults/git/ignore" "$d/config/git/ignore"
+fi
 if [ ! -f "$d/config/pet/snippet.toml" ]; then
   sed "s#__MASH_PET_SNIPPET__#$d/config/pet/snippet.toml#" \
     "$ROOT/Resources/defaults/pet/config.toml" \
