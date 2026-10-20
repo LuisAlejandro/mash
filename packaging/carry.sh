@@ -384,10 +384,6 @@ mash_link_plugins() {
     echo "a linked plugin does not point inside the bundle." >&2
     exit 1
   }
-  if grep -q "$home/dotfiles/plugins" "$listed"; then
-    echo "a linked plugin points at the personal plugin tree." >&2
-    exit 1
-  fi
   rm -rf "$sock"
 }
 
