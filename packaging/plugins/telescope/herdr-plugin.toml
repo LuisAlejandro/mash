@@ -14,10 +14,10 @@
 # `placement = "popup"`) that runs fzf in a real TTY.
 
 id = "telescope"
-name = "Herdr Telescope"
+name = "Command Palette"
 version = "0.1.2"
 min_herdr_version = "0.8.0"
-description = "fzf command telescope: built-in native herdr actions, every installed plugin's actions, a file finder (@), and live ripgrep content search (/) — in one centered popup."
+description = "One popup for every action and every file: native and plugin actions, a file finder (@), and live content search (/)."
 platforms = ["linux", "macos"]
 
 # On `herdr plugin install`, download the prebuilt binary for this platform
@@ -33,7 +33,7 @@ command = ["bash", "herdr/install.sh"]
 # the popup acts on the pane you invoked it from, not on itself.
 [[actions]]
 id = "open"
-title = "Telescope (native actions · plugin actions · files)"
+title = "Command palette (actions and files)"
 contexts = ["workspace"]
 command = ["bash", "-c", "exec \"$HERDR_PLUGIN_ROOT/bin/herdr-telescope\" open"]
 
@@ -42,7 +42,7 @@ command = ["bash", "-c", "exec \"$HERDR_PLUGIN_ROOT/bin/herdr-telescope\" open"]
 # offer actions.
 [[actions]]
 id = "open-actions"
-title = "Telescope actions only"
+title = "Command palette (actions only)"
 contexts = ["workspace"]
 command = ["bash", "-c", "exec \"$HERDR_PLUGIN_ROOT/bin/herdr-telescope\" open-actions"]
 
@@ -53,7 +53,7 @@ command = ["bash", "-c", "exec \"$HERDR_PLUGIN_ROOT/bin/herdr-telescope\" open-a
 # path because open.sh sets this pane's --cwd to the origin repo.
 [[panes]]
 id = "palette"
-title = "Telescope"
+title = "Palette"
 placement = "popup"
 width = "70%"
 height = "70%"

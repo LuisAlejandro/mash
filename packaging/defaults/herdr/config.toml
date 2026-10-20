@@ -141,19 +141,24 @@ cycle_pane_previous = "cmd+alt+["
 # REPLACES the prefix default ctrl+b r.
 resize_mode = "cmd+alt+r"
 
-# Keyboard copy mode for the focused pane. cmd+alt+c -- "c for copy". Free in
-# Ghostty and Herdr both, so no unbind. REPLACES the prefix default ctrl+b [.
-copy_mode = "cmd+alt+c"
+# Keyboard copy mode for the focused pane: DELIBERATELY UNBOUND, freeing
+# cmd+alt+c. It was cmd+alt+c ("c for copy") and still replaces the prefix
+# default ctrl+b [ whenever it is bound again -- re-add
+# `copy_mode = "cmd+alt+c"` to restore it. Mouse drag-select still copies
+# (ui.copy_on_select = true below), so only the keyboard path is lost.
+# Declared with the other unbound pane actions below.
 
 # Deliberately UNBOUND pane actions. Each is given an explicit empty string
 # rather than simply being omitted: an omitted field silently inherits the
 # default, while an empty one never will -- so these stay released even if a
 # future Herdr version starts shipping a default for one of them.
 #
+#   copy_mode       -- was cmd+alt+c here, now released (frees cmd+alt+c)
 #   rename_pane     -- was prefix+shift+p by default, now released
 #   edit_scrollback -- was prefix+e by default, now released
 #   last_pane       -- unset by default
 #   resize_pane_*   -- unset by default; resize_mode above is the intended path
+copy_mode = ""
 rename_pane = ""
 edit_scrollback = ""
 last_pane = ""
@@ -273,7 +278,7 @@ description = "new plain shell tab"
 key = ["cmd+t", "cmd+shift+n"]
 type = "shell"
 command = "herdr-new-dev-tab"
-description = "new dev tab (fresh + pi)"
+description = "new dev tab (editor + agent)"
 
 # cmd+alt+t / cmd+alt+n: new tab running pi in a single pane.
 # Two chords, one command: cmd+alt+n is a synonym. Ghostty never bound either
@@ -282,13 +287,13 @@ description = "new dev tab (fresh + pi)"
 key = ["cmd+alt+t", "cmd+alt+n"]
 type = "shell"
 command = "herdr-new-pi-tab"
-description = "new pi tab"
+description = "new agent tab"
 
 [[keys.command]]
 key = "cmd+p"
 type = "popup"
 command = "telescope-files"
-description = "File finder (telescope, files only)"
+description = "File finder"
 width = "70%"
 height = "70%"
 
@@ -304,7 +309,7 @@ height = "70%"
 key = "ctrl+shift+g"
 type = "popup"
 command = "cd \"${HERDR_ACTIVE_PANE_CWD:-.}\" && exec lazygit"
-description = "Lazygit"
+description = "Source control"
 width = "90%"
 height = "85%"
 
@@ -347,9 +352,11 @@ copy_on_select = true
 # No scrollbar column beside panes. It is a vertical line the borders already
 # imply, and dropping it keeps the column out of terminal-native selections.
 pane_scrollbars = false
-# What the titlebar says. The default is "{hostname}: {workspace}", and the
-# hostname is the one thing on screen that never changes and never matters.
-window_title = "{hostname} › {workspace} › {tab}"
+# What the titlebar says. Herdr's default is "{hostname}: {workspace}", and the
+# hostname is the one thing on screen that never changes and never matters, so
+# it is replaced with the app name. Ghostty's own `title` is already "Mash",
+# but this line overrides it.
+window_title = "Mash › {workspace} › {tab}"
 # Frame every pane, not only splits, and keep the outside edge of the pane
 # area. With sidebar_bg at base there is no colour change left to separate the
 # sidebar from the panes, so the outer border is what draws that line.
@@ -437,7 +444,7 @@ enabled = false
 key = "cmd+shift+o"
 type = "popup"
 command = "cd \"${HERDR_ACTIVE_PANE_CWD:-.}\" && CONFIG_DIR=\"__MASH_CONFIG__/lazydocker\" exec lazydocker"
-description = "Docker status"
+description = "Container status"
 width = "90%"
 height = "85%"
 
@@ -452,7 +459,7 @@ height = "85%"
 key = "cmd+alt+p"
 type = "popup"
 command = "exec pet exec --color"
-description = "Pet execute"
+description = "Snippets"
 width = "90%"
 height = "85%"
 
@@ -462,7 +469,7 @@ height = "85%"
 key = "cmd+shift+r"
 type = "shell"
 command = "herdr-new-reviewr-tab"
-description = "Reviewr + pi tab"
+description = "new review tab (diff + agent)"
 
 # Annotate plugin (plannotator/herdr-annotate/lite).
 # Moved from prefix+a to cmd+k. Requires `keybind = super+k=unbind` in
@@ -516,7 +523,7 @@ description = "manage annotations"
 key = "alt+g"
 type = "plugin_action"
 command = "herdr-fingers.finger"
-description = "Fingers"
+description = "Pick link or ID"
 
 # Plugin manager (speardragon/herdr-plugin-manager, id ray.plugin-manager).
 # Its own `open` action opens the manager as a popup pane, so one binding covers
@@ -585,7 +592,7 @@ description = "New worktree (layout profile)"
 key = "cmd+ctrl+o"
 type = "shell"
 command = '"${HERDR_BIN_PATH:-herdr}" plugin pane open --plugin fullerzz.sesh --entrypoint picker --placement popup --width 90% --height 85% --env HERDR_SESH_REDUCE_MOTION=1'
-description = "Sesh picker (popup)"
+description = "Workspace picker"
 
 # Telescope plugin (zackshen/herdr-telescope): fzf command palette merging
 # native actions, plugin actions, and a file finder.
@@ -604,7 +611,7 @@ description = "Sesh picker (popup)"
 key = "cmd+shift+p"
 type = "plugin_action"
 command = "telescope.open-actions"
-description = "Telescope (actions only)"
+description = "Command palette"
 
 # Fork the focused agent's session from an earlier user message. The plugin
 # resolves Pi or OpenCode from the focused pane, so one chord covers both.

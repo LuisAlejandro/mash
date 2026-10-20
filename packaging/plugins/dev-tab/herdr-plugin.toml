@@ -2,7 +2,7 @@ id = "dev-tab"
 name = "Dev Tab"
 version = "0.1.0"
 min_herdr_version = "0.9.0"
-description = "Shape a bare new tab into the same two-pane layout as cmd+t (fresh + pi)"
+description = "Shape a bare new tab into the same two-pane layout as cmd+t (editor + agent)"
 platforms = ["macos", "linux"]
 
 # Herdr's "+" tab button runs the built-in new_tab action, which takes no

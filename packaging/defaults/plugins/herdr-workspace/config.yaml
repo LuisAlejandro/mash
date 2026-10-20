@@ -58,9 +58,9 @@
 
 profiles:
   - id: dev
-    name: Dev (fresh + pi)
+    name: Dev (editor + agent)
     description: |
-      fresh left 60%, pi right 40%.
+      Editor left 60%, agent right 40%.
       Same as cmd+t.
     tabs:
       - panes:
@@ -109,9 +109,9 @@ profiles:
             focus: true
 
   - id: pi
-    name: Agent (pi)
+    name: Agent
     description: |
-      One tab, one pi agent.
+      One tab, one agent.
       Same as cmd+alt+t.
     tabs:
       - panes:

@@ -12,8 +12,8 @@ ratio="${REVIEWR_RATIO:-0.6}"
 # one also raises a notification. Best-effort -- a failing notification must
 # not mask the real error.
 refuse() {
-	printf 'reviewr: %s\n' "$1" >&2
-	"$herdr" notification show "reviewr" --body "$1" --sound none >/dev/null 2>&1 || true
+	printf 'review tab: %s\n' "$1" >&2
+	"$herdr" notification show "Review tab" --body "$1" --sound none >/dev/null 2>&1 || true
 	exit 1
 }
 

@@ -83,7 +83,7 @@ impl Group {
     fn summary(self) -> &'static str {
         match self {
             Group::Utilities => "Git workflows, search, previews, pickers, and GitHub features.",
-            Group::Formatters => "Formatting and language intelligence in Fresh.",
+            Group::Formatters => "Formatting and language intelligence in the editor.",
         }
     }
 

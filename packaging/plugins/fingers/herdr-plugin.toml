@@ -6,7 +6,7 @@
 #   alt+f  →  action "finger" runs  →  opens overlay pane "finger-picker"  →  Python script extracts, displays, reads key, copies to clipboard  →  pane closes.
 
 id = "herdr-fingers"
-name = "Fingers"
+name = "Link Picker"
 version = "0.1.0"
 min_herdr_version = "0.7.0"
 description = "Extract file paths, URLs, IPs, UUIDs, hashes, and other identifiers from the focused pane and pick one with vimium-style letter keys."
@@ -16,7 +16,7 @@ platforms = ["linux", "macos"]
 # the overlay pane that runs the extraction script.
 [[actions]]
 id = "finger"
-title = "Fingers"
+title = "Pick link or ID"
 command = ["./bin/herdr-fingers"]
 
 # finger-picker — the picker pane that runs the extraction script.
@@ -28,7 +28,7 @@ command = ["./bin/herdr-fingers"]
 # is content-hashed on install, so re-run this edit after any plugin update.
 [[panes]]
 id = "finger-picker"
-title = "Fingers"
+title = "Pick link or ID"
 placement = "popup"
 width = "70%"
 height = "70%"

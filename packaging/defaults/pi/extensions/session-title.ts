@@ -33,8 +33,8 @@
  * auto/fast meta-aliases routed to an unstable backend at 10–13s with
  * occasional empty replies. OMNIROUTE_TITLE_MODEL overrides it.
  *
- * Format follows Pi's own title convention, `π - <text>`, truncating the body
- * to 37 chars + "…" once it exceeds 40.
+ * Format: the agent's own answer becomes the title verbatim, with no product
+ * prefix, truncating the body to 37 chars + "…" once it exceeds 40.
  */
 
 import { readFileSync } from "node:fs";
@@ -43,7 +43,6 @@ import { getAgentDir, type ExtensionAPI, type SessionEntry } from "@earendil-wor
 
 const MAX_LABEL_WORDS = 5;
 const MAX_LABEL_CHARS = 55;
-const TITLE_PREFIX = "π - ";
 const TITLE_TRUNCATE_AT = 40;
 const TITLE_KEEP_CHARS = 37;
 const COMPRESS_MODEL = process.env.OMNIROUTE_TITLE_MODEL || "ollama-cloud/gemma4:31b";
@@ -128,8 +127,7 @@ function lastAssistantText(entries: readonly SessionEntry[]): string | undefined
 }
 
 function formatTitle(text: string): string {
-	const body = text.length > TITLE_TRUNCATE_AT ? `${text.slice(0, TITLE_KEEP_CHARS)}…` : text;
-	return `${TITLE_PREFIX}${body}`;
+	return text.length > TITLE_TRUNCATE_AT ? `${text.slice(0, TITLE_KEEP_CHARS)}…` : text;
 }
 
 export default function (pi: ExtensionAPI) {
