@@ -1078,6 +1078,24 @@
       ],
       "action": "focus_editor",
       "when": "file_explorer"
+    },
+    {
+      "key": "c",
+      "modifiers": [
+        "alt",
+        "cmd"
+      ],
+      "action": "file_explorer_copy_full_path",
+      "when": "file_explorer"
+    },
+    {
+      "key": "c",
+      "modifiers": [
+        "alt",
+        "cmd"
+      ],
+      "action": "copy_file_path",
+      "when": "normal"
     }
   ],
   "lsp": {

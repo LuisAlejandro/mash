@@ -133,8 +133,8 @@ keybind = super+shift+w=unbind
 # Release cmd+alt+w so Herdr uses it for close_pane, part of the pane
 # family's cmd+alt modifier alongside split_vertical, split_horizontal,
 # focus_pane_left/right/up/down, cycle_pane_previous/next, resize_mode,
-# copy_mode, and zoom. Ghostty gives up `close_tab:this`; its tabs are unused
-# here.
+# and zoom. (copy_mode left that family when it was unbound, freeing
+# cmd+alt+c.) Ghostty gives up `close_tab:this`; its tabs are unused here.
 keybind = super+alt+w=unbind
 
 # Release cmd+d so Fresh receives it. Ghostty owns the chord as
