@@ -4,6 +4,14 @@
 # Writes only under this repo's dist/. Does not start Herdr.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
+# Folder name of the terminal bundle nested in Mash.app. macOS draws a Dock
+# tile's label from the bundle's FOLDER NAME, not from CFBundleName or
+# CFBundleDisplayName -- proved with a throwaway bundle named PlainBeta.app
+# carrying CFBundleName "Alpha" and CFBundleDisplayName "Alpha Display",
+# registered in /Applications, which still showed "PlainBeta" under the tile.
+# So this literal, not the plist keys, is what the running tile says. One
+# variable because build.sh and carry.sh build the same layout.
+terminal_app="Mash Terminal.app"
 # shellcheck source=carry.sh
 source "$root/packaging/carry.sh"
 dest="$root/dist/Mash.app"
@@ -293,7 +301,13 @@ exec "$(cd "$(dirname "$0")/../node/bin" && pwd)/npm" "$@"
 EOF
 cat >"$app/Contents/Resources/bin/python3" <<'EOF'
 #!/bin/bash
+# Interpreter choke point for everything on a pane's PATH. PYTHONDONTWRITEBYTECODE
+# belongs here, not only in the launcher: the launcher's export covers the panes
+# it starts, while this covers every other caller -- plugin startup processes,
+# hourly helpers, anything a user types -- and Mash.app is signed, so a stray
+# __pycache__ inside it breaks the seal.
 export PYTHONNOUSERSITE=1
+export PYTHONDONTWRITEBYTECODE=1
 exec "$(cd "$(dirname "$0")/../python/bin" && pwd)/python3" "$@"
 EOF
 chmod 755 "$app/Contents/Resources/bin/node" "$app/Contents/Resources/bin/npm" \
@@ -414,8 +428,8 @@ export GOTOOLCHAIN=local
 mash_build_fresh
 mash_build_plugins
 
-ditto "$ghostty_src" "$app/Contents/Resources/Ghostty.app"
-plist="$app/Contents/Resources/Ghostty.app/Contents/Info.plist"
+ditto "$ghostty_src" "$app/Contents/Resources/$terminal_app"
+plist="$app/Contents/Resources/$terminal_app/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier app.mash.ghostty' "$plist"
 /usr/libexec/PlistBuddy -c 'Set :CFBundleName Mash' "$plist"
 # The dock tile takes its artwork from the asset catalog whenever the app was
@@ -432,14 +446,25 @@ if /usr/libexec/PlistBuddy -c 'Set :CFBundleDisplayName Mash' "$plist" 2>/dev/nu
 else
   /usr/libexec/PlistBuddy -c 'Add :CFBundleDisplayName string Mash' "$plist"
 fi
+# The nested bundle kept Ghostty's placeholder 1 / 0.1 across every Mash
+# build, so the app path, the bundle identifier and the version were all
+# unchanged when Mash.icns was rewritten -- and the Dock went on drawing the
+# previous icon from its cache until the cache expired. Observed after the
+# ANSI-art icon landed: the running tile still showed the icon Mash used two
+# releases earlier. Mash's own version makes each release a new identity to
+# LaunchServices and Icon Services.
+nested_version="$(tr -d '[:space:]' <"$root/VERSION")"
+[ -n "$nested_version" ] || { echo "VERSION is empty." >&2; exit 1; }
+/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $nested_version" "$plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $nested_version" "$plist"
 # Bundled artwork and menus. Both edit files inside the copy, so they belong
 # before any signing.
-cp "$root/packaging/Mash.icns" "$app/Contents/Resources/Ghostty.app/Contents/Resources/Mash.icns"
+cp "$root/packaging/Mash.icns" "$app/Contents/Resources/$terminal_app/Contents/Resources/Mash.icns"
 # The menu bar still says Ghostty in five places. Those strings are compiled
 # into MainMenu.nib and About.nib, which plutil cannot read and the Command
 # Line Tools cannot recompile, so the patcher rewrites the NIBArchive itself.
 "$app/Contents/Resources/python/bin/python3" "$root/packaging/patch-ghostty-menu.py" \
-  "$app/Contents/Resources/Ghostty.app"
+  "$app/Contents/Resources/$terminal_app"
 mash_install_fonts
 
 # The app version is whatever VERSION holds; bumpversion is its only writer.
@@ -565,7 +590,7 @@ mash_link_plugins "$dest" "$home"
 # venv works, which re-creates __pycache__ inside it. This has to be the last
 # thing before signing, or the bytecode it writes ships.
 find "$dest/Contents" -type d -name __pycache__ -prune -exec rm -rf {} + 2>/dev/null || true
-codesign --force --deep --sign - "$dest/Contents/Resources/Ghostty.app"
+codesign --force --deep --sign - "$dest/Contents/Resources/$terminal_app"
 codesign --force --sign - "$dest"
 mash_write_pins
 chmod -R u+w "$work" "$root/dist/.cargo" "$root/dist/.cargo-target" 2>/dev/null || true

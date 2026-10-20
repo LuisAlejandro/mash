@@ -135,7 +135,7 @@ while IFS= read -r path; do
         # Restated from upstream: Mash re-signs Ghostty with its own team, so
         # the TCC entitlements it brokers for programs running inside it have
         # to be re-applied or they are silently lost.
-        "$download/Mash.app/Contents/Resources/Ghostty.app")
+        "$download/Mash.app/Contents/Resources/Mash Terminal.app")
             sign_item "$path" "$root/packaging/entitlements-ghostty.plist" ;;
         *) sign_item "$path" ;;
     esac

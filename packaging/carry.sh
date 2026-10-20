@@ -336,7 +336,7 @@ mash_build_plugins() {
 }
 
 mash_install_fonts() {
-  local fonts="$app/Contents/Resources/Ghostty.app/Contents/Resources/Fonts"
+  local fonts="$app/Contents/Resources/$terminal_app/Contents/Resources/Fonts"
   local font
   mkdir -p "$fonts"
   for font in \
@@ -347,7 +347,7 @@ mash_install_fonts() {
     cp "$root/packaging/fonts/$font" "$fonts/$font"
   done
   cp "$root/packaging/fonts/NOTICE.txt" "$fonts/NOTICE.txt"
-  local plist="$app/Contents/Resources/Ghostty.app/Contents/Info.plist"
+  local plist="$app/Contents/Resources/$terminal_app/Contents/Info.plist"
   if /usr/libexec/PlistBuddy -c 'Set :ATSApplicationFontsPath Fonts' "$plist" 2>/dev/null; then
     :
   else

@@ -338,7 +338,7 @@ PY
 }
 mash_link_plugins
 
-exec /usr/bin/open -na "$ROOT/Resources/Ghostty.app" \
+exec /usr/bin/open -na "$ROOT/Resources/Mash Terminal.app" \
   --env "XDG_CONFIG_HOME=$XDG_CONFIG_HOME" \
   --env "XDG_STATE_HOME=$XDG_STATE_HOME" \
   --env "XDG_DATA_HOME=$XDG_DATA_HOME" \

@@ -91,7 +91,7 @@ keep() { printf '%s\t%s\t%s\t%s\n' "$GROUP" "$2" "$1" "$3" >>"$PLAN"; }
 survey() {
     local h="$HOME"
     local bin="$RES/bin" plugins="$RES/plugins" pidef="$DEFAULTS/pi" name font
-    local cfg="$DATA/config" ghostty_fonts="$RES/Ghostty.app/Contents/Resources/Fonts"
+    local cfg="$DATA/config" ghostty_fonts="$RES/Mash Terminal.app/Contents/Resources/Fonts"
 
     # --- 1 launch chain ---------------------------------------------------
     GROUP="1-launch"
