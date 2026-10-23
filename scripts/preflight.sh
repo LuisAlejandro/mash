@@ -81,6 +81,26 @@ if [ -n "$expected" ]; then
     fi
 fi
 
+echo "preflight: artifact manifest"
+
+# packaging/assets.json is the single authority for pinned versions and
+# checksums; packaging/pins.txt is generated from it. A mismatch here is the
+# drift that would otherwise only surface as a wrong binary inside a release.
+if ! command -v python3 >/dev/null 2>&1; then
+    bad "python3 is required to validate packaging/assets.json"
+else
+    if python3 packaging/assets.py validate; then
+        ok "packaging/assets.json is valid"
+    else
+        bad "packaging/assets.json failed validation"
+    fi
+    if python3 packaging/assets.py check packaging/pins.txt; then
+        ok "packaging/pins.txt matches the manifest"
+    else
+        bad "packaging/pins.txt does not match packaging/assets.json"
+    fi
+fi
+
 echo "preflight: release inputs are present"
 
 inputs=(
@@ -104,6 +124,8 @@ inputs=(
     packaging/patch-ghostty-menu.py
     packaging/fresh-gpl-notice.txt
     packaging/pins.txt
+    packaging/assets.json
+    packaging/assets.py
     packaging/wizard/Cargo.toml
     .gitchangelog.rc
     .gitchangelog.tpl

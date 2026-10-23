@@ -1,0 +1,302 @@
+{
+  "schemaVersion": 1,
+  "notes": "Single source of truth for pinned components. packaging/pins.txt is a projection of this file and is checked byte-for-byte by mash_pins_check; never edit one without the other.",
+  "targets": {
+    "macos-arm64": {"os": "macos", "arch": "arm64"},
+    "linux-amd64": {"os": "linux", "arch": "amd64"},
+    "linux-arm64": {"os": "linux", "arch": "arm64"}
+  },
+  "supportedTargets": ["macos-arm64", "linux-amd64", "linux-arm64"],
+  "strategies": {
+    "binary": "A hash-pinned archive downloaded at build or first run. Requires url, sha256, archive and member for every supported target that ships it.",
+    "source": "A hash-pinned source archive compiled by the build.",
+    "git": "A pinned git ref cloned by the build.",
+    "npm": "Installed by the bundled npm.",
+    "pip": "Installed into a Mash venv by the bundled python.",
+    "package": "Provided by the platform package manager or the host system; never vendored by Mash."
+  },
+  "pinOrder": [
+    "ghostty", "herdr", "fresh", "pi", "node", "python", "git", "lazygit",
+    "lazydocker", "pet", "zoxide", "eza", "fzf", "fd", "bat", "rg", "jq", "gh",
+    "delta", "atuin", "gopls", "rust-analyzer", "marksman", "texlab",
+    "bash-language-server", "typescript-language-server", "yaml-language-server",
+    "tailwindcss-language-server", "svelte-language-server",
+    "vscode-langservers-extracted", "python-lsp-server", "pi-subagents",
+    "pi-ask-user", "pi-monokai-pro", "pi-web-search", "typebox", "shfmt",
+    "prettier", "prettier-plugin-svelte", "annotate", "herdr-terminal-notifier",
+    "fullerzz.sesh", "herdr.auto-title", "persiyanov.reviewr",
+    "herdr-workspace", "telescope", "ray.plugin-manager",
+    "mash-programming-skills", "mash-design-skills", "sentrux",
+    "hindsight-embed", "hindsight-api", "cua-driver", "agent-browser",
+    "chrome-devtools-mcp"
+  ],
+  "components": {
+    "ghostty": {
+      "version": "1.3.1",
+      "strategy": "git",
+      "install": "bundled",
+      "repo": "LuisAlejandro/ghostty",
+      "ref": "fork-main",
+      "commit": "a3f0c0b79665f26b0b3c705aaa4362b2ccca2db1",
+      "frontends": {"macos-arm64": "swift", "linux-amd64": "gtk", "linux-arm64": "gtk"}
+    },
+    "herdr": {
+      "version": "0.9.3",
+      "strategy": "binary",
+      "install": "bundled",
+      "artifacts": {
+        "macos-arm64": {
+          "url": "https://ghcr.io/v2/homebrew/core/herdr/blobs/sha256:d381e8af36dc499593101d33b80098dd7316ba9f167b1535e4eeb76b2ac2e58a",
+          "sha256": "d381e8af36dc499593101d33b80098dd7316ba9f167b1535e4eeb76b2ac2e58a",
+          "archive": "tar.gz",
+          "member": "bin/herdr"
+        },
+        "linux-amd64": {
+          "url": "https://github.com/herdrdev/herdr/releases/download/v0.9.3/herdr-linux-x86_64",
+          "sha256": "18a8dc65f1c2fa485884344356dea1cfd911c6f06cf46fa78e193f4087f4dba7",
+          "archive": "raw",
+          "member": "herdr-linux-x86_64"
+        },
+        "linux-arm64": {
+          "url": "https://github.com/herdrdev/herdr/releases/download/v0.9.3/herdr-linux-aarch64",
+          "sha256": "4de7aa3e25678812e92960de64f7c2aaa1bca1f0f80a3c5e559837e231e1f5c0",
+          "archive": "raw",
+          "member": "herdr-linux-aarch64"
+        }
+      }
+    },
+    "fresh": {
+      "version": "0.5.1",
+      "strategy": "source",
+      "install": "bundled",
+      "artifacts": {
+        "*": {
+          "url": "https://github.com/sinelaw/fresh/archive/refs/tags/v0.5.1.tar.gz",
+          "sha256": "3472273fcf77b019922b32ddffad061cc068bfb260344865c239c8eb056d92bf",
+          "archive": "tar.gz",
+          "member": "fresh-0.5.1"
+        }
+      }
+    },
+    "pi": {"version": "1.1.0", "strategy": "npm", "install": "bundled", "package": "@earendil-works/pi-coding-agent"},
+    "node": {
+      "version": "24.16.0",
+      "strategy": "binary",
+      "install": "bundled",
+      "artifacts": {
+        "macos-arm64": {
+          "url": "https://nodejs.org/dist/v24.16.0/node-v24.16.0-darwin-arm64.tar.gz",
+          "sha256": "39189dab4eeb15706c424af0ac08a3044c9e48f7db12a7d77f6b7aafc7dd5df6",
+          "archive": "tar.gz",
+          "member": "node-v24.16.0-darwin-arm64"
+        },
+        "linux-amd64": {
+          "url": "https://nodejs.org/dist/v24.16.0/node-v24.16.0-linux-x64.tar.gz",
+          "sha256": "2faf6a387e9b62b888e21c54f01249fb27537ffecf1842f29f4c919d0a59a0ff",
+          "archive": "tar.gz",
+          "member": "node-v24.16.0-linux-x64"
+        },
+        "linux-arm64": {
+          "url": "https://nodejs.org/dist/v24.16.0/node-v24.16.0-linux-arm64.tar.gz",
+          "sha256": "589f5b6dd4fcfee4dfda73013903c966abaa8abd93dbc9d436544e472b4f0e74",
+          "archive": "tar.gz",
+          "member": "node-v24.16.0-linux-arm64"
+        }
+      }
+    },
+    "python": {
+      "version": "3.13.16",
+      "strategy": "binary",
+      "install": "bundled",
+      "artifacts": {
+        "macos-arm64": {
+          "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261003/cpython-3.13.16%2B20261003-aarch64-apple-darwin-install_only.tar.gz",
+          "sha256": "d8975d7df4f08f7b1c7aafcdfacbddcec3d366415f2c1a72b2466b6850815933",
+          "archive": "tar.gz",
+          "member": "python"
+        },
+        "linux-amd64": {
+          "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261003/cpython-3.13.16%2B20261003-x86_64-unknown-linux-gnu-install_only.tar.gz",
+          "sha256": "0a0272910b10417c659a9312fb3f2d7a6d774da7bd510999be7a3ba83273dc1f",
+          "archive": "tar.gz",
+          "member": "python"
+        },
+        "linux-arm64": {
+          "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261003/cpython-3.13.16%2B20261003-aarch64-unknown-linux-gnu-install_only.tar.gz",
+          "sha256": "6477121f22904963a066ac8ff89983baae781510815590e894daa3c11ce86652",
+          "archive": "tar.gz",
+          "member": "python"
+        }
+      }
+    },
+    "git": {"version": "2.56.0", "strategy": "package", "install": "host"},
+    "lazygit": {
+      "version": "0.65.1",
+      "strategy": "binary",
+      "install": "bundled",
+      "artifacts": {
+        "macos-arm64": {
+          "url": "https://github.com/jesseduffield/lazygit/releases/download/v0.65.1/lazygit_0.65.1_darwin_arm64.tar.gz",
+          "sha256": "65a367c6ea9a88efebaaf7998a6835eedb987e04916cef677264ff9b31b1b13e",
+          "archive": "tar.gz",
+          "member": "lazygit"
+        },
+        "linux-amd64": {
+          "url": "https://github.com/jesseduffield/lazygit/releases/download/v0.65.1/lazygit_0.65.1_linux_x86_64.tar.gz",
+          "sha256": "02beacbcda0fa342e50ae3480ba8147307353af3fb28e1d5f790e02329c201a6",
+          "archive": "tar.gz",
+          "member": "lazygit"
+        },
+        "linux-arm64": {
+          "url": "https://github.com/jesseduffield/lazygit/releases/download/v0.65.1/lazygit_0.65.1_linux_arm64.tar.gz",
+          "sha256": "49abecdf6adf4f2dfdb11bf7b9bfada267ea523612ed809d1c6d87f6c04000a7",
+          "archive": "tar.gz",
+          "member": "lazygit"
+        }
+      }
+    },
+    "lazydocker": {
+      "version": "0.25.2",
+      "strategy": "binary",
+      "install": "bundled",
+      "artifacts": {
+        "macos-arm64": {
+          "url": "https://github.com/jesseduffield/lazydocker/releases/download/v0.25.2/lazydocker_0.25.2_Darwin_arm64.tar.gz",
+          "sha256": "4a54d7b4abdf255b2bce9806641eac5568d5b7fbc820c1b5d3f9e34ea1367d60",
+          "archive": "tar.gz",
+          "member": "lazydocker"
+        },
+        "linux-amd64": {
+          "url": "https://github.com/jesseduffield/lazydocker/releases/download/v0.25.2/lazydocker_0.25.2_Linux_x86_64.tar.gz",
+          "sha256": "0d9dbfc26068b218e7ed84b104748cadc6e3cf733c0afd35465306fb39b9523c",
+          "archive": "tar.gz",
+          "member": "lazydocker"
+        },
+        "linux-arm64": {
+          "url": "https://github.com/jesseduffield/lazydocker/releases/download/v0.25.2/lazydocker_0.25.2_Linux_arm64.tar.gz",
+          "sha256": "005c38b685aaa557e7d646d83a3dadb5024340eeed8c6a2e1949eee6f530de23",
+          "archive": "tar.gz",
+          "member": "lazydocker"
+        }
+      }
+    },
+    "pet": {
+      "version": "1.0.1",
+      "strategy": "binary",
+      "install": "bundled",
+      "artifacts": {
+        "macos-arm64": {
+          "url": "https://github.com/knqyf263/pet/releases/download/v1.0.1/pet_1.0.1_darwin_arm64.tar.gz",
+          "sha256": "f3ba11bc1cb2b2edc8725648e52d871e417eaa76d8b1c12fa8e24e4f1c704f03",
+          "archive": "tar.gz",
+          "member": "pet"
+        },
+        "linux-amd64": {
+          "url": "https://github.com/knqyf263/pet/releases/download/v1.0.1/pet_1.0.1_linux_amd64.tar.gz",
+          "sha256": "be6ca6b64953f3c63430b1519382bdf56a062a03944b9a3723513b285c91dd20",
+          "archive": "tar.gz",
+          "member": "pet"
+        },
+        "linux-arm64": {
+          "url": "https://github.com/knqyf263/pet/releases/download/v1.0.1/pet_1.0.1_linux_arm64.tar.gz",
+          "sha256": "f2a950f42789ec1e0952259c3c1731e03b2eb034bd830ae494a6268e9cac9273",
+          "archive": "tar.gz",
+          "member": "pet"
+        }
+      }
+    },
+    "atuin": {
+      "version": "18.23.0",
+      "strategy": "binary",
+      "install": "bundled",
+      "artifacts": {
+        "macos-arm64": {
+          "url": "https://github.com/atuinsh/atuin/releases/download/v18.23.0/atuin-aarch64-apple-darwin.tar.gz",
+          "sha256": "c988be1cde19cd7295ce64bc8b955d42fb1855e5227cb640c87fc09c8408c3fc",
+          "archive": "tar.gz",
+          "member": "atuin-aarch64-apple-darwin/atuin"
+        },
+        "linux-amd64": {
+          "url": "https://github.com/atuinsh/atuin/releases/download/v18.23.0/atuin-x86_64-unknown-linux-gnu.tar.gz",
+          "sha256": "5cf46e926b696a9b23a3c61ef3cb00f8f7c156d1d7b7967a3b51741653b48ba3",
+          "archive": "tar.gz",
+          "member": "atuin-x86_64-unknown-linux-gnu/atuin"
+        },
+        "linux-arm64": {
+          "url": "https://github.com/atuinsh/atuin/releases/download/v18.23.0/atuin-aarch64-unknown-linux-gnu.tar.gz",
+          "sha256": "21869faff1fedb9f8fb27837136567b089bcd588d21252533d5b314605517ae2",
+          "archive": "tar.gz",
+          "member": "atuin-aarch64-unknown-linux-gnu/atuin"
+        }
+      }
+    },
+    "zoxide": {"version": "0.10.0", "strategy": "package", "install": "host"},
+    "eza": {"version": "0.23.5", "strategy": "package", "install": "host"},
+    "fzf": {"version": "0.67.0", "strategy": "package", "install": "host"},
+    "fd": {"version": "10.5.0", "strategy": "package", "install": "host"},
+    "bat": {"version": "0.26.1", "strategy": "package", "install": "host"},
+    "rg": {"version": "15.2.0", "strategy": "package", "install": "host"},
+    "jq": {"version": "1.8.1", "strategy": "package", "install": "host"},
+    "gh": {"version": "2.95.0", "strategy": "package", "install": "host"},
+    "delta": {"version": "0.19.2", "strategy": "package", "install": "host"},
+    "gopls": {"version": "0.23.0", "strategy": "package", "install": "user"},
+    "rust-analyzer": {"version": "2026-09-27", "strategy": "package", "install": "user"},
+    "marksman": {"version": "2026-02-08", "strategy": "package", "install": "user"},
+    "texlab": {"version": "5.26.0", "strategy": "package", "install": "user"},
+    "bash-language-server": {"version": "5.8.1", "strategy": "npm", "install": "user", "package": "bash-language-server"},
+    "typescript-language-server": {"version": "6.0.1", "strategy": "npm", "install": "user", "package": "typescript-language-server"},
+    "yaml-language-server": {"version": "1.24.0", "strategy": "npm", "install": "user", "package": "yaml-language-server"},
+    "tailwindcss-language-server": {"version": "0.16.0", "strategy": "npm", "install": "user", "package": "@tailwindcss/language-server"},
+    "svelte-language-server": {"version": "0.18.4", "strategy": "npm", "install": "user", "package": "svelte-language-server"},
+    "vscode-langservers-extracted": {"version": "4.10.0", "strategy": "npm", "install": "user", "package": "vscode-langservers-extracted"},
+    "python-lsp-server": {"version": "1.15.0", "strategy": "pip", "install": "user", "package": "python-lsp-server"},
+    "pi-subagents": {"version": "0.76.0", "strategy": "npm", "install": "bundled", "package": "pi-subagents"},
+    "pi-ask-user": {"version": "0.16.0", "strategy": "npm", "install": "bundled", "package": "pi-ask-user"},
+    "pi-monokai-pro": {"version": "0.2.0", "strategy": "npm", "install": "bundled", "package": "@krfantasy/pi-monokai-pro"},
+    "pi-web-search": {"version": "1.6.0", "strategy": "npm", "install": "bundled", "package": "pi-web-search"},
+    "typebox": {"version": "1.3.36", "strategy": "npm", "install": "bundled", "package": "typebox"},
+    "shfmt": {"version": "3.14.1", "strategy": "package", "install": "user"},
+    "prettier": {"version": "3.9.9", "strategy": "package", "install": "user"},
+    "prettier-plugin-svelte": {"version": "4.1.1", "strategy": "package", "install": "user"},
+    "annotate": {"version": "0.8.0", "strategy": "git", "install": "bundled", "repo": "plannotator/herdr-annotate", "ref": "main"},
+    "herdr-terminal-notifier": {"version": "0.1.0", "strategy": "git", "install": "bundled", "repo": "dot/herdr-terminal-notifier", "ref": "main", "targets": ["macos-arm64"]},
+    "fullerzz.sesh": {"version": "0.14.0", "strategy": "git", "install": "bundled", "repo": "fullerzz/herdr-plugin-sesh", "ref": "v0.14.0"},
+    "herdr.auto-title": {"version": "0.9.1", "strategy": "git", "install": "bundled", "repo": "kryptamine/herdr-auto-title", "ref": "v0.9.1"},
+    "persiyanov.reviewr": {"version": "0.39.0", "strategy": "git", "install": "bundled", "repo": "persiyanov/herdr-reviewr", "ref": "v0.39.0"},
+    "herdr-workspace": {"version": "0.1.2", "strategy": "git", "install": "bundled", "repo": "local", "ref": "packaging/plugins/herdr-workspace"},
+    "telescope": {"version": "0.1.2", "strategy": "git", "install": "bundled", "repo": "local", "ref": "packaging/plugins/telescope"},
+    "ray.plugin-manager": {"version": "0.5.0", "strategy": "git", "install": "bundled", "repo": "speardragon/herdr-plugin-manager", "ref": "v0.5.0"},
+    "mash-programming-skills": {"version": "0.5.15", "strategy": "git", "install": "bundled", "repo": "LuisAlejandro/mash-programming-skills", "ref": "0.5.15"},
+    "mash-design-skills": {"version": "0.1.1", "strategy": "git", "install": "bundled", "repo": "LuisAlejandro/mash-design-skills", "ref": "0.1.1"},
+    "sentrux": {"version": "0.5.7", "strategy": "package", "install": "user"},
+    "hindsight-embed": {"version": "0.8.3", "strategy": "pip", "install": "user", "package": "hindsight-embed"},
+    "hindsight-api": {"version": "0.8.3", "strategy": "pip", "install": "user", "package": "hindsight-api-slim"},
+    "cua-driver": {
+      "version": "0.33.3",
+      "strategy": "binary",
+      "install": "user",
+      "artifacts": {
+        "macos-arm64": {
+          "url": "https://github.com/trycua/cua/releases/download/cua-driver-rs-v0.33.3/cua-driver-rs-0.33.3-darwin-arm64.tar.gz",
+          "sha256": "4c477303dd83b36d169e367c02483923337ed8d1de48afaf0eca6f448b109585",
+          "archive": "tar.gz",
+          "member": "cua-driver"
+        },
+        "linux-amd64": {
+          "url": "https://github.com/trycua/cua/releases/download/cua-driver-rs-v0.33.3/cua-driver-rs-0.33.3-linux-x86_64.tar.gz",
+          "sha256": "ec3e2816bc0321ba6c606b59b9cfc1eb6d08ce51029e9169114058d1131de420",
+          "archive": "tar.gz",
+          "member": "cua-driver"
+        },
+        "linux-arm64": {
+          "url": "https://github.com/trycua/cua/releases/download/cua-driver-rs-v0.33.3/cua-driver-rs-0.33.3-linux-arm64.tar.gz",
+          "sha256": "ae0697ed784e042707eba80d854d5e68372ead545f83ad5f04ef1ca987daa4c2",
+          "archive": "tar.gz",
+          "member": "cua-driver"
+        }
+      }
+    },
+    "agent-browser": {"version": "0.38.2", "strategy": "npm", "install": "user", "package": "agent-browser"},
+    "chrome-devtools-mcp": {"version": "1.10.1", "strategy": "npm", "install": "user", "package": "chrome-devtools-mcp"}
+  }
+}

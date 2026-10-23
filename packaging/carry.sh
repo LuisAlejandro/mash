@@ -2,71 +2,27 @@
 # Fresh, plugins, fonts, and pins for packaging/build.sh.
 # Sourced by that script. Writes only under the repo dist/ and, once, pins.txt.
 
+mash_assets() {
+  python3 "${MASH_ASSETS_PY:-$root/packaging/assets.py}" "$@"
+}
+
+# The readable pin list is a projection of packaging/assets.json, which is the
+# single authority for every pinned version and checksum. Nothing here may hard
+# code a version again: one that disagrees with the manifest is exactly the drift
+# mash_pins_check exists to catch.
 mash_pins_text() {
-  cat <<'EOF'
-ghostty 1.3.1
-herdr 0.9.3
-fresh 0.5.1
-pi 1.1.0
-node 24.16.0
-python 3.13.16
-git 2.56.0
-lazygit 0.65.1
-lazydocker 0.25.2
-pet 1.0.1
-zoxide 0.10.0
-eza 0.23.5
-fzf 0.67.0
-fd 10.5.0
-bat 0.26.1
-rg 15.2.0
-jq 1.8.1
-gh 2.95.0
-delta 0.19.2
-atuin 18.23.0
-gopls 0.23.0
-rust-analyzer 2026-09-27
-marksman 2026-02-08
-texlab 5.26.0
-bash-language-server 5.8.1
-typescript-language-server 6.0.1
-yaml-language-server 1.24.0
-tailwindcss-language-server 0.16.0
-svelte-language-server 0.18.4
-vscode-langservers-extracted 4.10.0
-python-lsp-server 1.15.0
-pi-subagents 0.76.0
-pi-ask-user 0.16.0
-pi-monokai-pro 0.2.0
-pi-web-search 1.6.0
-typebox 1.3.36
-shfmt 3.14.1
-prettier 3.9.9
-prettier-plugin-svelte 4.1.1
-annotate 0.8.0
-herdr-terminal-notifier 0.1.0
-fullerzz.sesh 0.14.0
-herdr.auto-title 0.9.1
-persiyanov.reviewr 0.39.0
-herdr-workspace 0.1.2
-telescope 0.1.2
-ray.plugin-manager 0.5.0
-mash-programming-skills 0.5.15
-mash-design-skills 0.1.1
-sentrux 0.5.7
-hindsight-embed 0.8.3
-hindsight-api 0.8.3
-cua-driver 0.33.3
-agent-browser 0.38.2
-chrome-devtools-mcp 1.10.1
-EOF
+  mash_assets pins
 }
 
 mash_pins_check() {
   local pins="$root/packaging/pins.txt"
+  if ! mash_assets validate; then
+    echo "packaging/assets.json is not valid. Leaving dist/Mash.app in place." >&2
+    exit 1
+  fi
   [ -f "$pins" ] || return 0
-  if ! mash_pins_text | cmp -s - "$pins"; then
-    echo "packaging/pins.txt does not match this build. Leaving dist/Mash.app in place." >&2
+  if ! mash_assets check "$pins"; then
+    echo "packaging/pins.txt does not match packaging/assets.json. Leaving dist/Mash.app in place." >&2
     exit 1
   fi
 }
