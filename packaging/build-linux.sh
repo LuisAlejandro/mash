@@ -10,6 +10,8 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 # shellcheck source=carry.sh
 source "$root/packaging/carry.sh"
+# shellcheck source=build-common.sh
+source "$root/packaging/build-common.sh"
 
 # The Debian package name, not the product name: Ubuntu already ships an
 # unrelated bioinformatics package called `mash` that owns /usr/bin/mash.
@@ -187,9 +189,20 @@ LAUNCHER
 chmod 755 "$product/bin/$launcher"
 
 # --- shared payload --------------------------------------------------------
-# Staged by the same helpers the macOS adapter uses. U2 owns moving the Node,
-# Python, Pi and plugin payload here; this call is the seam it fills in.
-mash_stage_linux_payload "$product" "$target"
+# The portable half comes from the one shared staging every adapter uses; only
+# the runtime and frontend below are Linux-specific.
+mash_stage_portable_payload "$product" "$target" || {
+  echo "could not stage the shared payload" >&2
+  exit 1
+}
+mash_stage_linux_runtime "$product" "$target" || {
+  echo "could not stage the Linux runtime" >&2
+  exit 1
+}
+mash_verify_portable_payload "$product" || {
+  echo "the staged payload is incomplete" >&2
+  exit 1
+}
 
 # --- package metadata ------------------------------------------------------
 # A staged file that names this build's staging path would break once

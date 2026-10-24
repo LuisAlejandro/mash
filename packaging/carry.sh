@@ -61,32 +61,15 @@ mash_fetch_pinned() {
   rm -rf "$tmp"
 }
 
-# Stage the parts of the Linux payload that are already portable. Node, Python,
-# Pi packages, plugins and skills are added by the shared staging in U2; this
-# function is the seam it extends.
-mash_stage_linux_payload() {
+# Stage the Linux-only half of the payload: the pinned Herdr binary for this
+# architecture. Everything portable is already in place from the shared staging.
+mash_stage_linux_runtime() {
   local product="$1" target="$2"
-  mkdir -p "$product/bin" "$product/defaults"
-
-  # Herdr is the workspace server a pane talks to.
   mash_fetch_pinned herdr "$target" "$product/bin" || {
     echo "could not stage herdr for $target" >&2
     return 1
   }
-
-  cp "$root/packaging/lib.sh" "$product/bin/lib.sh"
-  cp "$root/packaging/mash-shell" "$product/bin/mash-shell"
-  cp "$root/packaging/herdr-pane" "$product/bin/herdr-pane"
-  # Only the shipped helpers: their tests and bytecode live beside them.
-  for helper in "$root/packaging/helpers"/*; do
-    [ -f "$helper" ] || continue
-    cp "$helper" "$product/bin/"
-  done
-  chmod 755 "$product/bin/lib.sh" "$product/bin/mash-shell" "$product/bin/herdr-pane"
-  chmod 755 "$product/bin/"* 2>/dev/null || true
-
-  cp -R "$root/packaging/defaults/." "$product/defaults/"
-  tr -d '[:space:]' <"$root/VERSION" >"$product/VERSION"
+  return 0
 }
 
 # The readable pin list is a projection of packaging/assets.json, which is the
