@@ -56,8 +56,15 @@ mash_fetch_pinned() {
     rm -rf "$tmp"
     return 1
   }
-  cp "$tmp/$MEMBER" "$outdir"
-  chmod 755 "$outdir/$(basename "$MEMBER")"
+  # Install under the name callers run, not the release asset's name: a raw
+  # download is called herdr-linux-x86_64 but every caller execs `herdr`.
+  local install_name
+  install_name="$(basename "$MEMBER")"
+  case "$ARCHIVE" in
+  raw) install_name="$component" ;;
+  esac
+  cp "$tmp/$MEMBER" "$outdir/$install_name"
+  chmod 755 "$outdir/$install_name"
   rm -rf "$tmp"
 }
 
@@ -72,10 +79,68 @@ mash_stage_linux_runtime() {
   return 0
 }
 
+# Download one pinned component and extract its whole archive into a directory.
+# mash_fetch_pinned() above extracts a single named member; runtimes are trees,
+# so they need the archive itself.
+mash_fetch_tree() {
+  local component="$1" target="$2" outdir="$3" tmp
+  local COMPONENT TARGET STRATEGY VERSION URL SHA256 ARCHIVE MEMBER
+  mash_resolve "$component" "$target" || return 1
+  [ -n "${URL:-}" ] || {
+    echo "$component for $target is not a downloaded artifact" >&2
+    return 1
+  }
+  tmp="$(mktemp -d)"
+  curl -fL --retry 2 --max-time 900 -o "$tmp/archive" "$URL" || {
+    echo "could not download $component $VERSION for $target" >&2
+    rm -rf "$tmp"
+    return 1
+  }
+  echo "$SHA256  $tmp/archive" | sha256sum -c - >/dev/null || {
+    echo "$component $VERSION for $target failed its checksum" >&2
+    rm -rf "$tmp"
+    return 1
+  }
+  mkdir -p "$tmp/x"
+  case "$ARCHIVE" in
+  tar.gz) tar -xzf "$tmp/archive" -C "$tmp/x" ;;
+  tar.xz) tar -xJf "$tmp/archive" -C "$tmp/x" ;;
+  zip) unzip -q "$tmp/archive" -d "$tmp/x" ;;
+  *)
+    echo "$component: unsupported archive $ARCHIVE for tree extraction" >&2
+    rm -rf "$tmp"
+    return 1
+    ;;
+  esac
+  mkdir -p "$outdir"
+  cp -R "$tmp/x/." "$outdir/"
+  rm -rf "$tmp"
+  printf '%s\n' "$MEMBER" >"$outdir/.mash-member"
+}
+
 # The readable pin list is a projection of packaging/assets.json, which is the
 # single authority for every pinned version and checksum. Nothing here may hard
 # code a version again: one that disagrees with the manifest is exactly the drift
 # mash_pins_check exists to catch.
+# The resource root the active adapter is staging into. packaging/build.sh
+# sets it to the app's Contents/Resources; packaging/build-linux.sh sets it to
+# the package's /opt/letsmash. Nothing shared below may reconstruct either path,
+# which is what lets one set of staging functions serve both products.
+mash_res() { printf '%s\n' "${MASH_RES_ROOT:?MASH_RES_ROOT is not set by the adapter}"; }
+
+# The pinned version of one component, from the manifest alone. Callers must not
+# hard-code a version: a package spec without one makes npm install whatever is
+# current, which is how a build silently ships an unpinned agent runtime.
+mash_version() {
+  local version
+  version="$(mash_assets pins | sed -n "s/^$1 //p")"
+  if [ -z "$version" ]; then
+    echo "no pinned version for $1" >&2
+    return 1
+  fi
+  printf '%s\n' "$version"
+}
+
 mash_pins_text() {
   mash_assets pins
 }
@@ -253,10 +318,10 @@ mash_build_fresh() {
     echo "Fresh binary was not produced." >&2
     exit 1
   }
-  mkdir -p "$app/Contents/Resources/libexec"
-  cp "$bin" "$app/Contents/Resources/libexec/fresh"
-  chmod 755 "$app/Contents/Resources/libexec/fresh"
-  cat >"$app/Contents/Resources/bin/fresh" <<'EOF'
+  mkdir -p "$(mash_res)/libexec"
+  cp "$bin" "$(mash_res)/libexec/fresh"
+  chmod 755 "$(mash_res)/libexec/fresh"
+  cat >"$(mash_res)/bin/fresh" <<'EOF'
 #!/bin/bash
 # Refuse to start unless Mash pointed Fresh at ~/.mash.
 set -euo pipefail
@@ -273,7 +338,7 @@ esac
 [ -f "$cfg/config.json" ] || { echo "Fresh seed is not in place." >&2; exit 1; }
 exec "$(cd "$(dirname "$0")/../libexec" && pwd)/fresh" "$@"
 EOF
-  chmod 755 "$app/Contents/Resources/bin/fresh"
+  chmod 755 "$(mash_res)/bin/fresh"
   tar -C "$work" --exclude target --exclude .git -czf \
     "$root/dist/fresh-0.5.1-patched.tar.gz" fresh-0.5.1
 }
@@ -287,7 +352,7 @@ mash_go() {
 }
 
 mash_build_plugins() {
-  local plugins="$app/Contents/Resources/plugins"
+  local plugins="$(mash_res)/plugins"
   local src="$root/packaging/plugins"
   mkdir -p "$plugins" "$work/src"
   local name
@@ -358,7 +423,7 @@ mash_build_plugins() {
 }
 
 mash_install_fonts() {
-  local fonts="$app/Contents/Resources/$terminal_app/Contents/Resources/Fonts"
+  local fonts="$(mash_res)/$terminal_app/Contents/Resources/Fonts"
   local font
   mkdir -p "$fonts"
   for font in \
@@ -369,7 +434,7 @@ mash_install_fonts() {
     cp "$root/packaging/fonts/$font" "$fonts/$font"
   done
   cp "$root/packaging/fonts/NOTICE.txt" "$fonts/NOTICE.txt"
-  local plist="$app/Contents/Resources/$terminal_app/Contents/Info.plist"
+  local plist="$(mash_res)/$terminal_app/Contents/Info.plist"
   if /usr/libexec/PlistBuddy -c 'Set :ATSApplicationFontsPath Fonts' "$plist" 2>/dev/null; then
     :
   else
@@ -435,10 +500,10 @@ mash_install_skills() {
   local src pi cfg name destskill
   mash_require_skills
   src="$(mash_skills_src)"
-  pi="$app/Contents/Resources/defaults/pi"
-  cfg="$app/Contents/Resources/defaults/mash-config"
+  pi="$(mash_res)/defaults/pi"
+  cfg="$(mash_res)/defaults/mash-config"
   case "$pi" in
-  "$app/Contents/Resources/defaults/pi") ;;
+  "$(mash_res)/defaults/pi") ;;
   *)
     echo "refusing to install skills outside the staged app" >&2
     exit 1
@@ -687,7 +752,7 @@ EOF
 
 # On the staged copy only. Longer prefixes are replaced first so a Mash path is not rewritten twice.
 mash_rewrite_skill_paths() {
-  local py="$app/Contents/Resources/python/bin/python3"
+  local py="$(mash_res)/python/bin/python3"
   "$py" - "$@" <<'PY'
 import os, sys
 repls = (
@@ -944,7 +1009,7 @@ EOF
 
 mash_build_parallel_venv() {
   local dest="$1"
-  local py="$app/Contents/Resources/python/bin/python3"
+  local py="$(mash_res)/python/bin/python3"
   local req cache home_dir cleanup=""
   req="$(mash_skills_src)/src/skills/mash-parallel/requirements.txt"
   [ -f "$req" ] || {
@@ -1058,14 +1123,14 @@ mash_bundled_npm() {
   fi
   mkdir -p "$home_dir" "$cache_dir"
   env HOME="$home_dir" npm_config_cache="$cache_dir" npm_config_update_notifier=false \
-    "$app/Contents/Resources/node/bin/npm" "$@"
+    "$(mash_res)/node/bin/npm" "$@"
 }
 
 # The penpot-local MCP server. Built at build time because it needs tsc; the
 # launcher only ever starts the compiled server.
 mash_build_design_headless() {
   local src="$1" dest="$2"
-  local node_runtime="$app/Contents/Resources/node/bin/node"
+  local node_runtime="$(mash_res)/node/bin/node"
   [ -d "$src" ] || {
     echo "design headless source is missing" >&2
     exit 1
@@ -1120,11 +1185,11 @@ mash_install_design_skills() {
   local src pi cfg stack name skill
   mash_require_design_skills
   src="$(mash_design_src)"
-  pi="$app/Contents/Resources/defaults/pi"
-  cfg="$app/Contents/Resources/defaults/mash-config"
-  stack="$app/Contents/Resources/defaults/design-stack"
+  pi="$(mash_res)/defaults/pi"
+  cfg="$(mash_res)/defaults/mash-config"
+  stack="$(mash_res)/defaults/design-stack"
   case "$pi" in
-  "$app/Contents/Resources/defaults/pi") ;;
+  "$(mash_res)/defaults/pi") ;;
   *)
     echo "refusing to install design skills outside the staged app" >&2
     exit 1
@@ -1162,7 +1227,7 @@ mash_install_design_skills() {
       tar -C "$stack" -xf -
   done
   # Patch only the staged copy; the pinned toolkit checkout stays read-only.
-  "$app/Contents/Resources/python/bin/python3" \
+  "$(mash_res)/python/bin/python3" \
     "$root/packaging/patch-design-pi.py" "$stack" "$src"
   # `mds setup` generates the real one, with PENPOT_SECRET_KEY and OD_API_TOKEN
   # inside. The toolkit checkout may carry one; it must never ship.

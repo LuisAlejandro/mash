@@ -41,6 +41,9 @@ productrel="${prefix#/}"
 product="$stage/$productrel"
 dest="$root/dist/${pkgname}_$(tr -d '[:space:]' <"$root/VERSION")_${debarch}.deb"
 
+# The resource root shared staging fills; on Linux the product tree is the root.
+export MASH_RES_ROOT="$product"
+
 ghostty_src="${MASH_GHOSTTY_SRC:-$root/../ghostty}"
 zig="${MASH_ZIG:-$(command -v zig || true)}"
 
@@ -193,6 +196,10 @@ chmod 755 "$product/bin/$launcher"
 # the runtime and frontend below are Linux-specific.
 mash_stage_portable_payload "$product" "$target" || {
   echo "could not stage the shared payload" >&2
+  exit 1
+}
+mash_stage_runtimes "$product" "$target" || {
+  echo "could not stage the runtimes" >&2
   exit 1
 }
 mash_stage_linux_runtime "$product" "$target" || {

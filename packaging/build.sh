@@ -18,6 +18,10 @@ dest="$root/dist/Mash.app"
 work="$root/dist/.build"
 app="$work/Mash.app"
 
+# The resource root shared staging fills. macOS uses the app bundle's Resources;
+# the Linux adapter uses the package's /opt/letsmash. See packaging/build-common.sh.
+export MASH_RES_ROOT="$app/Contents/Resources"
+
 case "$dest" in
 "$root/dist/Mash.app") ;;
 *)

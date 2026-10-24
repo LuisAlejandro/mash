@@ -3,6 +3,7 @@ blueprint-compiler 0.16.0
 herdr 0.9.3
 fresh 0.5.1
 pi 1.1.0
+pi-voice 0.2.0
 node 24.16.0
 python 3.13.16
 git 2.56.0

@@ -54,7 +54,9 @@ esac
 [ -n "$(dpkg-deb -f "$deb" Depends 2>/dev/null)" ] && ok "depends is set" || fail "depends is missing"
 
 # --- product tree ---------------------------------------------------------
-for entry in bin/ghostty bin/lib.sh bin/mash-shell bin/herdr-pane lib/libgtk4-layer-shell.so; do
+# bin/herdr is the name herdr-pane execs; an asset installed under its release
+# name instead (herdr-linux-x86_64) would look present and fail at launch.
+for entry in bin/ghostty bin/herdr bin/lib.sh bin/mash-shell bin/herdr-pane lib/libgtk4-layer-shell.so; do
   [ -e "$product/$entry" ] && ok "product has $entry" || fail "product is missing $entry"
 done
 
@@ -120,14 +122,26 @@ if [ -x "$product/bin/ghostty" ]; then
 fi
 
 # Every shipped executable must resolve, not only ghostty.
+#
+# Native modules that ship several builds for different C libraries are skipped:
+# a musl build cannot resolve its libc on glibc, by design, and it is never the
+# build this package loads. Skipping is reported rather than silent so the count
+# of unaudited files stays visible.
+skipped_variants=0
 while IFS= read -r exe; do
+  case "$exe" in
+  */musl/* | *musl*)
+    skipped_variants=$((skipped_variants + 1))
+    continue
+    ;;
+  esac
   if file "$exe" 2>/dev/null | grep -q 'ELF'; then
     if ldd "$exe" 2>/dev/null | grep -q 'not found'; then
       fail "unresolved libraries: ${exe#"$tmp/root"}"
     fi
   fi
 done < <(find "$tmp/root" -type f -perm -u+x 2>/dev/null)
-ok "shipped executables audited for unresolved libraries"
+ok "shipped executables audited for unresolved libraries (skipped $skipped_variants non-glibc variant(s))"
 
 # --- build-machine leakage ------------------------------------------------
 # Only the staging marker is searched. /Users/, /Volumes/ and bare short roots
