@@ -38,7 +38,9 @@
     "pi-voice",
     "node",
     "python",
+    "rust",
     "git",
+    "go",
     "lazygit",
     "lazydocker",
     "pet",
@@ -596,6 +598,52 @@
       "strategy": "npm",
       "install": "bundled",
       "package": "@earendil-works/pi-voice"
+    },
+    "rust": {
+      "version": "1.98.1",
+      "strategy": "binary",
+      "install": "build-host",
+      "targets": [
+        "linux-amd64",
+        "linux-arm64"
+      ],
+      "artifacts": {
+        "linux-amd64": {
+          "url": "https://static.rust-lang.org/dist/rust-1.98.1-x86_64-unknown-linux-gnu.tar.gz",
+          "sha256": "24ba1338a2d35c5a3247936546429e163fa674d726102af18bdf624582c57aea",
+          "archive": "tar.gz",
+          "member": "."
+        },
+        "linux-arm64": {
+          "url": "https://static.rust-lang.org/dist/rust-1.98.1-aarch64-unknown-linux-gnu.tar.gz",
+          "sha256": "f00ba576645cef658e1deed96fab8f707958e9d58808b16343448b5d1c4f7407",
+          "archive": "tar.gz",
+          "member": "."
+        }
+      }
+    },
+    "go": {
+      "version": "1.26.4",
+      "strategy": "binary",
+      "install": "build-host",
+      "targets": [
+        "linux-amd64",
+        "linux-arm64"
+      ],
+      "artifacts": {
+        "linux-amd64": {
+          "url": "https://go.dev/dl/go1.26.4.linux-amd64.tar.gz",
+          "sha256": "1153d3d50e0ac764b447adfe05c2bcf08e889d42a02e0fe0259bd47f6733ad7f",
+          "archive": "tar.gz",
+          "member": "."
+        },
+        "linux-arm64": {
+          "url": "https://go.dev/dl/go1.26.4.linux-arm64.tar.gz",
+          "sha256": "ef758ae7c6cf9267c9c0ef080b8965f453d89ab2d25d9eb22de4405925238768",
+          "archive": "tar.gz",
+          "member": "."
+        }
+      }
     }
   }
 }

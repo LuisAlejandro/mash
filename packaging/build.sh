@@ -588,7 +588,7 @@ if ps -ax -o command= | grep -F "$dest/" | grep -v grep >/dev/null; then
 fi
 rm -rf "$dest"
 mv "$app" "$dest"
-mash_finish_skill_venv "$dest" "$work/Mash.app"
+mash_finish_skill_venv "$dest/Contents/Resources" "$work/Mash.app/Contents/Resources"
 mash_link_plugins "$dest" "$home"
 # Again, and after mash_finish_skill_venv: that step imports pytest to prove the
 # venv works, which re-creates __pycache__ inside it. This has to be the last

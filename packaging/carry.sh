@@ -411,11 +411,16 @@ mash_build_plugins() {
     https://github.com/speardragon/herdr-plugin-manager.git "$work/src/plugin-manager"
   mash_copy_tree "$work/src/plugin-manager" "$plugins/ray.plugin-manager"
 
-  git clone --depth 1 https://github.com/dot/herdr-terminal-notifier.git "$work/src/notifier"
-  mash_copy_tree "$work/src/notifier" "$plugins/dot.terminal-notifier"
-  local plist="$plugins/dot.terminal-notifier/assets/HerdrNotify.app/Contents/Info.plist"
-  /usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier app.mash.notify' "$plist"
-  codesign --force --deep --sign - "$plugins/dot.terminal-notifier/assets/HerdrNotify.app"
+  # The notifier is a macOS .app helper. Linux gets its notifications through
+  # Herdr and the terminal instead, so the plugin is not staged there -- and the
+  # plist and codesign steps below are Apple-only regardless.
+  if [ "$(uname -s)" = "Darwin" ]; then
+    git clone --depth 1 https://github.com/dot/herdr-terminal-notifier.git "$work/src/notifier"
+    mash_copy_tree "$work/src/notifier" "$plugins/dot.terminal-notifier"
+    local plist="$plugins/dot.terminal-notifier/assets/HerdrNotify.app/Contents/Info.plist"
+    /usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier app.mash.notify' "$plist"
+    codesign --force --deep --sign - "$plugins/dot.terminal-notifier/assets/HerdrNotify.app"
+  fi
 
   git clone --depth 1 https://github.com/plannotator/herdr-annotate.git "$work/src/annotate"
   (cd "$work/src/annotate" && bash scripts/fetch-herdr-annotate.sh)
@@ -1036,11 +1041,20 @@ mash_build_parallel_venv() {
 }
 
 # After the staged app moves, point every venv at the finished bundle path.
+# Point every staged venv at the root it will actually run from, and make its
+# interpreter link relative so the tree survives being copied or packaged.
+#
+#   mash_finish_skill_venv <resource-root> <old-root> [new-root]
+#
+# The rewrite exists because pip records the absolute interpreter path it built
+# with; on macOS the tree moves between staging and the bundle, and on Linux it
+# moves from the staging directory to /opt/letsmash.
 mash_finish_skill_venv() {
-  local dest="$1"
+  local res="$1"
   local old="${2:-}"
-  local venvs="$dest/Contents/Resources/defaults/mash-config/venvs"
-  local py="$dest/Contents/Resources/python/bin/python3"
+  local new="${3:-$1}"
+  local venvs="$res/defaults/mash-config/venvs"
+  local py="$res/python/bin/python3"
   local venv name
   [ -d "$venvs" ] || return 0
   [ -x "$py" ] || {
@@ -1050,8 +1064,8 @@ mash_finish_skill_venv() {
   for venv in "$venvs"/*; do
     [ -d "$venv" ] || continue
     name="$(basename "$venv")"
-    if [ -n "$old" ] && [ "$old" != "$dest" ]; then
-      "$py" - "$venv" "$old" "$dest" <<'PY'
+    if [ -n "$old" ] && [ "$old" != "$new" ]; then
+      "$py" - "$venv" "$old" "$new" <<'PY'
 import os, sys
 venv, old, new = sys.argv[1:]
 old_b, new_b = old.encode(), new.encode()
@@ -1122,7 +1136,10 @@ mash_bundled_npm() {
     cache_dir="$home_dir/cache"
   fi
   mkdir -p "$home_dir" "$cache_dir"
+  # npm's entry point is `#!/usr/bin/env node`, so the runtime it belongs to has
+  # to be on PATH or it reports a missing interpreter instead of doing the work.
   env HOME="$home_dir" npm_config_cache="$cache_dir" npm_config_update_notifier=false \
+    PATH="$(mash_res)/node/bin:$PATH" \
     "$(mash_res)/node/bin/npm" "$@"
 }
 

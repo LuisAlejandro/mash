@@ -8,6 +8,8 @@
 # Writes only under this repo's dist/. Does not install anything.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=lib.sh
+source "$root/packaging/lib.sh"
 # shellcheck source=carry.sh
 source "$root/packaging/carry.sh"
 # shellcheck source=build-common.sh
@@ -25,6 +27,9 @@ prefix="/opt/letsmash"
 appid="app.mash.Mash"
 launcher="letsmash-launch"
 
+# Shared staging resolves default checkout paths from the account home, the way
+# the macOS adapter does.
+home="$(mash_real_home)"
 target="$(python3 "$root/packaging/assets.py" target)"
 case "$target" in
 linux-amd64) debarch="amd64" ;;
@@ -97,6 +102,10 @@ version="$(tr -d '[:space:]' <"$root/VERSION")"
 [ -n "$version" ] || { echo "VERSION is empty." >&2; exit 1; }
 
 echo "building $pkgname $version for $debarch ($target)"
+# A previous run can leave the Go module cache read-only and a failed Cargo
+# build can leave locked artifacts, either of which makes a plain rm fail and
+# abort the next build before it starts.
+chmod -R u+w "$work" 2>/dev/null || true
 rm -rf "$work"
 mkdir -p "$product/bin" "$product/lib" "$work/npm-cache" "$work/pip-cache" "$stage/DEBIAN"
 
@@ -230,12 +239,62 @@ mash_stage_runtimes "$product" "$target" || {
   echo "could not stage the runtimes" >&2
   exit 1
 }
+
+# Rust and Go build Fresh, the wizard and two of the plugins. They are build
+# dependencies, staged into the work tree and never shipped.
+toolchain="$work/toolchain"
+mash_stage_toolchain rust "$target" "$toolchain/rust" || {
+  echo "could not stage the rust toolchain" >&2
+  exit 1
+}
+mash_stage_toolchain go "$target" "$toolchain/go" || {
+  echo "could not stage the go toolchain" >&2
+  exit 1
+}
+export PATH="$toolchain/rust/bin:$toolchain/go/bin:$PATH"
+# The downloaded Go owns its standard library; an inherited GOROOT from a host
+# install makes its compile tool disagree about which release it is.
+export GOROOT="$toolchain/go"
+export GOTOOLCHAIN=local
+export MASH_CARGO="$toolchain/rust/bin/cargo"
+
+mash_stage_fresh "$product" "$target" "$work/cargo-home" || {
+  echo "could not stage fresh" >&2
+  exit 1
+}
+mash_stage_wizard "$product" "$work/cargo-home" || {
+  echo "could not stage the wizard" >&2
+  exit 1
+}
 mash_stage_linux_runtime "$product" "$target" || {
   echo "could not stage the Linux runtime" >&2
   exit 1
 }
+# Skills and plugins are pinned checkouts in CI and on a maintainer machine.
+# Both are staged from their own sources, never installed by their installers.
+mash_install_skills || {
+  echo "could not stage the skills payload" >&2
+  exit 1
+}
+mash_install_design_skills || {
+  echo "could not stage the design payload" >&2
+  exit 1
+}
+mash_build_plugins || {
+  echo "could not stage the plugins" >&2
+  exit 1
+}
+
 mash_verify_portable_payload "$product" || {
   echo "the staged payload is incomplete" >&2
+  exit 1
+}
+
+# pip records the interpreter path it built the venv with, which here is the
+# staging tree. Point it at the install prefix before anything is packaged, or
+# the shipped venvs name a directory that only existed on the builder.
+mash_finish_skill_venv "$product" "$product" "$prefix" || {
+  echo "could not finish the skill venvs" >&2
   exit 1
 }
 

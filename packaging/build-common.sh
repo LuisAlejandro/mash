@@ -159,6 +159,138 @@ EOF
   done < <(find "$res/node" -type f 2>/dev/null)
 }
 
+# Unpack a pinned toolchain into a build-only directory and echo its bin path.
+# Rust and Go are build dependencies, never shipped, so they are fetched per
+# architecture under the same checksum discipline as the payload.
+mash_stage_toolchain() {
+  local component="$1" target="$2" destdir="$3" tmp
+  tmp="$(mktemp -d)"
+  mash_fetch_tree "$component" "$target" "$tmp" || {
+    rm -rf "$tmp"
+    return 1
+  }
+  rm -rf "$destdir"
+  mkdir -p "$(dirname "$destdir")"
+  # Rust's tarball installs with its own script; Go's is a plain tree.
+  case "$component" in
+  rust)
+    local dir
+    dir="$(find "$tmp" -maxdepth 1 -type d -name 'rust-*' -print -quit)"
+    [ -n "$dir" ] || {
+      echo "the rust archive has no rust-* directory" >&2
+      rm -rf "$tmp"
+      return 1
+    }
+    "$dir/install.sh" --prefix="$destdir" --without=rust-docs >/dev/null 2>&1 || {
+      echo "could not install the rust toolchain" >&2
+      rm -rf "$tmp"
+      return 1
+    }
+    ;;
+  go)
+    local dir
+    dir="$(find "$tmp" -maxdepth 2 -type d -name go -print -quit)"
+    [ -n "$dir" ] || {
+      echo "the go archive has no go directory" >&2
+      rm -rf "$tmp"
+      return 1
+    }
+    mkdir -p "$destdir"
+    cp -R "$dir/." "$destdir/"
+    ;;
+  *)
+    echo "$component is not a staged toolchain" >&2
+    rm -rf "$tmp"
+    return 1
+    ;;
+  esac
+  rm -rf "$tmp"
+}
+
+# Build Fresh from its pinned source archive into the payload, applying the
+# Mash patches. Shared because Fresh is Rust on both platforms; only the target
+# triple differs, and it comes from the toolchain the caller staged.
+mash_stage_fresh() {
+  local res="$1" arch="$2" cargo_home="${3:-}"
+  local work_fresh tmp src
+  tmp="$(mktemp -d)"
+  # Fresh's source archive carries no platform in it, so the manifest answers
+  # every target with the same pin.
+  mash_fetch_tree fresh "${MASH_FRESH_TARGET:-linux-amd64}" "$tmp" || {
+    rm -rf "$tmp"
+    return 1
+  }
+  src="$tmp/fresh-$(mash_version fresh)"
+  [ -d "$src" ] || {
+    echo "the fresh archive has no fresh-$(mash_version fresh) directory" >&2
+    rm -rf "$tmp"
+    return 1
+  }
+  for name in fresh-config-dir fresh-reveal-in-finder; do
+    if ! patch -p1 -d "$src" <"$root/packaging/patches/$name.patch"; then
+      echo "$name.patch did not apply. Leaving the package unbuilt." >&2
+      rm -rf "$tmp"
+      return 1
+    fi
+  done
+  work_fresh="$(mktemp -d)"
+  # liblzma-sys probes pkg-config and takes a host shared library on some
+  # systems; forcing the vendored copy keeps the binary self-contained.
+  if ! env LZMA_API_STATIC=1 CARGO_HOME="$cargo_home" CARGO_TARGET_DIR="$work_fresh" \
+    "${MASH_CARGO:-cargo}" build --release --manifest-path "$src/Cargo.toml" >/dev/null 2>&1; then
+    echo "fresh failed to build" >&2
+    rm -rf "$tmp" "$work_fresh"
+    return 1
+  fi
+  mkdir -p "$res/libexec" "$res/bin"
+  cp "$work_fresh/release/fresh" "$res/libexec/fresh"
+  chmod 755 "$res/libexec/fresh"
+  cat >"$res/bin/fresh" <<'EOF'
+#!/bin/sh
+# Refuse to start unless Mash pointed Fresh at ~/.mash.
+set -eu
+cfg="${MASH_FRESH_CONFIG_DIR:-}"
+data="${MASH_FRESH_DATA_DIR:-}"
+case "$cfg" in
+/*/.mash/*) ;;
+*) echo "Fresh refused to start." >&2; exit 1 ;;
+esac
+case "$data" in
+/*/.mash/*) ;;
+*) echo "Fresh refused to start." >&2; exit 1 ;;
+esac
+[ -f "$cfg/config.json" ] || { echo "Fresh seed is not in place." >&2; exit 1; }
+exec "$(cd "$(dirname "$0")/../libexec" && pwd)/fresh" "$@"
+EOF
+  chmod 755 "$res/bin/fresh"
+  rm -rf "$tmp" "$work_fresh"
+  echo "staged fresh $arch"
+}
+
+# The first-run wizard, built from this repository. Shared so both adapters
+# ship the same binary rather than each compiling its own copy.
+mash_stage_wizard() {
+  local res="$1" cargo_home="${2:-}" target_dir
+  target_dir="$(mktemp -d)"
+  if ! env CARGO_HOME="$cargo_home" CARGO_TARGET_DIR="$target_dir" \
+    "${MASH_CARGO:-cargo}" build --release --locked \
+    --manifest-path "$root/packaging/wizard/Cargo.toml" >/dev/null 2>&1; then
+    echo "the wizard failed to build" >&2
+    rm -rf "$target_dir"
+    return 1
+  fi
+  [ -x "$target_dir/release/mash-wizard" ] || {
+    echo "the wizard binary was not produced" >&2
+    rm -rf "$target_dir"
+    return 1
+  }
+  mkdir -p "$res/bin"
+  cp "$target_dir/release/mash-wizard" "$res/bin/mash-wizard"
+  chmod 755 "$res/bin/mash-wizard"
+  rm -rf "$target_dir"
+  echo "staged mash-wizard"
+}
+
 # The scripts a pane, the launcher and the plugins expect to find beside them.
 mash_portable_scripts() {
   printf '%s\n' lib.sh mash-shell herdr-pane
