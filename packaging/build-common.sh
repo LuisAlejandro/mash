@@ -293,7 +293,7 @@ mash_stage_wizard() {
 
 # The scripts a pane, the launcher and the plugins expect to find beside them.
 mash_portable_scripts() {
-  printf '%s\n' lib.sh mash-shell herdr-pane
+  printf '%s\n' lib.sh launch-common.sh mash-shell herdr-pane
 }
 
 # Stage the platform-neutral part of the payload into <resource-root>.

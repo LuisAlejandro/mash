@@ -209,23 +209,9 @@ chmod 644 "$fonts/"*
   "$root/branding/logo-solid.png" "$stage/usr/share/icons/hicolor" "$appid"
 
 # --- launcher --------------------------------------------------------------
-cat >"$product/bin/$launcher" <<'LAUNCHER'
-#!/bin/sh
-# Mash's Linux entry point. Resolves the product tree from itself so the same
-# script works from the package and from a staged build, then hands Ghostty the
-# pane command with Mash's environment already in place.
-set -eu
-here="$(cd "$(dirname "$0")" && pwd)"
-product="$(cd "$here/.." && pwd)"
-home="${HOME:?Mash needs HOME to locate ~/.mash}"
-export MASH_BIN="$here:$product/node/bin:$product/python/bin:$home/.mash/bin"
-
-if [ ! -x "$product/bin/herdr-pane" ]; then
-  printf 'Mash is not fully installed: %s is missing.\n' "$product/bin/herdr-pane" >&2
-  exit 1
-fi
-exec "$product/bin/ghostty" -e "$product/bin/herdr-pane" "$@"
-LAUNCHER
+# The launcher is a tracked file rather than a heredoc so it is linted and
+# reviewed like every other shipped script.
+cp "$root/packaging/linux/launcher" "$product/bin/$launcher"
 chmod 755 "$product/bin/$launcher"
 
 # --- shared payload --------------------------------------------------------
@@ -327,7 +313,12 @@ shlibs_depends="$(
 
 maintainer="${MASH_MAINTAINER:-Luis Alejandro Martínez Faneyth <luis@letsma.sh>}"
 installed_kb="$(du -sk --exclude=DEBIAN "$stage" | awk '{print $1}')"
-sed -e "s#@VERSION@#$version#" \
+# Runtime dependencies the payload invokes rather than links. rsync is how the
+# launcher seeds ~/.mash without replacing the user's files; xdg-utils is the
+# desktop-opener the panel and preview fallbacks use.
+extra_depends="rsync, xdg-utils"
+sed -e "s#@EXTRA_DEPENDS@#$extra_depends#" \
+  -e "s#@VERSION@#$version#" \
   -e "s#@ARCH@#$debarch#" \
   -e "s#@MAINTAINER@#$maintainer#" \
   -e "s#@INSTALLED_SIZE@#$installed_kb#" \

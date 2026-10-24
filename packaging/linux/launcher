@@ -1,0 +1,62 @@
+#!/bin/bash
+# Mash's Linux entry point. Called by the desktop entry, resolved from its own
+# location so the same script works from the package and from a staged build.
+#
+# The macOS launcher does the same work in packaging/mash; this one reuses the
+# shared seeding module instead of its own copy, so what lands in ~/.mash is
+# identical on both platforms.
+set -eu
+here="$(cd "$(dirname "$0")" && pwd)"
+res="$(cd "$here/.." && pwd)"
+home="${HOME:?Mash needs HOME to locate ~/.mash}"
+d="$home/.mash"
+
+# shellcheck source=lib.sh
+. "$res/bin/lib.sh"
+
+mkdir -p "$d"
+# Nothing may grow inside the package after it is installed, and the bundled
+# interpreter is on every pane's PATH, so bytecode writes are refused here and
+# forwarded to the panes.
+PYTHONDONTWRITEBYTECODE=1
+export PYTHONDONTWRITEBYTECODE
+
+export MASH_RES_ROOT="$res"
+export MASH_BIN="$res/bin:$res/node/bin:$res/python/bin:$d/bin"
+
+# Seeds only what is missing, so a user's own files are never replaced. This is
+# the step that makes the package usable: without it ~/.mash has no config, no
+# skills and no plugins, and Herdr would start against an empty tree.
+. "$res/bin/launch-common.sh"
+mash_seed_all "$res" "$d" "$home"
+
+# Mash ships its own terminal, Herdr and Fresh, so self-updates are pinned off
+# as they are on macOS. Never replaces a file, only flips existing keys.
+mash_force_updates "$home"
+
+# Point every included tool at ~/.mash before anything starts.
+mash_isolate "$home"
+
+case "$HERDR_SOCKET_PATH" in
+"$d/run/"*) ;;
+*)
+  printf 'Mash refused to start: socket outside ~/.mash.\n' >&2
+  exit 1
+  ;;
+esac
+
+# A plugin registry recorded elsewhere (a previous package, another checkout) is
+# relinked in place. This only rewrites entries it is handed, so plugins the
+# user installed themselves stay registered.
+mash_link_plugins "$res" "$home" || true
+
+# A leftover socket is removed only when nothing is using it.
+if [ -S "$HERDR_SOCKET_PATH" ] && command -v lsof >/dev/null 2>&1; then
+  if ! lsof "$HERDR_SOCKET_PATH" >/dev/null 2>&1; then
+    rm -f "$HERDR_SOCKET_PATH"
+  fi
+fi
+
+# -e is what makes Ghostty honour this per-process environment, refuse to attach
+# to an existing GTK instance, and quit when the last window closes.
+exec "$res/bin/ghostty" -e "$res/bin/herdr-pane"

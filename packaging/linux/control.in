@@ -3,7 +3,7 @@ Version: @VERSION@
 Architecture: @ARCH@
 Maintainer: @MAINTAINER@
 Installed-Size: @INSTALLED_SIZE@
-Depends: @DEPENDS@
+Depends: @DEPENDS@, @EXTRA_DEPENDS@
 Section: x11
 Priority: optional
 Homepage: https://letsma.sh
