@@ -1,16 +1,33 @@
 #!/bin/bash
-# Remove Mash preference domains, saved state, and caches.
-# Leaves ~/.mash in place. Does not touch Ghostty, Herdr, Fresh, or pi.
+# Remove Mash's per-user preferences and caches.
+# Leaves ~/.mash in place. Does not touch the product tree, Ghostty, Herdr,
+# Fresh or pi, and never deletes workspaces, credentials or models.
 set -euo pipefail
-home="$(dscl . -read "/Users/$(id -un)" NFSHomeDirectory | awk '{print $2}')"
-# app.mash.ghostty.menutest is written by the menu-bar patcher while it works
-# out the Ghostty menu strings. It is a separate domain from app.mash.ghostty,
-# so it survives unless it is listed here.
-for domain in app.mash app.mash.ghostty app.mash.ghostty.menutest app.mash.notify; do
+source "$(cd "$(dirname "$0")" && pwd)/lib.sh"
+home="$(mash_real_home)"
+
+case "$(uname -s)" in
+Darwin)
+  # app.mash.ghostty.menutest is written by the menu-bar patcher while it works
+  # out the Ghostty menu strings. It is a separate domain from app.mash.ghostty,
+  # so it survives unless it is listed here.
+  for domain in app.mash app.mash.ghostty app.mash.ghostty.menutest app.mash.notify; do
     defaults delete "$domain" >/dev/null 2>&1 || true
     rm -f "$home/Library/Preferences/${domain}.plist"
     rm -rf "$home/Library/Saved Application State/${domain}.savedState"
     rm -rf "$home/Library/Caches/${domain}"
-done
-echo "Removed Mash preferences for app.mash, app.mash.ghostty, app.mash.ghostty.menutest, and app.mash.notify."
+  done
+  echo "Removed Mash preferences for app.mash, app.mash.ghostty, app.mash.ghostty.menutest, and app.mash.notify."
+  ;;
+*)
+  # On Linux the package owns the product files, so removal is the package
+  # manager's job. Only user-scoped leftovers are cleared here, and no GTK
+  # caches are shared with other applications.
+  rm -rf "$home/.cache/app.mash.Mash" 2>/dev/null || true
+  echo "Removed Mash user caches. Remove the package itself with: sudo apt remove letsmash"
+  ;;
+esac
+
 echo "~/.mash was left in place."
+echo "To delete everything Mash ever wrote, including workspaces and credentials:"
+echo "  rm -rf \"$home/.mash\""

@@ -47,7 +47,11 @@ export MASH_RES_ROOT="$product"
 ghostty_src="${MASH_GHOSTTY_SRC:-$root/../ghostty}"
 zig="${MASH_ZIG:-$(command -v zig || true)}"
 
-for cmd in dpkg-deb dpkg-shlibdeps patchelf python3; do
+[ -f "$root/packaging/patches/ghostty-gtk-branding.patch" ] || {
+  echo "missing the Ghostty branding patch" >&2
+  exit 1
+}
+for cmd in dpkg-deb dpkg-shlibdeps patchelf python3 patch; do
   command -v "$cmd" >/dev/null 2>&1 || {
     echo "missing $cmd; install dpkg-dev, patchelf and python3" >&2
     exit 1
@@ -102,8 +106,20 @@ mkdir -p "$product/bin" "$product/lib" "$work/npm-cache" "$work/pip-cache" "$sta
 # -fno-sys=gtk4-layer-shell because Ubuntu 24.04 does not package it, and the
 # flag makes Ghostty build its own copy into the prefix lib/.
 echo "building Ghostty GTK from $ghostty_src @ $(git -c safe.directory="$ghostty_src" -C "$ghostty_src" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+# Build from a copy so the branding patch never mutates the pinned checkout,
+# the same way Fresh is patched in a staged tree rather than in its original.
+src="$work/ghostty"
+rm -rf "$src"
+mkdir -p "$src"
+tar -C "$ghostty_src" --exclude .git --exclude .zig-cache --exclude zig-out -cf - . | tar -C "$src" -xf -
+for branding in "$root/packaging/patches/ghostty-gtk-branding.patch"; do
+  if ! patch -p1 -d "$src" <"$branding"; then
+    echo "$(basename "$branding") did not apply. The fork moved under it." >&2
+    exit 1
+  fi
+done
 (
-  cd "$ghostty_src"
+  cd "$src"
   PATH="$(dirname "$zig"):$PATH" \
     "$zig" build -Doptimize=ReleaseFast -fno-sys=gtk4-layer-shell -p "$product"
 ) || {
@@ -165,6 +181,18 @@ apps="$stage/usr/share/applications"
 mkdir -p "$apps"
 sed -e "s#@APPID@#$appid#g" "$root/packaging/linux/app.desktop.in" >"$apps/$appid.desktop"
 chmod 644 "$apps/$appid.desktop"
+
+# MesloLGS NF ships with the package so the terminal looks the same as on macOS
+# without asking the user to install a font. fontconfig discovers it from the
+# system font tree, which is why the desktop entry does not name a path.
+fonts="$stage/usr/share/fonts/truetype/meslo-lg-nerd-font"
+mkdir -p "$fonts"
+for ttf in "$root/packaging/fonts/"*.ttf; do
+  [ -f "$ttf" ] || continue
+  cp "$ttf" "$fonts/"
+done
+cp "$root/packaging/fonts/NOTICE.txt" "$fonts/" 2>/dev/null || true
+chmod 644 "$fonts/"*
 
 # Icons come from Mash's own artwork, not Ghostty's, so the launcher never shows
 # the upstream logo. Sizes match what hicolor-aware desktops ask for.

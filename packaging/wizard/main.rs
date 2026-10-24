@@ -414,11 +414,18 @@ fn draw_confirm_quit(frame: &mut Frame) {
         Line::from("Open Mash again to start setup from the beginning."),
         Line::from(""),
         Line::from(vec![
-            Span::styled("y", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "y",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::raw(" quit setup    "),
             Span::styled(
                 "any other key",
-                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
             ),
             Span::raw(" keep going"),
         ]),
@@ -588,6 +595,7 @@ const STEP_HINDSIGHT: &str = "Install the Hindsight environment";
 const STEP_HINDSIGHT_DAEMON: &str = "Start Hindsight and fetch its models";
 const STEP_DESIGN: &str = "Install the design dependencies";
 const STEP_PENPOT: &str = "Create the local Penpot account (or defer until Docker is ready)";
+const STEP_VOICE: &str = "Install the dictation model";
 
 fn install_steps(plan: &Plan, missing: &[&str]) -> Vec<String> {
     let mut steps = vec!["Check selected tools".to_string()];
@@ -611,6 +619,12 @@ fn install_steps(plan: &Plan, missing: &[&str]) -> Vec<String> {
     steps.push(STEP_HINDSIGHT_DAEMON.to_string());
     steps.push(STEP_DESIGN.to_string());
     steps.push(STEP_PENPOT.to_string());
+    // Last, and only when the page chose one: the model is the big download,
+    // and it goes straight into the cache Pi Voice reads, so nothing re-runs
+    // it when the same file is already there.
+    if plan.voice.is_some() {
+        steps.push(STEP_VOICE.to_string());
+    }
     steps
 }
 
@@ -746,6 +760,55 @@ fn install_helper_with_progress<B: Backend>(
     }
 }
 
+// Install the dictation model through the bundled helper. It writes the voice
+// settings only after the download and checksum succeed, so a failed install
+// leaves Pi Voice's own wizard ready to take over rather than half-configured.
+fn install_voice_model<B: Backend>(
+    terminal: &mut Terminal<B>,
+    completed: usize,
+    total: usize,
+    step: &str,
+    messages: &[String],
+    choice: &voice::VoiceChoice,
+) -> Result<String, String> {
+    let script = mash_bin().join("mash-voice-model");
+    if !script.is_file() {
+        return Err("mash-voice-model is missing from the bundle".into());
+    }
+    let helper_log = helper_log_path("mash-voice-model");
+    let mut command = Command::new(&script);
+    command
+        // The inherited PATH, as with the other environment helpers:
+        // mash-voice-model drives the bundled node and curl itself.
+        .env("PATH", env::var_os("PATH").unwrap_or_default())
+        .arg(data_dir())
+        .arg(&choice.model_id)
+        .arg(choice.languages.join(","))
+        .arg(if choice.needs_detector { "1" } else { "0" })
+        .stdout(Stdio::null())
+        .stderr(Stdio::null());
+    let mut child = command.spawn().map_err(|e| e.to_string())?;
+    loop {
+        match child.try_wait() {
+            Ok(Some(status)) if status.success() => return Ok("model installed".into()),
+            Ok(Some(_)) => {
+                return Err(format!(
+                    "mash-voice-model failed; see {}",
+                    helper_log.display()
+                ))
+            }
+            Ok(None) => {}
+            Err(error) => return Err(error.to_string()),
+        }
+        let mut shown = messages.to_vec();
+        if let Some(line) = last_log_line(&helper_log) {
+            shown.push(format!("  ...{line}"));
+        }
+        draw_apply(terminal, completed, total, step, &shown);
+        std::thread::sleep(Duration::from_millis(700));
+    }
+}
+
 // mash-hindsight-install logs to setup/hindsight-install.log, and so on.
 fn penpot_account_ready() -> bool {
     let config = data_dir().join("local/share/mash/design/penpot.env");
@@ -774,20 +837,31 @@ fn mash_bin() -> PathBuf {
     mash_resources().join("bin")
 }
 
+// The one resource root both adapters stage into: a macOS Contents/Resources or
+// a Linux /opt/letsmash. MASH_RES_ROOT wins when the launcher set it, because
+// that is the value the rest of the process tree already uses. Otherwise the
+// binary's own location decides: inside a bundle it is the bundle's Resources
+// directory, and everywhere else the wizard sits at <root>/bin/mash-wizard.
 fn mash_resources() -> PathBuf {
-    mash_root().join("Contents/Resources")
-}
-
-// The bundle this process runs from: the nearest ancestor ending in `.app`.
-fn mash_root() -> PathBuf {
-    env::current_exe()
-        .ok()
-        .and_then(|exe| {
-            exe.ancestors()
-                .find(|path| path.extension().is_some_and(|ext| ext == "app"))
-                .map(Path::to_path_buf)
-        })
-        .unwrap_or_else(|| PathBuf::from("/Applications/Mash.app"))
+    if let Some(explicit) = env::var_os("MASH_RES_ROOT") {
+        if !explicit.is_empty() {
+            return PathBuf::from(explicit);
+        }
+    }
+    let exe = match env::current_exe() {
+        Ok(path) => path,
+        Err(_) => return PathBuf::from("/Applications/Mash.app/Contents/Resources"),
+    };
+    if let Some(bundle) = exe
+        .ancestors()
+        .find(|path| path.extension().is_some_and(|ext| ext == "app"))
+    {
+        return bundle.join("Contents/Resources");
+    }
+    exe.parent()
+        .and_then(Path::parent)
+        .map(Path::to_path_buf)
+        .unwrap_or_else(|| PathBuf::from("/Applications/Mash.app/Contents/Resources"))
 }
 
 fn apply_steps<B: Backend>(
@@ -861,6 +935,15 @@ fn apply_steps<B: Backend>(
                     "credentials saved; reopen Mash after Docker starts".into()
                 }
             })
+        } else if step == STEP_VOICE {
+            install_voice_model(
+                terminal,
+                index,
+                steps.len(),
+                step,
+                &messages,
+                plan.voice.as_ref().expect("STEP_VOICE follows a choice"),
+            )
         } else {
             install_python(&plan.python)
         };
@@ -872,7 +955,8 @@ fn apply_steps<B: Backend>(
         let environment_step = step == STEP_HINDSIGHT
             || step == STEP_HINDSIGHT_DAEMON
             || step == STEP_DESIGN
-            || step == STEP_PENPOT;
+            || step == STEP_PENPOT
+            || step == STEP_VOICE;
         let message = match result {
             Ok(message) => message,
             Err(_) if !environment_step && tools_available(&plan.tools) => {
@@ -1521,7 +1605,6 @@ mod tests {
         assert!(steps.contains(&STEP_HINDSIGHT.to_string()));
         assert!(steps.contains(&STEP_DESIGN.to_string()));
         assert!(steps.contains(&STEP_PENPOT.to_string()));
-        // Account creation follows its design dependencies.
         assert_eq!(steps.last().unwrap(), STEP_PENPOT);
         let full = install_steps(&install_plan([true, true]), &["gopls"]);
         let hindsight = full.iter().position(|s| s == STEP_HINDSIGHT).unwrap();
@@ -1565,11 +1648,28 @@ mod tests {
     }
 
     #[test]
-    fn mash_root_is_the_running_bundle() {
-        // Under `cargo test` the executable is not inside a .app, so this
-        // asserts the fallback rather than a real bundle.
-        let root = mash_root();
-        assert!(root.to_string_lossy().ends_with("Mash.app"));
+    fn resource_root_follows_the_binary_not_a_bundle() {
+        // Under `cargo test` the executable is target/debug/deps/mash-wizard-*,
+        // so there is no bundle and no <root>/bin layout: the function must fall
+        // back instead of inventing a path from the test binary's ancestors.
+        let root = mash_resources();
+        assert!(!root.as_os_str().is_empty());
+        assert!(root.is_absolute());
+    }
+
+    #[test]
+    fn explicit_resource_root_wins() {
+        // The launcher exports MASH_RES_ROOT, and the wizard must agree with the
+        // panes about where the payload lives rather than re-deriving it.
+        let previous = env::var_os("MASH_RES_ROOT");
+        // SAFETY: this test is the only writer of this variable in this process.
+        unsafe { env::set_var("MASH_RES_ROOT", "/opt/letsmash") };
+        assert_eq!(mash_resources(), PathBuf::from("/opt/letsmash"));
+        assert_eq!(mash_bin(), PathBuf::from("/opt/letsmash/bin"));
+        match previous {
+            Some(value) => unsafe { env::set_var("MASH_RES_ROOT", value) },
+            None => unsafe { env::remove_var("MASH_RES_ROOT") },
+        }
     }
 
     #[test]
@@ -1627,6 +1727,7 @@ mod tests {
         assert!(!steps.iter().any(|s| s == "Install npm packages"));
         assert!(!steps.iter().any(|s| s == "Install Python packages"));
         assert!(!steps.iter().any(|s| s == "Install CUA Driver"));
+        assert!(!steps.iter().any(|s| s == STEP_VOICE));
         assert_eq!(
             steps,
             vec![
@@ -1645,5 +1746,19 @@ mod tests {
         let steps = install_steps(&plan, &["gopls"]);
         assert!(steps.iter().any(|step| step == "Install npm packages"));
         assert!(steps.iter().any(|step| step == "Install Homebrew packages"));
+    }
+
+    #[test]
+    fn a_chosen_dictation_model_reaches_installation() {
+        // The choice was collected for this long before it installed anything.
+        let mut plan = install_plan([false, false]);
+        assert!(!install_steps(&plan, &[]).iter().any(|s| s == STEP_VOICE));
+        plan.voice = Some(voice::VoiceChoice {
+            model_id: "parakeet-unified-en-0.6b".into(),
+            languages: vec!["en".into()],
+            needs_detector: false,
+        });
+        let steps = install_steps(&plan, &[]);
+        assert_eq!(steps.last().map(String::as_str), Some(STEP_VOICE));
     }
 }

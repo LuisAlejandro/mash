@@ -18,7 +18,7 @@ mash_isolate "$home" pane
 export MASH_PANE=1
 # MASH_USER_SHELL stands in for the account's shell in tests, so the branch
 # below can be exercised without a pty or a second account.
-user_shell="${MASH_USER_SHELL:-$(dscl . -read "/Users/$(id -un)" UserShell | awk '{print $2}')}"
+user_shell="${MASH_USER_SHELL:-$(mash_real_shell)}"
 # The account's shell startup is not read, the same way zsh panes already ignore
 # it: a ~/.bashrc that prepends ~/.local/bin or /opt/homebrew/bin runs after
 # isolation and puts a host pi back in front of the bundled one. zsh needs

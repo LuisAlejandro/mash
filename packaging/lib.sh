@@ -1,10 +1,34 @@
 #!/bin/bash
 # Shared by Mash's launcher and the shell inside its panes.
-# HOME is never changed. Paths come from the directory service, not $HOME.
-# Personal trees are read-only. This file exports variables. It does not write them.
+# HOME is never changed. Personal trees are read-only.
+# This file exports variables. It does not write them.
 
+# The account database, not $HOME: a Mash launched from another environment, or
+# with HOME overridden by a tool, must still resolve the real home. macOS reads
+# the directory service; Linux reads NSS through getent, which also answers for
+# LDAP and SSSD accounts. Both fall back to $HOME rather than guessing a path.
 mash_real_home() {
-  dscl . -read "/Users/$(id -un)" NFSHomeDirectory | awk '{print $2}'
+  local home=""
+  if command -v dscl >/dev/null 2>&1; then
+    home="$(dscl . -read "/Users/$(id -un)" NFSHomeDirectory 2>/dev/null | awk '{print $2}')"
+  fi
+  if [ -z "$home" ] && command -v getent >/dev/null 2>&1; then
+    home="$(getent passwd "$(id -un)" 2>/dev/null | cut -d: -f6)"
+  fi
+  printf '%s\n' "${home:-${HOME:-}}"
+}
+
+# The account's login shell, by the same rules: the directory service on macOS,
+# NSS elsewhere, and $SHELL as the fallback.
+mash_real_shell() {
+  local shell=""
+  if command -v dscl >/dev/null 2>&1; then
+    shell="$(dscl . -read "/Users/$(id -un)" UserShell 2>/dev/null | awk '{print $2}')"
+  fi
+  if [ -z "$shell" ] && command -v getent >/dev/null 2>&1; then
+    shell="$(getent passwd "$(id -un)" 2>/dev/null | cut -d: -f7)"
+  fi
+  printf '%s\n' "${shell:-${SHELL:-/bin/sh}}"
 }
 
 # Clear inherited HERDR_* and point every included tool at ~/.mash.

@@ -1,0 +1,245 @@
+diff --git a/src/apprt/gtk/build/info.zig b/src/apprt/gtk/build/info.zig
+index fc6478d..8f1dd20 100644
+--- a/src/apprt/gtk/build/info.zig
++++ b/src/apprt/gtk/build/info.zig
+@@ -1,7 +1,7 @@
+ const builtin = @import("builtin");
+ 
+ /// Base application ID
+-pub const base_application_id = "com.mitchellh.ghostty";
++pub const base_application_id = "app.mash.Mash";
+ 
+ /// GTK application ID
+ pub const application_id = switch (builtin.mode) {
+@@ -9,7 +9,7 @@ pub const application_id = switch (builtin.mode) {
+     .ReleaseFast, .ReleaseSmall => base_application_id,
+ };
+ 
+-pub const resource_path = "/com/mitchellh/ghostty";
++pub const resource_path = "/app/mash/Mash";
+ 
+ /// GTK object path
+ pub const object_path = switch (builtin.mode) {
+diff --git a/src/apprt/gtk/class/application.zig b/src/apprt/gtk/class/application.zig
+index 80cc8bd..4694bdc 100644
+--- a/src/apprt/gtk/class/application.zig
++++ b/src/apprt/gtk/class/application.zig
+@@ -2288,7 +2288,7 @@ const Action = struct {
+ 
+         // Set a default title if we don't already have one
+         const t = switch (n.title.len) {
+-            0 => "Ghostty",
++            0 => "Mash Terminal",
+             else => n.title,
+         };
+ 
+@@ -2296,7 +2296,7 @@ const Action = struct {
+         defer notification.unref();
+         notification.setBody(n.body);
+ 
+-        const icon = gio.ThemedIcon.new("com.mitchellh.ghostty");
++        const icon = gio.ThemedIcon.new("app.mash.Mash");
+         defer icon.unref();
+         notification.setIcon(icon.as(gio.Icon));
+         notification.setDefaultActionAndTargetValue(
+diff --git a/src/apprt/gtk/class/surface.zig b/src/apprt/gtk/class/surface.zig
+index 6a24035..c27e50d 100644
+--- a/src/apprt/gtk/class/surface.zig
++++ b/src/apprt/gtk/class/surface.zig
+@@ -1765,7 +1765,7 @@ pub const Surface = extern struct {
+         };
+ 
+         const t = switch (title.len) {
+-            0 => "Ghostty",
++            0 => "Mash Terminal",
+             else => title,
+         };
+ 
+@@ -1773,7 +1773,7 @@ pub const Surface = extern struct {
+         defer notification.unref();
+         notification.setBody(body);
+ 
+-        const icon = gio.ThemedIcon.new("com.mitchellh.ghostty");
++        const icon = gio.ThemedIcon.new("app.mash.Mash");
+         defer icon.unref();
+         notification.setIcon(icon.as(gio.Icon));
+ 
+diff --git a/src/apprt/gtk/class/tab.zig b/src/apprt/gtk/class/tab.zig
+index 4bfd65f..5f54b58 100644
+--- a/src/apprt/gtk/class/tab.zig
++++ b/src/apprt/gtk/class/tab.zig
+@@ -490,7 +490,7 @@ pub const Tab = extern struct {
+         // otherwise the overridden title if it exists, otherwise
+         // the terminal title if it exists, otherwise a default string.
+         const plain = plain: {
+-            const default = "Ghostty";
++            const default = "Mash Terminal";
+             const config_title: ?[*:0]const u8 = title: {
+                 const config = config_ orelse break :title null;
+                 break :title config.get().title orelse null;
+diff --git a/src/apprt/gtk/class/window.zig b/src/apprt/gtk/class/window.zig
+index 8c5e055..883719e 100644
+--- a/src/apprt/gtk/class/window.zig
++++ b/src/apprt/gtk/class/window.zig
+@@ -1413,7 +1413,7 @@ pub const Window = extern struct {
+     ) callconv(.c) ?[*:0]const u8 {
+         if (title_override_) |v| return glib.ext.dupeZ(u8, std.mem.span(v));
+         if (title_) |v| return glib.ext.dupeZ(u8, std.mem.span(v));
+-        return glib.ext.dupeZ(u8, "Ghostty");
++        return glib.ext.dupeZ(u8, "Mash Terminal");
+     }
+ 
+     fn closureSubtitle(
+@@ -2005,9 +2005,9 @@ pub const Window = extern struct {
+         _: ?*glib.Variant,
+         self: *Self,
+     ) callconv(.c) void {
+-        const name = "Ghostty";
+-        const icon = "com.mitchellh.ghostty";
+-        const website = "https://ghostty.org";
++        const name = "Mash Terminal";
++        const icon = "app.mash.Mash";
++        const website = "https://letsma.sh";
+ 
+         if (adw_version.supportsDialogs()) {
+             adw.showAboutDialog(
+@@ -2015,13 +2015,13 @@ pub const Window = extern struct {
+                 "application-name",
+                 name,
+                 "developer-name",
+-                i18n._("Ghostty Developers"),
++                i18n._("Mash"),
+                 "application-icon",
+                 icon,
+                 "version",
+                 build_config.version_string.ptr,
+                 "issue-url",
+-                "https://github.com/ghostty-org/ghostty/issues",
++                "https://github.com/LuisAlejandro/mash/issues",
+                 "website",
+                 website,
+                 @as(?*anyopaque, null),
+diff --git a/src/apprt/gtk/ui/1.5/inspector-window.blp b/src/apprt/gtk/ui/1.5/inspector-window.blp
+index a7625bc..ee1b15f 100644
+--- a/src/apprt/gtk/ui/1.5/inspector-window.blp
++++ b/src/apprt/gtk/ui/1.5/inspector-window.blp
+@@ -3,7 +3,7 @@ using Adw 1;
+ 
+ template $GhosttyInspectorWindow: Adw.ApplicationWindow {
+   title: _("Ghostty: Terminal Inspector");
+-  icon-name: "com.mitchellh.ghostty";
++  icon-name: "app.mash.Mash";
+   default-width: 1000;
+   default-height: 600;
+ 
+diff --git a/src/apprt/gtk/winproto/x11.zig b/src/apprt/gtk/winproto/x11.zig
+index 11cce24..9700a8b 100644
+--- a/src/apprt/gtk/winproto/x11.zig
++++ b/src/apprt/gtk/winproto/x11.zig
+@@ -42,9 +42,9 @@ pub const App = struct {
+         const x11_program_name: [:0]const u8 = if (config.@"x11-instance-name") |pn|
+             pn
+         else if (builtin.mode == .Debug)
+-            "ghostty-debug"
++            "mash-terminal-debug"
+         else
+-            "ghostty";
++            "mash-terminal";
+ 
+         // Set the X11 window class property (WM_CLASS) if we are on an X11
+         // display.
+diff --git a/src/build_config.zig b/src/build_config.zig
+index 2f665cc..4651d70 100644
+--- a/src/build_config.zig
++++ b/src/build_config.zig
+@@ -55,7 +55,7 @@ pub const i18n: bool = config.i18n;
+ /// There are many places that don't use this variable so simply swapping
+ /// this variable is NOT ENOUGH to change the bundle ID. I just wanted to
+ /// avoid it in Zig coe as much as possible.
+-pub const bundle_id = "com.mitchellh.ghostty";
++pub const bundle_id = "app.mash.Mash";
+ 
+ /// Mash: true when this Ghostty is nested inside Mash.app and is reached only
+ /// through Mash's launcher (`packaging/mash`), which passes -e herdr-pane and
+diff --git a/src/cli/edit_config.zig b/src/cli/edit_config.zig
+index cc6aec6..e8d0f24 100644
+--- a/src/cli/edit_config.zig
++++ b/src/cli/edit_config.zig
+@@ -33,7 +33,7 @@ pub const Options = struct {
+ /// The filepath opened is the default user-specific configuration
+ /// file, which is typically located at `$XDG_CONFIG_HOME/ghostty/config.ghostty`.
+ /// On macOS, this may also be located at
+-/// `~/Library/Application Support/com.mitchellh.ghostty/config.ghostty`.
++/// `~/Library/Application Support/app.mash.Mash/config.ghostty`.
+ /// On macOS, whichever path exists and is non-empty will be prioritized,
+ /// prioritizing the Application Support directory if neither are
+ /// non-empty.
+diff --git a/src/cli/list_themes.zig b/src/cli/list_themes.zig
+index b5f497d..b4d9f61 100644
+--- a/src/cli/list_themes.zig
++++ b/src/cli/list_themes.zig
+@@ -878,7 +878,7 @@ const Preview = struct {
+                     "",
+                     "For more details on configuration and themes, visit the Ghostty documentation:",
+                     "",
+-                    "https://ghostty.org/docs/config/reference",
++                    "https://letsma.sh",
+                 };
+ 
+                 for (save_instructions, 0..) |instruction, captured_i| {
+diff --git a/src/cli/new_tab.zig b/src/cli/new_tab.zig
+index 040419a..bed4317 100644
+--- a/src/cli/new_tab.zig
++++ b/src/cli/new_tab.zig
+@@ -137,8 +137,8 @@ pub const Options = struct {
+ ///
+ /// GTK uses an application ID to identify instances of applications. If Ghostty
+ /// is compiled with release optimizations, the default application ID will be
+-/// `com.mitchellh.ghostty`. If Ghostty is compiled with debug optimizations,
+-/// the default application ID will be `com.mitchellh.ghostty-debug`.  The
++/// `app.mash.Mash`. If Ghostty is compiled with debug optimizations,
++/// the default application ID will be `app.mash.Mash-debug`.  The
+ /// `class` configuration entry can be used to set up a custom application
+ /// ID. The class name must follow the requirements defined [in the GTK
+ /// documentation](https://docs.gtk.org/gio/type_func.Application.id_is_valid.html)
+diff --git a/src/cli/new_window.zig b/src/cli/new_window.zig
+index e520b75..45fc2d6 100644
+--- a/src/cli/new_window.zig
++++ b/src/cli/new_window.zig
+@@ -136,8 +136,8 @@ pub const Options = struct {
+ ///
+ /// GTK uses an application ID to identify instances of applications. If Ghostty
+ /// is compiled with release optimizations, the default application ID will be
+-/// `com.mitchellh.ghostty`. If Ghostty is compiled with debug optimizations,
+-/// the default application ID will be `com.mitchellh.ghostty-debug`.  The
++/// `app.mash.Mash`. If Ghostty is compiled with debug optimizations,
++/// the default application ID will be `app.mash.Mash-debug`.  The
+ /// `class` configuration entry can be used to set up a custom application
+ /// ID. The class name must follow the requirements defined [in the GTK
+ /// documentation](https://docs.gtk.org/gio/type_func.Application.id_is_valid.html)
+diff --git a/src/config/Config.zig b/src/config/Config.zig
+index 859bf46..0d548ff 100644
+--- a/src/config/Config.zig
++++ b/src/config/Config.zig
+@@ -1557,7 +1557,7 @@ title: ?[:0]const u8 = null,
+ /// The class name must follow the requirements defined [in the GTK
+ /// documentation](https://docs.gtk.org/gio/type_func.Application.id_is_valid.html).
+ ///
+-/// The default is `com.mitchellh.ghostty`.
++/// The default is `app.mash.Mash`.
+ ///
+ /// This only affects GTK builds.
+ class: ?[:0]const u8 = null,
+diff --git a/src/config/config-template b/src/config/config-template
+index 6330913..e61a89d 100644
+--- a/src/config/config-template
++++ b/src/config/config-template
+@@ -16,7 +16,7 @@
+ # all available config options and their default values.
+ #
+ # Additionally, each config option is also explained in detail
+-# on Ghostty's website, at https://ghostty.org/docs/config.
++# on Ghostty's website, at https://letsma.sh.
+ #
+ # Ghostty can reload the configuration while running by using the menu
+ # options or the bound key (default: Command + Shift + comma on macOS and
