@@ -6,6 +6,89 @@ mash_assets() {
   python3 "${MASH_ASSETS_PY:-$root/packaging/assets.py}" "$@"
 }
 
+# Resolve one pinned component for one target into shell variables. Callers get
+# exactly the artifact the manifest names, or a hard failure -- never a host
+# binary that happens to share the name.
+mash_resolve() {
+  local spec
+  spec="$(mash_assets resolve-shell "$1" "$2")" || return 1
+  eval "$spec"
+}
+
+# Download, verify, and extract one pinned component into a directory.
+mash_fetch_pinned() {
+  local component="$1" target="$2" outdir="$3" tmp
+  local COMPONENT TARGET STRATEGY VERSION URL SHA256 ARCHIVE MEMBER
+  mash_resolve "$component" "$target" || {
+    echo "cannot resolve $component for $target" >&2
+    return 1
+  }
+  [ -n "${URL:-}" ] || {
+    echo "$component for $target is not a downloaded artifact" >&2
+    return 1
+  }
+  tmp="$(mktemp -d)"
+  curl -fL --retry 2 --max-time 600 -o "$tmp/archive" "$URL" || {
+    echo "could not download $component $VERSION for $target" >&2
+    rm -rf "$tmp"
+    return 1
+  }
+  echo "$SHA256  $tmp/archive" | sha256sum -c - >/dev/null || {
+    echo "$component $VERSION for $target failed its checksum" >&2
+    rm -rf "$tmp"
+    return 1
+  }
+  mkdir -p "$outdir"
+  case "$ARCHIVE" in
+  tar.gz) tar -xzf "$tmp/archive" -C "$tmp" ;;
+  tar.xz) tar -xJf "$tmp/archive" -C "$tmp" ;;
+  zip) unzip -q "$tmp/archive" -d "$tmp" ;;
+  gz) gunzip -c "$tmp/archive" >"$tmp/$MEMBER" ;;
+  raw) cp "$tmp/archive" "$tmp/$MEMBER" ;;
+  *)
+    echo "$component: unsupported archive $ARCHIVE" >&2
+    rm -rf "$tmp"
+    return 1
+    ;;
+  esac
+  [ -f "$tmp/$MEMBER" ] || {
+    echo "$component archive has no $MEMBER" >&2
+    rm -rf "$tmp"
+    return 1
+  }
+  cp "$tmp/$MEMBER" "$outdir"
+  chmod 755 "$outdir/$(basename "$MEMBER")"
+  rm -rf "$tmp"
+}
+
+# Stage the parts of the Linux payload that are already portable. Node, Python,
+# Pi packages, plugins and skills are added by the shared staging in U2; this
+# function is the seam it extends.
+mash_stage_linux_payload() {
+  local product="$1" target="$2"
+  mkdir -p "$product/bin" "$product/defaults"
+
+  # Herdr is the workspace server a pane talks to.
+  mash_fetch_pinned herdr "$target" "$product/bin" || {
+    echo "could not stage herdr for $target" >&2
+    return 1
+  }
+
+  cp "$root/packaging/lib.sh" "$product/bin/lib.sh"
+  cp "$root/packaging/mash-shell" "$product/bin/mash-shell"
+  cp "$root/packaging/herdr-pane" "$product/bin/herdr-pane"
+  # Only the shipped helpers: their tests and bytecode live beside them.
+  for helper in "$root/packaging/helpers"/*; do
+    [ -f "$helper" ] || continue
+    cp "$helper" "$product/bin/"
+  done
+  chmod 755 "$product/bin/lib.sh" "$product/bin/mash-shell" "$product/bin/herdr-pane"
+  chmod 755 "$product/bin/"* 2>/dev/null || true
+
+  cp -R "$root/packaging/defaults/." "$product/defaults/"
+  tr -d '[:space:]' <"$root/VERSION" >"$product/VERSION"
+}
+
 # The readable pin list is a projection of packaging/assets.json, which is the
 # single authority for every pinned version and checksum. Nothing here may hard
 # code a version again: one that disagrees with the manifest is exactly the drift

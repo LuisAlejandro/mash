@@ -72,3 +72,12 @@ undo-release:
 # script as .github/workflows/release.yml, so local and CI cannot drift apart.
 release-preflight:
 	@./scripts/preflight.sh
+
+# Native Linux package for this machine's architecture. Runs on Ubuntu 24.04
+# x86_64 or arm64 only; the macOS build stays in packaging/build.sh.
+package-linux:
+	@./packaging/build-linux.sh
+
+# Audit a built package without installing it.
+verify-linux:
+	@./packaging/tests/verify-linux-installed.sh $${DEB:?Set DEB=dist/letsmash_<version>_<arch>.deb}

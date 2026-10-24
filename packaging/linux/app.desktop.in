@@ -1,0 +1,19 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Mash
+Comment=A desktop workspace for AI coding agents
+GenericName=AI coding workspace
+Categories=Development;System;TerminalEmulator;
+Keywords=mash;agent;terminal;herdr;pi;fresh;
+TryExec=/opt/letsmash/bin/letsmash-launch
+Exec=/opt/letsmash/bin/letsmash-launch
+Icon=@APPID@
+Terminal=false
+StartupNotify=true
+StartupWMClass=@APPID@
+# DBus activation is deliberately off. Mash's launch carries the isolated
+# environment (XDG dirs, Herdr sockets, MASH_BIN) that a DBus-activated process
+# would not inherit, and it must never attach to a personal Ghostty instance.
+DBusActivatable=false
+X-GNOME-UsesNotifications=true

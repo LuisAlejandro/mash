@@ -11,12 +11,13 @@
     "binary": "A hash-pinned archive downloaded at build or first run. Requires url, sha256, archive and member for every supported target that ships it.",
     "source": "A hash-pinned source archive compiled by the build.",
     "git": "A pinned git ref cloned by the build.",
+    "build": "A build-time tool the host image must provide at exactly this version; it never reaches the user.",
     "npm": "Installed by the bundled npm.",
     "pip": "Installed into a Mash venv by the bundled python.",
     "package": "Provided by the platform package manager or the host system; never vendored by Mash."
   },
   "pinOrder": [
-    "ghostty", "herdr", "fresh", "pi", "node", "python", "git", "lazygit",
+    "ghostty", "blueprint-compiler", "herdr", "fresh", "pi", "node", "python", "git", "lazygit",
     "lazydocker", "pet", "zoxide", "eza", "fzf", "fd", "bat", "rg", "jq", "gh",
     "delta", "atuin", "gopls", "rust-analyzer", "marksman", "texlab",
     "bash-language-server", "typescript-language-server", "yaml-language-server",
@@ -39,6 +40,14 @@
       "ref": "fork-main",
       "commit": "a3f0c0b79665f26b0b3c705aaa4362b2ccca2db1",
       "frontends": {"macos-arm64": "swift", "linux-amd64": "gtk", "linux-arm64": "gtk"}
+    },
+    "blueprint-compiler": {
+      "version": "0.16.0",
+      "strategy": "build",
+      "install": "build-host",
+      "repo": "https://gitlab.gnome.org/jwestman/blueprint-compiler.git",
+      "ref": "v0.16.0",
+      "targets": ["linux-amd64", "linux-arm64"]
     },
     "herdr": {
       "version": "0.9.3",

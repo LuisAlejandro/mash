@@ -1,4 +1,5 @@
 ghostty 1.3.1
+blueprint-compiler 0.16.0
 herdr 0.9.3
 fresh 0.5.1
 pi 1.1.0

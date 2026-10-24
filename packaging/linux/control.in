@@ -1,0 +1,20 @@
+Package: letsmash
+Version: @VERSION@
+Architecture: @ARCH@
+Maintainer: @MAINTAINER@
+Installed-Size: @INSTALLED_SIZE@
+Depends: @DEPENDS@
+Section: x11
+Priority: optional
+Homepage: https://letsma.sh
+Description: Mash, a desktop workspace for AI coding agents
+ Mash is an isolated desktop environment for AI coding agents: a pinned
+ terminal frontend, a Herdr workspace with panes and tabs, the Pi agent,
+ and the Fresh editor, all sharing one writable data folder in ~/.mash.
+ .
+ The macOS build ships as a signed disk image; this package is the Linux
+ build for Ubuntu 24.04 with GNOME on Wayland or Xorg.
+ .
+ Product files live in /opt/letsmash and are read-only. Everything Mash
+ writes lives under ~/.mash, which the package never touches: upgrades
+ and removal leave your configuration, credentials and workspaces alone.

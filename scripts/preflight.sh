@@ -103,7 +103,7 @@ fi
 
 echo "preflight: release inputs are present"
 
-inputs=(
+files=(
     packaging/build.sh
     packaging/carry.sh
     packaging/lib.sh
@@ -127,17 +127,24 @@ inputs=(
     packaging/assets.json
     packaging/assets.py
     packaging/wizard/Cargo.toml
+    packaging/build-linux.sh
+    packaging/assets.json
+    packaging/assets.py
+    packaging/linux/control.in
+    packaging/linux/app.desktop.in
+    packaging/linux/render-icons.py
+    packaging/tests/verify-linux-installed.sh
     .gitchangelog.rc
     .gitchangelog.tpl
 )
 missing=0
-for f in "${inputs[@]}"; do
+for f in "${files[@]}"; do
     [ -e "$f" ] || {
         bad "$f is missing"
         missing=$((missing + 1))
     }
 done
-[ "$missing" -eq 0 ] && ok "${#inputs[@]} file(s) present"
+[ "$missing" -eq 0 ] && ok "${#files[@]} file(s) present"
 
 # Advisory only. shellcheck is on GitHub's ubuntu runners but not required on a
 # maintainer's machine, and its findings have never been triaged here, so this

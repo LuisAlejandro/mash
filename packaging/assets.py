@@ -289,6 +289,25 @@ def _main(argv: list[str]) -> int:
                 print(name)
         return 0
 
+    if command == "resolve-shell":
+        # Shell callers cannot parse JSON without a dependency, so the same
+        # resolution is offered as KEY=VALUE lines they can `eval`.
+        if len(argv) < 4:
+            print("usage: assets.py resolve-shell <component> <target>", file=sys.stderr)
+            return 2
+        try:
+            spec = manifest.resolve(argv[2], argv[3])
+        except AssetError as error:
+            print(f"assets: {error}", file=sys.stderr)
+            return 1
+        for key in ("component", "target", "strategy", "version", "url", "sha256",
+                    "archive", "member", "package", "ref", "repo"):
+            value = spec.get(key)
+            if value is None:
+                continue
+            print(f"{key.upper()}={value}")
+        return 0
+
     if command == "resolve":
         if len(argv) < 4:
             print("usage: assets.py resolve <component> <target>", file=sys.stderr)
