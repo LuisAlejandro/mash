@@ -92,6 +92,7 @@ mash_stage_runtimes() {
   # has to be on PATH or it reports a missing interpreter.
   env HOME="$npm_env_home" \
     PATH="$res/node/bin:$PATH" \
+    npm_config_cache="${MASH_CACHE:-$npm_env_home}/npm" \
     npm_config_update_notifier=false \
     npm_config_fund=false \
     npm_config_audit=false \
@@ -212,38 +213,47 @@ mash_stage_toolchain() {
 # triple differs, and it comes from the toolchain the caller staged.
 mash_stage_fresh() {
   local res="$1" arch="$2" cargo_home="${3:-}"
-  local work_fresh tmp src
-  tmp="$(mktemp -d)"
-  # Fresh's source archive carries no platform in it, so the manifest answers
-  # every target with the same pin.
-  mash_fetch_tree fresh "${MASH_FRESH_TARGET:-linux-amd64}" "$tmp" || {
-    rm -rf "$tmp"
-    return 1
-  }
-  src="$tmp/fresh-$(mash_version fresh)"
-  [ -d "$src" ] || {
-    echo "the fresh archive has no fresh-$(mash_version fresh) directory" >&2
-    rm -rf "$tmp"
-    return 1
-  }
-  for name in fresh-config-dir fresh-reveal-in-finder; do
-    if ! patch -p1 -d "$src" <"$root/packaging/patches/$name.patch"; then
-      echo "$name.patch did not apply. Leaving the package unbuilt." >&2
+  local src tmp patched
+  # The patched source lives in the cache: extracting to a fresh temp directory
+  # makes cargo see a new path on every build and recompile the whole crate.
+  if [ -n "${MASH_CACHE:-}" ]; then
+    src="$MASH_CACHE/fresh-src"
+  else
+    src="$(mktemp -d)/fresh"
+  fi
+  if [ ! -f "$src/.mash-fresh-src" ]; then
+    tmp="$(mktemp -d)"
+    mash_fetch_tree fresh "${MASH_FRESH_TARGET:-linux-amd64}" "$tmp" || {
       rm -rf "$tmp"
       return 1
-    fi
-  done
-  work_fresh="$(mktemp -d)"
+    }
+    rm -rf "$src"
+    mkdir -p "$(dirname "$src")"
+    mv "$tmp/fresh-$(mash_version fresh)" "$src" || {
+      rm -rf "$tmp"
+      return 1
+    }
+    for name in fresh-config-dir fresh-reveal-in-finder; do
+      if ! patch -p1 -d "$src" <"$root/packaging/patches/$name.patch"; then
+        echo "$name.patch did not apply. Leaving the package unbuilt." >&2
+        rm -rf "$tmp"
+        return 1
+      fi
+    done
+    printf '%s\n' "$(mash_version fresh)" >"$src/.mash-fresh-src"
+    rm -rf "$tmp"
+  fi
   # liblzma-sys probes pkg-config and takes a host shared library on some
   # systems; forcing the vendored copy keeps the binary self-contained.
-  if ! env LZMA_API_STATIC=1 CARGO_HOME="$cargo_home" CARGO_TARGET_DIR="$work_fresh" \
+  if ! env LZMA_API_STATIC=1 CARGO_HOME="$cargo_home" \
+    CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$src/target}" \
     "${MASH_CARGO:-cargo}" build --release --manifest-path "$src/Cargo.toml" >/dev/null 2>&1; then
     echo "fresh failed to build" >&2
-    rm -rf "$tmp" "$work_fresh"
     return 1
   fi
+  patched="${CARGO_TARGET_DIR:-$src/target}/release/fresh"
   mkdir -p "$res/libexec" "$res/bin"
-  cp "$work_fresh/release/fresh" "$res/libexec/fresh"
+  cp "$patched" "$res/libexec/fresh"
   chmod 755 "$res/libexec/fresh"
   cat >"$res/bin/fresh" <<'EOF'
 #!/bin/sh
@@ -263,7 +273,6 @@ esac
 exec "$(cd "$(dirname "$0")/../libexec" && pwd)/fresh" "$@"
 EOF
   chmod 755 "$res/bin/fresh"
-  rm -rf "$tmp" "$work_fresh"
   echo "staged fresh $arch"
 }
 
@@ -272,23 +281,64 @@ EOF
 mash_stage_wizard() {
   local res="$1" cargo_home="${2:-}" target_dir
   target_dir="$(mktemp -d)"
-  if ! env CARGO_HOME="$cargo_home" CARGO_TARGET_DIR="$target_dir" \
+  if ! env CARGO_HOME="$cargo_home" CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$target_dir}" \
     "${MASH_CARGO:-cargo}" build --release --locked \
     --manifest-path "$root/packaging/wizard/Cargo.toml" >/dev/null 2>&1; then
     echo "the wizard failed to build" >&2
     rm -rf "$target_dir"
     return 1
   fi
-  [ -x "$target_dir/release/mash-wizard" ] || {
+  local built="${CARGO_TARGET_DIR:-$target_dir}/release/mash-wizard"
+  [ -x "$built" ] || {
     echo "the wizard binary was not produced" >&2
     rm -rf "$target_dir"
     return 1
   }
   mkdir -p "$res/bin"
-  cp "$target_dir/release/mash-wizard" "$res/bin/mash-wizard"
+  cp "$built" "$res/bin/mash-wizard"
   chmod 755 "$res/bin/mash-wizard"
   rm -rf "$target_dir"
   echo "staged mash-wizard"
+}
+
+# Fetch one URL into <out>, through a cache keyed by its pinned checksum.
+#
+# The checksum is a content address, so a cache hit needs no verification beyond
+# the file being present: a wrong file could not have been stored under it. A
+# corrupt cache entry is therefore treated as a miss and replaced.
+mash_download() {
+  local url="$1" sha="$2" out="$3" cache_file
+  cache_file="${MASH_CACHE:-}/downloads/$sha"
+  if [ -n "${MASH_CACHE:-}" ] && [ -f "$cache_file" ]; then
+    cp "$cache_file" "$out"
+    if echo "$sha  $out" | sha256sum -c - >/dev/null 2>&1; then
+      return 0
+    fi
+    rm -f "$cache_file"
+  fi
+  curl -fL --retry 3 --max-time 900 -o "$out" "$url" || return 1
+  if ! echo "$sha  $out" | sha256sum -c - >/dev/null 2>&1; then
+    rm -f "$out"
+    return 1
+  fi
+  if [ -n "${MASH_CACHE:-}" ]; then
+    mkdir -p "$(dirname "$cache_file")"
+    cp "$out" "$cache_file.tmp" && mv "$cache_file.tmp" "$cache_file"
+  fi
+  return 0
+}
+
+# Extract a pinned toolchain once per architecture. A version marker records
+# what is on disk, so a warm cache skips both the download and the extraction.
+mash_ensure_toolchain() {
+  local component="$1" target="$2" dest="$3" want marker
+  want="$(mash_version "$component")" || return 1
+  marker="$dest/.mash-toolchain"
+  if [ -f "$marker" ] && [ "$(cat "$marker")" = "$want" ]; then
+    return 0
+  fi
+  mash_stage_toolchain "$component" "$target" "$dest" || return 1
+  printf '%s\n' "$want" >"$marker"
 }
 
 # The scripts a pane, the launcher and the plugins expect to find beside them.

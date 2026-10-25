@@ -28,7 +28,7 @@ mash_fetch_pinned() {
     return 1
   }
   tmp="$(mktemp -d)"
-  curl -fL --retry 2 --max-time 600 -o "$tmp/archive" "$URL" || {
+  mash_download "$URL" "$SHA256" "$tmp/archive" || {
     echo "could not download $component $VERSION for $target" >&2
     rm -rf "$tmp"
     return 1
@@ -91,13 +91,8 @@ mash_fetch_tree() {
     return 1
   }
   tmp="$(mktemp -d)"
-  curl -fL --retry 2 --max-time 900 -o "$tmp/archive" "$URL" || {
+  mash_download "$URL" "$SHA256" "$tmp/archive" || {
     echo "could not download $component $VERSION for $target" >&2
-    rm -rf "$tmp"
-    return 1
-  }
-  echo "$SHA256  $tmp/archive" | sha256sum -c - >/dev/null || {
-    echo "$component $VERSION for $target failed its checksum" >&2
     rm -rf "$tmp"
     return 1
   }

@@ -41,6 +41,13 @@ linux-arm64) debarch="arm64" ;;
 esac
 
 work="$root/dist/.linux-build/$target"
+# Build caches live outside the staging tree, which is wiped every run: a
+# payload-only edit must not recompile Ghostty, and a checksum-pinned download
+# must not be fetched twice. CI points this at its own cache directory.
+cache="${MASH_BUILD_CACHE:-$root/dist/.cache}"
+mkdir -p "$cache/downloads" "$cache/toolchains/$target" "$cache/cargo" \
+  "$cache/cargo-target/$target" "$cache/go-mod" "$cache/go-build" \
+  "$cache/zig/$target" "$cache/npm" "$cache/pip"
 stage="$work/pkgroot"
 productrel="${prefix#/}"
 product="$stage/$productrel"
@@ -114,27 +121,46 @@ mkdir -p "$product/bin" "$product/lib" "$work/npm-cache" "$work/pip-cache" "$sta
 # frontend rather than the Swift app, so no Xcode and no .app bundle.
 # -fno-sys=gtk4-layer-shell because Ubuntu 24.04 does not package it, and the
 # flag makes Ghostty build its own copy into the prefix lib/.
-echo "building Ghostty GTK from $ghostty_src @ $(git -c safe.directory="$ghostty_src" -C "$ghostty_src" rev-parse --short HEAD 2>/dev/null || echo unknown)"
-# Build from a copy so the branding patch never mutates the pinned checkout,
-# the same way Fresh is patched in a staged tree rather than in its original.
-src="$work/ghostty"
-rm -rf "$src"
-mkdir -p "$src"
-tar -C "$ghostty_src" --exclude .git --exclude .zig-cache --exclude zig-out -cf - . | tar -C "$src" -xf -
-for branding in "$root/packaging/patches/ghostty-gtk-branding.patch"; do
-  if ! patch -p1 -d "$src" <"$branding"; then
-    echo "$(basename "$branding") did not apply. The fork moved under it." >&2
-    exit 1
+ghostty_commit="$(git -c safe.directory="$ghostty_src" -C "$ghostty_src" rev-parse HEAD 2>/dev/null || echo unknown)"
+ghostty_sig="$ghostty_commit-$(sha256sum "$root/packaging/patches/ghostty-gtk-branding.patch" | awk '{print $1}')"
+ghostty_src_cache="$cache/ghostty-src/$target"
+ghostty_out_cache="$cache/ghostty-out/$target"
+echo "building Ghostty GTK from $ghostty_src @ ${ghostty_commit:0:9}"
+
+if [ "${MASH_SKIP_GHOSTTY:-0}" = "1" ] && [ -d "$ghostty_out_cache" ]; then
+  # Reuse path: a payload-only change must not pay for the terminal's compile.
+  cp -a "$ghostty_out_cache/." "$product/"
+  echo "reused the cached Ghostty frontend"
+else
+  # The patched source and its Zig cache are kept outside the staging tree, so
+  # a rebuild recompiles only what actually changed.
+  if [ ! -f "$ghostty_src_cache/.mash-ghostty-sig" ] ||
+    [ "$(cat "$ghostty_src_cache/.mash-ghostty-sig")" != "$ghostty_sig" ]; then
+    rm -rf "$ghostty_src_cache"
+    mkdir -p "$ghostty_src_cache"
+    tar -C "$ghostty_src" --exclude .git --exclude .zig-cache --exclude zig-out \
+      -cf - . | tar -C "$ghostty_src_cache" -xf -
+    if ! patch -p1 -d "$ghostty_src_cache" <"$root/packaging/patches/ghostty-gtk-branding.patch"; then
+      echo "ghostty-gtk-branding.patch did not apply. The fork moved under it." >&2
+      exit 1
+    fi
+    printf '%s\n' "$ghostty_sig" >"$ghostty_src_cache/.mash-ghostty-sig"
   fi
-done
-(
-  cd "$src"
-  PATH="$(dirname "$zig"):$PATH" \
-    "$zig" build -Doptimize=ReleaseFast -fno-sys=gtk4-layer-shell -p "$product"
-) || {
-  echo "the Ghostty GTK frontend failed to build." >&2
-  exit 1
-}
+  (
+    cd "$ghostty_src_cache"
+    PATH="$(dirname "$zig"):$PATH" \
+      "$zig" build -Doptimize=ReleaseFast -fno-sys=gtk4-layer-shell -p "$product" \
+      --cache-dir "$cache/zig/$target/local" \
+      --global-cache-dir "$cache/zig/$target/global"
+  ) || {
+    echo "the Ghostty GTK frontend failed to build." >&2
+    exit 1
+  }
+  rm -rf "$ghostty_out_cache"
+  mkdir -p "$ghostty_out_cache"
+  cp -a "$product/." "$ghostty_out_cache/"
+fi
+
 [ -x "$product/bin/ghostty" ] || {
   echo "the Ghostty GTK frontend did not produce bin/ghostty" >&2
   exit 1
@@ -228,12 +254,12 @@ mash_stage_runtimes "$product" "$target" || {
 
 # Rust and Go build Fresh, the wizard and two of the plugins. They are build
 # dependencies, staged into the work tree and never shipped.
-toolchain="$work/toolchain"
-mash_stage_toolchain rust "$target" "$toolchain/rust" || {
+toolchain="$cache/toolchains/$target"
+mash_ensure_toolchain rust "$target" "$toolchain/rust" || {
   echo "could not stage the rust toolchain" >&2
   exit 1
 }
-mash_stage_toolchain go "$target" "$toolchain/go" || {
+mash_ensure_toolchain go "$target" "$toolchain/go" || {
   echo "could not stage the go toolchain" >&2
   exit 1
 }
@@ -243,12 +269,19 @@ export PATH="$toolchain/rust/bin:$toolchain/go/bin:$PATH"
 export GOROOT="$toolchain/go"
 export GOTOOLCHAIN=local
 export MASH_CARGO="$toolchain/rust/bin/cargo"
+# Module downloads and compiled objects are the expensive part of the two Go
+# plugins; both survive the staging wipe.
+export GOMODCACHE="$cache/go-mod"
+export GOCACHE="$cache/go-build"
+export GOPATH="$cache/go-path"
+export CARGO_TARGET_DIR="$cache/cargo-target/$target"
+export MASH_CACHE="$cache"
 
-mash_stage_fresh "$product" "$target" "$work/cargo-home" || {
+mash_stage_fresh "$product" "$target" "$cache/cargo" || {
   echo "could not stage fresh" >&2
   exit 1
 }
-mash_stage_wizard "$product" "$work/cargo-home" || {
+mash_stage_wizard "$product" "$cache/cargo" || {
   echo "could not stage the wizard" >&2
   exit 1
 }
