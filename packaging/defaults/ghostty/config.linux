@@ -1,6 +1,28 @@
 auto-update = off
 title = "Mash Terminal"
 
+# What a window runs. The launcher starts the first window with `-e herdr-pane`;
+# this is what every OTHER window gets -- the GTK New Window item and the
+# desktop file's "New Instance" action -- and it has to be the same program, or
+# such a window would open a bare shell instead of Mash.
+#
+# herdr-pane claims the first instance with no live window, so a new window is a
+# second, independent Mash (its own workspaces and tabs, the same settings)
+# while the first is open, and reattaches to a closed one otherwise.
+# __MASH_HERDR_PANE__ is substituted at first launch: the path depends on the
+# install prefix.
+command = __MASH_HERDR_PANE__
+
+# Where a window starts. This is the directory Herdr gives the first workspace
+# of an instance that has none saved yet -- a second, empty Mash -- so an unset
+# value would open it wherever the launcher ran.
+#
+# It matters more here than on macOS: Ghostty defaults to `home` only when it
+# can DETECT a desktop-launcher start, and Mash's launcher execs the terminal
+# from a shell script, where that detection can fall back to `inherit` and the
+# new instance would open on the launcher's directory.
+working-directory = home
+
 theme = Monokai Cursor
 
 # Mash's identity on Linux. The macOS bundle gets these from its plist and its

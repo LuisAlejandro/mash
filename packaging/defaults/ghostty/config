@@ -1,6 +1,29 @@
 auto-update = off
 title = "Mash"
 
+# What a window runs. The launcher starts the first window with `-e herdr-pane`;
+# this is what every OTHER window gets -- File > New Window, and the Dock menu's
+# New Window -- and it has to be the same program, or a menu window would open a
+# bare shell instead of Mash.
+#
+# herdr-pane claims the first instance with no live window, so a menu window is
+# a second, independent Mash (its own workspaces and tabs, the same settings)
+# while the first window is open, and reattaches to a closed one otherwise.
+# __MASH_HERDR_PANE__ is substituted at first launch: the path is inside the
+# bundle, which moves between installs.
+command = __MASH_HERDR_PANE__
+
+# Where a window starts. This is the directory Herdr gives the first workspace
+# of an instance that has none saved yet -- a second, empty Mash -- so an
+# unset value would open it on whatever directory the launcher happened to run
+# in, which for a Dock launch is "/".
+#
+# Ghostty already defaults to `home` when it can DETECT a launchd/`open`
+# launch, which is how Mash starts on macOS. Stating it is the point: the
+# detection is a heuristic, and the one case that must not depend on it is the
+# empty instance, whose whole first impression is this directory.
+working-directory = home
+
 theme = Monokai Cursor
 
 # Release cmd+t so Herdr's own cmd+t (new dev tab: fresh + pi) receives it.

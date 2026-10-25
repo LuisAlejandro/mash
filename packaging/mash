@@ -38,7 +38,10 @@ if [ ! -f "$d/config/herdr/config.toml" ]; then
     >"$d/config/herdr/config.toml"
 fi
 if [ ! -f "$d/config/ghostty/config" ]; then
-  cp "$ROOT/Resources/defaults/ghostty/config" "$d/config/ghostty/config"
+  # The terminal config names herdr-pane by absolute path; see the key's comment
+  # in defaults/ghostty/config.
+  sed -e "s#__MASH_HERDR_PANE__#$ROOT/Resources/bin/herdr-pane#g" \
+    "$ROOT/Resources/defaults/ghostty/config" >"$d/config/ghostty/config"
 fi
 if [ ! -f "$d/config/zsh/.zshenv" ]; then
   cp "$ROOT/Resources/defaults/zsh/.zshenv" "$d/config/zsh/.zshenv"
@@ -252,6 +255,7 @@ mash_seed_design_stack
 mash_seed_hindsight
 
 mash_force_updates "$home"
+mash_force_window_command "$home" "$ROOT/Resources"
 export MASH_BIN="$ROOT/Resources/bin:$ROOT/Resources/node/bin:$ROOT/Resources/python/bin:$d/bin"
 mash_isolate "$home"
 

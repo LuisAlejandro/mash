@@ -223,8 +223,12 @@ mash_seed_configs() {
       -e "s#__MASH_CONFIG__#$d/config#g" \
       "$res/defaults/herdr/config${suffix}.toml" >"$d/config/herdr/config.toml"
   fi
-  [ -f "$d/config/ghostty/config" ] ||
-    cp "$res/defaults/ghostty/config${suffix}" "$d/config/ghostty/config"
+  # The terminal config names herdr-pane by absolute path, so the placeholder is
+  # substituted here the same way the Herdr config's shell path is above.
+  if [ ! -f "$d/config/ghostty/config" ]; then
+    sed -e "s#__MASH_HERDR_PANE__#$res/bin/herdr-pane#g" \
+      "$res/defaults/ghostty/config${suffix}" >"$d/config/ghostty/config"
+  fi
   # Fresh reads config.json only, so the Linux keymap is seeded under that name.
   # Seeding it before the tree copy below means --ignore-existing leaves it
   # alone instead of replacing it with the macOS keymap.

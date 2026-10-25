@@ -337,6 +337,22 @@ mash_isolate() {
 
 # Flip self-update keys in an existing Mash config. Never replaces the file.
 # $1 is the real home. The target must already sit under that home's .mash.
+# Point the terminal's own New Window at herdr-pane, in an install that already
+# has a config from before the key existed, and after an app update moved the
+# bundle. Without it, File > New Window opens a bare shell in an old install and
+# a stale path in a moved one. $2 is the resource root.
+mash_force_window_command() {
+  local home="$1" res="$2"
+  [ -n "$res" ] || return 0
+  mash_force_assign "$home" "$home/.mash/config/ghostty/config" \
+    "command" "$res/bin/herdr-pane"
+  # A second, empty instance takes its first workspace from the window's
+  # directory, so this must not be left to Ghostty's launch detection in an
+  # install whose config predates the key.
+  mash_force_assign "$home" "$home/.mash/config/ghostty/config" \
+    "working-directory" "home"
+}
+
 mash_force_updates() {
   local home="$1"
   local d="$home/.mash"
