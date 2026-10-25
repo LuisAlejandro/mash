@@ -36,9 +36,15 @@ cannot drift. It needs no Apple tooling, no Docker and no network.
 `make release-*` runs that same gate automatically before bumping anything, so a
 bad tree stops the release instead of producing a tag that only CI rejects.
 
-**The release ships a DMG.** Publishing the GitHub release triggers `release.yml`,
-which re-runs the gate at that tag and then dispatches `artifacts.yml` to build,
-sign, notarize and staple `Mash.dmg` and attach it to the release with checksums.
+**The release ships three artifacts.** `make release-*` creates the release as a
+**draft** and dispatches `release.yml` at that tag. It re-runs the gate and hands
+off to `artifacts.yml`, which builds macOS arm64, Linux amd64 and Linux arm64,
+attaches every file with one combined checksum manifest, attests the Debian
+packages, and only then flips the draft public. A failed platform leaves an
+unpublished draft, so users never see a release with missing files.
+
+Publishing a release by hand in the GitHub UI builds nothing: the build is
+dispatched by `scripts/release.sh`, not by the publish event.
 
 ## Before `make release-*`
 
@@ -56,7 +62,8 @@ sign, notarize and staple `Mash.dmg` and attach it to the release with checksums
 |---|---|---|
 | `push.yml` | push to `develop`, `master`, `release/**` | Runs `scripts/preflight.sh`, then the helper and packaging tests. `release.sh` waits on this run for the release branch before merging. |
 | `release.yml` | release published | Runs `scripts/preflight.sh <tag>` at that tag, then dispatches `artifacts.yml`. |
-| `artifacts.yml` | dispatched by `release.yml` | Builds, signs, notarizes and staples `Mash.dmg` on a GitHub-hosted `macos-26` runner, checks the artifact, and attaches it to the release with checksums. |
+| `artifacts.yml` | dispatched by `release.yml` | Builds `Mash.dmg` on `macos-26` and both `letsmash` packages on `ubuntu-24.04` and `ubuntu-24.04-arm`, verifies each, combines checksums, publishes the draft. |
+| `release.yml` | `workflow_dispatch` | Re-runs the gate at the tag, then dispatches `artifacts.yml`. |
 | `keepalive.yml` | schedule | Keeps the repo's scheduled workflows alive. |
 
 `push.yml` gates every push to a long-lived branch, including the `release/<version>`
@@ -94,6 +101,28 @@ Both skills repos cut releases and tag them, so the pin is a tag (`SKILLS_REF`,
 state; a commit only names where a branch happened to be. Bumping the pin means
 cutting a release there first, then pointing `SKILLS_VERSION`/`SKILLS_REF` (and
 the matching values in `packaging/carry.sh` and `packaging/pins.txt`) at it.
+
+## Building the Linux package
+
+On Ubuntu 24.04, natively:
+
+```
+make package-linux          # or ./packaging/build-linux.sh
+make verify-linux DEB=dist/letsmash_0.1.0_amd64.deb
+```
+
+Needs the distro's GTK4/libadwaita development packages, `dpkg-dev`, `patchelf`,
+`meson`/`ninja`, Zig 0.16.0, blueprint-compiler **0.16.x** (Ubuntu ships 0.12,
+which Ghostty rejects; 0.20+ rejects Ghostty's `.blp` files), a Rust toolchain
+and Go. The script fetches and checksum-verifies the pinned toolchains itself.
+
+`dist/.cache` (or `MASH_BUILD_CACHE`) holds downloads, toolchains, Zig's and
+cargo's caches. A cold build takes about fifteen minutes; a payload-only rebuild
+about four. `MASH_SKIP_GHOSTTY=1` reuses the previously built terminal frontend.
+
+Ghostty's GTK frontend is built from the pinned fork with
+`packaging/patches/ghostty-gtk-branding.patch` applied, so the fork itself needs
+no branding commit.
 
 ## Building the DMG by hand
 

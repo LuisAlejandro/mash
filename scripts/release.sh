@@ -113,4 +113,21 @@ release_wait_for_branch_ci "release/$NEW_VERSION" "$RELEASE_BRANCH_SHA"
 export PREVIOUS_VERSION="$CURRENT_VERSION"
 release_finish_release "$NEW_VERSION" "$APP_NAME"
 
-print_step "Release $NEW_VERSION completed successfully!"
+# The draft exists; the build is a dispatch at that exact tag. Keeping them
+# separate is what stops a published release from rebuilding itself, and what
+# lets the build attach every platform before the release goes public.
+print_step "Dispatching the artifact build for $NEW_VERSION"
+if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+    if gh workflow run release.yml --ref "$NEW_VERSION" -f tag="$NEW_VERSION"; then
+        print_step "Artifact build dispatched for $NEW_VERSION"
+        print_step "It will publish the draft once every platform's assets are attached"
+    else
+        print_warning "Could not dispatch the artifact build. Run it by hand:"
+        print_warning "  gh workflow run release.yml --ref $NEW_VERSION -f tag=$NEW_VERSION"
+    fi
+else
+    print_warning "gh is unavailable, so the artifact build was not dispatched."
+    print_warning "Run: gh workflow run release.yml --ref $NEW_VERSION -f tag=$NEW_VERSION"
+fi
+
+print_step "Release $NEW_VERSION prepared as a draft; the build publishes it."

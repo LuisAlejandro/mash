@@ -6,8 +6,10 @@ name: Artifacts
 # this at that tag, and only this workflow touches the release's assets. It is
 # only ever started that way, so it cannot publish on a branch push.
 #
-# Mash is much smaller than wholmaster here: one platform (macOS arm64), one
-# artifact (Mash.dmg), and no auto-updater manifest, because Mash ships none.
+# Mash ships three artifacts from one tag: a macOS arm64 DMG and two Debian
+# packages. There is no auto-updater manifest, because Mash ships none. The
+# release stays a draft until every artifact is attached, so a failed platform
+# is invisible to users instead of leaving a public release with missing files.
 
 on:
   workflow_dispatch:
@@ -19,6 +21,8 @@ on:
 
 permissions:
   contents: write # required to upload release assets
+  id-token: write # required by actions/attest-build-provenance
+  attestations: write # required by actions/attest-build-provenance
 
 concurrency:
   group: artifacts-${{ github.event.inputs.tag }}
@@ -239,9 +243,137 @@ jobs:
           path: release-artifacts/
           retention-days: 7
 
+
+  build-linux:
+    name: Build letsmash (${{ matrix.debarch }})
+    needs: [setup]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            debarch: amd64
+            zig_triple: x86_64-linux
+          - runner: ubuntu-24.04-arm
+            debarch: arm64
+            zig_triple: aarch64-linux
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.setup.outputs.tag }}
+
+      # Everything the Linux half needs comes from the distro plus the pinned
+      # sources. No Docker, so the artifact is built the way a maintainer builds
+      # it and smoke-tested in the same step.
+      - name: Install build dependencies
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            ca-certificates curl git python3 python3-pil \
+            python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 \
+            build-essential pkg-config gettext libxml2-utils xz-utils unzip file patch \
+            libgtk-4-dev libadwaita-1-dev meson ninja-build \
+            dpkg-dev patchelf lintian fakeroot rsync xdg-utils
+
+      # Ubuntu 24.04 ships blueprint-compiler 0.12, which Ghostty rejects, and
+      # 0.20+ rejects Ghostty's own .blp files. 0.16 is built from its tag.
+      - name: Install blueprint-compiler
+        run: |
+          set -euo pipefail
+          git clone -q --depth 1 --branch v0.16.0 \
+            https://gitlab.gnome.org/jwestman/blueprint-compiler.git "$RUNNER_TEMP/bp"
+          cd "$RUNNER_TEMP/bp"
+          meson setup _b --prefix=/usr/local >/dev/null
+          sudo meson install -C _b >/dev/null
+          blueprint-compiler --version
+
+      - name: Install Zig
+        run: |
+          set -euo pipefail
+          dest="$RUNNER_TEMP/zig-$ZIG_VERSION"
+          mkdir -p "$dest"
+          curl -fL --retry 3 --max-time 900 -o "$RUNNER_TEMP/zig.tar.xz" \
+            "https://ziglang.org/download/${ZIG_VERSION}/zig-${{ matrix.zig_triple }}-${ZIG_VERSION}.tar.xz"
+          tar -xJf "$RUNNER_TEMP/zig.tar.xz" -C "$dest" --strip-components=1
+          echo "MASH_ZIG=$dest/zig" >>"$GITHUB_ENV"
+          "$dest/zig" version
+
+      - name: Clone the Ghostty fork
+        run: |
+          set -euo pipefail
+          dest="$RUNNER_TEMP/ghostty"
+          git clone --depth 1 --branch "$GHOSTTY_FORK_REF" \
+            "https://github.com/${GHOSTTY_FORK}.git" "$dest"
+          actual="$(git -C "$dest" rev-parse HEAD)"
+          if [ "$actual" != "$GHOSTTY_FORK_COMMIT" ]; then
+            echo "fork $GHOSTTY_FORK_REF is at $actual, expected $GHOSTTY_FORK_COMMIT" >&2
+            exit 1
+          fi
+          echo "MASH_GHOSTTY_SRC=$dest" >>"$GITHUB_ENV"
+
+      - name: Clone the pinned skills checkout
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ env.SKILLS_REPO }}
+          ref: ${{ env.SKILLS_REF }}
+          path: skills
+
+      - name: Clone the pinned design-skills checkout
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ env.DESIGN_SKILLS_REPO }}
+          ref: ${{ env.DESIGN_SKILLS_REF }}
+          path: design-skills
+
+      - name: Build the package
+        env:
+          MASH_SKILLS_SRC: ${{ github.workspace }}/skills
+          MASH_DESIGN_SRC: ${{ github.workspace }}/design-skills
+          MASH_BUILD_CACHE: ${{ github.workspace }}/.cache
+        run: |
+          set -euo pipefail
+          ./packaging/build-linux.sh
+          ls -lh dist/*.deb
+
+      - name: Verify the installed tree
+        run: |
+          set -euo pipefail
+          deb="$(ls dist/*.deb)"
+          ./packaging/tests/verify-linux-installed.sh "$deb"
+
+      # Provenance is the Linux substitute for a codesigned binary: it ties the
+      # file to this workflow, commit and tag, which no embedded .deb signature
+      # would do for a direct download.
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/*.deb
+
+      - name: Stage release artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p release-artifacts
+          cp dist/*.deb "release-artifacts/letsmash-${VERSION}-linux-${{ matrix.debarch }}.deb"
+          cd release-artifacts
+          sha256sum ./*.deb >"checksums-linux-${{ matrix.debarch }}.txt"
+          cat "checksums-linux-${{ matrix.debarch }}.txt"
+        env:
+          VERSION: ${{ needs.setup.outputs.version }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v5
+        with:
+          name: linux-${{ matrix.debarch }}-release-artifacts
+          path: release-artifacts/
+          retention-days: 7
+
   finalize-release:
     name: Publish release
-    needs: [setup, build-macos]
+    needs: [setup, build-macos, build-linux]
     runs-on: ubuntu-24.04
     steps:
       - name: Download artifacts
@@ -250,6 +382,16 @@ jobs:
           pattern: "*-release-artifacts"
           path: artifacts/
           merge-multiple: true
+
+      # One checksum manifest for the whole release, recomputed here so no
+      # per-job file can drift or collide when several platforms upload.
+      - name: Combine checksums
+        run: |
+          set -euo pipefail
+          cd artifacts
+          rm -f checksums-*.txt
+          sha256sum ./*.deb ./*.dmg >checksums-sha256.txt
+          cat checksums-sha256.txt
 
       - name: Attach artifacts to the release
         env:
@@ -276,11 +418,35 @@ jobs:
 
           ## Download
 
-          - \`Mash-${VERSION}-mac-arm64.dmg\` — macOS, Apple silicon
-          - \`checksums-sha256.txt\` — SHA-256 checksums
+          - \`Mash-${VERSION}-mac-arm64.dmg\` — macOS, Apple silicon. Signed and notarized.
+          - \`letsmash-${VERSION}-linux-amd64.deb\` — Ubuntu 24.04, x86_64
+          - \`letsmash-${VERSION}-linux-arm64.deb\` — Ubuntu 24.04, arm64
+          - \`checksums-sha256.txt\` — SHA-256 checksums for every file above
 
-          Signed with a Developer ID certificate and notarized by Apple, so it
-          opens without the Gatekeeper bypass. Verify a download with:
+          ### Linux
+
+          Ubuntu 24.04 with GNOME on Wayland or Xorg. The package installs Mash
+          under \`/opt/letsmash\` and keeps everything you configure in
+          \`~/.mash\`; upgrades and removal leave that folder alone. To remove it
+          as well, delete it yourself afterwards.
+
+          \`\`\`sh
+          sudo apt install ./letsmash-${VERSION}-linux-amd64.deb
+          \`\`\`
+
+          Verify a download before installing:
+
+          \`\`\`sh
+          sha256sum -c checksums-sha256.txt
+          gh attestation verify letsmash-${VERSION}-linux-amd64.deb --repo $GITHUB_REPOSITORY
+          \`\`\`
+
+          Other distributions, other desktops and other architectures are not
+          supported by this release.
+
+          ### macOS
+
+          Verify with:
 
           \`\`\`sh
           shasum -a 256 -c checksums-sha256.txt
@@ -291,3 +457,26 @@ jobs:
           else
             gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --notes "${body}${note}"
           fi
+
+      # Publishing is the very last step, and only after every asset and the
+      # checksum manifest are attached. A failed platform therefore leaves an
+      # unpublished draft instead of a public release missing files.
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.setup.outputs.tag }}
+          VERSION: ${{ needs.setup.outputs.version }}
+        run: |
+          set -euo pipefail
+          assets="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name')"
+          printf '%s\n' "$assets"
+          for expected in checksums-sha256.txt "Mash-${VERSION}-mac-arm64.dmg" \
+            "letsmash-${VERSION}-linux-amd64.deb" "letsmash-${VERSION}-linux-arm64.deb"; do
+            printf '%s\n' "$assets" | grep -qxF "$expected" || {
+              echo "refusing to publish: $expected is not attached" >&2
+              exit 1
+            }
+          done
+          gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest
+          echo "release $TAG is public"
+

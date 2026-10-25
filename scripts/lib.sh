@@ -211,12 +211,14 @@ release_create_github_release() {
         return 0
     fi
 
-    print_step "Creating GitHub release $version"
+    # Draft: the artifact build attaches files and publishes nothing, and only
+    # artifacts.yml makes it public once every platform's assets are present.
+    print_step "Creating draft GitHub release $version"
     if gh release create "$version" \
         --title "$title" \
         --notes "$notes" \
-        --latest; then
-        print_step "GitHub release created successfully!"
+        --draft; then
+        print_step "Draft release created; the build will publish it once assets attach."
     else
         print_warning "Failed to create GitHub release. You can create it manually later."
     fi

@@ -1,22 +1,26 @@
 name: Publish Release
 
-# Runs when a release is published, at that exact tag.
+# Gates a draft release at an exact tag, then hands off to artifacts.yml.
 #
-# Mirrors wholmaster's two-workflow shape: this one gates the tag, then hands
-# off to artifacts.yml, which is the only thing that touches the release's
-# assets. Keeping them separate means the long, credential-using macOS build
-# is a dispatch at a known tag rather than a side effect of publishing.
+# Dispatched by scripts/release.sh right after it creates the draft. It is not
+# triggered by publishing, because publishing is now the *last* step of the
+# build: a release created in the GitHub UI builds nothing, and a build cannot
+# re-enter itself by flipping its own draft public.
 #
 # The gate is deliberately the same script a maintainer runs locally via
 # `make release-preflight`, told which version the tag claims, so the two paths
 # cannot disagree about what "ready" means.
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to verify and build, e.g. 1.2.3"
+        required: true
+        type: string
 
 concurrency:
-  group: publish-release-${{ github.event.release.tag_name }}
+  group: publish-release-${{ github.event.inputs.tag }}
   cancel-in-progress: false
 
 permissions:
@@ -31,10 +35,10 @@ jobs:
       - name: Checkout release tag
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ github.event.inputs.tag }}
 
       - name: Verify tag, version and release inputs
-        run: ./scripts/preflight.sh "${{ github.event.release.tag_name }}"
+        run: ./scripts/preflight.sh "${{ github.event.inputs.tag }}"
 
   dispatch-artifacts:
     name: Dispatch Artifacts
@@ -44,7 +48,7 @@ jobs:
       - name: Trigger exact-tag Artifacts workflow
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.event.release.tag_name }}
+          TAG: ${{ github.event.inputs.tag }}
         run: |
           set -euo pipefail
           # The gate above already proved the tag matches VERSION; read it back

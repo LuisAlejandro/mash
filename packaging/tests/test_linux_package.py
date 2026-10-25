@@ -31,9 +31,19 @@ class ControlTemplateTest(unittest.TestCase):
         self.assertNotIn("\nPackage: mash\n", self.text)
 
     def test_required_debian_fields_are_templated(self):
-        for field in ("Version", "Architecture", "Maintainer", "Depends", "Installed-Size"):
+        # Depends is composed from the derived shared-library list plus the
+        # runtime commands the launcher invokes, so it may hold several tokens.
+        for field in ("Version", "Architecture", "Maintainer", "Installed-Size"):
             with self.subTest(field=field):
                 self.assertRegex(self.text, rf"(?m)^{field}: @[A-Z_]+@$")
+        self.assertRegex(self.text, r"(?m)^Depends: @[A-Z_]+@(, @[A-Z_]+@)*$")
+
+    def test_runtime_dependencies_cover_what_the_launcher_invokes(self):
+        # The launcher seeds with rsync and the desktop entry opens files with
+        # xdg-open; neither is linked, so both must be declared.
+        build = BUILD.read_text()
+        self.assertIn("rsync", build)
+        self.assertIn("xdg-utils", build)
 
     def test_description_names_the_data_folder_contract(self):
         # The single sentence a user reads before installing should say that

@@ -73,6 +73,11 @@ undo-release:
 release-preflight:
 	@./scripts/preflight.sh
 
+# Every test in the repository, on any platform that can host them. This is the
+# single entry point CI calls, so a suite cannot be skipped in one lane only.
+test:
+	@./scripts/test.sh
+
 # Native Linux package for this machine's architecture. Runs on Ubuntu 24.04
 # x86_64 or arm64 only; the macOS build stays in packaging/build.sh.
 package-linux:

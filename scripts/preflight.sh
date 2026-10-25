@@ -128,6 +128,11 @@ files=(
     packaging/assets.py
     packaging/wizard/Cargo.toml
     packaging/build-linux.sh
+    packaging/build-common.sh
+    packaging/launch-common.sh
+    packaging/linux/launcher
+    packaging/patches/ghostty-gtk-branding.patch
+    scripts/test.sh
     packaging/assets.json
     packaging/assets.py
     packaging/linux/control.in

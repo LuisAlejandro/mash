@@ -258,10 +258,17 @@ export default function (pi: ExtensionAPI) {
 				], { timeoutMs: 10_000 });
 				if (opened.code !== 0) {
 					const detail = opened.stderr.trim() || opened.stdout.trim();
-					const preview = await run("open", ["-a", "Preview", path], { timeoutMs: 5000 });
+					// Preview is a macOS application. Elsewhere the desktop's own
+					// handler is the equivalent, and openWithDesktop already knows
+					// which one that is.
+					const preview =
+						process.platform === "darwin"
+							? await run("open", ["-a", "Preview", path], { timeoutMs: 5000 })
+							: await run("xdg-open", [path], { timeoutMs: 5000 });
 					if (preview.code === 0) {
+						const where = process.platform === "darwin" ? "Preview" : "the desktop's default application";
 						return textResult(
-							`Image popup unavailable (${detail || "no reason given"}). ${name} opened in Preview instead.` +
+							`Image popup unavailable (${detail || "no reason given"}). ${name} opened in ${where} instead.` +
 								(params.note ? ` (${params.note})` : ""),
 						);
 					}
