@@ -45,17 +45,21 @@ case "$HERDR_SOCKET_PATH" in
   ;;
 esac
 
+# Which instance this window is belongs to the window, not to the launch: the
+# terminal below starts herdr-pane, which claims the first instance with no
+# live window. Unsetting the sockets mash_isolate just derived is what lets it
+# do that -- inherited, they would pin every window to the default instance and
+# the second window would clone the first. herdr-pane recomputes both.
+unset HERDR_SOCKET_PATH HERDR_CLIENT_SOCKET_PATH HERDR_SESSION MASH_INSTANCE
+
 # A plugin registry recorded elsewhere (a previous package, another checkout) is
 # relinked in place. This only rewrites entries it is handed, so plugins the
 # user installed themselves stay registered.
 mash_link_plugins "$res" "$home" || true
 
-# A leftover socket is removed only when nothing is using it.
-if [ -S "$HERDR_SOCKET_PATH" ] && command -v lsof >/dev/null 2>&1; then
-  if ! lsof "$HERDR_SOCKET_PATH" >/dev/null 2>&1; then
-    rm -f "$HERDR_SOCKET_PATH"
-  fi
-fi
+# The stale-socket sweep moved into herdr-pane, which is where the instance --
+# and therefore the socket path -- is known. Sweeping here would only ever
+# consider the default instance's socket.
 
 # -e is what makes Ghostty honour this per-process environment, refuse to attach
 # to an existing GTK instance, and quit when the last window closes.

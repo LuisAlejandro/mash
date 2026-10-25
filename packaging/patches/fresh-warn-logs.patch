@@ -1,0 +1,32 @@
+--- a/crates/fresh-editor/src/services/tracing_setup.rs
++++ b/crates/fresh-editor/src/services/tracing_setup.rs
+@@ -1,3 +1,5 @@
++// Modified by Mash on 2026-10-25: default diagnostics to WARN, honoring RUST_LOG.
++// Mash source: packaging/patches/fresh-warn-logs.patch
+ //! Tracing subscriber setup
+ //!
+ //! This module provides shared tracing configuration used by both
+@@ -22,6 +24,6 @@
+ /// This sets up:
+ /// - File-based logging with the given log file
+-/// - Environment-based filtering (RUST_LOG) with DEBUG default
++/// - Environment-based filtering (RUST_LOG) with WARN default
+ /// - Warning log layer that captures WARN+ to a separate file
+ /// - Status log layer that captures status messages to a separate file
+ ///
+@@ -49,10 +51,10 @@
+     warning_layer: Option<WarningLogLayer>,
+     status_layer: Option<StatusLogLayer>,
+ ) -> impl tracing::Subscriber + Send + Sync {
+-    let env_filter = EnvFilter::from_default_env()
+-        .add_directive(tracing::Level::DEBUG.into())
+-        // Suppress noisy SWC debug logs
+-        .add_directive("swc_ecma_transforms_base=info".parse().unwrap())
+-        .add_directive("swc_common=info".parse().unwrap());
++    let env_filter = EnvFilter::try_from_default_env()
++        .unwrap_or_else(|_| EnvFilter::new("warn"))
++        // Keep SWC quiet even when Fresh diagnostics are enabled explicitly.
++        .add_directive("swc_ecma_transforms_base=warn".parse().unwrap())
++        .add_directive("swc_common=warn".parse().unwrap());
+ 
+     let span_events = if std::env::var("FRESH_LOG_SPANS").is_ok() {

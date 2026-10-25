@@ -344,14 +344,32 @@ PY
 }
 mash_link_plugins
 
+# Belt and braces: `open --env` forwards only what is listed below, so these
+# cannot leak today. Unsetting them states the requirement locally, so adding
+# a socket line to that list cannot quietly pin every window to one instance.
+unset HERDR_SOCKET_PATH HERDR_CLIENT_SOCKET_PATH HERDR_SESSION MASH_INSTANCE
+
+# No instance is chosen here. The click opens a window, and the window's own
+# herdr-pane claims the first instance with no live window: the restored one on
+# the first click, a fresh empty one while that window is open. Choosing here
+# instead would race two quick clicks through one launcher each, and would also
+# miss windows opened from File > New Window, which run herdr-pane directly.
+#
+# MASH_INSTANCE is deliberately NOT forwarded below for the same reason: an
+# inherited value would pin every window of this launch to one instance.
+#
+# The two socket variables are not forwarded either. mash_isolate set them to
+# the default instance's paths for the setup above (plugin linking, the stale
+# socket sweep), and forwarding them would hand every window that instance
+# before its herdr-pane could claim a free one -- reinstating the clone. The
+# window recomputes both from the instance it claims; every other variable
+# below is instance-independent and is still forwarded.
 exec /usr/bin/open -na "$ROOT/Resources/Mash Terminal.app" \
   --env "XDG_CONFIG_HOME=$XDG_CONFIG_HOME" \
   --env "XDG_STATE_HOME=$XDG_STATE_HOME" \
   --env "XDG_DATA_HOME=$XDG_DATA_HOME" \
   --env "XDG_CACHE_HOME=$XDG_CACHE_HOME" \
   --env "HERDR_CONFIG_PATH=$HERDR_CONFIG_PATH" \
-  --env "HERDR_SOCKET_PATH=$HERDR_SOCKET_PATH" \
-  --env "HERDR_CLIENT_SOCKET_PATH=$HERDR_CLIENT_SOCKET_PATH" \
   --env "PI_CODING_AGENT_DIR=$PI_CODING_AGENT_DIR" \
   --env "PI_HOME=$PI_HOME" \
   --env "npm_config_cache=$npm_config_cache" \

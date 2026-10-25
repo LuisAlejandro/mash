@@ -129,10 +129,9 @@ profiles:
       - panes:
           - id: shell
             name: shell
-            # Prints the Mash logo + keybinding quick-reference, then execs the
-            # real shell -- the shell distribution's equivalent of what pi's
-            # header shows for fresh+pi / pi-only (single source of truth:
-            # the bundled keybinding list, same file custom-header.ts
-            # reads). Without this, `command` is absent and the pane runs
-            # Herdr's default shell directly with no greeting at all.
+            # Prints the Mash logo + keybinding quick-reference (and clears the
+            # echoed command), then execs the real shell -- the shell
+            # distribution's equivalent of what pi's header shows. Without
+            # this, `command` is absent and the pane runs Herdr's default shell
+            # directly with no greeting at all.
             command: herdr-shell-greeting

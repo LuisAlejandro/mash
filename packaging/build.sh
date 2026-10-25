@@ -14,6 +14,8 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 terminal_app="Mash Terminal.app"
 # shellcheck source=carry.sh
 source "$root/packaging/carry.sh"
+# shellcheck source=build-common.sh
+source "$root/packaging/build-common.sh"
 dest="$root/dist/Mash.app"
 work="$root/dist/.build"
 app="$work/Mash.app"
@@ -267,6 +269,13 @@ cp -R "$work/node-v24.16.0-darwin-arm64/bin" "$work/node-v24.16.0-darwin-arm64/l
 }
 cp -R "$work/python" "$app/Contents/Resources/python"
 
+# Resolve the pins first: bash ignores the exit status of a failing command
+# substitution inside an argument list, so a broken pin would otherwise install
+# a shorter package set and still exit 0.
+pi_packages="$(mash_pi_packages)" || {
+  echo "could not resolve the pinned Pi packages" >&2
+  exit 1
+}
 env HOME="$work/home" \
   npm_config_cache="$work/npm-cache" \
   npm_config_update_notifier=false \
@@ -274,12 +283,8 @@ env HOME="$work/home" \
   npm_config_audit=false \
   "$app/Contents/Resources/node/bin/npm" install --global \
   --prefix "$app/Contents/Resources/node" \
-  @earendil-works/pi-coding-agent@1.1.0 \
-  @earendil-works/pi-voice@0.2.0 \
-  pi-subagents@0.76.0 \
-  pi-ask-user@0.16.0 \
-  @krfantasy/pi-monokai-pro@0.2.0 \
-  pi-web-search@1.6.0
+  $pi_packages
+"$root/packaging/tests/test_pi_runtime.sh" "$app/Contents/Resources"
 
 node_real="$app/Contents/Resources/node/bin/node"
 while IFS= read -r script; do

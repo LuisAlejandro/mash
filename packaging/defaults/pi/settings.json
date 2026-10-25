@@ -1,14 +1,15 @@
 {
   "packages": [
-    "npm:pi-subagents",
-    "npm:pi-ask-user",
-    "npm:@krfantasy/pi-monokai-pro",
-    "npm:pi-web-search",
-    "npm:@earendil-works/pi-voice"
+    "npm:pi-subagents@0.76.0",
+    "npm:pi-ask-user@0.16.0",
+    "npm:@krfantasy/pi-monokai-pro@0.2.0",
+    "npm:pi-web-search@1.6.0",
+    "npm:@earendil-works/pi-voice@0.2.0"
   ],
   "lastChangelogVersion": "1.1.0",
   "defaultThinkingLevel": "medium",
   "theme": "Monokai Pro (CE)",
+  "quietStartup": "header",
   "defaultTools": [
     "+grep",
     "+find",

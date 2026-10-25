@@ -18,6 +18,22 @@ mash_seed_missing() {
   rsync -a --ignore-existing "$src/" "$dest/"
 }
 
+# Seeding never overwrites, so a shipped patch reaches an install that already
+# ran Mash only through a repair. The bundled Herdr integration is authoritative
+# for that one file, and the marker line in it is how a stale copy is
+# recognised: Herdr rewrites the file on every integration update.
+mash_repair_pi_integration() {
+  local src="$1" d="$2" bundled installed marker
+  bundled="$src/defaults/pi/extensions/herdr-agent-state.ts"
+  installed="$d/pi/agent/extensions/herdr-agent-state.ts"
+  [ -f "$bundled" ] || return 0
+  marker="$(sed -n 's/.*\(MASH_PATCH=restore-resume\).*/\1/p' "$bundled" | head -n 1)"
+  [ -n "$marker" ] || return 0
+  grep -qF -- "$marker" "$installed" 2>/dev/null && return 0
+  mkdir -p "$d/pi/agent/extensions"
+  cp "$bundled" "$installed"
+}
+
 # References and the mash-parallel venv live under ~/.mash/config/mash.
 # The venv's Python symlink is retargeted at this bundle. Existing files stay.
 mash_seed_programming_skills() {
@@ -265,6 +281,7 @@ mash_seed_all() {
   mash_seed_missing "$res/defaults/ghostty/themes" "$d/config/ghostty/themes"
   mash_seed_missing "$res/defaults/fresh" "$d/config/fresh"
   mash_seed_missing "$res/defaults/pi" "$d/pi/agent"
+  mash_repair_pi_integration "$res" "$d"
   mash_seed_missing "$res/defaults/plugins" "$d/config/herdr/plugins/config"
   mash_seed_missing "$res/defaults/atuin" "$d/config/atuin"
   mash_seed_missing "$res/defaults/lazydocker" "$d/config/lazydocker"

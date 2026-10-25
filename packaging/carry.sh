@@ -175,10 +175,12 @@ mash_require_sources() {
       exit 1
     }
   done
-  [ -f "$root/packaging/patches/fresh-config-dir.patch" ] || {
-    echo "missing Fresh patch" >&2
-    exit 1
-  }
+  for name in fresh-config-dir fresh-reveal-in-finder fresh-warn-logs; do
+    [ -f "$root/packaging/patches/$name.patch" ] || {
+      echo "missing Fresh patch $name" >&2
+      exit 1
+    }
+  done
   [ -f "$root/packaging/patches/herdr-workspace-absolute-path.patch" ] || {
     echo "missing workspace patch" >&2
     exit 1
@@ -295,7 +297,7 @@ mash_build_fresh() {
   # failure means upstream moved under it. Naming the patch in the message is
   # what makes that a one-minute fix instead of a bisect. herdr-workspace's
   # patch is deliberately absent: it targets a plugin, not Fresh.
-  for name in fresh-config-dir fresh-reveal-in-finder; do
+  for name in fresh-config-dir fresh-reveal-in-finder fresh-warn-logs; do
     if ! patch -p1 -d "$src" <"$root/packaging/patches/$name.patch"; then
       echo "$name.patch did not apply. Leaving dist/Mash.app in place." >&2
       exit 1
@@ -331,6 +333,9 @@ case "$data" in
     *) echo "Fresh refused to start." >&2; exit 1 ;;
 esac
 [ -f "$cfg/config.json" ] || { echo "Fresh seed is not in place." >&2; exit 1; }
+# Production logs default to warnings. RUST_LOG=debug remains an opt-in for
+# diagnosing a particular Fresh launch.
+export RUST_LOG="${RUST_LOG:-warn}"
 exec "$(cd "$(dirname "$0")/../libexec" && pwd)/fresh" "$@"
 EOF
   chmod 755 "$(mash_res)/bin/fresh"
@@ -495,6 +500,16 @@ mash_skills_src() {
   printf '%s\n' "${MASH_SKILLS_SRC:-$home/Development/mash-programming-skills}"
 }
 
+# One required sentence in a shipped file, or the build stops with its reason.
+# The gates inside mash_install_skills all share this shape; naming the sentence
+# in the message is what makes a drift a one-line fix instead of a bisect.
+mash_require_text() {
+  grep -q -- "$2" "$1" || {
+    echo "$3" >&2
+    exit 1
+  }
+}
+
 # Copy the pinned checkout into the staged app. The checkout itself is not edited.
 mash_install_skills() {
   local src pi cfg name destskill
@@ -557,20 +572,20 @@ mash_install_skills() {
     echo "mash-customize was not staged" >&2
     exit 1
   }
-  grep -q 'mash-customize' "$pi/APPEND_SYSTEM.md" || {
-    echo "APPEND_SYSTEM.md does not point at mash-customize" >&2
-    exit 1
-  }
-  grep -q 'HOME. is not changed' "$pi/APPEND_SYSTEM.md" || {
-    echo "APPEND_SYSTEM.md is missing the Mash environment section" >&2
-    exit 1
-  }
+  mash_require_text "$pi/APPEND_SYSTEM.md" 'mash-customize' \
+    "APPEND_SYSTEM.md does not point at mash-customize"
+  mash_require_text "$pi/APPEND_SYSTEM.md" '^## Tool-call recovery$' \
+    "APPEND_SYSTEM.md is missing tool-call recovery guidance"
+  mash_require_text "$pi/APPEND_SYSTEM.md" 'Never include both' \
+    "APPEND_SYSTEM.md is missing ask_user argument guidance"
+  mash_require_text "$pi/APPEND_SYSTEM.md" 'uv_cwd' \
+    "APPEND_SYSTEM.md is missing codemode cwd guidance"
+  mash_require_text "$pi/APPEND_SYSTEM.md" 'HOME. is not changed' \
+    "APPEND_SYSTEM.md is missing the Mash environment section"
   # The rewrite pass must not have touched the sentence that names the user's
   # own Pi, or it would read as Mash's own directory.
-  grep -q '\$HOME/\.pi/agent' "$pi/APPEND_SYSTEM.md" || {
-    echo "APPEND_SYSTEM.md lost the distinction between Mash's Pi and the user's" >&2
-    exit 1
-  }
+  mash_require_text "$pi/APPEND_SYSTEM.md" '\$HOME/\.pi/agent' \
+    "APPEND_SYSTEM.md lost the distinction between Mash's Pi and the user's"
   # The guidance ships to every user, so it must not name the machine that
   # built it: a checkout path or a home directory is meaningless anywhere else
   # and points the agent at a directory that does not exist. Checked on the
@@ -719,6 +734,19 @@ for everyone live in the bundle and are added through the build instead.
 For the full map — every config path, how to author an extension or skill, how
 to install a package, which machine tools Mash borrows, and what must go through
 the repository instead — load the `mash-customize` skill.
+
+## Tool-call recovery
+
+- For `ask_user`, use exactly one form: `question` for one question, or
+  `questions` for a batch of 2–4 independent questions. Never include both.
+  With `questions`, put `context`, `options`, `allowMultiple` and
+  `allowFreeform` on each entry, never at the top level.
+  On validation error, correct the payload; never retry it unchanged.
+- If `codemode` fails before script execution with `uv_cwd`, `process.cwd`, or
+  a missing-working-directory error, treat it as a session/environment failure,
+  not a script bug. Do not retry `codemode` or try to fix cwd inside its script.
+  Use direct tools only if they work (prefer absolute paths); if needed tools
+  also fail, stop and report the cwd blocker.
 EOF
   } >"$dest"
   for mdc in "$src"/src/rules/*.mdc; do

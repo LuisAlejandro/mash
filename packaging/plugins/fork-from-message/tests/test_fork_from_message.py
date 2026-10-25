@@ -77,6 +77,12 @@ class FakeClient:
         return {"agent": self.agent_kind, "kind": kind,
                 "source": f"herdr:{self.agent_kind}", "value": value}
 
+    def ok(self, args, timeout=None):
+        """Mirror Herdr: success prints nothing, so only the exit status counts."""
+        self.calls.append(list(args))
+        if self.fail_on and tuple(args[:len(self.fail_on)]) == self.fail_on:
+            raise ffm.ForkError("simulated Herdr failure")
+
     def json(self, args, timeout=None):
         self.calls.append(list(args))
         if self.fail_on and tuple(args[:len(self.fail_on)]) == self.fail_on:
@@ -405,6 +411,21 @@ def test_picker_lines_start_at_the_left_margin(tmp: Path) -> None:
     assert len(plain) == 40 and plain.endswith("…"), plain
 
 
+def test_pane_run_accepts_a_silent_herdr(tmp: Path) -> None:
+    """Herdr's `pane run` prints nothing on success; parsing that killed the tab."""
+    exe = tmp / "herdr"
+    exe.write_text("#!/bin/sh\nexit 0\n")
+    exe.chmod(0o755)
+    client = ffm.HerdrClient(str(exe))
+    client.ok(["pane", "run", SOURCE_PANE, "true"])
+    try:
+        client.json(["pane", "run", SOURCE_PANE, "true"])
+    except ffm.ForkError as exc:
+        assert "invalid JSON" in str(exc), exc
+    else:
+        raise AssertionError("json() must still reject a silent response")
+
+
 def main() -> int:
     tests = [
         test_pi_backend,
@@ -420,6 +441,7 @@ def main() -> int:
         test_session_identity_shapes,
         test_cross_agent_session_metadata_is_rejected,
         test_picker_lines_start_at_the_left_margin,
+        test_pane_run_accepts_a_silent_herdr,
     ]
     for test in tests:
         with tempfile.TemporaryDirectory() as raw:

@@ -48,9 +48,15 @@ else
   skipped+=("extension tests: node not installed")
 fi
 
-# Vendored plugins are not run here. They are other projects' code with their
-# own upstream CI, and scripts/preflight.sh already excludes packaging/plugins
-# from its parsing for the same reason: their failures are not this repo's.
+# Mash's own plugin: Herdr's `pane run` prints nothing on success, and the
+# fork-from-message code has to stay that way or the fork tab breaks.
+run "packaging/plugins/fork-from-message/tests/test_fork_from_message.py" \
+  python3 packaging/plugins/fork-from-message/tests/test_fork_from_message.py
+
+# Other vendored plugins are not run here. They are other projects' code with
+# their own upstream CI, and scripts/preflight.sh already excludes
+# packaging/plugins from its parsing for the same reason: their failures are
+# not this repo's.
 
 echo
 if [ "${#skipped[@]}" -gt 0 ]; then

@@ -1289,6 +1289,7 @@
     }
   },
   "editor": {
+    "cursor_jump_animation": false,
     "status_bar": {
       "left": [
         "{trust}",

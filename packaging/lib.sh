@@ -31,6 +31,123 @@ mash_real_shell() {
   printf '%s\n' "${shell:-${SHELL:-/bin/sh}}"
 }
 
+# The Mash instance a launch or a pane belongs to. "default" is the instance
+# every Mash had before instances existed, and it keeps the original paths:
+# ~/.mash/run/herdr.sock and the unnamed Herdr session, whose layout is
+# ~/.mash/config/herdr/session.json. A named instance gets its own socket
+# directory and its own Herdr session, which is what gives it its own
+# workspaces and tabs while every setting stays shared.
+#
+# The name cannot travel in a HERDR_* variable: mash_isolate clears all of
+# them below, precisely so a Mash started from a personal Herdr's pane cannot
+# inherit that server. MASH_INSTANCE is therefore the carrier, and
+# HERDR_SESSION is derived from it after the purge.
+mash_instance_name() {
+  local name="${MASH_INSTANCE:-default}"
+  # Anything outside [A-Za-z0-9._-] could escape the run directory or produce a
+  # session name Herdr rejects, so an unusable name falls back rather than
+  # failing a launch the user cannot otherwise recover from.
+  case "$name" in
+  "" | *[!A-Za-z0-9._-]*) name="default" ;;
+  esac
+  printf '%s\n' "$name"
+}
+
+# Where an instance records the pid of the window that owns it.
+mash_instance_window_file() {
+  # Each name is assigned from a positional, never from a sibling in the same
+  # `local` statement: within one declaration an earlier name is not yet
+  # assigned when a later one expands it, so `local home="$1" d="$home/.mash"`
+  # silently yields "/.mash". That form made every claim fail its mkdir and
+  # fall back to the default instance -- indistinguishable from the clone bug
+  # this feature removes.
+  local d="$1/.mash" instance="$2"
+  if [ "$instance" = "default" ]; then
+    printf '%s\n' "$d/run/window.pid"
+  else
+    printf '%s\n' "$d/run/$instance/window.pid"
+  fi
+}
+
+# Whether an instance already has a live window. A marker naming a pid that is
+# gone is stale -- a crash, a kill -9, a reboot -- and the instance is free.
+mash_instance_is_taken() {
+  local home="$1" instance="$2" file pid
+  file="$(mash_instance_window_file "$home" "$instance")"
+  [ -f "$file" ] || return 1
+  pid="$(cat "$file" 2>/dev/null)"
+  case "$pid" in
+  "" | *[!0-9]*) return 1 ;;
+  esac
+  kill -0 "$pid" 2>/dev/null
+}
+
+# The first instance with no live window: "default", then 2, 3, ...
+#
+# Clicking the icon twice in quick succession runs two of these at once, so the
+# claim has to be atomic or both would pick the same free instance and the
+# second window would clone the first -- the very bug this feature removes.
+# `mkdir` is the atomic primitive that exists everywhere: it fails if the
+# directory is already there, and unlike flock(1) it is on macOS too.
+mash_claim_instance() {
+  local home="$1" pid="$2" instance n=1 lock
+  # Separate statement: see mash_instance_window_file.
+  local d="$home/.mash"
+  mkdir -p "$d/run"
+  local holder
+  while [ "$n" -le 32 ]; do
+    if [ "$n" -eq 1 ]; then instance="default"; else instance="$n"; fi
+    lock="$d/run/.claim-$instance"
+    if mkdir "$lock" 2>/dev/null; then
+      if mash_instance_is_taken "$home" "$instance"; then
+        rmdir "$lock" 2>/dev/null
+      else
+        # Hold the instance against a concurrent claim until the window marker
+        # is written. Without this the window between "found free" and "marked
+        # taken" is wide enough for a second click to pick the same instance.
+        printf '%s\n' "$pid" >"$lock/pid"
+        printf '%s\n' "$instance"
+        return 0
+      fi
+    elif [ -f "$lock/pid" ]; then
+      # Someone else is mid-claim. Theirs if they are alive; otherwise the lock
+      # outlived its claimant and must not strand the instance forever.
+      holder="$(cat "$lock/pid" 2>/dev/null)"
+      case "$holder" in
+      "" | *[!0-9]*) rm -rf "$lock" 2>/dev/null && continue ;;
+      esac
+      kill -0 "$holder" 2>/dev/null || {
+        rm -rf "$lock" 2>/dev/null
+        continue
+      }
+    fi
+    n=$((n + 1))
+  done
+  # Every instance is busy. The default is the honest answer: the user gets the
+  # clone window they get today rather than no window at all.
+  printf 'default\n'
+}
+
+# Record this window as the owner of its instance and release the claim lock.
+mash_mark_instance_window() {
+  local home="$1" instance="$2" pid="$3" file
+  file="$(mash_instance_window_file "$home" "$instance")"
+  mkdir -p "$(dirname "$file")"
+  printf '%s\n' "$pid" >"$file"
+  rm -rf "$home/.mash/run/.claim-$instance" 2>/dev/null || true
+}
+
+# Drop the marker when the window exits, but only if it is still ours: a
+# relaunch may already have claimed the instance, and removing its marker would
+# hand the same instance to the next click while that window is still open.
+mash_release_instance_window() {
+  local home="$1" instance="$2" pid="$3" file
+  file="$(mash_instance_window_file "$home" "$instance")"
+  [ -f "$file" ] || return 0
+  [ "$(cat "$file" 2>/dev/null)" = "$pid" ] || return 0
+  rm -f "$file" 2>/dev/null || true
+}
+
 # Clear inherited HERDR_* and point every included tool at ~/.mash.
 #
 # $2 = "pane" is the pane shell's call. It keeps the per-pane variables the
@@ -66,8 +183,30 @@ mash_isolate() {
   export XDG_DATA_HOME="$d/local/share"
   export XDG_CACHE_HOME="$d/cache"
   export HERDR_CONFIG_PATH="$d/config/herdr/config.toml"
-  export HERDR_SOCKET_PATH="$d/run/herdr.sock"
-  export HERDR_CLIENT_SOCKET_PATH="$d/run/herdr-client.sock"
+  # The instance decides the socket and the Herdr session; every path above and
+  # below is shared by all instances, which is what "separate workspaces, one
+  # set of settings" means here.
+  #
+  # Both variables are set on purpose. HERDR_SOCKET_PATH wins over
+  # HERDR_SESSION in Herdr 0.9.3, so naming the session alone would leave every
+  # instance on the same socket; and the socket alone would leave them sharing
+  # one session.json, where two servers overwrite each other's workspaces.
+  local instance
+  instance="$(mash_instance_name)"
+  export MASH_INSTANCE="$instance"
+  if [ "$instance" = "default" ]; then
+    export HERDR_SOCKET_PATH="$d/run/herdr.sock"
+    export HERDR_CLIENT_SOCKET_PATH="$d/run/herdr-client.sock"
+    # Herdr treats the name "default" as the unnamed session, so exporting it
+    # would be a no-op; leaving it unset keeps the default instance byte-for-byte
+    # what it was before instances existed.
+    unset HERDR_SESSION
+  else
+    mkdir -p "$d/run/$instance"
+    export HERDR_SOCKET_PATH="$d/run/$instance/herdr.sock"
+    export HERDR_CLIENT_SOCKET_PATH="$d/run/$instance/herdr-client.sock"
+    export HERDR_SESSION="$instance"
+  fi
   export PI_CODING_AGENT_DIR="$d/pi/agent"
   # pi packages the user installs, like pi's own agent directory. pi resolves
   # them from `<agentDir>/npm/node_modules` (getManagedNpmInstallPath), so
@@ -179,8 +318,10 @@ mash_isolate() {
   if [ -n "$joined" ]; then
     export PATH="$joined"
   fi
+  # Both shapes live under ~/.mash/run: the default instance's socket sits
+  # directly in it, a named instance's in its own subdirectory.
   case "$HERDR_SOCKET_PATH" in
-  "$home/.mash/run/"*) ;;
+  "$home/.mash/run/herdr.sock" | "$home/.mash/run/$instance/herdr.sock") ;;
   *)
     echo "Mash refused to use a socket outside ~/.mash/run." >&2
     exit 1

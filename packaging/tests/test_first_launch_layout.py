@@ -32,6 +32,22 @@ class FirstLaunchLayoutTest(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertIn(path, launcher)
 
+    def test_pi_settings_pins_match_the_manifest(self):
+        settings = json.loads((PACKAGING / "defaults/pi/settings.json").read_text())
+        manifest = json.loads((PACKAGING / "assets.json").read_text())
+        pinned = {
+            component["package"]: component["version"]
+            for component in manifest["components"].values()
+            if component.get("package") and component.get("version")
+        }
+        specs = [spec for spec in settings.get("packages", []) if str(spec).startswith("npm:")]
+        self.assertTrue(specs)
+        for spec in specs:
+            name, _, version = str(spec)[len("npm:"):].rpartition("@")
+            with self.subTest(spec=spec):
+                self.assertIn(name, pinned)
+                self.assertEqual(version, pinned[name])
+
     def test_pi_defaults_use_built_in_mcp(self):
         settings = json.loads((PACKAGING / "defaults/pi/settings.json").read_text())
         self.assertFalse(any("pi-mcp-adapter" in str(package) for package in settings.get("packages", [])))

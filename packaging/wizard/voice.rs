@@ -195,7 +195,10 @@ fn requires_detector(model: &Value) -> bool {
     if native_detection(model) {
         return false;
     }
-    let distinct: HashSet<String> = languages_of(model).iter().map(|code| identity(code)).collect();
+    let distinct: HashSet<String> = languages_of(model)
+        .iter()
+        .map(|code| identity(code))
+        .collect();
     distinct.len() > 1
 }
 
@@ -331,7 +334,11 @@ struct Selection {
     usable: bool,
 }
 
-fn minimum_index_by(candidates: &[usize], scored: &[Scored], key: impl Fn(&Scored) -> f64) -> Option<usize> {
+fn minimum_index_by(
+    candidates: &[usize],
+    scored: &[Scored],
+    key: impl Fn(&Scored) -> f64,
+) -> Option<usize> {
     candidates
         .iter()
         .copied()

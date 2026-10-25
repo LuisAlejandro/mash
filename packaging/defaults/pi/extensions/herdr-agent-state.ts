@@ -3,6 +3,11 @@
 // add custom hooks/plugins beside this file instead of editing it.
 // HERDR_INTEGRATION_ID=pi
 // HERDR_INTEGRATION_VERSION=9
+// MASH_PATCH=restore-resume: also report the resume command, so a restored pi
+// pane reopens its conversation instead of starting a new one. Mash's launcher
+// reinstalls this patched copy when a Herdr integration update replaces it with
+// the unpatched original. Keep this marker line: it is how that repair is
+// recognised.
 // @ts-nocheck
 
 import net from "node:net";
@@ -111,6 +116,22 @@ function currentSessionRef(): Record<string, unknown> | undefined {
   return undefined;
 }
 
+// Mash: the command that reopens this conversation after a Herdr server restart.
+// The stock integration reported only the session reference, so a restored pane
+// came back as a bare shell and pi started a new empty session while the old
+// one sat unused on disk. Herdr enforces these rules on resume_argv, so a path
+// that breaks one is skipped and the pane keeps its previous resume command.
+const UNSAFE_RESUME_ARG = /['\x00-\x1f\x7f]/;
+
+function resumeArgv(): string[] | undefined {
+  if (!currentAgentSessionPath) return undefined;
+  if (!path.posix.isAbsolute(currentAgentSessionPath) && !path.win32.isAbsolute(currentAgentSessionPath)) {
+    return undefined;
+  }
+  if (UNSAFE_RESUME_ARG.test(currentAgentSessionPath)) return undefined;
+  return ["pi", "--session", currentAgentSessionPath];
+}
+
 function reportSession(sessionStartSource?: string): Promise<void> {
   const sessionRef = currentSessionRef();
   if (!sessionRef) {
@@ -131,8 +152,32 @@ function reportSession(sessionStartSource?: string): Promise<void> {
   });
 }
 
-function sendState(state: AgentState, message?: string, seq = nextReportSeq()): Promise<void> {
+// Mash: report the resume command AFTER the state report. Herdr accepts a
+// resume command only from a reporter that already holds the pane, and it
+// rejects the whole request otherwise -- so this must never ride on the state
+// report itself, or a first-call rejection would drop the state update too.
+function reportResume(state: AgentState, message?: string): Promise<void> {
+  const argv = resumeArgv();
+  if (!argv) {
+    return Promise.resolve();
+  }
   return sendRequest({
+    id: `${source}:resume:${Date.now()}:${Math.random().toString(36).slice(2)}`,
+    method: "pane.report_agent",
+    params: withSessionRef({
+      pane_id: paneId,
+      source,
+      agent: "pi",
+      state,
+      message,
+      seq: nextReportSeq(),
+      resume_argv: argv,
+    }),
+  });
+}
+
+async function sendState(state: AgentState, message?: string, seq = nextReportSeq()): Promise<void> {
+  await sendRequest({
     id: `${source}:${Date.now()}:${Math.random().toString(36).slice(2)}`,
     method: "pane.report_agent",
     params: withSessionRef({
@@ -144,6 +189,7 @@ function sendState(state: AgentState, message?: string, seq = nextReportSeq()): 
       seq,
     }),
   });
+  await reportResume(state, message);
 }
 
 let sendInFlight = false;

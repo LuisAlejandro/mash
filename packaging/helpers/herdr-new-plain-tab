@@ -12,9 +12,10 @@
 #
 # Runs the same greeting as herdr-workspace's `shell` profile (which its own
 # config.yaml documents as "Same as cmd+shift+t" -- this chord is that
-# profile's other entry point): Mash logo + keybinding quick-reference,
-# then hands over to the real shell. Single source of truth for the text:
-# the keybinding list shipped with Mash.
+# profile's other entry point): prints the Mash logo + keybinding
+# quick-reference, then hands over to the real shell. The greeting clears the
+# echoed command itself. Single source of truth for the text: the keybinding
+# list shipped with Mash.
 set -eu
 
 herdr="${HERDR_BIN_PATH:-herdr}"

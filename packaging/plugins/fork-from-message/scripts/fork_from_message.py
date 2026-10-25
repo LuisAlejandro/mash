@@ -96,6 +96,11 @@ class HerdrClient:
             detail = (exc.stderr or exc.stdout or "unknown Herdr error").strip()
             raise ForkError(f"Herdr command failed ({' '.join(args[:3])}): {detail}") from exc
 
+    def ok(self, args: Sequence[str], timeout: float = COMMAND_TIMEOUT_SECONDS) -> None:
+        # Herdr's `pane run`/`send-text`/`send-keys` answer with an empty body, so
+        # they must not go through json(); only the exit status carries meaning.
+        self._run(args, timeout)
+
     def json(self, args: Sequence[str], timeout: float = COMMAND_TIMEOUT_SECONDS) -> Mapping[str, Any]:
         output = self._run(args, timeout).stdout
         try:
@@ -390,7 +395,7 @@ class ForkWorkflow:
         if right_pane_id is None or right_pane_id == left_pane_id:
             raise ForkError("Herdr split the fork tab but did not return a distinct right pane.")
         # The trailing '.' makes Fresh show the directory's file explorer.
-        self.client.json(["pane", "run", left_pane_id, "herdr-fresh-pane ."])
+        self.client.ok(["pane", "run", left_pane_id, "herdr-fresh-pane ."])
         return ForkTarget("tab", workspace_id, tab_id, right_pane_id)
 
     def _split_direction(self, source_pane_id: str) -> str:

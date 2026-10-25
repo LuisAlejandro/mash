@@ -31,7 +31,7 @@
 # the macOS adapter and the Linux adapter ship the same list.
 mash_pi_packages() {
   local component spec
-  for component in pi pi-voice pi-subagents pi-ask-user pi-monokai-pro pi-web-search; do
+  for component in pi pi-codemode pi-voice pi-subagents pi-ask-user pi-monokai-pro pi-web-search; do
     spec="$(mash_package_spec "$component")" || return 1
     printf '%s\n' "$spec"
   done
@@ -90,6 +90,15 @@ mash_stage_runtimes() {
   npm_env_home="$(mktemp -d)"
   # npm's own entry point is `#!/usr/bin/env node`, so the runtime it belongs to
   # has to be on PATH or it reports a missing interpreter.
+  # Resolve the pins before installing: bash ignores the exit status of a
+  # failing command substitution inside an argument list, so a broken pin would
+  # otherwise install a shorter package set and still exit 0.
+  local pi_packages
+  pi_packages="$(mash_pi_packages)" || {
+    echo "could not resolve the pinned Pi packages for $target" >&2
+    rm -rf "$npm_env_home"
+    return 1
+  }
   env HOME="$npm_env_home" \
     PATH="$res/node/bin:$PATH" \
     npm_config_cache="${MASH_CACHE:-$npm_env_home}/npm" \
@@ -97,12 +106,13 @@ mash_stage_runtimes() {
     npm_config_fund=false \
     npm_config_audit=false \
     "$res/node/bin/npm" install --global --prefix "$res/node" \
-    $(mash_pi_packages) >/dev/null 2>&1 || {
+    $pi_packages >/dev/null 2>&1 || {
     echo "could not install the Pi packages for $target" >&2
     rm -rf "$npm_env_home"
     return 1
   }
   rm -rf "$npm_env_home"
+  "$root/packaging/tests/test_pi_runtime.sh" "$res" || return 1
 
   mash_write_runtime_shims "$res"
 
@@ -213,15 +223,21 @@ mash_stage_toolchain() {
 # triple differs, and it comes from the toolchain the caller staged.
 mash_stage_fresh() {
   local res="$1" arch="$2" cargo_home="${3:-}"
-  local src tmp patched
+  local src tmp patched source_stamp
   # The patched source lives in the cache: extracting to a fresh temp directory
   # makes cargo see a new path on every build and recompile the whole crate.
+  # Invalidate it when a Mash patch changes, not only when Fresh's tag changes.
+  # One list for both the stamp and the apply loop below. A patch added to the
+  # loop but not to the stamp leaves a warm cache matching the old stamp, so the
+  # patch never runs and the payload ships a Fresh built without it -- silently.
+  local patches="fresh-config-dir fresh-reveal-in-finder fresh-warn-logs"
+  source_stamp="$(mash_version fresh):$(for p in $patches; do cat "$root/packaging/patches/$p.patch"; done | cksum | awk '{print $1}')"
   if [ -n "${MASH_CACHE:-}" ]; then
     src="$MASH_CACHE/fresh-src"
   else
     src="$(mktemp -d)/fresh"
   fi
-  if [ ! -f "$src/.mash-fresh-src" ]; then
+  if [ "$(cat "$src/.mash-fresh-src" 2>/dev/null)" != "$source_stamp" ]; then
     tmp="$(mktemp -d)"
     mash_fetch_tree fresh "${MASH_FRESH_TARGET:-linux-amd64}" "$tmp" || {
       rm -rf "$tmp"
@@ -233,14 +249,14 @@ mash_stage_fresh() {
       rm -rf "$tmp"
       return 1
     }
-    for name in fresh-config-dir fresh-reveal-in-finder; do
+    for name in $patches; do
       if ! patch -p1 -d "$src" <"$root/packaging/patches/$name.patch"; then
         echo "$name.patch did not apply. Leaving the package unbuilt." >&2
         rm -rf "$tmp"
         return 1
       fi
     done
-    printf '%s\n' "$(mash_version fresh)" >"$src/.mash-fresh-src"
+    printf '%s\n' "$source_stamp" >"$src/.mash-fresh-src"
     rm -rf "$tmp"
   fi
   # liblzma-sys probes pkg-config and takes a host shared library on some

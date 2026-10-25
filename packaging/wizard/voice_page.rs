@@ -234,7 +234,9 @@ impl VoicePage {
         } else {
             inner.saturating_sub(1).max(1)
         };
-        let anchor = self.language_at(self.row).unwrap_or(count.saturating_sub(1));
+        let anchor = self
+            .language_at(self.row)
+            .unwrap_or(count.saturating_sub(1));
         let start = if count <= viewport {
             0
         } else {

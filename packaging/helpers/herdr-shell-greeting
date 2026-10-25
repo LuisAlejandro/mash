@@ -24,6 +24,11 @@ if [ -n "$agent" ]; then
 	quickref="$agent/extensions/keybindings-quickref.txt"
 fi
 
+# Clear the echoed command line before printing. Both call sites
+# (herdr-workspace's shell profile and helpers/herdr-new-plain-tab) run this
+# greeting as the pane's whole output, so the clear belongs here rather than in
+# a "clear; herdr-shell-greeting" prefix at each of them.
+printf '\033[H\033[2J'
 if [ -f "$logo" ]; then
 	cat "$logo"
 	echo

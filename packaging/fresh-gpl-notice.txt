@@ -4,7 +4,7 @@ This download includes fresh-0.5.1-patched.tar.gz: the complete corresponding
 source of the Fresh 0.5.1 binary shipped in Mash.app, under the GNU General
 Public License, version 2.
 
-Mash changes two things in that source, and both patches are in the archive
+Mash changes three things in that source, and all patches are in the archive
 and in Mash's public repository (packaging/patches/):
 
   - fresh-config-dir.patch     take the config and data directories from
@@ -13,11 +13,13 @@ and in Mash's public repository (packaging/patches/):
   - fresh-reveal-in-finder.patch
                                add "Reveal in Finder" to the file explorer
                                context menu
+  - fresh-warn-logs.patch      default diagnostics to WARN while honoring
+                               RUST_LOG for opt-in debugging
 
 GPL-2.0 section 2(a) asks that modified files state that they were changed.
-The three patched Rust files carry a dated "Modified by Mash on 2026-10-19"
-comment for that reason. The remaining patched file,
-crates/fresh-editor-core/locales/en.json, is JSON and cannot carry a comment;
+The patched Rust files carry dated "Modified by Mash" comments for that
+reason. The remaining patched file, crates/fresh-editor-core/locales/en.json,
+is JSON and cannot carry a comment;
 the patch in the archive is the record of that change.
 
 The archive is the exact source the binary was built from, patches included,

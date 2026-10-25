@@ -1,45 +1,39 @@
-── Workspaces ──
-  ⌘⌃N        New workspace (layout profile picker)
-  ⌘⌃⇧N       New worktree (layout profile picker)
+── Workspaces ──                                         ── Agents ──
+  ⌘⌃N        New workspace (layout profile picker)         ⌃⇧↑ / ⌃⇧↓  Previous / next agent
+  ⌘⌃⇧N       New worktree (layout profile picker)          ⌃⇧1-9      Focus agent N
   ⌘⌃R        Rename workspace
-  ⌘⌃W        Close workspace
-  ⌘⌃⌫        Remove worktree
-  ⌘⌃[ / ⌘⌃]  Previous / next workspace
-  ⌘⌃1-9      Switch to workspace N
-  ⌘⌃G        Goto (session navigator)
-  ⌘⌃O        Workspace picker (sessions / workspaces)
-
-── Tabs ──
-  ⌘T / ⌘⇧N   New dev tab (editor + agent)
-  ⌘⌥T / ⌘⌥N  New agent tab
-  ⌘⇧R        New review tab (diff + agent)
-  ⌘⇧T        New plain shell tab
+  ⌘⌃W        Close workspace                             ── Addons ──
+  ⌘⌃⌫        Remove worktree                               ⌃⇧G        Source control
+  ⌘⌃[ / ⌘⌃]  Previous / next workspace                     ⌘⇧O        Container status
+  ⌘⌃1-9      Switch to workspace N                         ⌘⌥P        Snippets (snippet executor)
+  ⌘⌃G        Goto (session navigator)                      ⌘P         File finder
+  ⌘⌃O        Workspace picker (sessions / workspaces)      ⌘⇧P        Command palette
+                                                           ⌘⌥L        Session search
+── Tabs ──                                                 ⌘K / ⌘L    Annotate -- capture / paste
+  ⌘T / ⌘⇧N   New dev tab (editor + agent)                  ⌘⇧L        Annotate -- manage
+  ⌘⌥T / ⌘⌥N  New agent tab                                 ⌥G         Pick link or ID
+  ⌘⇧R        New review tab (diff + agent)                 ⌘⇧X        Plugin manager
+  ⌘⇧T        New plain shell tab                           ⌘⌥Y        Fork agent from message
   ⌘⇧[ / ⌘⇧]  Previous / next tab
-  ⌘⇧1-9      Switch to tab N
-  ⌘⇧M        Rename tab
-  ⌘⇧W        Close tab
-
-── Panes ──
-  ⌘⌥← ↓ ↑ →  Focus pane left / down / up / right
-  ⌘⌥[ / ⌘⌥]  Cycle pane previous / next
+  ⌘⇧1-9      Switch to tab N                             ── Global ──
+  ⌘⇧M        Rename tab                                    ⌘⇧I        Help
+  ⌘⇧W        Close tab                                     ⌘I         Settings
+                                                           ⌘U         Detach
+── Panes ──                                                ⌘R         Reload config
+  ⌘⌥← ↓ ↑ →  Focus pane left / down / up / right           ⌘Y         Open notification target
+  ⌘⌥[ / ⌘⌥]  Cycle pane previous / next                    ⌘B         Toggle sidebar
   ⌘⌥\ ⌘⌥-    Split vertical / horizontal
   ⌘⌥W        Close pane
   ⌘⌥Z        Zoom pane
   ⌘⌥R        Resize mode
 
-── Agents ──
-  ⌃⇧↑ / ⌃⇧↓  Previous / next agent
-  ⌃⇧1-9      Focus agent N
-
-── Addons ──
-  ⌃⇧G        Source control
-  ⌘⇧O        Container status
-  ⌘⌥P        Snippets (snippet executor)
-  ⌘P         File finder
-  ⌘⇧P        Command palette
-  ⌘⌥L        Session search
-  ⌘K / ⌘L    Annotate -- capture / paste & archive
-  ⌘⇧L        Annotate -- manage
-  ⌥G         Pick link or ID
-  ⌘⇧X        Plugin manager
-  ⌘⌥Y        Fork agent from message
+── Editor ──                                               ── Agent ──
+  ⌘O         Open file                                      Esc        Interrupt
+  ⌘S         Save                                           ⌃C         Clear / exit
+  ⌘F         Find / replace in buffer                      ⇧Tab       Cycle thinking level
+  ⌘⇧F        Find / replace in files                       ⌃O         Expand tool output
+  ⌘⇧E        Toggle file explorer                           ⌃P         Cycle models
+  ⌘D         Add cursor to next match                      ⌃G         External editor
+  ⌘⌥C        Copy file path                                 ⌃⇧F       Search transcript
+  ⌥⇧↓        Duplicate line                                 ⌥↵        Queue follow-up
+                                                            ⌃⌥Z        Dictation (Pi Voice)
