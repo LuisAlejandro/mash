@@ -17,7 +17,8 @@
  *         Herdr plugin pane running `viu`, which emits the Kitty graphics
  *         protocol and gets a real picture back.
  *
- *   anything else                             -> macOS Quick Look (`qlmanage`),
+ *   anything else                             -> the desktop's own handler
+ *         (`qlmanage` on macOS, `xdg-open` on Linux),
  *         which previews PDFs and everything else the terminal cannot.
  *
  * The lookup that makes this work: the Fresh pane to send to is the one beside
@@ -102,6 +103,28 @@ function selfPaneId(): string | undefined {
 }
 
 /**
+ * The pid of the pane's Fresh process, or undefined when Fresh is not there.
+ *
+ * `process-info` lists every foreground process in the pane, and a language
+ * server that Fresh spawned sits in that list too — ahead of Fresh. Reading
+ * the first `pid` out of the raw text therefore picked the language server and
+ * then looked up a daemon named after it, which never exists. The entry has to
+ * be selected by name.
+ */
+function freshPid(info: string): number | undefined {
+	try {
+		const processes = JSON.parse(info)?.result?.process_info?.foreground_processes;
+		if (!Array.isArray(processes)) return undefined;
+		for (const entry of processes) {
+			if (entry?.name === "fresh" && typeof entry.pid === "number") return entry.pid;
+		}
+	} catch {
+		// Not JSON: no editor to report.
+	}
+	return undefined;
+}
+
+/**
  * The pane id of the Fresh editor beside this one, or undefined when there is
  * none. Pane ids come from the tab's layout, which is scoped to the tab, so
  * this can never reach an editor in another tab.
@@ -123,8 +146,7 @@ async function freshPaneBeside(): Promise<string | undefined> {
 		if (info.code !== 0) continue;
 		// Only a pane whose foreground process IS Fresh counts. A pane that
 		// merely ran Fresh once is not an editor.
-		if (!/"name":"fresh"/.test(info.stdout)) continue;
-		const pid = /"pid":(\d+)/.exec(info.stdout);
+		if (freshPid(info.stdout) === undefined) continue;
 		return id;
 	}
 	return undefined;
@@ -134,14 +156,14 @@ async function freshPaneBeside(): Promise<string | undefined> {
 async function freshSessionFor(paneId: string): Promise<string | undefined> {
 	const info = await run(herdrBin(), ["pane", "process-info", "--pane", paneId], { timeoutMs: 5000 });
 	if (info.code !== 0) return undefined;
-	const pid = /"pid":(\d+)/.exec(info.stdout);
-	if (!pid) return undefined;
+	const pid = freshPid(info.stdout);
+	if (pid === undefined) return undefined;
 
 	const list = await run(freshBin(), ["--cmd", "daemon", "info"], {
 		env: { ...process.env, MASH_FRESH_CONFIG_DIR: process.env.MASH_FRESH_CONFIG_DIR },
 		timeoutMs: 5000,
 	});
-	const match = new RegExp(`local-${pid[1]}-[A-Za-z0-9]+`).exec(list.stdout);
+	const match = new RegExp(`local-${pid}-[A-Za-z0-9]+`).exec(list.stdout);
 	return match ? match[0] : undefined;
 }
 
@@ -158,13 +180,31 @@ function freshLocation(path: string, note: string | undefined, line?: number): s
 	return note ? `${where}@"${note.replace(/"/g, "'")}"` : where;
 }
 
+
+/**
+ * Open a file with the desktop's own handler.
+ *
+ * macOS has Quick Look, which previews PDFs and everything else the terminal
+ * cannot; Linux has xdg-open, which hands the file to whatever the desktop
+ * registered. Both are best-effort: the file path is always reported so the
+ * person can open it themselves if the handler is missing.
+ */
+async function openWithDesktop(path: string): Promise<{ ok: boolean; how: string }> {
+	if (process.platform === "darwin") {
+		const ql = await run("qlmanage", ["-p", path], { timeoutMs: 5000 });
+		return { ok: ql.code === 0, how: "Quick Look" };
+	}
+	const opener = await run("xdg-open", [path], { timeoutMs: 5000 });
+	return { ok: opener.code === 0, how: "the desktop's default application" };
+}
+
 export default function (pi: ExtensionAPI) {
 	pi.registerTool({
 		name: "show_file",
 		label: "Show file to the person",
 		description:
 			"Show a file to the person you are working for, instead of describing it. " +
-			"Text opens in the Fresh editor beside this pane with an optional note; an image opens as a vertical split with real pixels; anything else opens in macOS Quick Look. " +
+			"Text opens in the Fresh editor beside this pane with an optional note; an image opens as a vertical split with real pixels; anything else opens in the desktop's default application. " +
 			"Use this whenever a task produces a report, a chart, a screenshot, a log or any other file the person should look at. " +
 			"The result says where it went. Prefer this over pasting file contents into your reply.",
 		promptSnippet: "Show a result file to the person instead of describing it",
@@ -203,7 +243,7 @@ export default function (pi: ExtensionAPI) {
 				const target = (await freshPaneBeside()) || selfPaneId();
 				if (!target) {
 					return textResult(
-						`Could not find a pane to show ${name} in. The person can open it with Quick Look: qlmanage -p ${path}`,
+						`Could not find a pane to show ${name} in. The person can open it with: ${path}`,
 					);
 				}
 				const opened = await run(herdrBin(), [
@@ -218,9 +258,16 @@ export default function (pi: ExtensionAPI) {
 				], { timeoutMs: 10_000 });
 				if (opened.code !== 0) {
 					const detail = opened.stderr.trim() || opened.stdout.trim();
+					const preview = await run("open", ["-a", "Preview", path], { timeoutMs: 5000 });
+					if (preview.code === 0) {
+						return textResult(
+							`Image popup unavailable (${detail || "no reason given"}). ${name} opened in Preview instead.` +
+								(params.note ? ` (${params.note})` : ""),
+						);
+					}
 					return textResult(
 						`Could not open the image popup (${detail || "no reason given"}). ` +
-							`The person can open it with: qlmanage -p ${path}`,
+							`The person can open it with: ${path}`,
 					);
 				}
 				return textResult(
@@ -233,13 +280,13 @@ export default function (pi: ExtensionAPI) {
 			if (kind === "text") {
 				const pane = await freshPaneBeside();
 				if (!pane) {
-					// No editor in this tab. Quick Look still shows the file,
-					// which beats a description in prose.
-					const ql = await run("qlmanage", ["-p", path], { timeoutMs: 5000 });
+					// No editor in this tab. The desktop handler still shows the
+					// file, which beats a description in prose.
+					const desktop = await openWithDesktop(path);
 					return textResult(
-						ql.code === 0
-							? `No Fresh editor in this tab, so ${name} opened in Quick Look instead.`
-							: `No Fresh editor in this tab and Quick Look failed. The person can open it with: ${path}`,
+						desktop.ok
+							? `No Fresh editor in this tab, so ${name} opened in ${desktop.how} instead.`
+							: `No Fresh editor in this tab and ${desktop.how} failed. The person can open it with: ${path}`,
 					);
 				}
 				const session = await freshSessionFor(pane);
@@ -265,13 +312,13 @@ export default function (pi: ExtensionAPI) {
 				);
 			}
 
-			// --- anything else: macOS Quick Look ----------------------------
-			const ql = await run("qlmanage", ["-p", path], { timeoutMs: 5000 });
-			if (ql.code === 0) {
-				return textResult(`Shown: ${name} opened in Quick Look. (${params.note ?? kind})`);
+			// --- anything else: the desktop's own handler --------------------
+			const desktop = await openWithDesktop(path);
+			if (desktop.ok) {
+				return textResult(`Shown: ${name} opened in ${desktop.how}. (${params.note ?? kind})`);
 			}
 			return textResult(
-				`Could not preview ${name}. The person can open it with: open ${path}`,
+				`Could not preview ${name}. The person can open it with: ${path}`,
 			);
 		},
 	});

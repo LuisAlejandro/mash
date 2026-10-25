@@ -1,0 +1,72 @@
+auto-update = off
+title = "Mash Terminal"
+
+theme = Monokai Cursor
+
+# Mash's identity on Linux. The macOS bundle gets these from its plist and its
+# folder name; on Linux the Wayland app-id, WM_CLASS and DBus name all come from
+# `class`, so it must match the desktop entry's StartupWMClass and the icon name
+# the package installs, or GNOME shows a second, unassociated application.
+class = "app.mash.Mash"
+x11-instance-name = "mash-terminal"
+
+# Mash launches one process per window and passes -e, which already disables
+# GTK single instance. Stated explicitly so a changed launcher cannot silently
+# hand Mash's isolated environment to an existing instance.
+gtk-single-instance = false
+
+# Linux keymap. Ghostty on Linux does not receive the macOS Command chords, so
+# this file releases the Ctrl chords that Ghostty would otherwise consume before
+# Herdr or Fresh sees them, and leaves the rest of the stock keymap alone.
+#
+# The rule: Ghostty owns terminal-level behaviour (copy, paste, font size,
+# scrollback); Herdr owns workspaces, tabs and panes; Fresh owns editing. A chord
+# is released here only when something downstream actually binds it.
+
+# Ctrl+Shift chords are the closest Linux equivalent of the macOS Command
+# families Herdr uses, and GNOME leaves them alone.
+keybind = ctrl+shift+t=unbind
+keybind = ctrl+shift+w=unbind
+keybind = ctrl+shift+n=unbind
+keybind = ctrl+shift+p=unbind
+keybind = ctrl+shift+o=unbind
+keybind = ctrl+shift+r=unbind
+keybind = ctrl+shift+l=unbind
+keybind = ctrl+shift+x=unbind
+keybind = ctrl+shift+g=unbind
+keybind = ctrl+shift+i=unbind
+
+# Ctrl+Alt chords carry the pane family. Ghostty binds goto_split to
+# ctrl+alt+arrows, which would consume pane focus before Herdr sees it.
+keybind = ctrl+alt+arrow_left=unbind
+keybind = ctrl+alt+arrow_right=unbind
+keybind = ctrl+alt+arrow_up=unbind
+keybind = ctrl+alt+arrow_down=unbind
+keybind = ctrl+alt+w=unbind
+
+# Let Fresh own the editing chords inside its panes. These are the ones Ghostty
+# binds by default and would otherwise swallow.
+keybind = ctrl+f=unbind
+keybind = ctrl+g=unbind
+keybind = ctrl+e=unbind
+keybind = ctrl+a=unbind
+keybind = ctrl+d=unbind
+keybind = ctrl+z=unbind
+keybind = ctrl+shift+z=unbind
+keybind = ctrl+backslash=unbind
+keybind = ctrl+shift+f=unbind
+
+# Copy stays terminal-owned and performable: with a Ghostty selection Ctrl+Shift+C
+# copies it, with none the chord falls through to Fresh and copies the buffer.
+keybind = performable:ctrl+shift+c=copy_to_clipboard:mixed
+keybind = ctrl+shift+v=paste_from_clipboard
+
+# Font: the package installs MesloLGS NF into the system font tree, so naming it
+# is enough and no fallback is needed.
+font-family = "MesloLGS NF"
+font-size = 14
+font-feature = -liga, -calt, -dlig
+
+window-padding-x = 0
+window-padding-y = 0
+window-padding-balance = true

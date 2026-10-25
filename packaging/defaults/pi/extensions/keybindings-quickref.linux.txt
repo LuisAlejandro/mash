@@ -1,0 +1,61 @@
+Mash on Linux — keyboard
+
+Ctrl is the editing modifier, so Mash's own families live on Ctrl+Alt and
+Ctrl+Shift, which GNOME leaves alone. Inside a pane the shell keeps every
+bare Ctrl chord (Ctrl+C, Ctrl+R, Ctrl+U) and Fresh keeps the editing ones.
+
+  Ctrl+Alt+W       Close pane
+  Ctrl+Shift+W     Close tab
+  Ctrl+Alt+Shift+W Close workspace
+  Ctrl+Alt+U       Detach
+  Ctrl+Alt+Down    Focus pane down
+  Ctrl+Alt+Left    Focus pane left
+  Ctrl+Alt+Right   Focus pane right
+  Ctrl+Alt+Up      Focus pane up
+  Ctrl+Alt+Shift+G Go to session
+  Ctrl+Shift+I     Help
+  Ctrl+Shift+Down  Next agent
+  Ctrl+Alt+]       Next pane
+  Ctrl+Shift+]     Next tab
+  Ctrl+Alt+Shift+] Next workspace
+  Ctrl+Alt+Y       Open notification
+  Ctrl+Shift+Up    Previous agent
+  Ctrl+Alt+[       Previous pane
+  Ctrl+Shift+[     Previous tab
+  Ctrl+Alt+Shift+[ Previous workspace
+  Ctrl+Alt+Shift+K Reload config
+  Ctrl+Alt+Shift+⌫ Remove worktree
+  Ctrl+Shift+M     Rename tab
+  Ctrl+Alt+Shift+R Rename workspace
+  Ctrl+Alt+R       Resize mode
+  Ctrl+Alt+I       Settings
+  Ctrl+Alt+-       Split pane horizontally
+  Ctrl+Alt+\       Split pane vertically
+  Alt+1..9         Switch to tab N
+  Ctrl+Alt+Shift+1..9 Switch to workspace N
+  Ctrl+Alt+B       Toggle sidebar
+  Ctrl+Alt+Z       Zoom pane
+
+  ── Launchers ──
+  Ctrl+Shift+T     new plain shell tab
+  Ctrl+Alt+T       new dev tab (editor + agent)
+  Ctrl+Alt+T       new agent tab
+  Ctrl+Alt+P       File finder
+  Ctrl+Shift+G     Source control
+  Ctrl+Shift+O     Container status
+  Ctrl+Alt+P       Snippets
+  Ctrl+Shift+R     new review tab (diff + agent)
+  Ctrl+Alt+K       annotate text
+  Ctrl+Alt+L       paste annotations into this tab's agent and archive them
+  Ctrl+Shift+L     manage annotations
+  Alt+G            Pick link or ID
+  Ctrl+Shift+X     Plugin manager
+  Ctrl+Alt+Shift+N New workspace (layout profile)
+  Ctrl+Alt+Shift+N New worktree (layout profile)
+  Ctrl+Alt+Shift+O Workspace picker
+  Ctrl+Shift+P     Command palette
+  Ctrl+Alt+Y       Fork agent from message
+  Ctrl+Alt+L       Session search
+
+Copy/paste: Ctrl+Shift+C / Ctrl+Shift+V, or the mouse. Fresh's own save,
+undo and search chords are unchanged from the macOS build.

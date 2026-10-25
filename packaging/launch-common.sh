@@ -195,16 +195,28 @@ PY
 #
 #   mash_seed_configs <resource-root> <data-dir>
 mash_seed_configs() {
-  local res="$1" d="$2"
+  local res="$1" d="$2" suffix=""
+  # The three keymaps are platform-specific: Command chords and the macOS
+  # notification app make no sense on Linux, and Ctrl chords would shadow the
+  # shell on macOS. The .linux variants sit beside the originals.
+  [ "$(uname -s)" = "Darwin" ] || suffix=".linux"
   mkdir -p "$d/config/herdr" "$d/config/ghostty" "$d/config/zsh" \
     "$d/config/git" "$d/config/pet"
   if [ ! -f "$d/config/herdr/config.toml" ]; then
     sed -e "s#__MASH_SHELL__#$d/bin/mash-shell#g" \
       -e "s#__MASH_CONFIG__#$d/config#g" \
-      "$res/defaults/herdr/config.toml" >"$d/config/herdr/config.toml"
+      "$res/defaults/herdr/config${suffix}.toml" >"$d/config/herdr/config.toml"
   fi
   [ -f "$d/config/ghostty/config" ] ||
-    cp "$res/defaults/ghostty/config" "$d/config/ghostty/config"
+    cp "$res/defaults/ghostty/config${suffix}" "$d/config/ghostty/config"
+  # Fresh reads config.json only, so the Linux keymap is seeded under that name.
+  # Seeding it before the tree copy below means --ignore-existing leaves it
+  # alone instead of replacing it with the macOS keymap.
+  if [ -n "$suffix" ] && [ -f "$res/defaults/fresh/config.linux.json" ]; then
+    mkdir -p "$d/config/fresh"
+    [ -f "$d/config/fresh/config.json" ] ||
+      cp "$res/defaults/fresh/config.linux.json" "$d/config/fresh/config.json"
+  fi
   [ -f "$d/config/zsh/.zshenv" ] ||
     cp "$res/defaults/zsh/.zshenv" "$d/config/zsh/.zshenv"
   [ -f "$d/config/git/config" ] ||
@@ -218,6 +230,15 @@ mash_seed_configs() {
       "$res/defaults/pet/config.toml" >"$d/config/pet/config.toml"
     cp "$res/defaults/pet/snippet.toml" "$d/config/pet/snippet.toml"
   fi
+  # The in-product cheat sheet lists chords, so it follows the platform too.
+  if [ -n "$suffix" ] &&
+    [ -f "$res/defaults/pi/extensions/keybindings-quickref.linux.txt" ]; then
+    mkdir -p "$d/pi/agent/extensions"
+    [ -f "$d/pi/agent/extensions/keybindings-quickref.txt" ] ||
+      cp "$res/defaults/pi/extensions/keybindings-quickref.linux.txt" \
+        "$d/pi/agent/extensions/keybindings-quickref.txt"
+  fi
+
   # The pane shell itself is copied out of the read-only tree so a package
   # upgrade does not change the shell underneath a running pane.
   cp "$res/bin/lib.sh" "$d/bin/lib.sh"
