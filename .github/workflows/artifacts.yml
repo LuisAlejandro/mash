@@ -345,6 +345,15 @@ jobs:
           deb="$(ls dist/*.deb)"
           ./packaging/tests/verify-linux-installed.sh "$deb"
 
+      # The session proof the plan promised: the installed package is launched
+      # inside a real session bus under Xvfb and weston headless. Failures here
+      # stop the release the same way a broken build does.
+      - name: Session smoke (Xorg)
+        run: ./packaging/tests/linux-session-smoke.sh "$(ls dist/*.deb)" xorg
+
+      - name: Session smoke (Wayland)
+        run: ./packaging/tests/linux-session-smoke.sh "$(ls dist/*.deb)" wayland
+
       # Provenance is the Linux substitute for a codesigned binary: it ties the
       # file to this workflow, commit and tag, which no embedded .deb signature
       # would do for a direct download.

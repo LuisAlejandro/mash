@@ -188,6 +188,29 @@ npm)
     printf '%s\n' "$VERSION" >"$marker"
     say "$component $VERSION installed"
   fi
+  # npm writes `#!/usr/bin/env node`, which only resolves if the bundled runtime
+  # happens to be on PATH. Mash's node is at a fixed path inside the data
+  # folder's payload, so the installed bins name it directly.
+  node_real="$res/node/bin/node"
+  # npm links most bins to the package's entry file, so the shebang lives on the
+  # target rather than on the link. Rewrite the target, following the link.
+  while IFS= read -r bin_script; do
+    resolved="$(readlink -f "$bin_script" 2>/dev/null || printf '%s' "$bin_script")"
+    [ -f "$resolved" ] || continue
+    case "$(head -n 1 "$resolved" 2>/dev/null)" in
+    '#!/usr/bin/env node')
+      {
+        echo "#!$node_real"
+        tail -n +2 "$resolved"
+      } >"$resolved.mashshebang"
+      mv "$resolved.mashshebang" "$resolved"
+      chmod 755 "$resolved"
+      ;;
+    esac
+  done < <(find "$prefix/bin" \( -type f -o -type l \) 2>/dev/null)
+  # A symlink into the package that was just rewritten still points at it, so
+  # only the shim outside the prefix has to be refreshed.
+  ln -sfn "$prefix/bin/$name" "$data/bin/$name"
   target_bin="$prefix/bin/$name"
   [ -x "$target_bin" ] || {
     say "$component did not provide bin/$name"
@@ -238,8 +261,8 @@ esac
 # A tool that landed but does not run is worse than one that failed loudly: the
 # wizard would record setup complete and the pane would break later.
 shim="$(shim_name "$component")"
-if ! "$data/bin/$shim" --version >/dev/null 2>&1 &&
-  ! "$data/bin/$shim" --help >/dev/null 2>&1; then
+if ! PATH="$res/node/bin:$res/python/bin:$PATH" "$data/bin/$shim" --version >/dev/null 2>&1 &&
+  ! PATH="$res/node/bin:$res/python/bin:$PATH" "$data/bin/$shim" --help >/dev/null 2>&1; then
   say "$component installed but does not answer --version or --help"
   exit 1
 fi

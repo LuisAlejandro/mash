@@ -83,6 +83,11 @@ test:
 package-linux:
 	@./packaging/build-linux.sh
 
+# Launch the built package inside a synthetic Xorg and Wayland session.
+session-smoke:
+	@./packaging/tests/linux-session-smoke.sh $${DEB:?Set DEB=dist/letsmash_<version>_<arch>.deb} xorg
+	@./packaging/tests/linux-session-smoke.sh $${DEB:?Set DEB=dist/letsmash_<version>_<arch>.deb} wayland
+
 # Audit a built package without installing it.
 verify-linux:
 	@./packaging/tests/verify-linux-installed.sh $${DEB:?Set DEB=dist/letsmash_<version>_<arch>.deb}
