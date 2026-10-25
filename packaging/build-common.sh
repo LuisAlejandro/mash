@@ -389,6 +389,14 @@ mash_stage_portable_payload() {
 
   tr -d '[:space:]' <"$root/VERSION" >"$res/VERSION"
 
+  # The artifact manifest and its resolver travel with the payload: the
+  # first-run installer reads pinned versions and checksums from them instead of
+  # resolving a version from the network or trusting the host.
+  mkdir -p "$res/assets"
+  cp "$root/packaging/assets.json" "$root/packaging/assets.py" "$res/assets/"
+  chmod 644 "$res/assets/assets.json"
+  chmod 755 "$res/assets/assets.py"
+
   echo "staged $staged shared program(s) and defaults for $target"
 }
 

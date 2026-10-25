@@ -1,0 +1,247 @@
+#!/bin/bash
+# Install one selected tool into Mash's own data folder, without elevation.
+#
+#   mash-tool-install <component> [target]
+#
+# Every tool is pinned in packaging/assets.json, so this never resolves a version
+# from the network or from whatever the host already has. Installs are versioned
+# and atomic: a new version lands beside the old one and the shim is switched
+# only after the download verified, so a failed upgrade leaves the previous tool
+# working.
+#
+# Layout, all under the data folder the launcher owns:
+#   local/tools/<component>/<version>/   the unpacked tool
+#   local/npm/                           packages installed with the bundled npm
+#   local/venv/<component>/              python tools
+#   bin/<command>                        shims, first on every pane's PATH
+#
+# Exit 3 means "provided by the system": the tool is expected from the platform
+# package manager, so setup should report it and continue rather than fail.
+#
+#   mash-tool-install sentrux
+#   mash-tool-install cua-driver linux-arm64
+set -uo pipefail
+
+self="$(cd "$(dirname "$0")" && pwd)"
+res="$(cd "$self/.." && pwd)"
+
+# The helper runs from two places: beside the payload in a package, where the
+# manifest sits one level above the resource root, and from this repository,
+# where it is under packaging/helpers. Walk up rather than assume either, so a
+# staged-build run and an installed run find the same manifest.
+manifest=""
+probe="$res"
+inspected=""
+while [ "$probe" != "/" ]; do
+  inspected="$inspected $probe"
+  if [ -f "$probe/assets/assets.py" ]; then
+    manifest="$probe/assets/assets.py"
+    break
+  fi
+  if [ -f "$probe/assets.py" ]; then
+    manifest="$probe/assets.py"
+    break
+  fi
+  if [ -f "$probe/packaging/assets.py" ]; then
+    manifest="$probe/packaging/assets.py"
+    break
+  fi
+  probe="$(dirname "$probe")"
+done
+[ -n "$manifest" ] || {
+  printf 'mash-tool-install: cannot find assets.py in%s\n' "$inspected" >&2
+  exit 1
+}
+
+data="${MASH_DATA_DIR:-${HOME:?MASH_DATA_DIR or HOME is required}/.mash}"
+component="${1:-}"
+target="${2:-$(python3 "$manifest" target)}"
+[ -n "$component" ] || {
+  printf 'usage: mash-tool-install <component> [target]\n' >&2
+  exit 2
+}
+
+setup="$data/setup"
+log="$setup/tool-install.log"
+mkdir -p "$setup" "$data/local/tools" "$data/bin"
+say() { printf '%s %s\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$*" >>"$log"; }
+
+# One install at a time; a lock older than two hours belongs to a dead run.
+lock="$setup/tool-install.lock"
+if ! mkdir "$lock" 2>/dev/null; then
+  if [ -n "$(find "$lock" -maxdepth 0 -mmin +120 2>/dev/null)" ]; then
+    rm -rf "$lock"
+    mkdir "$lock" 2>/dev/null || exit 0
+  else
+    say "another install is running; waiting is the caller's job"
+    exit 0
+  fi
+fi
+trap 'rm -rf "$lock"' EXIT
+
+spec="$(python3 "$manifest" resolve-shell "$component" "$target")" || {
+  say "$component is not pinned for $target"
+  exit 1
+}
+eval "$spec"
+
+say "installing $component $VERSION for $target (strategy $STRATEGY)"
+
+# The shim name is what a pane runs; the archive member may differ.
+shim_name() {
+  case "$1" in
+  cua-driver) printf 'cua-driver\n' ;;
+  *) printf '%s\n' "$1" ;;
+  esac
+}
+
+already() {
+  local marker="$1"
+  [ -f "$marker" ]
+}
+
+case "$STRATEGY" in
+package)
+  # The platform supplies this one. Mash does not vendor it and does not ask for
+  # privileges, so the honest answer is to report it and move on.
+  if command -v "$component" >/dev/null 2>&1; then
+    say "$component is provided by the system"
+    exit 0
+  fi
+  say "$component is expected from the system package manager; not installed by Mash"
+  exit 3
+  ;;
+
+binary)
+  dest="$data/local/tools/$component/$VERSION"
+  name="$(shim_name "$component")"
+  if already "$dest/.mash-installed"; then
+    say "$component $VERSION is already installed"
+  else
+    tmp="$(mktemp -d)"
+    if ! curl -fL --retry 3 --max-time 900 -o "$tmp/archive" "$URL" >>"$log" 2>&1; then
+      say "download failed for $component $VERSION"
+      rm -rf "$tmp"
+      exit 1
+    fi
+    if ! printf '%s  %s\n' "$SHA256" "$tmp/archive" | sha256sum -c - >>"$log" 2>&1; then
+      say "$component $VERSION failed its checksum"
+      rm -rf "$tmp"
+      exit 1
+    fi
+    mkdir -p "$tmp/x"
+    case "$ARCHIVE" in
+    tar.gz) tar -xzf "$tmp/archive" -C "$tmp/x" >>"$log" 2>&1 ;;
+    tar.xz) tar -xJf "$tmp/archive" -C "$tmp/x" >>"$log" 2>&1 ;;
+    zip) unzip -q "$tmp/archive" -d "$tmp/x" >>"$log" 2>&1 ;;
+    gz)
+      gunzip -c "$tmp/archive" >"$tmp/x/$(basename "$MEMBER")"
+      ;;
+    raw) cp "$tmp/archive" "$tmp/x/$(basename "$MEMBER")" ;;
+    *)
+      say "$component uses unsupported archive $ARCHIVE"
+      rm -rf "$tmp"
+      exit 1
+      ;;
+    esac
+    rm -rf "$dest.new"
+    mkdir -p "$dest.new"
+    # Runtimes ship a tree; single binaries ship one file. Copy what the member
+    # points at either way.
+    if [ -d "$tmp/x/$MEMBER" ]; then
+      cp -R "$tmp/x/$MEMBER/." "$dest.new/"
+    else
+      cp "$tmp/x/$MEMBER" "$dest.new/$(basename "$MEMBER")"
+    fi
+    chmod -R u+w "$dest.new"
+    printf '%s\n' "$VERSION" >"$dest.new/.mash-installed"
+    rm -rf "$dest"
+    mv "$dest.new" "$dest"
+    rm -rf "$tmp"
+    say "$component $VERSION unpacked"
+  fi
+  # Point the shim at this version only after it verified.
+  target_bin="$(find "$dest" -maxdepth 2 -type f -name "$name" -print -quit)"
+  [ -n "$target_bin" ] || {
+    say "$component $VERSION has no $name executable"
+    exit 1
+  }
+  chmod 755 "$target_bin"
+  ln -sfn "$target_bin" "$data/bin/$name"
+  say "$component $VERSION installed as bin/$name"
+  ;;
+
+npm)
+  prefix="$data/local/npm"
+  marker="$prefix/.mash-version-$component"
+  name="$(shim_name "$component")"
+  if [ -f "$marker" ] && [ "$(cat "$marker")" = "$VERSION" ]; then
+    say "$component $VERSION is already installed"
+  else
+    mkdir -p "$prefix"
+    if ! env PATH="$res/node/bin:$PATH" npm_config_cache="$data/cache/npm" \
+      "$res/node/bin/npm" install --global --prefix "$prefix" \
+      "${PACKAGE:-$component}@$VERSION" >>"$log" 2>&1; then
+      say "npm install failed for $component $VERSION"
+      exit 1
+    fi
+    printf '%s\n' "$VERSION" >"$marker"
+    say "$component $VERSION installed"
+  fi
+  target_bin="$prefix/bin/$name"
+  [ -x "$target_bin" ] || {
+    say "$component did not provide bin/$name"
+    exit 1
+  }
+  ln -sfn "$target_bin" "$data/bin/$name"
+  ;;
+
+pip)
+  venv="$data/local/venv/$component"
+  marker="$venv/.mash-version"
+  name="$(shim_name "$component")"
+  if [ -f "$marker" ] && [ "$(cat "$marker")" = "$VERSION" ]; then
+    say "$component $VERSION is already installed"
+  else
+    rm -rf "$venv.new"
+    if ! env PYTHONNOUSERSITE=1 PIP_DISABLE_PIP_VERSION_CHECK=1 \
+      "$res/python/bin/python3" -m venv "$venv.new" >>"$log" 2>&1; then
+      say "could not create the $component environment"
+      exit 1
+    fi
+    if ! env PYTHONNOUSERSITE=1 PIP_DISABLE_PIP_VERSION_CHECK=1 \
+      "$venv.new/bin/python" -m pip install --upgrade "${PACKAGE:-$component}==$VERSION" \
+      >>"$log" 2>&1; then
+      say "pip install failed for $component $VERSION"
+      rm -rf "$venv.new"
+      exit 1
+    fi
+    printf '%s\n' "$VERSION" >"$venv.new/.mash-version"
+    rm -rf "$venv"
+    mv "$venv.new" "$venv"
+    say "$component $VERSION installed"
+  fi
+  target_bin="$venv/bin/$name"
+  [ -x "$target_bin" ] || {
+    say "$component did not provide bin/$name"
+    exit 1
+  }
+  ln -sfn "$target_bin" "$data/bin/$name"
+  ;;
+
+*)
+  say "$component uses strategy $STRATEGY, which this helper does not install"
+  exit 1
+  ;;
+esac
+
+# A tool that landed but does not run is worse than one that failed loudly: the
+# wizard would record setup complete and the pane would break later.
+shim="$(shim_name "$component")"
+if ! "$data/bin/$shim" --version >/dev/null 2>&1 &&
+  ! "$data/bin/$shim" --help >/dev/null 2>&1; then
+  say "$component installed but does not answer --version or --help"
+  exit 1
+fi
+say "$component is ready"
+exit 0

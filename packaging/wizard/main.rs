@@ -602,6 +602,9 @@ fn install_steps(plan: &Plan, missing: &[&str]) -> Vec<String> {
     // A selected tool that is already on PATH needs no installer. Only add one
     // when something is actually missing.
     if !missing.is_empty() {
+        if !plan.linux.is_empty() {
+            steps.push(STEP_LINUX_TOOLS.to_string());
+        }
         if !plan.brew.is_empty() {
             steps.push("Install Homebrew packages".to_string());
         }
@@ -809,6 +812,58 @@ fn install_voice_model<B: Backend>(
     }
 }
 
+/// Install the selected tools into Mash's data folder.
+///
+/// One helper call per component, so a failure is attributable and a tool that
+/// is already present costs nothing. Exit 3 means the platform supplies that
+/// tool; setup records it and continues rather than failing the whole step,
+/// which is what keeps setup free of privilege prompts.
+fn install_linux_tools<B: Backend>(
+    terminal: &mut Terminal<B>,
+    completed: usize,
+    total: usize,
+    step: &str,
+    messages: &[String],
+    components: &[&'static str],
+) -> Result<String, String> {
+    let helper = mash_bin().join("mash-tool-install");
+    if !helper.is_file() {
+        return Err(format!("{} is missing from the bundle", helper.display()));
+    }
+    let mut installed = 0usize;
+    let mut provided = 0usize;
+    let mut shown = messages.to_vec();
+    for component in components {
+        draw_apply(terminal, completed, total, step, &shown);
+        let status = Command::new(&helper)
+            .env("PATH", env::var_os("PATH").unwrap_or_default())
+            .arg(component)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .map_err(|e| format!("{component}: {e}"))?;
+        match status.code() {
+            Some(0) => installed += 1,
+            Some(3) => {
+                provided += 1;
+                shown.push(format!(
+                    "  {component}: provided by the system, not installed by Mash"
+                ));
+            }
+            Some(code) => {
+                return Err(format!(
+                    "{component} failed to install (exit {code}); see {}",
+                    helper_log_path("mash-tool-install").display()
+                ))
+            }
+            None => return Err(format!("{component} ended without an exit status")),
+        }
+    }
+    Ok(format!(
+        "{installed} installed, {provided} provided by the system"
+    ))
+}
+
 // mash-hindsight-install logs to setup/hindsight-install.log, and so on.
 fn penpot_account_ready() -> bool {
     let config = data_dir().join("local/share/mash/design/penpot.env");
@@ -893,6 +948,8 @@ fn apply_steps<B: Backend>(
                 }
             }
             Ok(report)
+        } else if step == STEP_LINUX_TOOLS {
+            install_linux_tools(terminal, index, steps.len(), step, &messages, &plan.linux)
         } else if step == "Install Homebrew packages" {
             install_brew(&plan.brew)
         } else if step == "Install npm packages" {
@@ -1340,8 +1397,18 @@ fn draw_apply<B: Backend>(
     });
 }
 
+/// Linux installs its tools into Mash's own data folder instead of a package
+/// manager, so the plan carries names rather than Formula/npm/pip targets.
+fn is_linux() -> bool {
+    cfg!(target_os = "linux")
+}
+
+const STEP_LINUX_TOOLS: &str = "Install tools into Mash";
+
 #[derive(Default)]
 struct Plan {
+    /// Component names for `mash-tool-install`, Linux only.
+    linux: Vec<&'static str>,
     brew: Vec<&'static str>,
     npm: Vec<&'static str>,
     python: Vec<&'static str>,
@@ -1354,6 +1421,24 @@ struct Plan {
 
 fn install_plan(selections: [bool; 2]) -> Plan {
     let mut plan = Plan::default();
+    if is_linux() {
+        // The same capability groups, installed without elevation: everything
+        // is a pinned component in packaging/assets.json, resolved by the
+        // helper, so nothing here can drift to a host version.
+        if selections[0] {
+            for &(name, _) in UTILITIES {
+                plan.tools.push(name);
+                plan.linux.push(name);
+            }
+        }
+        if selections[1] {
+            for &(name, _) in FORMATTERS {
+                plan.tools.push(name);
+                plan.linux.push(name);
+            }
+        }
+        return plan;
+    }
     if selections[0] {
         // Every utility lands in `tools`, which drives the availability check
         // and the "already installed" report. Only the installer differs.
@@ -1678,6 +1763,25 @@ mod tests {
         assert!(plan.tools.contains(&"git"));
         assert!(plan.tools.contains(&"prettier"));
         assert!(plan.tools.contains(&"clangd"));
+    }
+
+    #[test]
+    fn the_plan_matches_the_platform() {
+        // The two plans must not mix: Linux resolves pinned components through
+        // its own helper, macOS uses the package manager. A laptop running the
+        // macOS suite asserts the macOS side, and the Linux lane in CI asserts
+        // the other, so neither can quietly take the wrong branch.
+        let plan = install_plan([true, true]);
+        if is_linux() {
+            assert!(!plan.linux.is_empty(), "linux plan has no components");
+            assert!(plan.brew.is_empty(), "linux plan reached for brew");
+            assert!(plan.npm.is_empty(), "linux plan reached for global npm");
+            assert!(plan.python.is_empty(), "linux plan reached for global pip");
+            assert!(plan.installer.is_empty(), "linux plan used a vendor installer");
+        } else {
+            assert!(plan.linux.is_empty(), "macOS plan carries Linux components");
+            assert!(!plan.brew.is_empty(), "macOS plan has no formulas");
+        }
     }
 
     #[test]

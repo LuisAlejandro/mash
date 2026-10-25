@@ -565,19 +565,19 @@
           "url": "https://github.com/trycua/cua/releases/download/cua-driver-rs-v0.33.3/cua-driver-rs-0.33.3-darwin-arm64.tar.gz",
           "sha256": "4c477303dd83b36d169e367c02483923337ed8d1de48afaf0eca6f448b109585",
           "archive": "tar.gz",
-          "member": "cua-driver"
+          "member": "cua-driver-rs-0.33.3-darwin-arm64"
         },
         "linux-amd64": {
           "url": "https://github.com/trycua/cua/releases/download/cua-driver-rs-v0.33.3/cua-driver-rs-0.33.3-linux-x86_64.tar.gz",
           "sha256": "ec3e2816bc0321ba6c606b59b9cfc1eb6d08ce51029e9169114058d1131de420",
           "archive": "tar.gz",
-          "member": "cua-driver"
+          "member": "cua-driver-rs-0.33.3-linux-x86_64"
         },
         "linux-arm64": {
           "url": "https://github.com/trycua/cua/releases/download/cua-driver-rs-v0.33.3/cua-driver-rs-0.33.3-linux-arm64.tar.gz",
           "sha256": "ae0697ed784e042707eba80d854d5e68372ead545f83ad5f04ef1ca987daa4c2",
           "archive": "tar.gz",
-          "member": "cua-driver"
+          "member": "cua-driver-rs-0.33.3-linux-arm64"
         }
       }
     },

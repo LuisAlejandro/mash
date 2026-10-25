@@ -35,6 +35,7 @@ done < <(find packaging/tests -maxdepth 1 -name 'test_*.py' | sort)
 
 # Shell: the launcher, isolation and packaging helpers.
 run "packaging/tests/test_mash_isolate.sh" bash packaging/tests/test_mash_isolate.sh
+run "packaging/helpers/tests/test-mash-voice-model.sh" bash packaging/helpers/tests/test-mash-voice-model.sh
 run "packaging/tests/test_mash_force_updates.sh" bash packaging/tests/test_mash_force_updates.sh
 
 # Node: the Pi extensions the product ships.

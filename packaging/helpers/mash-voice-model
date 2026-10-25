@@ -18,6 +18,24 @@
 # Progress goes to <data>/setup/voice-model.log for the wizard's progress pane.
 set -uo pipefail
 
+# Portable file size and checksum. The macOS build called /usr/bin/stat -f and
+# /usr/bin/shasum by absolute path, neither of which exists on Linux; these pick
+# the platform's spelling so the same script runs on both.
+file_size() {
+  /usr/bin/stat -f%z "$1" 2>/dev/null ||
+    stat -c%s "$1" 2>/dev/null ||
+    wc -c <"$1" 2>/dev/null | tr -d ' '
+}
+
+sha256_check() {
+  # Reads "sha  path" on stdin, like the two tools' -c modes.
+  if [ -x /usr/bin/shasum ]; then
+    /usr/bin/shasum -a 256 -c -
+  else
+    sha256sum -c -
+  fi
+}
+
 self="$(cd "$(dirname "$0")" && pwd)"
 node="$self/../node/bin/node"
 catalog="$self/../defaults/pi/catalog/catalog.json"
@@ -92,7 +110,7 @@ download() { # repo revision filename bytes sha label
   local dest partial url pid now
   dest="$(destination "$repo" "$file" "$revision")"
   partial="$dest.partial"
-  if [ -f "$dest" ] && [ "$(/usr/bin/stat -f%z "$dest" 2>/dev/null)" = "$bytes" ]; then
+  if [ -f "$dest" ] && [ "$(file_size "$dest")" = "$bytes" ]; then
     say "$label already present"
     printf '%s' "$dest"
     return 0
@@ -101,13 +119,13 @@ download() { # repo revision filename bytes sha label
   rm -f "$partial"
   url="https://huggingface.co/$repo/resolve/$revision/$file"
   say "downloading $label ($((bytes / 1048576)) MiB)"
-  /usr/bin/curl -fL --retry 2 -C - -sS -o "$partial" "$url" >>"$log" 2>&1 &
+  curl -fL --retry 2 -C - -sS -o "$partial" "$url" >>"$log" 2>&1 &
   pid=$!
   # The wizard shows the log's last line, so report bytes from the file the
   # download is filling instead of curl's carriage-return progress bar, which
   # would land inside a rendered ratatui line.
   while kill -0 "$pid" 2>/dev/null; do
-    now="$(/usr/bin/stat -f%z "$partial" 2>/dev/null || echo 0)"
+    now="$(file_size "$partial" 2>/dev/null || echo 0)"
     say "downloading $label: $((now / 1048576)) / $((bytes / 1048576)) MiB"
     sleep 2
   done
@@ -115,14 +133,14 @@ download() { # repo revision filename bytes sha label
     say "$label download failed"
     return 1
   fi
-  if [ "$(/usr/bin/stat -f%z "$partial" 2>/dev/null || echo 0)" != "$bytes" ]; then
+  if [ "$(file_size "$partial" 2>/dev/null || echo 0)" != "$bytes" ]; then
     say "$label is not $bytes bytes; removed"
     rm -f "$partial"
     return 1
   fi
   # Pi Voice never re-hashes a file it did not download, so a truncated one
   # would only fail later, inside the native recognizer.
-  if ! echo "$sha  $partial" | /usr/bin/shasum -a 256 -c - >>"$log" 2>&1; then
+  if ! echo "$sha  $partial" | sha256_check >>"$log" 2>&1; then
     say "$label failed its checksum; removed"
     rm -f "$partial"
     return 1

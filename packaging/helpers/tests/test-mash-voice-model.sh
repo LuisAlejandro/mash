@@ -14,7 +14,10 @@ home="$tmp/home"
 res="$tmp/Resources"
 mkdir -p "$res/bin" "$res/node/bin" "$res/defaults/pi/catalog"
 
-node="$(command -v node || true)"
+# The real interpreter, not a wrapper: when Mash is installed, `node` on PATH can
+# be a launcher script that resolves the binary relative to itself, and a symlink
+# to it breaks. execPath always names the binary that would actually run.
+node="$(node -p process.execPath 2>/dev/null || command -v node || true)"
 [ -n "$node" ] || {
 	echo "node is required to exercise mash-voice-model" >&2
 	exit 1
