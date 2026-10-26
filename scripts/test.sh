@@ -34,9 +34,13 @@ while IFS= read -r test_file; do
 done < <(find packaging/tests -maxdepth 1 -name 'test_*.py' | sort)
 
 # Shell: the launcher, isolation and packaging helpers.
-run "packaging/tests/test_mash_isolate.sh" bash packaging/tests/test_mash_isolate.sh
 run "packaging/helpers/tests/test-mash-voice-model.sh" bash packaging/helpers/tests/test-mash-voice-model.sh
-run "packaging/tests/test_mash_force_updates.sh" bash packaging/tests/test_mash_force_updates.sh
+while IFS= read -r test_file; do
+  # A build gate, not a suite: it needs a resource root, and the build runs it
+  # against the staged bundle (build.sh, build-common.sh).
+  [ "$test_file" = "packaging/tests/test_pi_runtime.sh" ] && continue
+  run "$test_file" bash "$test_file"
+done < <(find packaging/tests -maxdepth 1 -name 'test_*.sh' | sort)
 
 # Node: the Pi extensions the product ships.
 if command -v node >/dev/null 2>&1; then

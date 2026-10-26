@@ -34,11 +34,8 @@ const IMAGE_EXTENSIONS = [
 	"png", "jpg", "jpeg", "gif", "webp", "bmp", "tiff", "tif", "ico", "avif", "svg",
 ];
 
-/** Buffers already handed to the popup, so a reopen does not bounce twice. */
+/** Buffers already handed to the popup, so the two hooks do not open it twice. */
 const handled = new Set<number>();
-// Keyed by PATH, not by buffer id: after_file_open and buffer_activated can
-// report different ids for the same open.
-const shown = new Set<string>();
 
 function isImagePath(path: string): boolean {
 	if (!path) return false;
@@ -63,9 +60,10 @@ async function findSelfPane(): Promise<string | null> {
 
 	if (match) {
 		try {
-			const run = await editor.spawnProcess(herdrBin, ["pane", "list"], editor.getCwd());
-			const rows = run.result;
-			const text = (await rows).stdout || "";
+			// spawnProcess resolves to its own result: awaiting twice would read
+			// `.result` off a SpawnResult and throw.
+			const listing = await editor.spawnProcess(herdrBin, ["pane", "list"], editor.getCwd());
+			const text = listing.stdout || "";
 			const wanted = match[1];
 			// Each pane row carries its pane id and its process tree. A pane whose
 			// process list names this editor's pid is the one we are running in.
@@ -83,13 +81,13 @@ async function findSelfPane(): Promise<string | null> {
 	return own || null;
 }
 
-async function openInPopup(bufferId: number, path: string): Promise<boolean> {
+async function openInPopup(path: string): Promise<boolean> {
 	const selfPane = await findSelfPane();
 	if (!selfPane) return false;
 
 	const herdrBin = editor.getEnv("HERDR_BIN_PATH") || "herdr";
 	try {
-		const run = await editor.spawnProcess(herdrBin, [
+		const result = await editor.spawnProcess(herdrBin, [
 			"plugin", "pane", "open",
 			"--plugin", "image-popup",
 			"--entrypoint", "view",
@@ -99,8 +97,7 @@ async function openInPopup(bufferId: number, path: string): Promise<boolean> {
 			"--env", `IMAGE_POPUP_FILE=${path}`,
 			"--focus",
 		], editor.getCwd());
-		const result = await run.result;
-		return result.exit_code === 0;
+		return result.exit_code === 0 && !/"error"/.test(result.stdout || "");
 	} catch {
 		return false;
 	}
@@ -115,19 +112,34 @@ async function maybeShow(args: any): Promise<void> {
 	if (!isImagePath(info.path)) return;
 
 	handled.add(bufferId);
-	// Fire the popup request and drop the hex buffer without awaiting the
-	// round-trip. The hook does not await this handler's promise, so anything
-	// after an `await` runs too late to affect the buffer the user is looking
-	// at -- and a failure never costs the file, which stays on disk either way.
-	void openInPopup(bufferId, info.path).catch(function () {});
-	editor.closeBuffer(bufferId, true);
-	void editor.flush();
+	// Fire the popup request without awaiting the round-trip: the hook does not
+	// await this handler, so anything after an `await` runs too late to affect
+	// the buffer the user is looking at. The hex buffer is dropped only once
+	// the pane is really there -- a failure leaves the file on screen, and on
+	// disk, instead of silently taking the view away.
+	void openInPopup(info.path)
+		.then(function (opened) {
+			if (!opened) {
+				handled.delete(bufferId);
+				return;
+			}
+			editor.closeBuffer(bufferId, true);
+			void editor.flush();
+		})
+		.catch(function () {
+			handled.delete(bufferId);
+		});
 }
 
 registerHandler("mashImagePopupOpen", (args: any) => maybeShow(args));
 
-// after_file_open alone: it is the deliberate-open hook, and buffer_activated
-// fires for the same open with a different buffer id (a preview buffer and
-// the buffer it becomes), which opened the same picture twice. One hook, one
-// popup.
+// Both hooks, one popup. `after_file_open` fires for a deliberate open (the
+// quick opener, `fresh <file>`, a goto). It does NOT fire for a file-explorer
+// browse: that opens the file as an ephemeral preview and withholds the hook
+// until the preview is escalated (file_open_orchestrators.rs, OpenKind) --
+// which is why clicking a PNG in the explorer used to leave the hex dump on
+// screen with no popup. `buffer_activated` still fires for the preview, so it
+// covers that case; the buffer-id guard above is what keeps the two from
+// opening the picture twice.
 editor.on("after_file_open", "mashImagePopupOpen");
+editor.on("buffer_activated", "mashImagePopupOpen");

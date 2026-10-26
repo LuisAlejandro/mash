@@ -60,6 +60,7 @@ ship_helpers=(
   mash-penpot-account-setup
   mash-design-autostart
   mash-voice-model
+  mash-notify
 )
 
 for name in "${ship_helpers[@]}"; do
@@ -228,14 +229,14 @@ zig_bin="/Volumes/Documents/Software/tools/zig-$ghostty_zig_version/zig"
 # back from `xcodebuild -showComponent MetalToolchain` on its own runner rather
 # than trusting this one.
 ghostty_metal_toolchain="${MASH_METAL_TOOLCHAIN:-com.apple.dt.toolchain.Metal.32023.921.5}"
-mash_build_ghostty
-ghostty_src="$work/Ghostty.app"
 # Before building: fail if a rebase brought back a Ghostty feature Mash
 # removes. See mash_ghostty_trim_check for why each check exists.
 mash_ghostty_trim_check "$ghostty_fork" || {
   echo "the Ghostty fork no longer matches what Mash ships" >&2
   exit 1
 }
+mash_build_ghostty
+ghostty_src="$work/Ghostty.app"
 orig="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$ghostty_src/Contents/Info.plist")"
 [ "$orig" = "com.mitchellh.ghostty" ] || {
   echo "forked Ghostty bundle id is $orig" >&2

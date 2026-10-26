@@ -1,0 +1,45 @@
+#!/bin/bash
+# terminal-notifier with a click that can actually reach this Mash window.
+#
+# The notifier plugin builds `-execute '<herdr> agent focus <pane>'`, and macOS
+# runs that string from Notification Center, with Notification Center's
+# environment -- not the pane's. Two things break there:
+#
+#   1. No HERDR_SOCKET_PATH. The CLI then looks for ~/.config/herdr/herdr.sock,
+#      which Mash never creates (its server is under ~/.mash/run), reports
+#      server_not_running, and the click does nothing at all.
+#   2. Nothing raises the window. `agent focus` only moves focus inside the
+#      Herdr server, and herdr has no verb that activates a macOS window, so a
+#      click while another app is frontmost changes nothing you can see.
+#
+# Both are fixed here, at notify time, where the pane's environment still has
+# the paths. Everything else is passed straight through to the real notifier.
+set -u
+
+res="$(cd "$(dirname "$0")/.." && pwd)"
+real="${MASH_NOTIFY_REAL:-$res/plugins/dot.terminal-notifier/assets/HerdrNotify.app/Contents/MacOS/terminal-notifier}"
+# No bundled notifier (a Linux tree, or a partial install): stay silent rather
+# than fail the event handler.
+[ -x "$real" ] || exit 0
+
+args=()
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "-execute" ] && [ "$#" -ge 2 ]; then
+    click="$2"
+    shift 2
+    env_prefix=""
+    for var in HERDR_SOCKET_PATH HERDR_CLIENT_SOCKET_PATH HERDR_CONFIG_PATH; do
+      eval "value=\${$var:-}"
+      [ -n "$value" ] || continue
+      env_prefix="$env_prefix$(printf '%q' "$var")=$(printf '%q' "$value") "
+    done
+    # Focus first, then raise the window, so it comes forward already showing
+    # the pane that changed instead of the one it was left on.
+    args+=(-execute "$env_prefix$click; open -b app.mash.ghostty >/dev/null 2>&1 || true")
+    continue
+  fi
+  args+=("$1")
+  shift
+done
+
+exec "$real" "${args[@]}"

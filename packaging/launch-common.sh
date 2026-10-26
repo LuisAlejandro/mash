@@ -34,6 +34,30 @@ mash_repair_pi_integration() {
   cp "$bundled" "$installed"
 }
 
+# The notifier's click runs from Notification Center, which has none of the
+# pane's herdr environment: without the socket path the click looks for
+# ~/.config/herdr/herdr.sock, finds nothing, and does nothing at all -- and it
+# could not raise the window even if it found the server. bin/mash-notify
+# rewrites that click at notify time, when the paths are still available. The
+# absolute path is written here because only the launcher knows where the bundle
+# lives. Any other NOTIFIER line is dropped so the setting cannot go stale after
+# moving the app.
+mash_write_notifier_config() {
+  local res="$1" d="$2" cfg tmp
+  cfg="$d/config/herdr/plugins/config/dot.terminal-notifier/config.env"
+  # macOS only: the notifier plugin is staged for Darwin alone (carry.sh), and
+  # Linux delivers notifications as OSC9/OSC99 through the terminal instead.
+  # Writing NOTIFIER there would configure a plugin that does not exist.
+  [ "${MASH_UNAME:-$(uname -s)}" = "Darwin" ] || return 0
+  [ -x "$res/bin/mash-notify" ] || return 0
+  mkdir -p "$(dirname "$cfg")"
+  tmp="$cfg.tmp"
+  : >"$tmp"
+  [ -f "$cfg" ] && grep -v '^NOTIFIER=' "$cfg" >>"$tmp"
+  printf 'NOTIFIER=%s\n' "$res/bin/mash-notify" >>"$tmp"
+  mv "$tmp" "$cfg"
+}
+
 # References and the mash-parallel venv live under ~/.mash/config/mash.
 # The venv's Python symlink is retargeted at this bundle. Existing files stay.
 mash_seed_programming_skills() {
@@ -287,6 +311,7 @@ mash_seed_all() {
   mash_seed_missing "$res/defaults/pi" "$d/pi/agent"
   mash_repair_pi_integration "$res" "$d"
   mash_seed_missing "$res/defaults/plugins" "$d/config/herdr/plugins/config"
+  mash_write_notifier_config "$res" "$d"
   mash_seed_missing "$res/defaults/atuin" "$d/config/atuin"
   mash_seed_missing "$res/defaults/lazydocker" "$d/config/lazydocker"
   mash_seed_programming_skills
