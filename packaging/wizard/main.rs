@@ -1692,13 +1692,13 @@ mod tests {
         assert!(steps.contains(&STEP_DESIGN.to_string()));
         assert!(steps.contains(&STEP_PENPOT.to_string()));
         assert_eq!(steps.last().unwrap(), STEP_PENPOT);
+        // Tools install before the environment steps that may use them. The
+        // step is Homebrew on macOS and Mash's own installer on Linux.
         let full = install_steps(&install_plan([true, true]), &["gopls"]);
         let hindsight = full.iter().position(|s| s == STEP_HINDSIGHT).unwrap();
-        let brew = full
-            .iter()
-            .position(|s| s == "Install Homebrew packages")
-            .unwrap();
-        assert!(brew < hindsight, "brew must install first");
+        let tool_step = if is_linux() { STEP_LINUX_TOOLS } else { "Install Homebrew packages" };
+        let tools = full.iter().position(|s| s == tool_step).unwrap();
+        assert!(tools < hindsight, "tools must install first");
     }
 
     #[test]
@@ -1758,6 +1758,9 @@ mod tests {
         }
     }
 
+    // macOS installer routing: Linux installs every tool through plan.linux,
+    // which the_plan_matches_the_platform asserts.
+    #[cfg(target_os = "macos")]
     #[test]
     fn default_plan_covers_requested_tools() {
         let plan = install_plan([true, true]);
@@ -1793,6 +1796,9 @@ mod tests {
         assert!(plan.python.is_empty());
     }
 
+    // macOS installer routing: Linux installs every tool through plan.linux,
+    // which the_plan_matches_the_platform asserts.
+    #[cfg(target_os = "macos")]
     #[test]
     fn automation_tools_route_to_their_own_installers() {
         // Sentrux is a tapped formula, agent-browser is npm, CUA Driver has a
@@ -1810,6 +1816,9 @@ mod tests {
         assert_eq!(plan.installer, vec!["cua-driver"]);
     }
 
+    // macOS installer routing: Linux installs every tool through plan.linux,
+    // which the_plan_matches_the_platform asserts.
+    #[cfg(target_os = "macos")]
     #[test]
     fn cua_driver_installs_only_when_missing() {
         let plan = install_plan([true, true]);
@@ -1845,6 +1854,9 @@ mod tests {
         );
     }
 
+    // macOS installer routing: Linux installs every tool through plan.linux,
+    // which the_plan_matches_the_platform asserts.
+    #[cfg(target_os = "macos")]
     #[test]
     fn missing_tools_add_installers() {
         let plan = install_plan([true, true]);

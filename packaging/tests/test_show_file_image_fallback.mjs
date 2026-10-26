@@ -24,10 +24,18 @@ try {
   const image = join(dir, "result.png");
   const log = join(dir, "preview-path");
   const herdr = join(dir, "herdr");
-  const open = join(dir, "open");
+  // The fallback opener is platform-specific: `open -a Preview` on macOS,
+  // `xdg-open` elsewhere. Stub the one this platform's code path calls.
+  const mac = process.platform === "darwin";
+  const open = join(dir, mac ? "open" : "xdg-open");
   writeFileSync(image, "test image");
   writeFileSync(herdr, '#!/bin/sh\nif [ "$1 $2 $3" = "plugin pane open" ]; then echo "plugin image-popup manifest is unavailable" >&2; fi\nexit 1\n');
-  writeFileSync(open, '#!/bin/sh\n[ "$1" = "-a" ] && [ "$2" = "Preview" ] || exit 2\nprintf "%s" "$3" > "$OPEN_LOG"\nexit "${OPEN_CODE:-0}"\n');
+  writeFileSync(
+    open,
+    mac
+      ? '#!/bin/sh\n[ "$1" = "-a" ] && [ "$2" = "Preview" ] || exit 2\nprintf "%s" "$3" > "$OPEN_LOG"\nexit "${OPEN_CODE:-0}"\n'
+      : '#!/bin/sh\nprintf "%s" "$1" > "$OPEN_LOG"\nexit "${OPEN_CODE:-0}"\n',
+  );
   chmodSync(herdr, 0o755);
   chmodSync(open, 0o755);
   process.env.PATH = `${dir}:${process.env.PATH}`;
@@ -39,7 +47,10 @@ try {
   let tool;
   register({ registerTool(value) { tool = value; } });
   const result = await tool.execute("test", { path: image, note: "A screenshot" });
-  assert.match(result.content[0].text, /opened in Preview instead/);
+  assert.match(
+    result.content[0].text,
+    mac ? /opened in Preview instead/ : /opened in the desktop's default application instead/,
+  );
   assert.equal(readFileSync(log, "utf8"), image);
 
   process.env.OPEN_CODE = "1";

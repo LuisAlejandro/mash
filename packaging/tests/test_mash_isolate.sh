@@ -287,7 +287,9 @@ got="$(MASH_BIN="$tmp/fixture/node/bin" "$mash_bin" pi)"
 	exit 1
 }
 got="$(MASH_BIN="$tmp/fixture/bin" "$mash_bin" sh)"
-[ "$got" = "/bin/sh" ] || {
+# The fallback is `command -v`, so the answer is whatever PATH resolves first:
+# /bin/sh on macOS, /usr/bin/sh on Ubuntu (merged /usr). Compare against that.
+[ "$got" = "$(command -v sh)" ] || {
 	printf 'mash-bin did not fall back to PATH: got %s\n' "$got" >&2
 	exit 1
 }
