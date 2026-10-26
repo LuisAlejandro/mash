@@ -231,9 +231,11 @@ type = "shell"
 command = "herdr-new-dev-tab"
 description = "new dev tab (editor + agent)"
 
-# chord, so no unbind is required for either.
+# New agent tab. macOS pairs Cmd+T (dev tab) with Cmd+Alt+T (agent tab); both
+# land on Ctrl+Alt+T here, so the agent tab takes Ctrl+Alt+Shift+T. Neither
+# chord is a Ghostty default, so no unbind is required.
 [[keys.command]]
-key = ["ctrl+alt+t", "ctrl+alt+n"]
+key = ["ctrl+alt+shift+t", "ctrl+alt+n"]
 type = "shell"
 command = "herdr-new-pi-tab"
 description = "new agent tab"
@@ -395,11 +397,11 @@ description = "Container status"
 width = "90%"
 height = "85%"
 
-# Pet snippet executor over focused pane.
-# modifier, free in Herdr, Ghostty, and Fresh.
-# but it is the chord telescope now uses.
+# Pet snippet executor over the focused pane. macOS uses Cmd+Alt+P beside the
+# file finder's Cmd+P; both would land on Ctrl+Alt+P here, so Snippets moves up
+# to Ctrl+Alt+Shift+P. Free in Herdr, Ghostty and Fresh.
 [[keys.command]]
-key = "ctrl+alt+p"
+key = "ctrl+alt+shift+p"
 type = "popup"
 command = "exec pet exec --color"
 description = "Snippets"
@@ -492,10 +494,11 @@ command = "herdr-workspace.open"
 description = "New workspace (layout profile)"
 
 # Worktree variant: runs against the CURRENT git workspace, prompts for branch
-# and base ref, then creates a linked worktree and applies the same profile
-# new_worktree used on this chord.
+# and base ref, then creates a linked worktree and applies the same profile.
+# macOS separates it from New workspace with Shift (Cmd+Ctrl+Shift+N), but the
+# Linux workspace family already spends Shift, so it takes Ctrl+Alt+Shift+E.
 [[keys.command]]
-key = "ctrl+alt+shift+n"
+key = "ctrl+alt+shift+e"
 type = "plugin_action"
 command = "herdr-workspace.worktree"
 description = "New worktree (layout profile)"
@@ -546,16 +549,18 @@ description = "Command palette"
 
 # Fork the focused agent's session from an earlier user message. The plugin
 # resolves Pi or OpenCode from the focused pane, so one chord covers both.
-# Ghostty and has no macOS menu equivalent, so it cannot be swallowed by an
-# OS shortcut the way m/h/q are.
+# macOS uses Cmd+Alt+Y beside open_notification_target's Cmd+Y; both would land
+# on Ctrl+Alt+Y here, so the fork moves up to Ctrl+Alt+Shift+Y.
 [[keys.command]]
-key = "ctrl+alt+y"
+key = "ctrl+alt+shift+y"
 type = "plugin_action"
 command = "fork-from-message.fork"
 description = "Fork agent from message"
 
+# Session search. macOS uses Cmd+Alt+L beside paste-annotations' Cmd+L; both
+# would land on Ctrl+Alt+L here, so session search takes Ctrl+Alt+Shift+L.
 [[keys.command]]
-key = "ctrl+alt+l"
+key = "ctrl+alt+shift+l"
 type = "popup"
 command = "telescope-sessions"
 description = "Session search"
