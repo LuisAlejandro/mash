@@ -41,6 +41,7 @@ used.
 | Cross-window focus behaviour | a headless compositor has one window; assertions about focus stealing between workspaces need two |
 | Mash Terminal menus and second instance | On both GNOME Xorg and Wayland, inspect the titlebar, main menu, and terminal right-click menu: no Ghostty tab/overview, split, command palette, find, Quick Terminal, inspector, or Change Title affordance; the main menu reads "About Mash Terminal"; New Window remains and opens another Mash instance with its own Herdr workspaces |
 | Herdr input and clipboard | In a Herdr shell and a Fresh pane, verify mouse clicks, right-click routing, scrolling, selection copy and clipboard paste still work; the headless config check cannot prove event delivery |
+| Mash menu items | Open the titlebar main menu: File, Edit, View, Go and Tools submenus and Settings, Reload Configuration, Detach and Mash Help each show their chord. Pick one item per submenu and confirm Herdr does what the shortcut does. With two Mash windows open, an item acts only in the window whose menu was used. Edit Herdr's config and pick Reload Configuration: the change applies without a restart, and Fresh panes are untouched. A chord rebound by the user leaves its menu item inert; that is expected |
 | CUA background input into an occluded window | depends on compositor policy a headless backend does not implement |
 | Notification delivery appearance | the session bus is observable, the notification surface is not |
 | Font rendering | needs a real GPU/screen to judge, not only fontconfig discovery |
@@ -66,3 +67,9 @@ and Window have no Change Terminal Title, Float on Top, or Use as Default; Show/
 All Terminals remains. Close a Mash window, then press Cmd+Z: nothing reopens and a
 new icon click reuses the freed instance slot. The bundle carries no
 `Sparkle.framework` and its Info.plist no `SU*` keys.
+
+The menu bar adds Go, Tools and Help menus, and File, Edit and View carry Mash's
+tab, workspace, pane and annotation commands, each showing its Herdr chord.
+Choosing an item, or pressing its shortcut, does the Herdr command exactly once
+in that window only. Settings opens Herdr's settings, Reload Configuration
+reloads Ghostty and Herdr, and Detach closes the window and frees its instance.

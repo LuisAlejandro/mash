@@ -442,6 +442,24 @@ mash_ghostty_trim_check() {
     status=1
   }
 
+  # Mash's own menus: every item invokes a Herdr command by sending its chord
+  # through mash_send_key. Losing the action or either menu table drops the
+  # whole menu set on that platform.
+  grep -qE '^    mash_send_key: \[\]const u8,' "$src/src/input/Binding.zig" 2>/dev/null || {
+    echo "Ghostty fork lost the mash_send_key action Mash's menus depend on" >&2
+    status=1
+  }
+  grep -qF 'MashMenus.install' "$src/macos/Sources/App/AppDelegate.swift" 2>/dev/null &&
+    [ -f "$src/macos/Sources/App/MashMenus.swift" ] || {
+    echo "Ghostty fork lost Mash's macOS menu items" >&2
+    status=1
+  }
+  grep -qF 'action: "win.mash-send-key"' "$gtk_window" 2>/dev/null &&
+    grep -qF '.init("mash-send-key", ' "$src/src/apprt/gtk/class/window.zig" 2>/dev/null || {
+    echo "Ghostty fork lost Mash's GTK menu items" >&2
+    status=1
+  }
+
   return "$status"
 }
 
