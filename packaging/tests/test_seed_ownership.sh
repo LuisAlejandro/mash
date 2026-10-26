@@ -79,6 +79,13 @@ EOF
   printf 'snippet %s\n' "$version" >"$res/defaults/pet/snippet.toml"
   printf '[General]\nsnippetfile = "__MASH_PET_SNIPPET__"\n' >"$res/defaults/pet/config.toml"
   printf '{\n  "check_for_updates": true,\n  "self_update": true,\n  "label": "%s"\n}\n' "$version" >"$res/defaults/fresh/config.json"
+  # The helper seeds the platform's variant: Linux ships .linux files beside the
+  # macOS ones. Mirror them so the same assertions hold on both CI lanes.
+  cp "$res/defaults/herdr/config.toml" "$res/defaults/herdr/config.linux.toml"
+  cp "$res/defaults/ghostty/config" "$res/defaults/ghostty/config.linux"
+  cp "$res/defaults/fresh/config.json" "$res/defaults/fresh/config.linux.json"
+  cp "$res/defaults/pi/extensions/keybindings-quickref.txt" \
+    "$res/defaults/pi/extensions/keybindings-quickref.linux.txt"
   mkdir -p "$res/defaults/mash-config/venvs/mash-parallel/bin" "$res/python/bin"
   cat >"$res/defaults/mash-config/venvs/mash-parallel/pyvenv.cfg" <<'EOF'
 home = /build/python/bin
@@ -98,7 +105,9 @@ run_sync >/dev/null 2>&1
 chk "seed copies shipped files" '[ -f "$d/pi/agent/skills/demo/SKILL.md" ]'
 chk "record written" '[ -f "$record" ]'
 chk "record names the version" '[ "$(rec_version)" = "1.0.0" ]'
-chk "record digests copied trees, configs and venv" '[ "$(rec_count)" = 15 ]'
+# 17 on both platforms: the .linux variants inside copied trees are themselves
+# seeded (as mash_seed_missing's rsync already does) and so are recorded too.
+chk "record digests copied trees, configs and venv" '[ "$(rec_count)" = 17 ]'
 chk "record tracks bundled MCP servers separately" 'python3 - "$record" <<PY
 import json,sys
 servers=json.load(open(sys.argv[1]))["json"]["pi/agent/mcp.json"]
