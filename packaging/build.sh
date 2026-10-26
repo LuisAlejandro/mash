@@ -221,7 +221,11 @@ unpack_bin atuin \
 # hardcoded in upstream's Swift, out of reach of any bundle key, so it has to
 # come from source. See mash_build_ghostty in carry.sh for the host
 # requirements and why the Zig version is not free to drift.
-ghostty_fork="$home/Development/ghostty"
+# MASH_GHOSTTY_SRC wins over both host locations: CI clones the pinned fork
+# into its own runner temp and exports it, and neither path below exists there.
+# mash_build_ghostty already resolves it the same way, so the trim check must
+# read the very tree that gets built rather than a developer-only checkout.
+ghostty_fork="${MASH_GHOSTTY_SRC:-$home/Development/ghostty}"
 [ -d "$ghostty_fork/.git" ] || ghostty_fork="/Volumes/Documents/Software/ghostty"
 ghostty_zig_version="0.16.0"
 ghostty_zig_url="https://ziglang.org/download/0.16.0/zig-aarch64-macos-0.16.0.tar.xz"
