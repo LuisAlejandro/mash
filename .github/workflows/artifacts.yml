@@ -277,7 +277,7 @@ jobs:
             python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 \
             build-essential pkg-config gettext libxml2-utils xz-utils unzip file patch \
             libgtk-4-dev libadwaita-1-dev meson ninja-build \
-            dpkg-dev patchelf lintian fakeroot rsync xdg-utils
+            dpkg-dev patchelf lintian fakeroot rsync xdg-utils weston
 
       # Ubuntu 24.04 ships blueprint-compiler 0.12, which Ghostty rejects, and
       # 0.20+ rejects Ghostty's own .blp files. 0.16 is built from its tag.
