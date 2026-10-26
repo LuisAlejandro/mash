@@ -58,6 +58,7 @@ ship_helpers=(
   mash-design-deps
   mash-design-pi-sync
   mash-penpot-account-setup
+  mash-design-autostart
   mash-voice-model
 )
 

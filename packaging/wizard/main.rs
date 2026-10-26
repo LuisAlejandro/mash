@@ -294,6 +294,7 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>) -> Result<i32, String> {
     let mut app = App::new();
     let mut providers = provider_page::ProviderPage::new();
     let mut penpot = penpot_page::PenpotPage::new(app.email.clone());
+    penpot.load_autostart(&data_dir());
     let mut voice = voice_page::VoicePage::new();
     let mut page = 0;
     loop {

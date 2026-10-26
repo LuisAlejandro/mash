@@ -55,6 +55,19 @@ esac
 # without waiting for the pid check.
 mash_mark_instance_window "$home" "$MASH_INSTANCE" "$$"
 trap 'mash_release_instance_window "$home" "$MASH_INSTANCE" "$$"' EXIT HUP INT TERM
+# Start design work only after the wizard saves its choice. Both macOS and
+# Linux launch through this pane entry, so the first opted-in launch works too.
+# mds start can pull/build images; keep it off the window's critical path. It
+# also performs pending Penpot account setup, so never race it with that helper.
+if [ -f "$home/.mash/config/mash/design-autostart" ] &&
+  [ -x "$bin_dir/mash-design-autostart" ]; then
+  nohup "$bin_dir/mash-design-autostart" "$home/.mash" </dev/null >/dev/null 2>&1 &
+elif [ -f "$home/.mash/local/share/mash/design/penpot.env" ] &&
+  [ -x "$bin_dir/mash-penpot-account-setup" ]; then
+  # When not opted in, keep the existing account-creation retry behaviour.
+  nohup "$bin_dir/mash-penpot-account-setup" "$home/.mash" </dev/null >/dev/null 2>&1 &
+fi
+
 # A leftover socket is removed only here, and only when nothing is using it.
 if [ -S "$HERDR_SOCKET_PATH" ] && command -v lsof >/dev/null 2>&1; then
   if ! lsof "$HERDR_SOCKET_PATH" >/dev/null 2>&1; then

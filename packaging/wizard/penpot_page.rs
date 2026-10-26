@@ -14,8 +14,15 @@ enum Field {
     Email,
     Password,
     Confirm,
+    Autostart,
     Back,
     Save,
+}
+
+// Opt-in switch for starting the design stack with Mash. Presence is the
+// setting, so the launcher reads it without parsing anything.
+fn autostart_marker(root: &Path) -> std::path::PathBuf {
+    root.join("config/mash/design-autostart")
 }
 
 pub enum Decision {
@@ -28,6 +35,7 @@ pub struct PenpotPage {
     email: String,
     password: String,
     confirm: String,
+    autostart: bool,
     focus: Field,
     error: Option<String>,
 }
@@ -38,8 +46,33 @@ impl PenpotPage {
             email,
             password: String::new(),
             confirm: String::new(),
+            autostart: false,
             focus: Field::Email,
             error: None,
+        }
+    }
+
+    // The marker file is the setting: present starts the stack, absent does not.
+    // Read once at startup so a page reopened later shows what is in effect.
+    pub fn load_autostart(&mut self, root: &Path) {
+        self.autostart = autostart_marker(root).is_file();
+    }
+
+    fn save_autostart(&self, root: &Path) -> Result<(), String> {
+        let marker = autostart_marker(root);
+        if self.autostart {
+            if marker.is_symlink() {
+                return Err("Design autostart must stay inside Mash".into());
+            }
+            let dir = marker.parent().ok_or("design autostart path is invalid")?;
+            fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+            fs::write(&marker, "1\n").map_err(|e| e.to_string())
+        } else {
+            match fs::remove_file(&marker) {
+                Ok(()) => Ok(()),
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+                Err(e) => Err(e.to_string()),
+            }
         }
     }
 
@@ -53,10 +86,11 @@ impl PenpotPage {
     }
 
     fn move_focus(&mut self, direction: isize) {
-        const FIELDS: [Field; 5] = [
+        const FIELDS: [Field; 6] = [
             Field::Email,
             Field::Password,
             Field::Confirm,
+            Field::Autostart,
             Field::Back,
             Field::Save,
         ];
@@ -85,6 +119,10 @@ impl PenpotPage {
             KeyCode::Enter => match self.focus {
                 Field::Back => Some(Decision::Back),
                 Field::Save => Some(Decision::Save),
+                Field::Autostart => {
+                    self.autostart = !self.autostart;
+                    None
+                }
                 Field::Confirm => {
                     self.focus = Field::Save;
                     None
@@ -94,6 +132,10 @@ impl PenpotPage {
                     None
                 }
             },
+            KeyCode::Char(' ') if self.focus == Field::Autostart => {
+                self.autostart = !self.autostart;
+                None
+            }
             KeyCode::Backspace => {
                 if let Some(text) = self.text_mut() {
                     text.pop();
@@ -192,7 +234,8 @@ impl PenpotPage {
         if !same_account {
             updated.push_str("PENPOT_ACCESS_TOKEN=\n");
         }
-        write_private(&path, &updated)
+        write_private(&path, &updated)?;
+        self.save_autostart(root)
     }
 
     pub fn draw(&self, frame: &mut Frame) {
@@ -251,6 +294,32 @@ impl PenpotPage {
                 Style::default().fg(Color::Red),
             )));
         }
+        lines.push(Line::from(""));
+        lines.push(Line::from(vec![
+            Span::styled(
+                if self.focus == Field::Autostart {
+                    "> "
+                } else {
+                    "  "
+                },
+                Style::default().fg(Color::Yellow),
+            ),
+            Span::styled(
+                "Start the design stack when Mash opens: ",
+                Style::default().add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                if self.autostart { "[x] on" } else { "[ ] off" },
+                Style::default().fg(if self.autostart {
+                    Color::Green
+                } else {
+                    Color::Gray
+                }),
+            ),
+        ]));
+        lines.push(Line::from(
+            "    Space toggles. Penpot + OpenDesign start in the background; skipped while Docker is stopped.",
+        ));
         frame.render_widget(
             Paragraph::new(lines)
                 .wrap(Wrap { trim: true })
@@ -301,6 +370,69 @@ mod tests {
         )
         .unwrap();
         root
+    }
+
+    #[test]
+    fn autostart_choice_is_written_and_can_be_turned_off() {
+        let root = fixture();
+        let marker = autostart_marker(&root);
+        let mut page = PenpotPage::new("dev@example.com".into());
+        page.password = "safe-password-12".into();
+        page.confirm = page.password.clone();
+
+        // Off is the default, so a first save writes no marker at all.
+        page.save(&root).unwrap();
+        assert!(!marker.exists(), "a fresh account must not opt in");
+
+        // The toggle, once on, survives a reopened wizard page.
+        page.autostart = true;
+        page.save(&root).unwrap();
+        assert_eq!(fs::read_to_string(&marker).unwrap(), "1\n");
+        let mut reopened = PenpotPage::new("dev@example.com".into());
+        reopened.load_autostart(&root);
+        assert!(reopened.autostart);
+
+        // Turning it off removes the marker instead of writing "off".
+        reopened.autostart = false;
+        reopened.password = "safe-password-12".into();
+        reopened.confirm = reopened.password.clone();
+        reopened.save(&root).unwrap();
+        assert!(!marker.exists());
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn autostart_refuses_a_symlink() {
+        let root = fixture();
+        let marker = autostart_marker(&root);
+        fs::create_dir_all(marker.parent().unwrap()).unwrap();
+        let outside = root.join("outside");
+        fs::write(&outside, "keep\n").unwrap();
+        std::os::unix::fs::symlink(&outside, &marker).unwrap();
+        let mut page = PenpotPage::new("dev@example.com".into());
+        page.password = "safe-password-12".into();
+        page.confirm = page.password.clone();
+        page.autostart = true;
+        assert!(page.save(&root).is_err());
+        assert_eq!(fs::read_to_string(outside).unwrap(), "keep\n");
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn space_and_enter_toggle_autostart_without_typing() {
+        let mut page = PenpotPage::new("dev@example.com".into());
+        page.focus = Field::Autostart;
+        assert!(page
+            .on_key(KeyCode::Char(' '), KeyModifiers::NONE)
+            .is_none());
+        assert!(page.autostart);
+        assert!(page.on_key(KeyCode::Enter, KeyModifiers::NONE).is_none());
+        assert!(!page.autostart);
+        // A letter elsewhere must not flip it; elsewhere it reaches the text field.
+        page.focus = Field::Email;
+        page.on_key(KeyCode::Char('x'), KeyModifiers::NONE);
+        assert!(page.email.ends_with('x'));
+        assert!(!page.autostart);
     }
 
     #[test]

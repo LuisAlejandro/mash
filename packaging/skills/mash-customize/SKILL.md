@@ -60,6 +60,23 @@ Files here persist. The launcher seeds a file only when it is missing
 That also means a rebuild will not refresh a file you edited by hand — delete it
 to pick up the new seed.
 
+## Starting the design stack with Mash
+
+The setup wizard's Penpot page offers an opt-in checkbox to start Penpot and
+OpenDesign when Mash opens. The wizard writes
+`~/.mash/config/mash/design-autostart` for On and removes it for Off. This
+happens after setup finishes, in the background, and does not delay the Mash
+window. If Docker is unavailable, it logs to
+`~/.mash/setup/design-autostart.log` and retries on the next Mash launch;
+Mash does not start Docker itself.
+
+On an existing installation the wizard is already complete, so enable it with
+`printf '1\n' > ~/.mash/config/mash/design-autostart` (create the parent
+folder if needed). Disable it with `rm ~/.mash/config/mash/design-autostart`.
+The signed app must be rebuilt and reinstalled before its launcher knows about
+this setting. The helper's full output, including potential credentials, stays
+in the private `~/.mash/setup/design-autostart-mds.log`.
+
 ## Customizing Pi
 
 Everything a user changes lives under `~/.mash/pi/agent/`: `settings.json`,

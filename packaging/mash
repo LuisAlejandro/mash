@@ -259,13 +259,6 @@ mash_force_window_command "$home" "$ROOT/Resources"
 export MASH_BIN="$ROOT/Resources/bin:$ROOT/Resources/node/bin:$ROOT/Resources/python/bin:$d/bin"
 mash_isolate "$home"
 
-# Credentials can be saved while Docker is down. Retry account creation on
-# later launches without delaying the Mash window.
-if [ -f "$d/local/share/mash/design/penpot.env" ] &&
-  [ -x "$ROOT/Resources/bin/mash-penpot-account-setup" ]; then
-  nohup "$ROOT/Resources/bin/mash-penpot-account-setup" "$d" >/dev/null 2>&1 &
-fi
-
 # Herdr's plugin registry records absolute paths, so a registry linked while
 # the bundle was being built only resolves on the machine that built it -- and
 # the bundle's own copy is seeded before the app is installed anywhere. Link
