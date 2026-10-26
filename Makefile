@@ -91,3 +91,10 @@ session-smoke:
 # Audit a built package without installing it.
 verify-linux:
 	@./packaging/tests/verify-linux-installed.sh $${DEB:?Set DEB=dist/letsmash_<version>_<arch>.deb}
+
+# Deliver built packages to Mash's APT repository, so an installed machine picks
+# them up through its ordinary system update. Needs MASH_APT_HOST and
+# MASH_APT_USER (and MASH_APT_KEY for CI). See packaging/apt/README.md.
+publish-apt:
+	@: "$${VERSION:?Set VERSION=x.y.z before running make publish-apt}"
+	@./packaging/apt/publish.sh $${VERSION} $${DIST:-dist}

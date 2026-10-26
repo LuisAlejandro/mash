@@ -37,6 +37,10 @@ dpkg-deb -x "$deb" "$tmp/root" || {
   printf 'cannot extract %s\n' "$deb" >&2
   exit 2
 }
+dpkg-deb --control "$deb" "$tmp/control" || {
+  printf 'cannot extract control scripts from %s\n' "$deb" >&2
+  exit 2
+}
 product="$tmp/root/opt/letsmash"
 
 # --- metadata -------------------------------------------------------------
@@ -52,6 +56,28 @@ amd64 | arm64) ok "architecture is $arch" ;;
 esac
 [ -n "$(dpkg-deb -f "$deb" Version 2>/dev/null)" ] && ok "version is set" || fail "version is missing"
 [ -n "$(dpkg-deb -f "$deb" Depends 2>/dev/null)" ] && ok "depends is set" || fail "depends is missing"
+
+# --- APT repository setup ------------------------------------------------
+for script in postinst postrm; do
+  if [ -x "$tmp/control/$script" ]; then
+    ok "control $script is present and executable"
+  else
+    fail "control $script is missing or not executable"
+  fi
+done
+if [ -f "$tmp/root/usr/share/keyrings/letsmash-archive-keyring.gpg" ] &&
+  file "$tmp/root/usr/share/keyrings/letsmash-archive-keyring.gpg" 2>/dev/null | grep -q 'OpenPGP Public Key'; then
+  ok "Mash APT binary public key is shipped in /usr/share/keyrings"
+else
+  fail "Mash APT public key is missing"
+fi
+if [ -f "$tmp/control/postinst" ] &&
+  grep -qx "Architectures: $arch" "$tmp/control/postinst" &&
+  grep -qx 'URIs: https://apt.letsma.sh' "$tmp/control/postinst"; then
+  ok "postinst configures the production host for $arch"
+else
+  fail "postinst source is missing the production host or package architecture"
+fi
 
 # --- product tree ---------------------------------------------------------
 # bin/herdr is the name herdr-pane execs; an asset installed under its release

@@ -1,0 +1,93 @@
+#!/bin/sh
+# Configure Mash's APT repository on install and upgrade.
+#
+# The package ships the signing key at /usr/share/keyrings and dpkg owns it, so
+# this script only has to write the source. That is less code than the shape
+# most vendors use (dearmor a base64 blob into the keyring from the script) and
+# it removes a failure mode: a keyring dpkg owns is removed on purge without
+# this script touching it.
+#
+# The source is written once, and re-written on later upgrades only while it
+# still matches the copy Mash generated. A user who edited or deleted it keeps
+# their decision -- re-adding a source behind someone's back is the one thing a
+# package must not do.
+#
+# Nothing here runs apt, invokes a package manager, or fails the install when an
+# optional desktop step fails.
+set -e
+
+SOURCES=/etc/apt/sources.list.d/letsmash.sources
+PRISTINE=/var/lib/letsmash/repository.sources
+DEFAULTS=/etc/default/letsmash
+
+write_sources() {
+  tmp="$1"
+  cat >"$tmp" <<'EOF'
+### THIS FILE IS AUTOMATICALLY CONFIGURED BY THE letsmash PACKAGE ###
+# Remove it to opt out of automatic package updates.
+Types: deb
+URIs: https://apt.letsma.sh
+Suites: noble
+Components: main
+Architectures: @ARCH@
+Signed-By: /usr/share/keyrings/letsmash-archive-keyring.gpg
+EOF
+  chmod 0644 "$tmp"
+}
+
+repository_added_once() {
+  [ -f "$DEFAULTS" ] && grep -Eq '^[[:space:]]*repo_add_once=[[:space:]]*"?false"?[[:space:]]*$' "$DEFAULTS"
+}
+
+mark_repository_added() {
+  mkdir -p "$(dirname "$DEFAULTS")"
+  tmp="$(mktemp "$(dirname "$DEFAULTS")/.letsmash.XXXXXX")"
+  if [ -f "$DEFAULTS" ]; then
+    awk '
+            /^[[:space:]]*repo_add_once[[:space:]]*=/ {
+                if (!found) print "repo_add_once=\"false\""
+                found=1
+                next
+            }
+            { print }
+            END { if (!found) print "repo_add_once=\"false\"" }
+        ' "$DEFAULTS" >"$tmp"
+  else
+    printf '%s\n' 'repo_add_once="false"' >"$tmp"
+  fi
+  chmod 0644 "$tmp"
+  mv -f "$tmp" "$DEFAULTS"
+}
+
+case "${1:-}" in
+configure | "")
+  mkdir -p "$(dirname "$SOURCES")" "$(dirname "$PRISTINE")"
+
+  staged="$SOURCES.$$"
+  write_sources "$staged"
+
+  if [ -f "$SOURCES" ]; then
+    if [ -f "$PRISTINE" ] && cmp -s "$SOURCES" "$PRISTINE"; then
+      # Mash wrote it and nobody has edited it: keep it current.
+      mv -f "$staged" "$SOURCES"
+      cp "$SOURCES" "$PRISTINE"
+    else
+      # Edited, or written by a version that kept no pristine copy.
+      # Leave the user's file alone and remember what we wrote separately.
+      mv -f "$staged" "$PRISTINE"
+    fi
+  elif repository_added_once; then
+    # Configured on an earlier install and since removed by the user.
+    rm -f "$staged"
+  else
+    mv -f "$staged" "$SOURCES"
+    cp "$SOURCES" "$PRISTINE"
+  fi
+
+  chmod 0644 "$SOURCES" 2>/dev/null || true
+  mark_repository_added
+  update-desktop-database >/dev/null 2>&1 || true
+  ;;
+esac
+
+exit 0

@@ -1,0 +1,23 @@
+# Mash APT repository — reprepro distributions
+#
+# bootstrap-letsmash-repo.sh substitutes SIGNWITH_KEY_ID and installs this to
+# /var/www/letsmash/conf/distributions.
+#
+# One suite, named for the Ubuntu release the packages are built against. The
+# suite is deliberately not "stable": packaging/build-linux.sh derives Depends
+# with dpkg-shlibdeps from the build machine's libraries, so a package built on
+# a later Ubuntu is a genuinely different artifact and gets its own suite rather
+# than mutating this one.
+#
+# Manual install:
+#   sudo cp reprepro-distributions /var/www/letsmash/conf/distributions
+#   # Edit the SignWith line with your key id (gpg --list-keys --keyid-format long)
+
+Origin: Mash
+Label: Mash
+Suite: noble
+Codename: noble
+Architectures: amd64 arm64
+Components: main
+Description: Mash packages for Ubuntu 24.04 (noble)
+SignWith: SIGNWITH_KEY_ID

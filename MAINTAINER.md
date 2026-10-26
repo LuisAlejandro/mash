@@ -40,8 +40,9 @@ bad tree stops the release instead of producing a tag that only CI rejects.
 **draft** and dispatches `release.yml` at that tag. It re-runs the gate and hands
 off to `artifacts.yml`, which builds macOS arm64, Linux amd64 and Linux arm64,
 attaches every file with one combined checksum manifest, attests the Debian
-packages, and only then flips the draft public. A failed platform leaves an
-unpublished draft, so users never see a release with missing files.
+packages, publishes both Linux packages to the signed APT repository, verifies
+the signed indices, and only then flips the draft public. A failed platform or
+APT publication leaves an unpublished draft.
 
 Publishing a release by hand in the GitHub UI builds nothing: the build is
 dispatched by `scripts/release.sh`, not by the publish event.
@@ -81,6 +82,15 @@ defaults to its filename), so renaming or removing it makes `release.sh` poll fo
 | `APPLE_ID` | notarization |
 | `APPLE_APP_SPECIFIC_PASSWORD` | notarization |
 | `APPLE_TEAM_ID` | notarization, and the signing identity name |
+| `MASH_APT_DEPLOY_KEY` | private key of the `letsmash-repo` account, for APT publication |
+
+Variables, set on the repository:
+
+| Variable | Value |
+|---|---|
+| `MASH_APT_HOST` | `apt.letsma.sh` (the default when unset) |
+| `MASH_APT_USER` | `letsmash-repo` (the default when unset) |
+| `MASH_APT_KNOWN_HOSTS` | `apt.letsma.sh ssh-ed25519 <pinned-public-host-key>` |
 
 No secret is needed to read `mash-programming-skills`: that repo is public, so
 CI clones it anonymously. It was made public only after its history was
@@ -123,6 +133,35 @@ about four. `MASH_SKIP_GHOSTTY=1` reuses the previously built terminal frontend.
 Ghostty's GTK frontend is built from the pinned fork with
 `packaging/patches/ghostty-gtk-branding.patch` applied, so the fork itself needs
 no branding commit.
+
+## The APT repository
+
+The Linux half ships two ways: the `.deb` attached to the release, for a first
+install, and a signed APT repository at **`https://apt.letsma.sh/`**, which the
+package itself configures so later releases arrive through the ordinary system
+update. `artifacts.yml` publishes to it (`publish-apt`) after all assets are
+attached and verifies the index before making the release public; a maintainer
+does the same thing by hand with
+`make publish-apt VERSION=<version>`.
+
+The repository is a **separate reprepro instance** on the same host as
+`apt.dockershelf.com`. Its own root, signing key, nginx site, deploy user and
+import binary. Nothing in the Mash release path touches `/var/www/debian`, the
+`dockershelf-apt` site, the Dockershelf key or `dockershelf-import-incoming`.
+Setup, layout and the forked import script are documented in
+`packaging/apt/README.md`.
+
+Two things to know before changing it:
+
+- **The suite is `noble`, not `stable`.** `packaging/build-linux.sh` derives
+  `Depends` with `dpkg-shlibdeps` from the build machine's libraries, so a
+  package built on a later Ubuntu is a different artifact and gets its own
+  suite rather than mutating this one.
+- **The signing key never enters this repo.** It lives in
+  `/var/www/letsmash/.gnupg` on the host. The package ships only its public
+  half, at `packaging/linux/letsmash-archive-keyring.gpg`. Losing the private
+  key means every installed machine stops trusting the repository: back it up
+  out of band, and update the shipped public key if the key is ever replaced.
 
 ## Building the DMG by hand
 

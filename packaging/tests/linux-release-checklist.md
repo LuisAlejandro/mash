@@ -26,6 +26,9 @@ display, claims the packaged app-id, and exits without leaving a server behind.
 | Voice model selection | `test-mash-voice-model.sh` plans a model path without a network |
 | Tool installation | `mash-tool-install` installs npm, binary and system strategies into `~/.mash` and the shims answer `--version` |
 | Package contents | `verify-linux-installed.sh`: 26 checks over metadata, tree, icons, RPATH, linkage and identity |
+| Repository configuration | `test_linux_package.py` contract-checks `postinst`/`postrm`; a real install is proven by `apt-upgrade-smoke.sh --deb <package>` writing `/etc/apt/sources.list.d/letsmash.sources` |
+| Repository trust chain | `apt-upgrade-smoke.sh`: the published index verifies against the keyring the package ships, and apt resolves `letsmash` from `apt.letsma.sh` |
+| Upgrade preserves state | `apt-upgrade-smoke.sh` after publication, plus `test_seed_ownership.sh` for the seeded-file rule (edited files kept, untouched defaults refreshed) |
 
 ## Manual sign-off before publishing
 
@@ -36,11 +39,11 @@ used.
 | Capability | Why it cannot be automated |
 | --- | --- |
 | Cross-window focus behaviour | a headless compositor has one window; assertions about focus stealing between workspaces need two |
+| Mash Terminal menus and second instance | On both GNOME Xorg and Wayland, inspect the titlebar, main menu, and terminal right-click menu: no Ghostty tab/overview, split, command palette, find, Quick Terminal, or inspector affordance; New Window remains and opens another Mash instance with its own Herdr workspaces |
+| Herdr input and clipboard | In a Herdr shell and a Fresh pane, verify mouse clicks, right-click routing, scrolling, selection copy and clipboard paste still work; the headless config check cannot prove event delivery |
 | CUA background input into an occluded window | depends on compositor policy a headless backend does not implement |
 | Notification delivery appearance | the session bus is observable, the notification surface is not |
 | Font rendering | needs a real GPU/screen to judge, not only fontconfig discovery |
-| Mash Terminal menus and second instance | On both GNOME Xorg and Wayland, inspect the titlebar, main menu, and terminal right-click menu: no Ghostty tab/overview, split, command palette, find, Quick Terminal, or inspector affordance; New Window remains and opens another Mash instance with its own Herdr workspaces |
-| Herdr input and clipboard | In a Herdr shell and a Fresh pane, verify mouse clicks, right-click routing, scrolling, selection copy and clipboard paste still work; the headless config check cannot prove event delivery |
 | Audio capture from a microphone | the harness uses a virtual source; hardware wake-up and permissions are a machine concern |
 | Docker/design stack | needs a running Docker daemon, which the runner does not provide |
 

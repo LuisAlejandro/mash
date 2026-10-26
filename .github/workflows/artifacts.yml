@@ -1,15 +1,15 @@
 name: Artifacts
 
-# Builds and publishes the release DMG, at an exact tag.
+# Builds the release artifacts and delivers Linux packages to APT, at an exact tag.
 #
 # Mirrors wholmaster's shape: `release.yml` verifies the tag, then dispatches
 # this at that tag, and only this workflow touches the release's assets. It is
 # only ever started that way, so it cannot publish on a branch push.
 #
-# Mash ships three artifacts from one tag: a macOS arm64 DMG and two Debian
-# packages. There is no auto-updater manifest, because Mash ships none. The
-# release stays a draft until every artifact is attached, so a failed platform
-# is invisible to users instead of leaving a public release with missing files.
+# Mash ships three downloadable artifacts from one tag: a macOS arm64 DMG and
+# two Debian packages. Linux packages also enter the signed APT repository. The
+# release stays a draft until artifacts and the APT index verify, so a failed
+# platform or publication leaves an unpublished release rather than a partial one.
 
 on:
   workflow_dispatch:
@@ -380,8 +380,8 @@ jobs:
           path: release-artifacts/
           retention-days: 7
 
-  finalize-release:
-    name: Publish release
+  attach-release:
+    name: Attach release assets
     needs: [setup, build-macos, build-linux]
     runs-on: ubuntu-24.04
     steps:
@@ -443,6 +443,15 @@ jobs:
           sudo apt install ./letsmash-${VERSION}-linux-amd64.deb
           \`\`\`
 
+          Installing also configures Mash's signed APT repository, so later
+          releases arrive with your ordinary system update. To upgrade
+          explicitly:
+
+          \`\`\`sh
+          sudo apt update
+          sudo apt install --only-upgrade letsmash
+          \`\`\`
+
           Verify a download before installing:
 
           \`\`\`sh
@@ -467,10 +476,58 @@ jobs:
             gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --notes "${body}${note}"
           fi
 
-      # Publishing is the very last step, and only after every asset and the
-      # checksum manifest are attached. A failed platform therefore leaves an
-      # unpublished draft instead of a public release missing files.
-      - name: Publish the release
+  # Deliver both Linux packages to APT after every platform artifact has built
+  # and the release assets/notes are attached, but before the release becomes
+  # public. If publication or verification fails, the release stays a draft.
+  publish-apt:
+    name: Publish to APT
+    needs: [setup, attach-release, build-linux]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.setup.outputs.tag }}
+
+      - name: Download the Linux packages
+        uses: actions/download-artifact@v5
+        with:
+          pattern: "linux-*-release-artifacts"
+          path: artifacts/
+          merge-multiple: true
+
+      - name: Publish the packages to the repository
+        env:
+          MASH_APT_HOST: ${{ vars.MASH_APT_HOST || 'apt.letsma.sh' }}
+          MASH_APT_USER: ${{ vars.MASH_APT_USER || 'letsmash-repo' }}
+          MASH_APT_KEY: ${{ runner.temp }}/mash-apt-key
+          MASH_APT_KNOWN_HOSTS_FILE: ${{ runner.temp }}/mash-apt-known-hosts
+          MASH_APT_DEPLOY_KEY: ${{ secrets.MASH_APT_DEPLOY_KEY }}
+          MASH_APT_KNOWN_HOSTS: ${{ vars.MASH_APT_KNOWN_HOSTS }}
+          VERSION: ${{ needs.setup.outputs.version }}
+        run: |
+          set -euo pipefail
+          [ -n "${MASH_APT_DEPLOY_KEY:-}" ] || { echo "MASH_APT_DEPLOY_KEY is not configured" >&2; exit 1; }
+          [ -n "${MASH_APT_KNOWN_HOSTS:-}" ] || { echo "MASH_APT_KNOWN_HOSTS is not configured" >&2; exit 1; }
+          install -m 600 /dev/null "$MASH_APT_KEY"
+          install -m 600 /dev/null "$MASH_APT_KNOWN_HOSTS_FILE"
+          trap 'rm -f "$MASH_APT_KEY" "$MASH_APT_KNOWN_HOSTS_FILE"' EXIT
+          printf '%s\n' "$MASH_APT_DEPLOY_KEY" >"$MASH_APT_KEY"
+          printf '%s\n' "$MASH_APT_KNOWN_HOSTS" >"$MASH_APT_KNOWN_HOSTS_FILE"
+          ./packaging/apt/publish.sh "$VERSION" artifacts
+
+      - name: Verify apt can consume the signed release
+        run: ./packaging/tests/apt-upgrade-smoke.sh
+
+  # A release is public only after the signed APT indices contain both
+  # architectures and the Ubuntu runner has verified them using the key shipped
+  # in the package.
+  publish-release:
+    name: Publish release
+    needs: [setup, attach-release, publish-apt]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Verify release assets
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.setup.outputs.tag }}
@@ -486,6 +543,13 @@ jobs:
               exit 1
             }
           done
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.setup.outputs.tag }}
+        run: |
+          set -euo pipefail
           gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest
           echo "release $TAG is public"
 

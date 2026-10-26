@@ -44,6 +44,9 @@ class ControlTemplateTest(unittest.TestCase):
         build = BUILD.read_text()
         self.assertIn("rsync", build)
         self.assertIn("xdg-utils", build)
+        # The package-installed APT source is HTTPS; without CA roots apt
+        # cannot verify apt.letsma.sh and silently ignores the repository.
+        self.assertIn("ca-certificates", build)
 
     def test_description_names_the_data_folder_contract(self):
         # The single sentence a user reads before installing should say that
@@ -116,6 +119,26 @@ class BuildScriptContractTest(unittest.TestCase):
         self.assertNotIn('mkdir -p "$stage/usr/bin"', self.text)
 
 
+class AptPublishWorkflowTest(unittest.TestCase):
+    def test_publisher_accepts_release_asset_arch_names_and_pins_host_key(self):
+        publisher = (PACKAGING / "apt" / "publish.sh").read_text()
+        self.assertIn("*-linux-amd64.deb", publisher)
+        self.assertIn("*-linux-arm64.deb", publisher)
+        self.assertIn("StrictHostKeyChecking=yes", publisher)
+        self.assertIn("MASH_APT_KNOWN_HOSTS_FILE", publisher)
+
+    def test_release_is_not_public_until_apt_import_and_smoke_succeed(self):
+        workflow = (PACKAGING.parent / ".github" / "workflows" / "artifacts.yml").read_text()
+        publish_job = workflow.index("  publish-apt:")
+        smoke = workflow.index("./packaging/tests/apt-upgrade-smoke.sh")
+        release_job = workflow.index("  publish-release:")
+        public_flip = workflow.index("--draft=false", release_job)
+        self.assertLess(publish_job, smoke)
+        self.assertLess(smoke, release_job)
+        self.assertIn("needs: [setup, attach-release, publish-apt]", workflow[release_job:])
+        self.assertGreater(public_flip, release_job)
+
+
 class AppIdConsistencyTest(unittest.TestCase):
     """The desktop entry, the icons and the Ghostty config must agree.
 
@@ -133,6 +156,82 @@ class AppIdConsistencyTest(unittest.TestCase):
             self.skipTest("config.linux is added by the Linux defaults unit")
         text = config.read_text()
         self.assertRegex(text, rf'(?m)^class\s*=\s*"?{re.escape(APP_ID)}"?$')
+
+
+class RepositoryConfigurationTest(unittest.TestCase):
+    """The package subscribes the machine to Mash's own APT repository.
+
+    These are contract checks on the shipped maintainer scripts: what they
+    write, where, and what they must never do. Auditing a real install is
+    packaging/tests/verify-linux-installed.sh's job.
+    """
+
+    def setUp(self):
+        self.postinst = (LINUX / "postinst").read_text()
+        self.postrm = (LINUX / "postrm").read_text()
+        self.keyring = (LINUX / "letsmash-archive-keyring.gpg").read_bytes()
+
+    def test_scripts_are_executable(self):
+        for name in ("postinst", "postrm"):
+            with self.subTest(script=name):
+                path = LINUX / name
+                self.assertTrue(path.exists())
+                self.assertTrue(path.stat().st_mode & 0o111, f"{name} is not executable")
+
+    def test_source_names_the_production_repository(self):
+        self.assertIn("URIs: https://apt.letsma.sh", self.postinst)
+        # The suite is named for the Ubuntu baseline, not "stable": Depends are
+        # derived from the build machine's libraries.
+        self.assertIn("Suites: noble", self.postinst)
+        self.assertIn("Components: main", self.postinst)
+        self.assertIn("Architectures: @ARCH@", self.postinst)
+
+    def test_signed_by_points_at_the_shipped_keyring(self):
+        keyring_path = "/usr/share/keyrings/letsmash-archive-keyring.gpg"
+        self.assertIn(f"Signed-By: {keyring_path}", self.postinst)
+        self.assertTrue((LINUX / "letsmash-archive-keyring.gpg").exists())
+        self.assertEqual(self.keyring[0], 0x99)
+
+    def test_scripts_never_invoke_a_package_manager(self):
+        # Configuring a source must not refresh indices or install anything: a
+        # postinst that runs apt deadlocks other package operations. Comments
+        # are stripped first: both scripts mention dpkg in prose to explain why
+        # the keyring is package-owned.
+        def code_only(text):
+            return "\n".join(
+                line for line in text.splitlines() if not line.lstrip().startswith("#")
+            )
+
+        for name, text in (("postinst", self.postinst), ("postrm", self.postrm)):
+            code = code_only(text)
+            with self.subTest(script=name):
+                for command in ("apt-get", "aptitude", "dpkg "):
+                    self.assertNotIn(command, code)
+                self.assertIsNone(
+                    re.search(r"(?m)^\s*apt\s", code),
+                    f"{name} invokes apt directly",
+                )
+
+    def test_repository_is_configured_once(self):
+        # A user who removes the source keeps it removed; repo_add_once is the
+        # record of "we already did this", mirroring the ChatGPT package. Purge
+        # deletes the record, so a later reinstall configures the source again.
+        self.assertIn("repo_add_once", self.postinst)
+        self.assertIn("awk", self.postinst)  # preserves unrelated local defaults
+        self.assertIn("/etc/default/letsmash", self.postrm)
+
+    def test_purge_removes_the_configuration_and_remove_does_not(self):
+        self.assertIn('"${1:-}" = "purge"', self.postrm)
+        self.assertIn("/etc/apt/sources.list.d/letsmash.sources", self.postrm)
+        self.assertIn("/etc/default/letsmash", self.postrm)
+        self.assertIn("repo_add_once", self.postrm)
+        self.assertIn("awk", self.postrm)  # preserves unrelated local defaults
+
+    def test_build_stages_the_scripts_and_the_keyring(self):
+        build = BUILD.read_text()
+        self.assertIn("DEBIAN/$script", build)
+        self.assertIn("sed \"s/@ARCH@/$debarch/g\"", build)
+        self.assertIn("usr/share/keyrings/letsmash-archive-keyring.gpg", build)
 
 
 if __name__ == "__main__":

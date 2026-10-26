@@ -356,7 +356,7 @@ installed_kb="$(du -sk --exclude=DEBIAN "$stage" | awk '{print $1}')"
 # Runtime dependencies the payload invokes rather than links. rsync is how the
 # launcher seeds ~/.mash without replacing the user's files; xdg-utils is the
 # desktop-opener the panel and preview fallbacks use.
-extra_depends="rsync, xdg-utils"
+extra_depends="ca-certificates, rsync, xdg-utils"
 sed -e "s#@EXTRA_DEPENDS@#$extra_depends#" \
   -e "s#@VERSION@#$version#" \
   -e "s#@ARCH@#$debarch#" \
@@ -364,6 +364,28 @@ sed -e "s#@EXTRA_DEPENDS@#$extra_depends#" \
   -e "s#@INSTALLED_SIZE@#$installed_kb#" \
   -e "s#@DEPENDS@#$shlibs_depends#" \
   "$root/packaging/linux/control.in" >"$stage/DEBIAN/control"
+
+# --- repository configuration ----------------------------------------------
+# The package subscribes the machine to Mash's APT repository so later releases
+# arrive through the ordinary system update. The signing key is shipped as a
+# file dpkg owns, so purge removes it without a maintainer script touching it;
+# postinst only writes the source. linux/README.md explains the policy.
+for script in postrm; do
+  [ -f "$root/packaging/linux/$script" ] || {
+    echo "missing packaging/linux/$script" >&2
+    exit 1
+  }
+  install -m 755 "$root/packaging/linux/$script" "$stage/DEBIAN/$script"
+done
+postinst="$stage/DEBIAN/postinst"
+sed "s/@ARCH@/$debarch/g" "$root/packaging/linux/postinst" >"$postinst"
+chmod 755 "$postinst"
+keyring="$root/packaging/linux/letsmash-archive-keyring.gpg"
+[ -f "$keyring" ] || {
+  echo "missing $keyring; the package cannot trust the repository" >&2
+  exit 1
+}
+install -D -m 644 "$keyring" "$stage/usr/share/keyrings/letsmash-archive-keyring.gpg"
 
 # Reproducibility, precisely: the payload's file set, permissions and versions
 # are stable for the same inputs, and timestamps are clamped. The archive is not

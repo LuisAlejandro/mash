@@ -131,6 +131,18 @@ files=(
     packaging/build-common.sh
     packaging/launch-common.sh
     packaging/linux/launcher
+    packaging/linux/postinst
+    packaging/linux/postrm
+    packaging/linux/letsmash-archive-keyring.gpg
+    packaging/apt/bootstrap-letsmash-repo.sh
+    packaging/apt/import-incoming.sh
+    packaging/apt/publish.sh
+    packaging/apt/reprepro-distributions
+    packaging/apt/nginx-letsmash.conf
+    packaging/helpers/mash-seed-sync
+    packaging/tests/apt-upgrade-smoke.sh
+    packaging/tests/test_apt_import.sh
+    packaging/tests/test_seed_ownership.sh
     packaging/patches/ghostty-gtk-branding.patch
     scripts/test.sh
     packaging/assets.json

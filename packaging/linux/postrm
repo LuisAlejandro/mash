@@ -1,0 +1,37 @@
+#!/bin/sh
+# Remove Mash's APT configuration when the package is purged.
+#
+# A plain remove leaves the keyring and source in place: the user may be about
+# to reinstall, and a machine that quietly stops receiving updates during a
+# reinstall is worse than a stale source. Purge is the explicit "I am done"
+# signal, so that is where the configuration goes.
+#
+# /usr/share/keyrings/letsmash-archive-keyring.gpg belongs to dpkg and is
+# removed with the package; this script only cleans up what it wrote itself.
+set -e
+
+SOURCES=/etc/apt/sources.list.d/letsmash.sources
+PRISTINE=/var/lib/letsmash/repository.sources
+DEFAULTS=/etc/default/letsmash
+
+if [ "${1:-}" = "purge" ]; then
+  rm -f "$SOURCES" "$PRISTINE"
+  if [ -f "$DEFAULTS" ]; then
+    tmp="$(mktemp "$(dirname "$DEFAULTS")/.letsmash.XXXXXX")"
+    awk '
+            /^[[:space:]]*repo_add_once[[:space:]]*=/ { next }
+            { print }
+        ' "$DEFAULTS" >"$tmp"
+    if [ -s "$tmp" ]; then
+      chmod 0644 "$tmp"
+      mv -f "$tmp" "$DEFAULTS"
+    else
+      rm -f "$tmp" "$DEFAULTS"
+    fi
+  fi
+  rmdir "$(dirname "$PRISTINE")" 2>/dev/null || true
+fi
+
+update-desktop-database >/dev/null 2>&1 || true
+
+exit 0
