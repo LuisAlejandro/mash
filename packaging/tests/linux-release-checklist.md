@@ -39,7 +39,7 @@ used.
 | Capability | Why it cannot be automated |
 | --- | --- |
 | Cross-window focus behaviour | a headless compositor has one window; assertions about focus stealing between workspaces need two |
-| Mash Terminal menus and second instance | On both GNOME Xorg and Wayland, inspect the titlebar, main menu, and terminal right-click menu: no Ghostty tab/overview, split, command palette, find, Quick Terminal, or inspector affordance; New Window remains and opens another Mash instance with its own Herdr workspaces |
+| Mash Terminal menus and second instance | On both GNOME Xorg and Wayland, inspect the titlebar, main menu, and terminal right-click menu: no Ghostty tab/overview, split, command palette, find, Quick Terminal, inspector, or Change Title affordance; the main menu reads "About Mash Terminal"; New Window remains and opens another Mash instance with its own Herdr workspaces |
 | Herdr input and clipboard | In a Herdr shell and a Fresh pane, verify mouse clicks, right-click routing, scrolling, selection copy and clipboard paste still work; the headless config check cannot prove event delivery |
 | CUA background input into an occluded window | depends on compositor policy a headless backend does not implement |
 | Notification delivery appearance | the session bus is observable, the notification surface is not |
@@ -59,3 +59,10 @@ instance, but Ghostty tabs, splits, palette, find, Quick Terminal, and inspector
 are absent. Ask AppleScript to create a `new tab` or `split`; each must fail or do
 nothing, without creating another Ghostty surface. Confirm copy/paste and Herdr
 mouse input still work in a shell pane and in Fresh.
+
+The app menu reads About Mash, Hide Mash, and Quit Mash, with no Check for Updates,
+Make Ghostty the Default Terminal, or Help menu. Edit has no Undo or Redo, and View
+and Window have no Change Terminal Title, Float on Top, or Use as Default; Show/Hide
+All Terminals remains. Close a Mash window, then press Cmd+Z: nothing reopens and a
+new icon click reuses the freed instance slot. The bundle carries no
+`Sparkle.framework` and its Info.plist no `SU*` keys.
