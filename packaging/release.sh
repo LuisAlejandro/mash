@@ -5,12 +5,12 @@
 # tarball, and the Fresh GPL notice.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
-# Overridable so CI can supply the identity it imported, instead of this
-# necessarily being the maintainer's own name. Composed from APPLE_TEAM_ID when
-# that is set, since the common name is not known in advance there.
+# Overridable so CI or another maintainer can select a different imported
+# identity. In this repo CI imports the maintainer's cert, whose common name
+# includes both the maintainer name and APPLE_TEAM_ID.
 if [ -z "${MASH_SIGN_IDENTITY:-}" ]; then
     if [ -n "${APPLE_TEAM_ID:-}" ]; then
-        MASH_SIGN_IDENTITY="Developer ID Application ($APPLE_TEAM_ID)"
+        MASH_SIGN_IDENTITY="Developer ID Application: Luis Alejandro Martínez Faneyth ($APPLE_TEAM_ID)"
     else
         MASH_SIGN_IDENTITY="Developer ID Application: Luis Alejandro Martínez Faneyth (4SCJW6LZ6T)"
     fi

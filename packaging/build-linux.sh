@@ -155,7 +155,10 @@ else
   fi
   (
     cd "$ghostty_src_cache"
-    PATH="$(dirname "$zig"):$PATH" \
+    # The patched source cache lives under the Mash checkout. Without a Git
+    # boundary, Ghostty's version probe finds Mash's release tag and mistakes
+    # it for a Ghostty tag (vX.Y.Z), panicking. Treat the cache as the ceiling.
+    GIT_CEILING_DIRECTORIES="$cache" PATH="$(dirname "$zig"):$PATH" \
       "$zig" build -Doptimize=ReleaseFast -fno-sys=gtk4-layer-shell -p "$product" \
       --cache-dir "$cache/zig/$target/local" \
       --global-cache-dir "$cache/zig/$target/global"
