@@ -19,6 +19,8 @@ display, claims the packaged app-id, and exits without leaving a server behind.
 | Shutdown | no Herdr process outlives the launcher |
 | Package identity | `StartupWMClass` equals the class the terminal seeds |
 | Keymap integrity | `test_linux_defaults.py`: no Command chords, no bare Ctrl+letter, no duplicates, action families present |
+| GTK window startup | `linux-session-smoke.sh`: no GTK template-child error or panic while opening Mash under Xorg and Wayland; source-only Blueprint compilation cannot prove a window instantiates |
+| Terminal input wiring | `linux-session-smoke.sh` reads Ghostty's effective config: mouse reporting and clipboard access remain enabled, with Ctrl+Shift+C/V bound to copy/paste; real delivery is checked below |
 | Notifications | delivery mode asserted on the seeded Herdr config |
 | Preview and reveal | `show_file` picks `xdg-open` off macOS; the Fresh patch carries a FileManager1 branch |
 | Voice model selection | `test-mash-voice-model.sh` plans a model path without a network |
@@ -37,9 +39,20 @@ used.
 | CUA background input into an occluded window | depends on compositor policy a headless backend does not implement |
 | Notification delivery appearance | the session bus is observable, the notification surface is not |
 | Font rendering | needs a real GPU/screen to judge, not only fontconfig discovery |
+| Mash Terminal menus and second instance | On both GNOME Xorg and Wayland, inspect the titlebar, main menu, and terminal right-click menu: no Ghostty tab/overview, split, command palette, find, Quick Terminal, or inspector affordance; New Window remains and opens another Mash instance with its own Herdr workspaces |
+| Herdr input and clipboard | In a Herdr shell and a Fresh pane, verify mouse clicks, right-click routing, scrolling, selection copy and clipboard paste still work; the headless config check cannot prove event delivery |
 | Audio capture from a microphone | the harness uses a virtual source; hardware wake-up and permissions are a machine concern |
 | Docker/design stack | needs a running Docker daemon, which the runner does not provide |
 
 **Blocking:** publication requires every row above to be signed off. If a row
 cannot be signed off for an architecture, that architecture must not be
 published — a release with an untested platform is worse than a late one.
+
+## Companion macOS check for the same Ghostty trim
+
+This is not a Linux publication gate. On an updated Mash.app, inspect File, View,
+Window, Dock, and terminal context menus: New Window still creates a second Mash
+instance, but Ghostty tabs, splits, palette, find, Quick Terminal, and inspector
+are absent. Ask AppleScript to create a `new tab` or `split`; each must fail or do
+nothing, without creating another Ghostty surface. Confirm copy/paste and Herdr
+mouse input still work in a shell pane and in Fresh.

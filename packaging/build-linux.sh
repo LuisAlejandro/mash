@@ -74,6 +74,13 @@ done
   echo "Clone it, or set MASH_GHOSTTY_SRC." >&2
   exit 1
 }
+
+# Same guard the macOS build runs: a rebase must not quietly bring a removed
+# Ghostty feature back on either platform.
+mash_ghostty_trim_check "$ghostty_src" || {
+  echo "the Ghostty fork no longer matches what Mash ships" >&2
+  exit 1
+}
 [ -n "$zig" ] && [ -x "$zig" ] || {
   echo "zig is missing; Ghostty pins its own compiler version." >&2
   echo "Set MASH_ZIG, or put zig on PATH." >&2

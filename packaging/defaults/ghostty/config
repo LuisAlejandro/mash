@@ -26,6 +26,12 @@ working-directory = home
 
 theme = Monokai Cursor
 
+# Why these unbinds stay after Mash removed the features outright: a Ghostty
+# binding that performs nothing still consumes its chord unless it carries the
+# `performable:` prefix. The unbind is therefore what frees the key for Herdr
+# and Fresh, not merely a way to suppress a Ghostty behaviour. Removing one
+# restores the default binding and silently swallows the chord.
+
 # Release cmd+t so Herdr's own cmd+t (new dev tab: fresh + pi) receives it.
 # Ghostty's own tabs/windows are unused here; Herdr manages both.
 keybind = super+t=unbind

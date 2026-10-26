@@ -223,6 +223,142 @@ mash_cargo() {
 #     empty project), which is why the fork tracks a branch on 0.16.0.
 #   * Metal Toolchain. Xcode does not install it by default, and the stock
 #     `metal` shim stays broken until TOOLCHAINS names the downloaded one.
+# Fail the build when a Ghostty feature Mash deliberately removes comes back.
+#
+# Mash Terminal is a host for one full-window Herdr client: Ghostty's own tabs,
+# splits, command palette, find bar, quick terminal and inspector would draw a
+# second surface on top of Herdr. They are rejected in the fork's shared action
+# layer and deleted from the macOS menus, so a rebase that reintroduces one is
+# a silent regression unless something says so. This is that something: it runs
+# before the build, names the offending file, and costs one grep.
+#
+# The GTK template and action-map checks below also catch shortcuts and
+# direct GTK actions that would bypass the removed menu items.
+#
+#   mash_ghostty_trim_check <ghostty-src>
+mash_ghostty_trim_check() {
+  local src="$1" status=0 item
+  [ -d "$src" ] || {
+    echo "cannot check the Ghostty fork: $src is missing" >&2
+    return 1
+  }
+
+  # The shared rejection, which is what covers both platforms.
+  grep -q 'mash_removed_ui' "$src/src/Surface.zig" 2>/dev/null || {
+    echo "Ghostty fork lost the shared action rejection in src/Surface.zig" >&2
+    echo "Mash ships no Ghostty tabs, splits, palette, search, quick terminal or inspector." >&2
+    status=1
+  }
+
+  # The macOS menu items, by title. Deleting the item is the point: a
+  # disabled one still reads as a feature Mash offers.
+  for item in "New Tab" "Close Tab" "Split Right" "Split Left" "Split Down" \
+    "Split Up" "Command Palette" "Quick Terminal" "Terminal Inspector" \
+    "Zoom Split" "Equalize Splits" "Resize Split" "Change Tab Title..."; do
+    if grep -qF "title=\"$item\"" "$src/macos/Sources/App/MainMenu.xib" 2>/dev/null; then
+      echo "Ghostty fork reintroduced the macOS menu item '$item'" >&2
+      status=1
+    fi
+  done
+
+  # New Window is the opposite check: it opens a second Mash instance, so its
+  # disappearance breaks that flow silently.
+  grep -qF 'title="New Window"' "$src/macos/Sources/App/MainMenu.xib" 2>/dev/null || {
+    echo "Ghostty fork lost the macOS 'New Window' menu item" >&2
+    status=1
+  }
+
+  # The GTK menus and buttons, which are a different frontend from the macOS
+  # xib. window.blp owns the titlebar and main menu, surface.blp the terminal
+  # context menu; both must stay free of the removed features, and the tab bar
+  # itself has to be gone rather than merely hidden.
+  local gtk_window="$src/src/apprt/gtk/ui/1.5/window.blp"
+  local gtk_surface="$src/src/apprt/gtk/ui/1.2/surface.blp"
+  for needle in 'menu split_menu' 'Adw.TabBar tab_bar' 'action: "win.new-tab"' \
+    'action: "win.toggle-command-palette"' 'action: "win.toggle-inspector"' \
+    'action: "win.split-' 'clicked => $new_tab()' \
+    'tooltip-text: _("View Open Tabs")'; do
+    if grep -qF "$needle" "$gtk_window" 2>/dev/null; then
+      echo "Ghostty fork reintroduced '$needle' in the GTK window" >&2
+      status=1
+    fi
+  done
+  for needle in 'action: "split-tree.new-split"' 'action: "win.new-tab"' \
+    'label: _("Close Split")' 'label: _("Tab")'; do
+    if grep -qF "$needle" "$gtk_surface" 2>/dev/null; then
+      echo "Ghostty fork reintroduced '$needle' in the GTK context menu" >&2
+      status=1
+    fi
+  done
+  # Menu deletion alone leaves these registered as directly invokable GTK
+  # actions (notably app.new-tab and app.toggle-quick-terminal via DBus).
+  for name in new-tab split-right split-left split-up split-down \
+    toggle-command-palette toggle-inspector; do
+    if grep -qF ".init(\"$name\", " "$src/src/apprt/gtk/class/window.zig" 2>/dev/null; then
+      echo "Ghostty fork still registers the GTK window action '$name'" >&2
+      status=1
+    fi
+  done
+  for name in new-tab toggle-quick-terminal; do
+    if grep -qF ".init(\"$name\", " "$src/src/apprt/gtk/class/application.zig" 2>/dev/null; then
+      echo "Ghostty fork still registers the GTK application action '$name'" >&2
+      status=1
+    fi
+  done
+  # The page and split-tree widgets expose direct GTK actions too: unlike
+  # keyboard bindings, these bypass Surface.performBindingAction entirely.
+  for name in new-split equalize zoom close-split; do
+    if grep -qF ".init(\"$name\", " "$src/src/apprt/gtk/class/split_tree.zig" 2>/dev/null; then
+      echo "Ghostty fork still registers the GTK split-tree action '$name'" >&2
+      status=1
+    fi
+  done
+  for name in close next-page previous-page prompt-tab-title; do
+    if grep -qF ".init(\"$name\", " "$src/src/apprt/gtk/class/tab.zig" 2>/dev/null; then
+      echo "Ghostty fork still registers the GTK tab action '$name'" >&2
+      status=1
+    fi
+  done
+  if grep -qF '"tab.next-page"' "$src/src/apprt/gtk/class/surface.zig" 2>/dev/null; then
+    echo "Ghostty fork still diverts horizontal scrolling to GTK tabs" >&2
+    status=1
+  fi
+
+  # New Window must survive on Linux too: it is the second-instance entry point
+  # the desktop file and the macOS Dock menu both rely on.
+  grep -qF 'action: "win.new-window"' "$gtk_window" 2>/dev/null || {
+    echo "Ghostty fork lost the GTK 'New Window' menu item" >&2
+    status=1
+  }
+
+  # A template child that Zig still requires but the blueprint no longer
+  # declares panics the moment the window is instantiated, and a blueprint-only
+  # check cannot see it. Removing the tab bar from window.blp is what makes
+  # this pairing worth asserting.
+  if ! grep -qF 'Adw.TabBar' "$gtk_window" 2>/dev/null; then
+    if grep -qF 'bindTemplateChildPrivate("tab_bar"' "$src/src/apprt/gtk/class/window.zig" 2>/dev/null; then
+      echo "Ghostty fork still binds the 'tab_bar' template child that window.blp no longer declares" >&2
+      status=1
+    fi
+    if grep -qF 'priv.tab_bar' "$src/src/apprt/gtk/class/window.zig" 2>/dev/null; then
+      echo "Ghostty fork still uses priv.tab_bar after the tab bar was removed" >&2
+      status=1
+    fi
+  fi
+
+  # Scripting and Finder services are entry points a menu grep cannot see.
+  if grep -qE '<command name="(new tab|split)"' "$src/macos/Ghostty.sdef" 2>/dev/null; then
+    echo "Ghostty fork reintroduced the AppleScript tab/split commands" >&2
+    status=1
+  fi
+  if grep -q '<string>openTab</string>' "$src/macos/Ghostty-Info.plist" 2>/dev/null; then
+    echo "Ghostty fork reintroduced the 'New Tab Here' Finder service" >&2
+    status=1
+  fi
+
+  return "$status"
+}
+
 mash_build_ghostty() {
   local src="${MASH_GHOSTTY_SRC:-$ghostty_fork}"
   local zig="${MASH_ZIG:-$zig_bin}"

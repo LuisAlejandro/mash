@@ -45,6 +45,12 @@ gtk-single-instance = false
 # scrollback); Herdr owns workspaces, tabs and panes; Fresh owns editing. A chord
 # is released here only when something downstream actually binds it.
 
+# Why these unbinds stay after Mash removed the features outright: a Ghostty
+# binding that performs nothing still consumes its chord unless it carries the
+# `performable:` prefix. The unbind is therefore what frees the key for Herdr
+# and Fresh, not merely a way to suppress a Ghostty behaviour. Removing one
+# restores the default binding and silently swallows the chord.
+
 # Ctrl+Shift chords are the closest Linux equivalent of the macOS Command
 # families Herdr uses, and GNOME leaves them alone.
 keybind = ctrl+shift+t=unbind

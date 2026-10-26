@@ -8,11 +8,11 @@
 #
 #   linux-session-smoke.sh <deb> [xorg|wayland]
 #
-# What it proves: the launcher seeds ~/.mash, the terminal starts and reports its
-# version under that session, the app-id it claims is the packaged one, and
-# shutdown leaves no stray process. What it cannot prove is listed in
-# linux-release-checklist.md as manual sign-off — cross-window focus behaviour
-# and CUA input into occluded windows.
+# What it proves: the launcher seeds ~/.mash, the terminal reaches the display,
+# its GTK window has no template/panic errors, the isolated config preserves
+# mouse reporting and clipboard bindings, the app-id is the packaged one, and
+# shutdown leaves no stray process. Actual clipboard/mouse delivery and native
+# menu contents need manual sign-off in linux-release-checklist.md.
 set -uo pipefail
 
 deb="${1:-}"
@@ -114,6 +114,40 @@ if grep -qiE 'Failed to open display|Cannot open display|wayland.*display.*refus
   fail "the terminal could not open the $session display"
 else
   ok "the terminal reached the $session display"
+fi
+# Removing Ghostty's tab bar also removes a required GTK template child. A
+# blueprint may compile but the window will fail to instantiate if its Zig
+# binding still expects that child, so check the actual launched app's log.
+if grep -qiE 'Gtk-(CRITICAL|ERROR)|template child|no widget with name|tab_bar|panic:' "$launch_log"; then
+  fail "the terminal reported a GTK template error or panic"
+else
+  ok "the terminal reported no GTK template errors or panic"
+fi
+
+# A fresh HOME uses the shipped config. Query its effective values instead of
+# grepping source defaults: disabling mouse reporting would stop Herdr getting
+# mouse input; removing clipboard bindings would break copying in shell panes.
+# This checks wiring, not real clipboard or mouse delivery (manual sign-off).
+config_out="$tmp/ghostty-config"
+keybind_out="$tmp/ghostty-keybinds"
+if env HOME="$home" XDG_CONFIG_HOME="$data/config" MASH_BIN="$res/bin" \
+  "$res/bin/ghostty" +show-config --changes-only=false --no-pager \
+  >"$config_out" 2>"$tmp/ghostty-config.err"; then
+  for expected in 'mouse-reporting = true' 'clipboard-read = ask' \
+    'clipboard-write = allow'; do
+    grep -Fqx "$expected" "$config_out" && ok "Ghostty $expected" || fail "Ghostty lost $expected"
+  done
+else
+  fail "could not read the effective Ghostty config"
+fi
+if env HOME="$home" XDG_CONFIG_HOME="$data/config" MASH_BIN="$res/bin" \
+  "$res/bin/ghostty" +list-keybinds >"$keybind_out" 2>"$tmp/ghostty-keybinds.err"; then
+  for expected in 'keybind = ctrl+shift+c=copy_to_clipboard:mixed' \
+    'keybind = ctrl+shift+v=paste_from_clipboard'; do
+    grep -Fqx "$expected" "$keybind_out" && ok "Ghostty $expected" || fail "Ghostty lost $expected"
+  done
+else
+  fail "could not read Ghostty clipboard keybindings"
 fi
 
 case "$session" in
