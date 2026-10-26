@@ -61,6 +61,7 @@ ship_helpers=(
   mash-design-autostart
   mash-voice-model
   mash-notify
+  mash-seed-sync
 )
 
 for name in "${ship_helpers[@]}"; do
@@ -489,6 +490,9 @@ mash_install_fonts
 # second literal here to drift out of sync.
 version="$(tr -d '[:space:]' <"$root/VERSION")"
 [ -n "$version" ] || { echo "VERSION is empty." >&2; exit 1; }
+# The shared seed ownership helper needs the same release id on macOS as on
+# Linux, where build-common.sh already stages Resources/VERSION.
+printf '%s\n' "$version" >"$app/Contents/Resources/VERSION"
 
 cat >"$app/Contents/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>

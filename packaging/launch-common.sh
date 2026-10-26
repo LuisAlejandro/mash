@@ -18,10 +18,10 @@ mash_seed_missing() {
   rsync -a --ignore-existing "$src/" "$dest/"
 }
 
-# Seeding never overwrites, so a shipped patch reaches an install that already
-# ran Mash only through a repair. The bundled Herdr integration is authoritative
-# for that one file, and the marker line in it is how a stale copy is
-# recognised: Herdr rewrites the file on every integration update.
+# Herdr's own integration installer can replace this one Mash-patched extension
+# with upstream. The ownership sync runs first and preserves user edits; this
+# repair only restores the Mash patch when the marker is absent. Other defaults
+# use the general provenance/digest path below.
 mash_repair_pi_integration() {
   local src="$1" d="$2" bundled installed marker
   bundled="$src/defaults/pi/extensions/herdr-agent-state.ts"
@@ -304,6 +304,12 @@ mash_seed_all() {
     "$d/config/lazygit" "$d/config/lazydocker" "$d/config/mash" \
     "$d/local/state" "$d/local/share/fresh" "$d/local/share/zoxide" \
     "$d/cache" "$d/pi/agent" "$d/run" "$d/bin"
+
+  # Reconcile before the seed-if-missing helpers below. Otherwise a deleted file
+  # would be re-copied from the new defaults before we can compare it to its
+  # previous digest, making a legitimate restore look like a user edit.
+  [ -x "$res/bin/mash-seed-sync" ] &&
+    "$res/bin/mash-seed-sync" "$res" "$d" || true
 
   mash_seed_configs "$res" "$d"
   mash_seed_missing "$res/defaults/ghostty/themes" "$d/config/ghostty/themes"

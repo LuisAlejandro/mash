@@ -26,6 +26,11 @@ mkdir -p \
   "$d/local/state" "$d/local/share/fresh" "$d/local/share/zoxide" \
   "$d/cache" "$d/pi/agent" "$d/run" "$d/bin"
 
+# Reconcile before the seed-if-missing helpers below, so a deleted file can be
+# restored from the record instead of being pre-copied and mistaken for an edit.
+[ -x "$ROOT/Resources/bin/mash-seed-sync" ] &&
+  "$ROOT/Resources/bin/mash-seed-sync" "$ROOT/Resources" "$d" || true
+
 cp "$ROOT/Resources/bin/lib.sh" "$d/bin/lib.sh"
 cp "$ROOT/Resources/bin/mash-shell" "$d/bin/mash-shell"
 cp "$ROOT/Resources/bin/mash-design-pi-sync" "$d/bin/mash-design-pi-sync"

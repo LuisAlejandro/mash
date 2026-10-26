@@ -1,0 +1,509 @@
+#!/bin/bash
+# Reconcile all files Mash seeds under ~/.mash with this build's defaults.
+#
+#   mash-seed-sync <resource-root> <data-dir>
+#
+# Provenance rule: a file Mash wrote is Mash's to update while it still matches
+# what Mash wrote; the moment it differs it belongs to the user. A file Mash
+# never wrote -- a user-installed skill, extension or plugin -- is not in the
+# record and is never touched.
+#
+# The record lives at ~/.mash/local/state/seeded.json and stores each shipped
+# destination path, the digest of the installed bytes (after platform path
+# substitutions and Mash's forced update settings), and the version that wrote
+# it. On an install that predates this record, only files byte-identical to this
+# build's rendered defaults are adopted. Mismatches have unknown provenance and
+# are left alone: we cannot recover what an older package wrote, so guessing
+# "Mash-owned" could overwrite a user edit.
+#
+# Mash seeds from several shapes: copied trees, generated config files whose
+# templates contain a few install paths, and virtualenvs whose Python links and
+# shebangs are retargeted at launch. This one helper renders those same shapes,
+# so one digest rule covers all of them without special-case repair functions.
+set -euo pipefail
+
+res="${1:?usage: mash-seed-sync <resource-root> <data-dir>}"
+d="${2:?usage: mash-seed-sync <resource-root> <data-dir>}"
+
+[ -d "$res" ] || exit 0
+[ -d "$d" ] || exit 0
+
+python="$res/python/bin/python3"
+[ -x "$python" ] || python="$(command -v python3 || true)"
+[ -n "$python" ] || exit 0
+
+# Two Mash windows can launch at once. Serialize the reconcile/write/record
+# operation with a portable mkdir lock (flock is not shipped on macOS). A dead
+# owner's lock is recoverable; a live owner's lock is waited on briefly, then
+# this launch skips syncing rather than blocking Mash from opening. Refuse a
+# symlinked state directory outside the data root before creating the lock.
+if ! PYTHONDONTWRITEBYTECODE=1 "$python" -c 'import os,sys; root=os.path.realpath(sys.argv[1]); state=os.path.realpath(os.path.join(sys.argv[1],"local","state")); sys.exit(0 if os.path.commonpath((root,state)) == root else 1)' "$d"; then
+  echo "mash-seed-sync: state directory escapes the Mash data folder; skipping" >&2
+  exit 0
+fi
+lock="$d/local/state/seeded.lock"
+mkdir -p "$(dirname "$lock")"
+tries=0
+while ! mkdir "$lock" 2>/dev/null; do
+  owner="$(cat "$lock/pid" 2>/dev/null || true)"
+  if [[ "$owner" =~ ^[0-9]+$ ]] && ! kill -0 "$owner" 2>/dev/null; then
+    rm -rf "$lock"
+    continue
+  fi
+  tries=$((tries + 1))
+  if [ "$tries" -ge 300 ]; then
+    echo "mash-seed-sync: another launch holds the lock; skipping this pass" >&2
+    exit 0
+  fi
+  sleep 0.1
+done
+printf '%s\n' "$$" >"$lock/pid"
+cleanup_lock() {
+  if [ "$(cat "$lock/pid" 2>/dev/null || true)" = "$$" ]; then
+    rm -rf "$lock"
+  fi
+}
+trap cleanup_lock EXIT
+
+# No bytecode may be written inside the signed bundle.
+status=0
+PYTHONDONTWRITEBYTECODE=1 "$python" - "$res" "$d" <<'PY' || status=$?
+import hashlib
+import json
+import os
+import platform
+import re
+import shutil
+import sys
+
+res, data = sys.argv[1], sys.argv[2]
+record_path = os.path.join(data, "local", "state", "seeded.json")
+LINUX = platform.system() != "Darwin"
+SUFFIX = ".linux" if LINUX else ""
+CHUNK = 1 << 20
+
+# The trees copied with rsync --ignore-existing by mash_seed_missing and
+# mash_seed_design_stack. Simple file seeds and their path substitutions live in
+# SINGLE_SEEDS below.
+TREES = [
+    ("defaults/ghostty/themes", "config/ghostty/themes"),
+    ("defaults/fresh", "config/fresh"),
+    ("defaults/pi", "pi/agent"),
+    ("defaults/plugins", "config/herdr/plugins/config"),
+    ("defaults/atuin", "config/atuin"),
+    ("defaults/lazydocker", "config/lazydocker"),
+    ("defaults/mash-config/references", "config/mash/references"),
+    ("defaults/mash-config/headless", "config/mash/headless"),
+    ("defaults/mash-config/node_modules", "config/mash/node_modules"),
+    ("defaults/mash-config/venvs", "config/mash/venvs"),
+    ("defaults/design-stack", "local/share/mash/design"),
+]
+
+# Source, destination, template substitutions. These are the single files the
+# launchers used to seed conditionally with cp/sed. Keep the list aligned with
+# mash_seed_configs(), mash_seed_programming_skills() and mash_seed_hindsight().
+SINGLE_SEEDS = [
+    (f"defaults/herdr/config{SUFFIX}.toml", "config/herdr/config.toml", "herdr"),
+    (f"defaults/ghostty/config{SUFFIX}", "config/ghostty/config", "ghostty"),
+    ("defaults/zsh/.zshenv", "config/zsh/.zshenv", None),
+    ("defaults/git/config", "config/git/config", None),
+    ("defaults/git/ignore", "config/git/ignore", None),
+    ("defaults/pet/config.toml", "config/pet/config.toml", "pet"),
+    ("defaults/pet/snippet.toml", "config/pet/snippet.toml", None),
+    (f"defaults/fresh/config{SUFFIX}.json", "config/fresh/config.json", "fresh"),
+    (
+        "defaults/pi/extensions/keybindings-quickref.linux.txt"
+        if LINUX
+        else "defaults/pi/extensions/keybindings-quickref.txt",
+        "pi/agent/extensions/keybindings-quickref.txt",
+        None,
+    ),
+    ("defaults/mash-config/hindsight-pin", "config/mash/hindsight-pin", None),
+    ("defaults/mash-config/hindsight-embed.env", ".hindsight/embed", None),
+]
+
+
+def sha(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def json_digest(value):
+    data = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    return sha(data)
+
+
+def digest(path):
+    try:
+        if os.path.islink(path):
+            return sha(b"symlink\0" + os.fsencode(os.readlink(path)))
+        h = hashlib.sha256()
+        with open(path, "rb") as fh:
+            for block in iter(lambda: fh.read(CHUNK), b""):
+                h.update(block)
+        return h.hexdigest()
+    except OSError:
+        return None
+
+
+def bundle_version():
+    try:
+        with open(os.path.join(res, "VERSION"), encoding="utf-8") as fh:
+            return fh.read().strip()
+    except OSError:
+        return ""
+
+
+def load_record():
+    try:
+        with open(record_path, encoding="utf-8") as fh:
+            record = json.load(fh)
+    except (OSError, ValueError):
+        record = {}
+    if not isinstance(record, dict):
+        record = {}
+    files = record.get("files")
+    if not isinstance(files, dict):
+        files = {}
+    # This record is user-writable. Bad paths in it must never escape ~/.mash.
+    safe_files = {}
+    for key, value in files.items():
+        if not isinstance(key, str) or not isinstance(value, str) or os.path.isabs(key):
+            continue
+        normalized = os.path.normpath(key)
+        if normalized == ".." or normalized.startswith(".." + os.sep):
+            continue
+        safe_files[normalized] = value
+    json_record = record.get("json")
+    if not isinstance(json_record, dict):
+        json_record = {}
+    safe_json = {}
+    for path, values in json_record.items():
+        if not isinstance(path, str) or os.path.isabs(path) or not isinstance(values, dict):
+            continue
+        normalized = os.path.normpath(path)
+        if normalized == ".." or normalized.startswith(".." + os.sep):
+            continue
+        safe_json[normalized] = {k: v for k, v in values.items() if isinstance(k, str) and isinstance(v, str)}
+    return {
+        "version": record.get("version") if isinstance(record.get("version"), str) else "",
+        "files": safe_files,
+        "json": safe_json,
+    }
+
+
+def safe_target(key):
+    """Resolve parents only; the leaf symlink itself is safe to replace/unlink."""
+    candidate = os.path.join(data, key)
+    root = os.path.realpath(data)
+    parent = os.path.realpath(os.path.dirname(candidate))
+    try:
+        if os.path.commonpath((root, parent)) != root:
+            return None
+    except ValueError:
+        return None
+    return candidate
+
+
+def force_assignment(text, key, value):
+    lines = text.splitlines(keepends=True)
+    pattern = re.compile(r"^[ \t]*" + re.escape(key) + r"[ \t]*=")
+    out, found = [], False
+    replacement = f"{key} = {value}\n"
+    for line in lines:
+        if pattern.match(line):
+            out.append(replacement)
+            found = True
+        else:
+            out.append(line)
+    if not found:
+        out.append(replacement)
+    return "".join(out)
+
+
+def rendered_bytes(source, target, kind=None, rel_in_tree=""):
+    if os.path.islink(source):
+        if rel_in_tree.startswith("mash-parallel/"):
+            rel = rel_in_tree[len("mash-parallel/"):]
+            if rel == "bin/python":
+                return os.path.join(res, "python", "bin", "python3")
+            if rel in ("bin/python3", "bin/python3.13"):
+                return "python"
+        return os.readlink(source)
+    with open(source, "rb") as fh:
+        raw = fh.read()
+    if kind in ("herdr", "ghostty", "pet"):
+        text = raw.decode("utf-8")
+        if kind == "herdr":
+            text = text.replace("__MASH_SHELL__", os.path.join(data, "bin", "mash-shell"))
+            text = text.replace("__MASH_CONFIG__", os.path.join(data, "config"))
+            text = force_assignment(text, "version_check", "false")
+            text = force_assignment(text, "manifest_check", "false")
+        elif kind == "ghostty":
+            text = text.replace("__MASH_HERDR_PANE__", os.path.join(res, "bin", "herdr-pane"))
+            text = force_assignment(text, "command", os.path.join(res, "bin", "herdr-pane"))
+            text = force_assignment(text, "working-directory", "home")
+            text = force_assignment(text, "auto-update", "off")
+        else:
+            text = text.replace("__MASH_PET_SNIPPET__", os.path.join(data, "config", "pet", "snippet.toml"))
+        raw = text.encode("utf-8")
+    elif kind == "fresh":
+        config = json.loads(raw.decode("utf-8"))
+        config["check_for_updates"] = False
+        config["self_update"] = False
+        raw = (json.dumps(config, indent=2) + "\n").encode("utf-8")
+    elif kind == "notifier" and not LINUX and os.path.isfile(os.path.join(res, "bin", "mash-notify")):
+        lines = [line for line in raw.decode("utf-8").splitlines() if not line.startswith("NOTIFIER=")]
+        lines.append("NOTIFIER=" + os.path.join(res, "bin", "mash-notify"))
+        raw = ("\n".join(lines) + "\n").encode("utf-8")
+
+    # mash_seed_programming_skills retargets this venv from its bundled path to
+    # ~/.mash. Render the same links, cfg and shebangs before comparing/copying.
+    if rel_in_tree.startswith("mash-parallel/"):
+        rel = rel_in_tree[len("mash-parallel/"):]
+        venv = os.path.join(data, "config", "mash", "venvs", "mash-parallel")
+        if rel == "pyvenv.cfg":
+            text = raw.decode("utf-8")
+            lines = []
+            has_home = has_executable = False
+            for line in text.splitlines():
+                if re.match(r"^home\s*=", line):
+                    lines.append("home = " + os.path.join(res, "python", "bin"))
+                    has_home = True
+                elif re.match(r"^executable\s*=", line):
+                    lines.append("executable = " + os.path.join(res, "python", "bin", "python3"))
+                    has_executable = True
+                else:
+                    lines.append(line)
+            if not has_home:
+                lines.append("home = " + os.path.join(res, "python", "bin"))
+            if not has_executable:
+                lines.append("executable = " + os.path.join(res, "python", "bin", "python3"))
+            return ("\n".join(lines) + "\n").encode("utf-8")
+        if rel.startswith("bin/") and b"\0" not in raw:
+            head, sep, tail = raw.partition(b"\n")
+            if head.startswith(b"#!") and b"python" in head:
+                return b"#!" + os.path.join(venv, "bin", "python").encode() + b"\n" + tail
+
+    return raw
+
+
+def entries():
+    for source_rel, dest_rel, kind in SINGLE_SEEDS:
+        source = os.path.join(res, source_rel)
+        if os.path.isfile(source):
+            yield source, dest_rel, kind, ""
+
+    for source_rel, dest_rel in TREES:
+        root = os.path.join(res, source_rel)
+        if not os.path.isdir(root):
+            continue
+        for base, dirs, names in os.walk(root, followlinks=False):
+            # Symlinked directories are entries too; do not recurse through them.
+            linked_dirs = [name for name in dirs if os.path.islink(os.path.join(base, name))]
+            dirs[:] = [name for name in dirs if name not in linked_dirs]
+            for name in linked_dirs + names:
+                source = os.path.join(base, name)
+                if not os.path.islink(source) and not os.path.isfile(source):
+                    continue
+                rel = os.path.relpath(source, root)
+                if source_rel == "defaults/fresh" and rel == "config.json":
+                    continue  # platform-specific version is a single seed above
+                if source_rel == "defaults/pi" and rel == "extensions/keybindings-quickref.txt":
+                    continue  # Linux selects its platform variant above
+                if source_rel == "defaults/pi" and rel == "mcp.json":
+                    continue  # MCP servers are merged per key below
+                venv_rel = rel if source_rel == "defaults/mash-config/venvs" else ""
+                kind = "notifier" if source_rel == "defaults/plugins" and rel == "dot.terminal-notifier/config.env" else None
+                if venv_rel.startswith("mash-parallel/"):
+                    target_key = os.path.join(dest_rel, rel)
+                else:
+                    target_key = os.path.join(dest_rel, rel)
+                # Preserve symlink targets as entries; file bytes are transformed
+                # only for the relocated mash-parallel virtual environment.
+                yield source, target_key, kind, venv_rel
+
+
+def expected(source, key, kind=None, rel_in_tree=""):
+    if os.path.islink(source):
+        value = rendered_bytes(source, os.path.join(data, key), kind, rel_in_tree)
+        return "link", value, sha(b"symlink\0" + os.fsencode(value))
+    value = rendered_bytes(source, os.path.join(data, key), kind, rel_in_tree)
+    return "file", value, sha(value)
+
+
+def install_expected(entry, target):
+    source, key, kind, rel_in_tree = entry
+    typ, value, _ = expected(source, key, kind, rel_in_tree)
+    os.makedirs(os.path.dirname(target), exist_ok=True)
+    tmp = target + f".mash-seed-sync-{os.getpid()}"
+    try:
+        if typ == "link":
+            os.symlink(value, tmp)
+        else:
+            with open(tmp, "wb") as fh:
+                fh.write(value)
+            shutil.copystat(source, tmp, follow_symlinks=False)
+        os.replace(tmp, target)
+    finally:
+        try:
+            os.unlink(tmp)
+        except FileNotFoundError:
+            pass
+
+
+def sync_mcp_defaults(record, seen):
+    """Merge Mash-shipped MCP servers per key, leaving user servers untouched."""
+    key = "pi/agent/mcp.json"
+    target = safe_target(key)
+    source = os.path.join(res, "defaults", "pi", "mcp.json")
+    try:
+        with open(source, encoding="utf-8") as fh:
+            shipped = json.load(fh)
+    except (OSError, ValueError):
+        shipped = {}
+    shipped_servers = shipped.get("mcpServers", {}) if isinstance(shipped, dict) else {}
+    if not isinstance(shipped_servers, dict) or target is None:
+        return 0, 0
+
+    if os.path.exists(target):
+        try:
+            with open(target, encoding="utf-8") as fh:
+                installed = json.load(fh)
+        except (OSError, ValueError):
+            return 0, 0
+        if not isinstance(installed, dict) or not isinstance(installed.get("mcpServers"), dict):
+            return 0, 0
+    else:
+        installed = {}
+    current_servers = installed.setdefault("mcpServers", {})
+    known = record["json"].setdefault(key, {})
+    seen.add(key)
+    updated = kept = 0
+
+    for name, new_value in shipped_servers.items():
+        new_hash = json_digest(new_value)
+        old_hash = known.get(name)
+        if name not in current_servers:
+            current_servers[name] = new_value
+            known[name] = new_hash
+            updated += 1
+        elif old_hash is None:
+            if json_digest(current_servers[name]) == new_hash:
+                known[name] = new_hash
+            else:
+                kept += 1
+        elif json_digest(current_servers[name]) != old_hash:
+            kept += 1
+        elif new_hash != old_hash:
+            current_servers[name] = new_value
+            known[name] = new_hash
+            updated += 1
+
+    for name in list(known):
+        if name in shipped_servers:
+            continue
+        if name not in current_servers:
+            known.pop(name, None)
+        elif json_digest(current_servers[name]) == known[name]:
+            current_servers.pop(name, None)
+            known.pop(name, None)
+            updated += 1
+        else:
+            kept += 1
+
+    if updated:
+        os.makedirs(os.path.dirname(target), exist_ok=True)
+        mode = os.stat(target).st_mode & 0o777 if os.path.exists(target) else 0o600
+        tmp = target + f".mash-seed-sync-{os.getpid()}"
+        try:
+            with open(tmp, "w", encoding="utf-8") as fh:
+                json.dump(installed, fh, indent=2)
+                fh.write("\n")
+            os.chmod(tmp, mode)
+            os.replace(tmp, target)
+        finally:
+            try:
+                os.unlink(tmp)
+            except FileNotFoundError:
+                pass
+    return updated, kept
+
+
+def main():
+    version = bundle_version()
+    if not version:
+        return 0
+    record = load_record()
+    files = record["files"]
+    if record["version"] == version:
+        return 0
+
+    shipped = list(entries())
+    seen = set()
+    updated, kept = sync_mcp_defaults(record, seen)
+
+    for entry in shipped:
+        source, key, kind, rel_in_tree = entry
+        target = safe_target(key)
+        if target is None:
+            continue
+        seen.add(key)
+        typ, _value, new_digest = expected(source, key, kind, rel_in_tree)
+        current = digest(target) if os.path.lexists(target) else None
+        recorded = files.get(key)
+
+        if current is None:
+            install_expected(entry, target)
+            files[key] = new_digest
+            updated += 1
+        elif recorded is None:
+            # Legacy/adopted install: exact match is safe to adopt; any mismatch
+            # has unknown provenance and stays user-owned.
+            if current == new_digest:
+                files[key] = new_digest
+            else:
+                kept += 1
+        elif current != recorded:
+            # The user changed the file after Mash wrote it.
+            kept += 1
+        elif new_digest != recorded:
+            install_expected(entry, target)
+            files[key] = new_digest
+            updated += 1
+
+    removed = 0
+    for key in list(files):
+        if key in seen:
+            continue
+        target = safe_target(key)
+        if target is None:
+            continue
+        if not os.path.lexists(target):
+            files.pop(key, None)
+        elif digest(target) == files[key]:
+            try:
+                os.remove(target)
+                removed += 1
+                files.pop(key, None)
+            except OSError:
+                pass
+        # A modified dropped default stays and remains tracked. If the user later
+        # restores the shipped bytes, a subsequent release can safely remove it.
+
+    record["version"] = version
+    record["files"] = files
+    os.makedirs(os.path.dirname(record_path), exist_ok=True)
+    tmp = record_path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as fh:
+        json.dump(record, fh, indent=1, sort_keys=True)
+        fh.write("\n")
+    os.replace(tmp, record_path)
+
+    if updated or removed:
+        print(f"mash-seed-sync: {updated} refreshed, {removed} dropped, {kept} kept")
+    return 0
+
+
+sys.exit(main())
+PY
+exit "$status"
