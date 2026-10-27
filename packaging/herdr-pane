@@ -68,6 +68,13 @@ elif [ -f "$home/.mash/local/share/mash/design/penpot.env" ] &&
   nohup "$bin_dir/mash-penpot-account-setup" "$home/.mash" </dev/null >/dev/null 2>&1 &
 fi
 
+# GitHub's MCP follows Mash's gh sign-in: added while signed in, removed after a
+# logout. Covers installs whose wizard finished before this existed. Fast and
+# local (one `gh auth token`), but still kept off the window's critical path.
+if [ -x "$bin_dir/mash-github-mcp" ]; then
+  nohup "$bin_dir/mash-github-mcp" "$home/.mash" </dev/null >/dev/null 2>&1 &
+fi
+
 # A newer version is announced once per release: the local APT cache on Linux,
 # the rate-limited GitHub release check on macOS. The helper waits for this
 # window's server itself, so it never delays the window.

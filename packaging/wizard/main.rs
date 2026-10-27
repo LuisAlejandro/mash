@@ -1136,6 +1136,7 @@ fn offer_github_login<B: Backend>(terminal: &mut Terminal<B>) -> Result<(), Stri
         .status()
         .is_ok_and(|status| status.success());
     if already_signed_in || github_token(&config).is_some() {
+        connect_github_mcp();
         return Ok(());
     }
     let mut note = String::new();
@@ -1177,12 +1178,29 @@ fn offer_github_login<B: Backend>(terminal: &mut Terminal<B>) -> Result<(), Stri
                 enable_raw_mode().map_err(|e| e.to_string())?;
                 terminal.clear().map_err(|e| e.to_string())?;
                 if result.is_ok_and(|status| status.success()) {
+                    connect_github_mcp();
                     return Ok(());
                 }
                 note = "GitHub sign-in did not complete. Press y to retry or Enter to skip.".into();
             }
             _ => {}
         }
+    }
+}
+
+// Register GitHub's MCP server now that Mash's gh is signed in, so the first
+// session already has it. The helper decides from the sign-in itself and never
+// writes the token; every launch runs it too, so a failure here only delays the
+// server to the next launch.
+fn connect_github_mcp() {
+    let helper = mash_resources().join("bin/mash-github-mcp");
+    if helper.is_file() {
+        let _ = Command::new(&helper)
+            .env("PATH", host_path())
+            .arg(data_dir())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status();
     }
 }
 

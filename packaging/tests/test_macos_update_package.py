@@ -26,6 +26,18 @@ class MacOSUpdatePackageTest(unittest.TestCase):
         self.assertIn('"$bin_dir/mash-update-notice" "$res" "$home/.mash"', launcher)
         self.assertNotIn('"$bin_dir/mash-update-verify"', launcher)
 
+    def test_github_mcp_follows_sign_in_on_every_launch(self):
+        build = (ROOT / "packaging/build.sh").read_text()
+        helpers = build.split("ship_helpers=(", 1)[1].split("\n)", 1)[0].split()
+        self.assertIn("mash-github-mcp", helpers)
+        launcher = (ROOT / "packaging/herdr-pane").read_text()
+        self.assertIn('"$bin_dir/mash-github-mcp" "$home/.mash"', launcher)
+        wizard = (ROOT / "packaging/wizard/main.rs").read_text()
+        self.assertIn('join("bin/mash-github-mcp")', wizard)
+        # The build guard rejects token shapes, not the word "github".
+        carry = (ROOT / "packaging/carry.sh").read_text()
+        self.assertNotIn("grep -q 'github' \"$pi/mcp.json\"", carry)
+
     def test_popup_plugin_ships_to_both_platforms(self):
         manifest = tomllib.loads(
             (ROOT / "packaging/plugins/mash-update-notice/herdr-plugin.toml").read_text()

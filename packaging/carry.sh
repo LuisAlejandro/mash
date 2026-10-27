@@ -859,7 +859,10 @@ mash_install_skills() {
       exit 1
     }
   done
-  if grep -q 'github' "$pi/mcp.json"; then
+  # GitHub's MCP is added per user by mash-github-mcp after sign-in, never
+  # shipped. What must never ship is a credential, so look for the token
+  # shapes themselves rather than the word "github".
+  if grep -qE 'gh[opsu]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}' "$pi/mcp.json"; then
     echo "mcp.json must not carry a GitHub token" >&2
     exit 1
   fi

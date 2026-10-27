@@ -65,6 +65,7 @@ ship_helpers=(
   mash-update-notice
   mash-update-verify
   mash-update-apply
+  mash-github-mcp
 )
 
 for name in "${ship_helpers[@]}"; do
