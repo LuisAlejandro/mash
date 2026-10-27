@@ -83,7 +83,6 @@
     "telescope",
     "ray.plugin-manager",
     "mash-programming-skills",
-    "mash-design-skills",
     "sentrux",
     "hindsight-embed",
     "hindsight-api",
@@ -538,13 +537,6 @@
       "install": "bundled",
       "repo": "LuisAlejandro/mash-programming-skills",
       "ref": "0.5.15"
-    },
-    "mash-design-skills": {
-      "version": "0.1.1",
-      "strategy": "git",
-      "install": "bundled",
-      "repo": "LuisAlejandro/mash-design-skills",
-      "ref": "0.1.1"
     },
     "sentrux": {
       "version": "0.5.7",

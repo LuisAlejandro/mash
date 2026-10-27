@@ -32,7 +32,7 @@ mash_skill_enabled() {
 mash_seed_pi() {
   local suite path
   set --
-  for suite in programming design; do
+  for suite in programming; do
     if ! mash_skill_enabled "$suite"; then
       [ -f "$res/defaults/optional-$suite.txt" ] || continue
       while IFS= read -r path; do
@@ -166,97 +166,6 @@ mash_seed_hindsight() {
 }
 
 
-# The design stack: payload, dependency stores, the skill symlinks, and the
-# penpot-local MCP entry. Env values come from penpot.env, which `mds setup`
-# writes. Before that they are empty and the server reports it.
-mash_seed_design_stack() {
-  local src="$res/defaults/design-stack"
-  mash_skill_enabled design || return 0
-  local cfg="$d/config/mash"
-  local stack="$d/local/share/mash/design"
-  local py="$res/python/bin/python3"
-  local node="$res/node/bin/node"
-  local name target
-
-  [ -d "$src" ] || return 0
-  mkdir -p "$stack" "$cfg/node_modules" "$cfg/venvs"
-  rsync -a --ignore-existing "$src/" "$stack/"
-  mash_seed_missing "$res/defaults/mash-config/headless" "$cfg/headless"
-  mash_seed_missing "$res/defaults/mash-config/node_modules" "$cfg/node_modules"
-  for name in "$res/defaults/mash-config/venvs"/*; do
-    [ -d "$name" ] || continue
-    [ "$(basename "$name")" != mash-parallel ] || mash_skill_enabled programming || continue
-    target="$cfg/venvs/$(basename "$name")"
-    [ -e "$target/pyvenv.cfg" ] && continue
-    cp -a "$name" "$target"
-  done
-  chmod 755 "$stack/bin/mds" 2>/dev/null || true
-  chmod 755 "$stack/lib/od_daemon.sh" 2>/dev/null || true
-  # On PATH as `mds`. ~/.mash/bin is already in MASH_BIN; the user's own
-  # ~/.local/bin is never written to.
-  mkdir -p "$d/bin"
-  [ -e "$d/bin/mds" ] || ln -s "$stack/bin/mds" "$d/bin/mds"
-
-  # Each installed design skill reaches its dependency store here. The design
-  # installer does the same for the IDE copies it writes.
-  for name in "$cfg/node_modules"/*; do
-    [ -d "$name/node_modules" ] || continue
-    target="$d/pi/agent/skills/$(basename "$name")/node_modules"
-    [ -d "$(dirname "$target")" ] || continue
-    [ -e "$target" ] || ln -s "$name/node_modules" "$target"
-  done
-  for name in "$cfg/venvs"/*; do
-    [ -x "$name/bin/python" ] || continue
-    target="$d/pi/agent/skills/$(basename "$name")/.venv"
-    [ -d "$(dirname "$target")" ] || continue
-    [ -e "$target" ] || ln -s "$name" "$target"
-  done
-
-  [ -x "$py" ] && [ -f "$cfg/headless/dist/server.js" ] || return 0
-  "$py" - "$d/pi/agent/mcp.json" "$node" "$cfg/headless/dist/server.js" "$stack/penpot.env" <<'PY'
-import json, sys
-from pathlib import Path
-
-dest, node, server, env_file = sys.argv[1:5]
-values = {}
-source = Path(env_file)
-if source.is_file():
-    for line in source.read_text(encoding="utf-8").splitlines():
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, value = line.split("=", 1)
-        values[key] = value
-
-entry = {
-    "command": node,
-    "args": [server],
-    "env": {
-        "PENPOT_BASE_URL": "http://localhost:9001",
-        "PENPOT_ACCESS_TOKEN": values.get("PENPOT_ACCESS_TOKEN", ""),
-        "PENPOT_LOGIN_EMAIL": values.get("PENPOT_LOCAL_EMAIL", ""),
-    },
-}
-path = Path(dest)
-if path.is_symlink():
-    raise SystemExit("Mash refused a symlink for Pi MCP config")
-data = {}
-if path.is_file():
-    try:
-        loaded = json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        raise SystemExit(0)
-    if isinstance(loaded, dict):
-        data = loaded
-servers = data.get("mcpServers")
-if not isinstance(servers, dict):
-    servers = {}
-    data["mcpServers"] = servers
-if servers.get("penpot-local") != entry:
-    servers["penpot-local"] = entry
-    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
-path.chmod(0o600)
-PY
-}
 
 # Seed the individual config files that are generated rather than copied: the
 # Herdr config names the pane shell and data folder, and pet's config names its
@@ -351,7 +260,6 @@ mash_seed_all() {
   mash_seed_missing "$res/defaults/atuin" "$d/config/atuin"
   mash_seed_missing "$res/defaults/lazydocker" "$d/config/lazydocker"
   mash_seed_programming_skills
-  mash_seed_design_stack
   mash_seed_hindsight
 }
 

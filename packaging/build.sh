@@ -56,10 +56,6 @@ ship_helpers=(
   herdr-annotate-paste
   herdr-orchestration
   mash-hindsight-install
-  mash-design-deps
-  mash-design-pi-sync
-  mash-penpot-account-setup
-  mash-design-autostart
   mash-voice-model
   mash-notify
   mash-seed-sync
@@ -450,7 +446,6 @@ env HOME="$work/home" \
   "$app/Contents/Resources/node/bin/npm" install --prefix "$app/Contents/Resources/defaults/pi" \
   typebox@1.3.36
 mash_install_skills
-mash_install_design_skills
 export PATH="$work/rustc/bin:$work/go/bin:$app/Contents/Resources/bin:$PATH"
 # The downloaded Go owns its own standard library. An inherited GOROOT (for
 # example a Homebrew Go on PATH) makes its `compile` tool disagree with the

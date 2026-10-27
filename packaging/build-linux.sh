@@ -305,10 +305,6 @@ mash_install_skills || {
   echo "could not stage the skills payload" >&2
   exit 1
 }
-mash_install_design_skills || {
-  echo "could not stage the design payload" >&2
-  exit 1
-}
 mash_build_plugins || {
   echo "could not stage the plugins" >&2
   exit 1

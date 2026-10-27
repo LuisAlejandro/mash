@@ -1,6 +1,6 @@
 mod font_page;
-mod penpot_page;
 mod provider_page;
+mod skills_page;
 mod theme;
 mod voice;
 mod voice_page;
@@ -322,8 +322,7 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
     let mut app = App::new();
     let mut providers = provider_page::ProviderPage::new();
     providers.load_existing_auth(&data_dir().join("pi/agent"));
-    let mut penpot = penpot_page::PenpotPage::new(app.email.clone());
-    penpot.load_autostart(&data_dir());
+    let mut skills = skills_page::SkillsPage::new();
     let mut fonts =
         font_page::FontPage::new(&mash_resources(), &data_dir().join("config/ghostty/config"));
     fonts.theme = theme::Theme::current(&data_dir());
@@ -338,7 +337,7 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                     match page {
                         0 => draw_choices(frame, &app),
                         1 => providers.draw(frame),
-                        2 => penpot.draw(frame),
+                        2 => skills.draw(frame),
                         3 => fonts.draw(frame),
                         _ => voice.draw(frame),
                     }
@@ -393,8 +392,8 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                             1
                         }
                     }),
-                    2 => penpot.on_click(id).map(|d| {
-                        if matches!(d, penpot_page::Decision::Back) {
+                    2 => skills.on_click(id).map(|d| {
+                        if matches!(d, skills_page::Decision::Back) {
                             -1
                         } else {
                             1
@@ -486,17 +485,17 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                 _ => {}
             },
             2 => match if let Some(id) = click {
-                penpot.on_click(id)
+                skills.on_click(id)
             } else {
-                penpot.on_key(code, modifiers)
+                skills.on_key(code, modifiers)
             } {
-                Some(penpot_page::Decision::Cancel) => {
+                Some(skills_page::Decision::Cancel) => {
                     if confirm_quit(terminal)? {
                         return Ok(EXIT_NOT_DONE);
                     }
                 }
-                Some(penpot_page::Decision::Back) => page = 1,
-                Some(penpot_page::Decision::Save) if penpot.validate() => page = 3,
+                Some(skills_page::Decision::Back) => page = 1,
+                Some(skills_page::Decision::Save) => page = 3,
                 _ => {}
             },
             3 => match if let Some(id) = click {
@@ -533,15 +532,14 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
 
     let mut plan = install_plan(app.selections);
     plan.voice = voice.choice();
-    plan.programming = penpot.programming();
-    plan.design = penpot.design();
+    plan.programming = skills.programming();
     let identity = app.identity();
     match review_and_apply(
         terminal,
         &plan,
         &identity,
         &fonts,
-        &mut penpot,
+        &mut skills,
         &mut providers,
     ) {
         Ok(()) => {
@@ -667,15 +665,14 @@ fn review_and_apply<B: Backend>(
     plan: &Plan,
     identity: &Identity,
     fonts: &font_page::FontPage,
-    penpot: &mut penpot_page::PenpotPage,
+    skills: &mut skills_page::SkillsPage,
     providers: &mut provider_page::ProviderPage,
 ) -> Result<(), ApplyError> {
     let state_dir = state_dir();
     let mut state = load_state(&state_dir);
     let prepare = (|| -> Result<(), String> {
-        penpot.save_selection(&data_dir())?;
+        skills.save_selection(&data_dir())?;
         seed_selected_skills()?;
-        penpot.save(&data_dir())?;
         providers.save(&data_dir())?;
         Ok(())
     })();
@@ -837,7 +834,7 @@ fn seed_selected_skills() -> Result<(), String> {
     let mut setup = Command::new("/bin/bash");
     setup.args([
         "-c",
-        "res=$1; d=$2; source \"$res/bin/launch-common.sh\"; mash_seed_programming_skills; mash_seed_design_stack; mash_seed_hindsight",
+        "res=$1; d=$2; source \"$res/bin/launch-common.sh\"; mash_seed_programming_skills; mash_seed_hindsight",
         "mash",
     ]);
     setup.arg(&res).arg(&data);
@@ -851,12 +848,10 @@ fn seed_selected_skills() -> Result<(), String> {
 // binary, the failure never writes completed=true, and the setup reopens on
 // every launch. Only add installers when something is actually missing.
 // Environment steps that always run, after whichever installers the selections
-// needed. They are not optional: no one has to opt into having memory or a
-// design stack available.
+// needed. They are not optional: no one has to opt into having memory
+// available.
 const STEP_HINDSIGHT: &str = "Install the Hindsight environment";
 const STEP_HINDSIGHT_DAEMON: &str = "Start Hindsight and fetch its models";
-const STEP_DESIGN: &str = "Install the design dependencies";
-const STEP_PENPOT: &str = "Create the local Penpot account (or defer until Docker is ready)";
 const STEP_VOICE: &str = "Install the dictation model";
 
 fn install_steps(plan: &Plan, missing: &[&str]) -> Vec<String> {
@@ -883,10 +878,6 @@ fn install_steps(plan: &Plan, missing: &[&str]) -> Vec<String> {
     if plan.programming {
         steps.push(STEP_HINDSIGHT.to_string());
         steps.push(STEP_HINDSIGHT_DAEMON.to_string());
-    }
-    if plan.design {
-        steps.push(STEP_DESIGN.to_string());
-        steps.push(STEP_PENPOT.to_string());
     }
     // Last, and only when the page chose one: the model is the big download,
     // and it goes straight into the cache Pi Voice reads, so nothing re-runs
@@ -1131,16 +1122,6 @@ fn install_linux_tools<B: Backend>(
 }
 
 // mash-hindsight-install logs to setup/hindsight-install.log, and so on.
-fn penpot_account_ready() -> bool {
-    let config = data_dir().join("local/share/mash/design/penpot.env");
-    fs::read_to_string(config).is_ok_and(|text| {
-        text.lines().any(|line| {
-            line.strip_prefix("PENPOT_ACCESS_TOKEN=")
-                .is_some_and(|token| !token.is_empty())
-        })
-    })
-}
-
 fn helper_log_path(script_name: &str) -> PathBuf {
     let stem = script_name.strip_prefix("mash-").unwrap_or(script_name);
     data_dir().join("setup").join(format!("{stem}.log"))
@@ -1233,31 +1214,6 @@ fn apply_steps<B: Backend>(
             )
         } else if step == STEP_HINDSIGHT_DAEMON {
             start_hindsight_daemon(terminal, index, steps.len(), step, &messages)
-        } else if step == STEP_DESIGN {
-            install_helper_with_progress(
-                terminal,
-                index,
-                steps.len(),
-                step,
-                &messages,
-                "mash-design-deps",
-            )
-        } else if step == STEP_PENPOT {
-            install_helper_with_progress(
-                terminal,
-                index,
-                steps.len(),
-                step,
-                &messages,
-                "mash-penpot-account-setup",
-            )
-            .map(|_| {
-                if penpot_account_ready() {
-                    "local account and MCP token ready".into()
-                } else {
-                    "credentials saved; reopen Mash after Docker starts".into()
-                }
-            })
         } else if step == STEP_VOICE {
             install_voice_model(
                 terminal,
@@ -1274,12 +1230,9 @@ fn apply_steps<B: Backend>(
         // an installer trips over one that is already present. The step is
         // done once every selected tool is available; otherwise report why.
         // The environment steps are excluded: they have no such excuse, and
-        // masking their failure would leave memory or design quietly absent.
-        let environment_step = step == STEP_HINDSIGHT
-            || step == STEP_HINDSIGHT_DAEMON
-            || step == STEP_DESIGN
-            || step == STEP_PENPOT
-            || step == STEP_VOICE;
+        // masking their failure would leave memory quietly absent.
+        let environment_step =
+            step == STEP_HINDSIGHT || step == STEP_HINDSIGHT_DAEMON || step == STEP_VOICE;
         let message = match result {
             Ok(message) => message,
             Err(_) if !environment_step && tools_available(&plan.tools) => {
@@ -1676,13 +1629,11 @@ struct Plan {
     /// The dictation model to download, from the last wizard page.
     voice: Option<voice::VoiceChoice>,
     programming: bool,
-    design: bool,
 }
 
 fn install_plan(selections: [bool; 2]) -> Plan {
     let mut plan = Plan {
         programming: true,
-        design: true,
         ..Plan::default()
     };
     if is_linux() {
@@ -2025,23 +1976,15 @@ mod tests {
     }
 
     #[test]
-    fn unchecked_suites_add_no_hindsight_or_design_install_steps() {
+    fn an_unchecked_suite_adds_no_hindsight_install_steps() {
         let mut plan = install_plan([false, false]);
         plan.programming = false;
-        plan.design = false;
         let steps = install_steps(&plan, &[]);
-        assert!(!steps.iter().any(|step| {
-            [
-                STEP_HINDSIGHT,
-                STEP_HINDSIGHT_DAEMON,
-                STEP_DESIGN,
-                STEP_PENPOT,
-            ]
-            .contains(&step.as_str())
-        }));
+        assert!(!steps
+            .iter()
+            .any(|step| [STEP_HINDSIGHT, STEP_HINDSIGHT_DAEMON].contains(&step.as_str())));
         plan.programming = true;
         assert!(install_steps(&plan, &[]).contains(&STEP_HINDSIGHT.to_string()));
-        assert!(!install_steps(&plan, &[]).contains(&STEP_DESIGN.to_string()));
     }
 
     #[test]
@@ -2113,13 +2056,11 @@ mod tests {
     #[test]
     fn environment_steps_always_run() {
         // Not optional, and not gated on the tool selections: no one opts into
-        // having memory or a design stack available.
+        // having memory available.
         let plan = install_plan([false, false]);
         let steps = install_steps(&plan, &[]);
         assert!(steps.contains(&STEP_HINDSIGHT.to_string()));
-        assert!(steps.contains(&STEP_DESIGN.to_string()));
-        assert!(steps.contains(&STEP_PENPOT.to_string()));
-        assert_eq!(steps.last().unwrap(), STEP_PENPOT);
+        assert_eq!(steps.last().unwrap(), STEP_HINDSIGHT_DAEMON);
         // Tools install before the environment steps that may use them. The
         // step is Homebrew on macOS and Mash's own installer on Linux.
         let full = install_steps(&install_plan([true, true]), &["gopls"]);
@@ -2160,9 +2101,6 @@ mod tests {
         assert!(helper_log_path("mash-hindsight-install")
             .to_string_lossy()
             .ends_with("setup/hindsight-install.log"));
-        assert!(helper_log_path("mash-design-deps")
-            .to_string_lossy()
-            .ends_with("setup/design-deps.log"));
     }
 
     #[test]
@@ -2282,9 +2220,7 @@ mod tests {
             vec![
                 "Check selected tools",
                 STEP_HINDSIGHT,
-                STEP_HINDSIGHT_DAEMON,
-                STEP_DESIGN,
-                STEP_PENPOT
+                STEP_HINDSIGHT_DAEMON
             ]
         );
     }

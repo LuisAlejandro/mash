@@ -8,7 +8,7 @@ bin_dir="$(cd "$(dirname "$0")" && pwd)"
 res="$(cd "$bin_dir/.." && pwd)"
 export MASH_BIN="$bin_dir:$res/node/bin:$res/python/bin:$home/.mash/bin"
 # First-open setup. It is the only way to reach Herdr until it finishes: an
-# unfinished setup leaves no providers, no Penpot account and no git identity,
+# unfinished setup leaves no providers and no git identity,
 # and Herdr would then open on top of that as if Mash were ready. The wizard
 # exits 0 once setup is done, and on every later launch it returns 0 at once
 # without touching the terminal.
@@ -55,22 +55,6 @@ esac
 # without waiting for the pid check.
 mash_mark_instance_window "$home" "$MASH_INSTANCE" "$$"
 trap 'mash_release_instance_window "$home" "$MASH_INSTANCE" "$$"' EXIT HUP INT TERM
-# Start design work only after the wizard saves its choice. Both macOS and
-# Linux launch through this pane entry, so the first opted-in launch works too.
-# mds start can pull/build images; keep it off the window's critical path. It
-# also performs pending Penpot account setup, so never race it with that helper.
-if [ -f "$home/.mash/setup/skills-choice" ] &&
-  grep -qx 'design=false' "$home/.mash/setup/skills-choice"; then
-  : # Design Skills were declined; neither mds nor account setup exists.
-elif [ -f "$home/.mash/config/mash/design-autostart" ] &&
-  [ -x "$bin_dir/mash-design-autostart" ]; then
-  nohup "$bin_dir/mash-design-autostart" "$home/.mash" </dev/null >/dev/null 2>&1 &
-elif [ -f "$home/.mash/local/share/mash/design/penpot.env" ] &&
-  [ -x "$bin_dir/mash-penpot-account-setup" ]; then
-  # When not opted in, keep the existing account-creation retry behaviour.
-  nohup "$bin_dir/mash-penpot-account-setup" "$home/.mash" </dev/null >/dev/null 2>&1 &
-fi
-
 # GitHub's MCP follows Mash's gh sign-in: added while signed in, removed after a
 # logout. Covers installs whose wizard finished before this existed. Fast and
 # local (one `gh auth token`), but still kept off the window's critical path.

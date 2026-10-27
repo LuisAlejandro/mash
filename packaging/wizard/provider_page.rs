@@ -855,7 +855,7 @@ impl ProviderPage {
                 ),
                 (Span::raw("    "), None),
                 (
-                    wizard_style::button(self.focus == Field::Save, " Next — Penpot account "),
+                    wizard_style::button(self.focus == Field::Save, " Next — Skills "),
                     position(Field::Save),
                 ),
             ],
@@ -1648,7 +1648,7 @@ mod tests {
             Some(Decision::Back)
         ));
         assert!(matches!(
-            page.on_click(at(&page, "Next — Penpot")),
+            page.on_click(at(&page, "Next — Skills")),
             Some(Decision::Save)
         ));
     }
