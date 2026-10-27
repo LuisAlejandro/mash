@@ -99,7 +99,9 @@ EOF
 
 run_sync() { PYTHONDONTWRITEBYTECODE=1 "$sync" "$res" "$d"; }
 
-mkdir -p "$d"
+mkdir -p "$d/setup"
+# Existing opted-in installs still reconcile both suites, including the venv.
+printf 'programming=true\ndesign=true\n' >"$d/setup/skills-choice"
 mkres 1.0.0 "v1 content"
 run_sync >/dev/null 2>&1
 chk "seed copies shipped files" '[ -f "$d/pi/agent/skills/demo/SKILL.md" ]'
@@ -257,6 +259,67 @@ mkres 1.3.0 "v4 content"
 run_sync >/dev/null 2>&1
 chk "external state untouched" '[ ! -e "$tmp/outside/state/seeded.json" ]'
 chk "external sentinel untouched" 'grep -qx "must stay" "$tmp/outside/sentinel"'
+
+echo "-- optional suites stay absent until the final wizard choice"
+rm -rf "$d"
+mkdir -p "$d"
+mkres 2.0.0 "core"
+mkdir -p "$res/defaults/pi/skills/programming" "$res/defaults/pi/skills/design" \
+  "$res/defaults/mash-config/references" "$res/defaults/mash-config/headless" \
+  "$res/defaults/design-stack/bin"
+printf 'programming\n' >"$res/defaults/pi/skills/programming/SKILL.md"
+printf 'design\n' >"$res/defaults/pi/skills/design/SKILL.md"
+printf 'rules\n' >"$res/defaults/pi/APPEND_SYSTEM.md"
+printf 'refs\n' >"$res/defaults/mash-config/references/ref.md"
+printf '0.8.3\n' >"$res/defaults/mash-config/hindsight-pin"
+printf 'HINDSIGHT_API_PORT=8998\n' >"$res/defaults/mash-config/hindsight-embed.env"
+printf 'server\n' >"$res/defaults/mash-config/headless/server.js"
+printf '#!/bin/bash\n' >"$res/defaults/design-stack/bin/mds"
+printf 'skills/programming\nAPPEND_SYSTEM.md\n' >"$res/defaults/optional-programming.txt"
+printf 'skills/design\n' >"$res/defaults/optional-design.txt"
+# Both launcher adapters share this filter; sync applies the same inventory.
+# shellcheck source=../launch-common.sh
+source "$root/packaging/launch-common.sh"
+mash_seed_pi
+run_sync >/dev/null 2>&1
+chk "new setup keeps core Pi but no optional skills" '[ -f "$d/pi/agent/skills/demo/SKILL.md" ] && [ ! -e "$d/pi/agent/skills/programming/SKILL.md" ] && [ ! -e "$d/pi/agent/skills/design/SKILL.md" ]'
+chk "new setup has no design payload or mds" '[ ! -e "$d/local/share/mash/design/bin/mds" ] && [ ! -e "$d/bin/mds" ] && [ ! -e "$d/config/mash/headless/server.js" ]'
+chk "new setup has no programming guidance or Hindsight" '[ ! -e "$d/pi/agent/APPEND_SYSTEM.md" ] && [ ! -e "$d/config/mash/references/ref.md" ] && [ ! -e "$d/config/mash/hindsight-pin" ] && [ ! -e "$d/.hindsight/embed" ] && [ ! -e "$d/config/mash/venvs/mash-parallel/pyvenv.cfg" ]'
+
+mkdir -p "$d/setup"
+printf 'programming=false\ndesign=true\n' >"$d/setup/skills-choice"
+run_sync >/dev/null 2>&1
+mash_seed_design_stack
+chk "same-version choice adds only Design Skills" '[ -f "$d/pi/agent/skills/design/SKILL.md" ] && [ ! -e "$d/pi/agent/skills/programming/SKILL.md" ]'
+chk "design choice adds mds and its stack" '[ -L "$d/bin/mds" ] && [ -f "$d/config/mash/headless/server.js" ]'
+chk "programming opt-out does not seed parallel venv" '[ ! -e "$d/config/mash/venvs/mash-parallel/pyvenv.cfg" ]'
+# Disabling on a later visit stops further seeds, but never deletes personal
+# or previously installed files: the wizard offers an installation opt-out.
+printf 'programming=false\ndesign=false\n' >"$d/setup/skills-choice"
+run_sync >/dev/null 2>&1
+chk "changing preference never deletes existing Design files" '[ -f "$d/pi/agent/skills/design/SKILL.md" ]'
+
+echo "-- programming-only install never creates a design stack"
+d="$tmp/programming-only"
+mkdir -p "$d/setup"
+printf 'programming=true\ndesign=false\n' >"$d/setup/skills-choice"
+run_sync >/dev/null 2>&1
+mash_seed_pi
+mash_seed_programming_skills
+mash_seed_design_stack
+mash_seed_hindsight
+chk "programming-only seeds Hindsight configuration" '[ -f "$d/config/mash/hindsight-pin" ] && [ -f "$d/.hindsight/embed" ]'
+chk "programming-only seeds its skills and guidance" '[ -f "$d/pi/agent/skills/programming/SKILL.md" ] && [ -f "$d/pi/agent/APPEND_SYSTEM.md" ] && [ -f "$d/config/mash/references/ref.md" ]'
+chk "programming-only has no mds, Design Skills or headless server" '[ ! -e "$d/bin/mds" ] && [ ! -e "$d/pi/agent/skills/design/SKILL.md" ] && [ ! -e "$d/config/mash/headless/server.js" ]'
+
+echo "-- legacy completed installations without a choice retain both suites"
+d="$tmp/legacy-complete"
+mkdir -p "$d/setup"
+printf 'completed=true\n' >"$d/setup/state.txt"
+run_sync >/dev/null 2>&1
+mash_seed_pi
+mash_seed_design_stack
+chk "legacy installation gets both skills and mds" '[ -f "$d/pi/agent/skills/programming/SKILL.md" ] && [ -f "$d/pi/agent/skills/design/SKILL.md" ] && [ -L "$d/bin/mds" ]'
 
 echo
 if [ "$failures" -eq 0 ]; then

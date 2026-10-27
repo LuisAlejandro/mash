@@ -9,8 +9,23 @@
   "fresh": {
     "min_version": "0.1.75",
     "themes": [
-      { "file": "monokai.json", "name": "Monokai", "variant": "dark" }
+      {
+        "file": "monokai.json",
+        "name": "Monokai",
+        "variant": "dark"
+      },
+      {
+        "file": "monokai-light.json",
+        "name": "Monokai Light",
+        "variant": "light"
+      }
     ]
   },
-  "keywords": ["color-theme", "theme", "monokai", "dark", "classic"]
+  "keywords": [
+    "color-theme",
+    "theme",
+    "monokai",
+    "dark",
+    "classic"
+  ]
 }

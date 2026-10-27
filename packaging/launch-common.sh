@@ -18,6 +18,32 @@ mash_seed_missing() {
   rsync -a --ignore-existing "$src/" "$dest/"
 }
 
+# An undecided first launch seeds neither optional suite. Completed legacy
+# installs with no choice file keep both; a cancelled wizard stays undecided.
+mash_skill_enabled() {
+  local choice="$d/setup/skills-choice"
+  if [ -f "$choice" ]; then
+    grep -qx "$1=true" "$choice"
+  else
+    [ -f "$d/setup/state.txt" ] && grep -qx 'completed=true' "$d/setup/state.txt"
+  fi
+}
+
+mash_seed_pi() {
+  local suite path
+  set --
+  for suite in programming design; do
+    if ! mash_skill_enabled "$suite"; then
+      [ -f "$res/defaults/optional-$suite.txt" ] || continue
+      while IFS= read -r path; do
+        [ -n "$path" ] && set -- "$@" "--exclude=/$path"
+      done <"$res/defaults/optional-$suite.txt"
+    fi
+  done
+  mkdir -p "$d/pi/agent"
+  rsync -a --ignore-existing "$@" "$res/defaults/pi/" "$d/pi/agent/"
+}
+
 # Herdr's own integration installer can replace this one Mash-patched extension
 # with upstream. The ownership sync runs first and preserves user edits; this
 # repair only restores the Mash patch when the marker is absent. Other defaults
@@ -62,6 +88,7 @@ mash_write_notifier_config() {
 # The venv's Python symlink is retargeted at this bundle. Existing files stay.
 mash_seed_programming_skills() {
   local src venv py cfg current script
+  mash_skill_enabled programming || return 0
   src="$res/defaults/mash-config"
   [ -d "$src" ] || return 0
   mash_seed_missing "$src/references" "$d/config/mash/references"
@@ -132,6 +159,7 @@ PY
 # seeded once, and the owner's provider key is added in place — never shipped.
 mash_seed_hindsight() {
   local src="$res/defaults/mash-config/hindsight-embed.env"
+  mash_skill_enabled programming || return 0
   [ -f "$src" ] || return 0
   mkdir -p "$d/.hindsight" "$d/.local/bin" "$d/.pg0" "$d/setup"
   [ -f "$d/.hindsight/embed" ] || cp "$src" "$d/.hindsight/embed"
@@ -143,6 +171,7 @@ mash_seed_hindsight() {
 # writes. Before that they are empty and the server reports it.
 mash_seed_design_stack() {
   local src="$res/defaults/design-stack"
+  mash_skill_enabled design || return 0
   local cfg="$d/config/mash"
   local stack="$d/local/share/mash/design"
   local py="$res/python/bin/python3"
@@ -156,6 +185,7 @@ mash_seed_design_stack() {
   mash_seed_missing "$res/defaults/mash-config/node_modules" "$cfg/node_modules"
   for name in "$res/defaults/mash-config/venvs"/*; do
     [ -d "$name" ] || continue
+    [ "$(basename "$name")" != mash-parallel ] || mash_skill_enabled programming || continue
     target="$cfg/venvs/$(basename "$name")"
     [ -e "$target/pyvenv.cfg" ] && continue
     cp -a "$name" "$target"
@@ -314,7 +344,7 @@ mash_seed_all() {
   mash_seed_configs "$res" "$d"
   mash_seed_missing "$res/defaults/ghostty/themes" "$d/config/ghostty/themes"
   mash_seed_missing "$res/defaults/fresh" "$d/config/fresh"
-  mash_seed_missing "$res/defaults/pi" "$d/pi/agent"
+  mash_seed_pi
   mash_repair_pi_integration "$res" "$d"
   mash_seed_missing "$res/defaults/plugins" "$d/config/herdr/plugins/config"
   mash_write_notifier_config "$res" "$d"

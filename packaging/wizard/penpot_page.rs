@@ -1,16 +1,18 @@
 use crate::provider_page::{masked, write_private};
+use crate::wizard_style;
 use ratatui::{
     crossterm::event::{KeyCode, KeyModifiers},
-    layout::{Alignment, Constraint, Layout},
-    style::{Color, Modifier, Style},
+    layout::{Constraint, Layout},
+    style::Style,
     text::{Line, Span},
-    widgets::{Block, Borders, Paragraph, Wrap},
     Frame,
 };
 use std::{fs, path::Path};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Field {
+    Programming,
+    Design,
     Email,
     Password,
     Confirm,
@@ -18,6 +20,18 @@ enum Field {
     Back,
     Save,
 }
+
+// Tab order; an index here is also the field's mouse target id.
+const FIELDS: [Field; 8] = [
+    Field::Programming,
+    Field::Design,
+    Field::Email,
+    Field::Password,
+    Field::Confirm,
+    Field::Autostart,
+    Field::Back,
+    Field::Save,
+];
 
 // Opt-in switch for starting the design stack with Mash. Presence is the
 // setting, so the launcher reads it without parsing anything.
@@ -35,6 +49,8 @@ pub struct PenpotPage {
     email: String,
     password: String,
     confirm: String,
+    programming: bool,
+    design: bool,
     autostart: bool,
     focus: Field,
     error: Option<String>,
@@ -46,10 +62,29 @@ impl PenpotPage {
             email,
             password: String::new(),
             confirm: String::new(),
+            programming: true,
+            design: true,
             autostart: false,
-            focus: Field::Email,
+            focus: Field::Programming,
             error: None,
         }
+    }
+
+    pub fn programming(&self) -> bool {
+        self.programming
+    }
+
+    pub fn design(&self) -> bool {
+        self.design
+    }
+
+    // Set only after all wizard pages are complete. Before this file exists,
+    // launchers cannot know the choice and must seed neither optional suite.
+    pub fn save_selection(&self, root: &Path) -> Result<(), String> {
+        write_private(
+            &root.join("setup/skills-choice"),
+            &format!("programming={}\ndesign={}\n", self.programming, self.design),
+        )
     }
 
     // The marker file is the setting: present starts the stack, absent does not.
@@ -60,7 +95,7 @@ impl PenpotPage {
 
     fn save_autostart(&self, root: &Path) -> Result<(), String> {
         let marker = autostart_marker(root);
-        if self.autostart {
+        if self.design && self.autostart {
             if marker.is_symlink() {
                 return Err("Design autostart must stay inside Mash".into());
             }
@@ -85,21 +120,53 @@ impl PenpotPage {
         }
     }
 
+    /// Click target `index` into `FIELDS`: focus it; the toggle flips and the
+    /// buttons act like Enter.
+    pub fn on_click(&mut self, index: usize) -> Option<Decision> {
+        self.focus = *FIELDS.get(index)?;
+        match self.focus {
+            Field::Programming | Field::Design | Field::Autostart | Field::Back | Field::Save => {
+                self.on_key(KeyCode::Enter, KeyModifiers::NONE)
+            }
+            _ => None,
+        }
+    }
+
+    fn fields(&self) -> Vec<Field> {
+        FIELDS
+            .iter()
+            .copied()
+            .filter(|field| {
+                self.design
+                    || !matches!(
+                        field,
+                        Field::Email | Field::Password | Field::Confirm | Field::Autostart
+                    )
+            })
+            .collect()
+    }
+
     fn move_focus(&mut self, direction: isize) {
-        const FIELDS: [Field; 6] = [
-            Field::Email,
-            Field::Password,
-            Field::Confirm,
-            Field::Autostart,
-            Field::Back,
-            Field::Save,
-        ];
-        let current = FIELDS
+        let fields = self.fields();
+        let current = fields
             .iter()
             .position(|field| *field == self.focus)
             .unwrap_or(0);
-        self.focus =
-            FIELDS[(current as isize + direction).rem_euclid(FIELDS.len() as isize) as usize];
+        self.focus = fields[wizard_style::focus_step(current, fields.len(), direction, true)];
+    }
+
+    fn toggle(&mut self) {
+        match self.focus {
+            Field::Programming => self.programming = !self.programming,
+            Field::Design => {
+                self.design = !self.design;
+                if !self.design {
+                    self.autostart = false;
+                }
+            }
+            Field::Autostart if self.design => self.autostart = !self.autostart,
+            _ => {}
+        }
     }
 
     pub fn on_key(&mut self, code: KeyCode, modifiers: KeyModifiers) -> Option<Decision> {
@@ -119,8 +186,8 @@ impl PenpotPage {
             KeyCode::Enter => match self.focus {
                 Field::Back => Some(Decision::Back),
                 Field::Save => Some(Decision::Save),
-                Field::Autostart => {
-                    self.autostart = !self.autostart;
+                Field::Programming | Field::Design | Field::Autostart => {
+                    self.toggle();
                     None
                 }
                 Field::Confirm => {
@@ -132,8 +199,13 @@ impl PenpotPage {
                     None
                 }
             },
-            KeyCode::Char(' ') if self.focus == Field::Autostart => {
-                self.autostart = !self.autostart;
+            KeyCode::Char(' ')
+                if matches!(
+                    self.focus,
+                    Field::Programming | Field::Design | Field::Autostart
+                ) =>
+            {
+                self.toggle();
                 None
             }
             KeyCode::Backspace => {
@@ -155,6 +227,10 @@ impl PenpotPage {
     }
 
     pub fn validate(&mut self) -> bool {
+        if !self.design {
+            self.error = None;
+            return true;
+        }
         let email = self.email.trim();
         let valid_email = email.split_once('@').is_some_and(|(local, domain)| {
             !local.is_empty()
@@ -189,13 +265,12 @@ impl PenpotPage {
         self.error.is_none()
     }
 
-    pub fn show_error(&mut self, error: String) {
-        self.error = Some(error);
-    }
-
     pub fn save(&mut self, root: &Path) -> Result<(), String> {
         if !self.validate() {
             return Err(self.error.clone().unwrap_or_default());
+        }
+        if !self.design {
+            return self.save_autostart(root);
         }
         let stack = root.join("local/share/mash/design");
         let path = stack.join("penpot.env");
@@ -244,105 +319,105 @@ impl PenpotPage {
             Constraint::Min(8),
             Constraint::Length(3),
         ])
-        .split(frame.area());
-        frame.render_widget(
-            Paragraph::new("Local Penpot account — page 3/4")
-                .alignment(Alignment::Center)
-                .block(Block::default().borders(Borders::ALL)),
-            parts[0],
-        );
-        let mut lines = vec![
-            Line::from("For Mash's Penpot at localhost:9001; not a penpot.app account."),
-            Line::from("If Docker is unavailable, your private details are saved for later setup."),
-            Line::from(""),
-        ];
-        for (field, label, value, secret) in [
-            (Field::Email, "Email", self.email.as_str(), false),
-            (Field::Password, "Password", self.password.as_str(), true),
-            (
-                Field::Confirm,
-                "Confirm password",
-                self.confirm.as_str(),
-                true,
-            ),
-        ] {
-            let shown = if secret && !value.is_empty() {
-                masked(value)
-            } else {
-                value.to_string()
-            };
-            lines.push(Line::from(vec![
-                Span::styled(
-                    if self.focus == field { "> " } else { "  " },
-                    Style::default().fg(Color::Yellow),
-                ),
-                Span::styled(
-                    format!("{label}: "),
-                    Style::default().add_modifier(Modifier::BOLD),
-                ),
-                Span::raw(shown),
-                Span::styled(
-                    if self.focus == field { "_" } else { "" },
-                    Style::default().fg(Color::Yellow),
-                ),
-            ]));
-        }
-        if let Some(error) = &self.error {
-            lines.push(Line::from(""));
-            lines.push(Line::from(Span::styled(
-                error.clone(),
-                Style::default().fg(Color::Red),
-            )));
-        }
-        lines.push(Line::from(""));
-        lines.push(Line::from(vec![
-            Span::styled(
-                if self.focus == Field::Autostart {
-                    "> "
-                } else {
-                    "  "
-                },
-                Style::default().fg(Color::Yellow),
-            ),
-            Span::styled(
-                "Start the design stack when Mash opens: ",
-                Style::default().add_modifier(Modifier::BOLD),
-            ),
-            Span::styled(
-                if self.autostart { "[x] on" } else { "[ ] off" },
-                Style::default().fg(if self.autostart {
-                    Color::Green
-                } else {
-                    Color::Gray
-                }),
-            ),
-        ]));
-        lines.push(Line::from(
-            "    Space toggles. Penpot + OpenDesign start in the background; skipped while Docker is stopped.",
-        ));
-        frame.render_widget(
-            Paragraph::new(lines)
-                .wrap(Wrap { trim: true })
-                .block(Block::default().borders(Borders::ALL).title("Account")),
-            parts[1],
-        );
-        let button = |field, label| {
-            let style = if self.focus == field {
-                Style::default().fg(Color::Black).bg(Color::Yellow)
-            } else {
-                Style::default()
-            };
-            Span::styled(label, style.add_modifier(Modifier::BOLD))
+        .split(wizard_style::page_area(frame, Some(2)));
+        wizard_style::header(frame, parts[0], "Skills & Penpot — page 3/5");
+        let id = |field| FIELDS.iter().position(|f| *f == field);
+        let checkbox = |field, label: &str, checked| {
+            wizard_style::checkbox(self.focus == field, label, checked)
         };
-        frame.render_widget(
-            Paragraph::new(Line::from(vec![
-                button(Field::Back, " Back "),
-                Span::raw("    "),
-                button(Field::Save, " Save and continue "),
-            ]))
-            .alignment(Alignment::Center)
-            .block(Block::default().borders(Borders::ALL)),
+        let mut lines: Vec<(Line<'static>, Option<usize>)> = vec![
+            (
+                checkbox(
+                    Field::Programming,
+                    "Install Programming Skills (includes Hindsight)",
+                    self.programming,
+                ),
+                id(Field::Programming),
+            ),
+            (
+                checkbox(
+                    Field::Design,
+                    "Install Design Skills (Penpot + OpenDesign)",
+                    self.design,
+                ),
+                id(Field::Design),
+            ),
+            (Line::from(""), None),
+        ];
+        if self.design {
+            lines.push((
+                Line::from("Local Penpot account at localhost:9001; not penpot.app."),
+                None,
+            ));
+            lines.push((
+                Line::from("If Docker is unavailable, credentials are saved for later setup."),
+                None,
+            ));
+            lines.push((Line::from(""), None));
+            for (field, label, value, secret) in [
+                (Field::Email, "Email", self.email.as_str(), false),
+                (Field::Password, "Password", self.password.as_str(), true),
+                (
+                    Field::Confirm,
+                    "Confirm password",
+                    self.confirm.as_str(),
+                    true,
+                ),
+            ] {
+                let shown = if secret && !value.is_empty() {
+                    masked(value)
+                } else {
+                    value.to_string()
+                };
+                lines.push((
+                    wizard_style::text_field(self.focus == field, label, shown),
+                    id(field),
+                ));
+            }
+            if let Some(error) = &self.error {
+                lines.push((Line::from(""), None));
+                lines.push((
+                    Line::from(Span::styled(
+                        error.clone(),
+                        Style::default().fg(wizard_style::RED),
+                    )),
+                    None,
+                ));
+            }
+            lines.push((Line::from(""), None));
+            lines.push((
+                checkbox(
+                    Field::Autostart,
+                    "Start the design stack when Mash opens",
+                    self.autostart,
+                ),
+                id(Field::Autostart),
+            ));
+            lines.push((Line::from(
+            "    Space or click toggles. Penpot + OpenDesign start in the background; skipped while Docker is stopped.",
+        ), None));
+        } else {
+            lines.push((
+                Line::from("No Penpot account or mds is installed when Design Skills are off."),
+                None,
+            ));
+        }
+        let body = wizard_style::section(frame, parts[1], "Skills & account");
+        wizard_style::render_form(frame, body, lines, true);
+        wizard_style::render_buttons(
+            frame,
             parts[2],
+            &[
+                (
+                    wizard_style::button(self.focus == Field::Back, " Back "),
+                    id(Field::Back),
+                ),
+                (Span::raw("    "), None),
+                (
+                    wizard_style::button(self.focus == Field::Save, " Save and continue "),
+                    id(Field::Save),
+                ),
+            ],
         );
     }
 }
@@ -370,6 +445,46 @@ mod tests {
         )
         .unwrap();
         root
+    }
+
+    #[test]
+    fn disabling_design_skips_credentials_and_clears_autostart() {
+        let root = fixture();
+        fs::remove_file(root.join("local/share/mash/design/penpot.env.example")).unwrap();
+        let mut page = PenpotPage::new(String::new());
+        page.focus = Field::Autostart;
+        page.on_key(KeyCode::Enter, KeyModifiers::NONE);
+        assert!(page.autostart);
+        page.focus = Field::Design;
+        page.on_key(KeyCode::Char(' '), KeyModifiers::NONE);
+        assert!(!page.design);
+        assert!(!page.autostart);
+        assert!(page.fields() == [Field::Programming, Field::Design, Field::Back, Field::Save]);
+        assert!(page.validate());
+        page.save_selection(&root).unwrap();
+        page.save(&root).unwrap();
+        assert!(!root.join("local/share/mash/design/penpot.env").exists());
+        assert!(!autostart_marker(&root).exists());
+        assert_eq!(
+            fs::read_to_string(root.join("setup/skills-choice")).unwrap(),
+            "programming=true\ndesign=false\n"
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn both_suites_can_be_disabled_from_the_keyboard() {
+        let mut page = PenpotPage::new(String::new());
+        page.on_key(KeyCode::Char(' '), KeyModifiers::NONE);
+        assert!(!page.programming());
+        page.on_key(KeyCode::Tab, KeyModifiers::NONE);
+        page.on_key(KeyCode::Enter, KeyModifiers::NONE);
+        assert!(!page.design());
+        page.on_key(KeyCode::Tab, KeyModifiers::NONE);
+        assert!(matches!(
+            page.on_key(KeyCode::Enter, KeyModifiers::NONE),
+            Some(Decision::Back)
+        ));
     }
 
     #[test]
@@ -538,5 +653,33 @@ mod tests {
             .map(|cell| cell.symbol())
             .collect::<String>();
         assert!(!rendered.contains('•'));
+    }
+
+    fn render(page: &PenpotPage) -> ratatui::buffer::Buffer {
+        let mut terminal =
+            ratatui::Terminal::new(ratatui::backend::TestBackend::new(120, 32)).unwrap();
+        terminal.draw(|frame| page.draw(frame)).unwrap();
+        terminal.backend().buffer().clone()
+    }
+
+    #[test]
+    fn clicks_focus_fields_toggle_autostart_and_press_buttons() {
+        use wizard_style::tests::{click, find};
+        let mut page = PenpotPage::new(String::new());
+        let at = |page: &PenpotPage, label| {
+            let (x, y) = find(&render(page), label);
+            wizard_style::clicked(&click(x, y)).expect("label is clickable")
+        };
+        let id = at(&page, "Confirm password");
+        assert!(page.on_click(id).is_none());
+        assert!(page.focus == Field::Confirm);
+        let id = at(&page, "Start the design stack");
+        let before = page.autostart;
+        assert!(page.on_click(id).is_none());
+        assert_ne!(page.autostart, before);
+        let id = at(&page, "Back");
+        assert!(matches!(page.on_click(id), Some(Decision::Back)));
+        let id = at(&page, "Save and continue");
+        assert!(matches!(page.on_click(id), Some(Decision::Save)));
     }
 }

@@ -1,19 +1,26 @@
+mod font_page;
 mod penpot_page;
 mod provider_page;
+mod theme;
 mod voice;
 mod voice_page;
+mod welcome_page;
+mod wizard_style;
 
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     crossterm::{
-        event::{self, Event, KeyCode, KeyEventKind, KeyModifiers},
+        event::{
+            self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind,
+            KeyModifiers, MouseButton, MouseEventKind,
+        },
         execute,
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     },
-    layout::{Alignment, Constraint, Layout},
-    style::{Color, Modifier, Style},
+    layout::{Alignment, Constraint, Layout, Rect},
+    style::{Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Gauge, Paragraph, Wrap},
+    widgets::{Gauge, Paragraph, Wrap},
     Frame, Terminal,
 };
 use std::{
@@ -98,6 +105,7 @@ impl Group {
 struct App {
     name: String,
     email: String,
+    signing_key: String,
     selections: [bool; 2],
     focus: usize,
 }
@@ -106,10 +114,11 @@ struct App {
 // is taller than the window.
 const FOCUS_NAME: usize = 0;
 const FOCUS_EMAIL: usize = 1;
-const FOCUS_GROUP_UTILITIES: usize = 2;
-const FOCUS_GROUP_FORMATTERS: usize = 3;
-const FOCUS_BUTTON: usize = 4;
-const FOCUS_COUNT: usize = 5;
+const FOCUS_SIGNING_KEY: usize = 2;
+const FOCUS_GROUP_UTILITIES: usize = 3;
+const FOCUS_GROUP_FORMATTERS: usize = 4;
+const FOCUS_BUTTON: usize = 5;
+const FOCUS_COUNT: usize = 6;
 
 // Focus row carrying group `index`.
 fn focus_for_group(index: usize) -> usize {
@@ -121,13 +130,14 @@ fn focus_for_group(index: usize) -> usize {
 }
 
 fn is_text_field(focus: usize) -> bool {
-    focus == FOCUS_NAME || focus == FOCUS_EMAIL
+    matches!(focus, FOCUS_NAME | FOCUS_EMAIL | FOCUS_SIGNING_KEY)
 }
 
 #[derive(Default, Clone)]
 struct Identity {
     name: String,
     email: String,
+    signing_key: String,
 }
 
 impl App {
@@ -135,6 +145,7 @@ impl App {
         Self {
             name: git_config_value("user.name"),
             email: git_config_value("user.email"),
+            signing_key: git_config_value("user.signingkey"),
             selections: [true, true],
             focus: FOCUS_NAME,
         }
@@ -144,14 +155,16 @@ impl App {
         Identity {
             name: self.name.clone(),
             email: self.email.clone(),
+            signing_key: self.signing_key.clone(),
         }
     }
 
     fn text_mut(&mut self) -> &mut String {
-        if self.focus == FOCUS_NAME {
-            &mut self.name
-        } else {
-            &mut self.email
+        match self.focus {
+            FOCUS_NAME => &mut self.name,
+            FOCUS_EMAIL => &mut self.email,
+            FOCUS_SIGNING_KEY => &mut self.signing_key,
+            _ => unreachable!("text field must be focused"),
         }
     }
 
@@ -162,6 +175,15 @@ impl App {
             FOCUS_GROUP_FORMATTERS => Some(1),
             _ => None,
         }
+    }
+
+    /// A click focuses the row; a checkbox toggles too, and the button advances.
+    fn on_click(&mut self, focus: usize) -> Option<Outcome> {
+        self.focus = focus;
+        if let Some(index) = self.selection() {
+            self.selections[index] = !self.selections[index];
+        }
+        (focus == FOCUS_BUTTON).then_some(Outcome::Next)
     }
 
     fn on_key(&mut self, code: KeyCode, modifiers: KeyModifiers) -> Option<Outcome> {
@@ -176,11 +198,11 @@ impl App {
                 KeyCode::Esc => Some(Outcome::Cancel),
                 KeyCode::Enter => Some(Outcome::Next),
                 KeyCode::Up | KeyCode::BackTab => {
-                    self.focus = self.focus.saturating_sub(1);
+                    self.focus = wizard_style::focus_step(self.focus, FOCUS_COUNT, -1, false);
                     None
                 }
                 KeyCode::Down | KeyCode::Tab => {
-                    self.focus = (self.focus + 1).min(FOCUS_BUTTON);
+                    self.focus = wizard_style::focus_step(self.focus, FOCUS_COUNT, 1, false);
                     None
                 }
                 KeyCode::Backspace => {
@@ -198,16 +220,16 @@ impl App {
         }
         match code {
             KeyCode::Esc | KeyCode::Char('q') => Some(Outcome::Cancel),
-            KeyCode::Down | KeyCode::Char('j') if self.focus < FOCUS_BUTTON => {
-                self.focus += 1;
+            KeyCode::Down | KeyCode::Char('j') => {
+                self.focus = wizard_style::focus_step(self.focus, FOCUS_COUNT, 1, false);
                 None
             }
-            KeyCode::Up | KeyCode::Char('k') if self.focus > 0 => {
-                self.focus -= 1;
+            KeyCode::Up | KeyCode::Char('k') => {
+                self.focus = wizard_style::focus_step(self.focus, FOCUS_COUNT, -1, false);
                 None
             }
             KeyCode::Tab | KeyCode::BackTab => {
-                self.focus = (self.focus + 1) % FOCUS_COUNT;
+                self.focus = wizard_style::focus_step(self.focus, FOCUS_COUNT, 1, true);
                 None
             }
             KeyCode::Char(' ') => {
@@ -271,49 +293,176 @@ fn setup_is_done() -> bool {
 // can no longer drop the user into an unconfigured Mash. 0 is reserved for a
 // finished setup.
 const EXIT_NOT_DONE: i32 = 3;
+const OPEN_WORKSPACE_MARKER: &str = "open-workspace-once";
 
 fn run() -> Result<i32, String> {
-    // Every later launch runs this binary again; a finished setup only checks
-    // its own state file and leaves the terminal untouched.
-    if setup_is_done() {
+    // Preview is read-only and may run after setup is complete. The ordinary
+    // launch still returns immediately once the wizard has been finished.
+    let preview = env::args_os().any(|arg| arg == "--preview");
+    if !preview && setup_is_done() {
         return Ok(0);
     }
     enable_raw_mode().map_err(|e| e.to_string())?;
     let mut out = io::stdout();
-    execute!(out, EnterAlternateScreen).map_err(|e| e.to_string())?;
+    if let Err(error) = execute!(out, EnterAlternateScreen, EnableMouseCapture) {
+        let _ = execute!(io::stdout(), DisableMouseCapture, LeaveAlternateScreen);
+        let _ = disable_raw_mode();
+        return Err(error.to_string());
+    }
     let backend = CrosstermBackend::new(out);
-    let mut terminal = Terminal::new(backend).map_err(|e| e.to_string())?;
-    let result = interactive(&mut terminal);
+    let result = Terminal::new(backend)
+        .map_err(|error| error.to_string())
+        .and_then(|mut terminal| interactive(&mut terminal, preview));
+    let _ = execute!(io::stdout(), DisableMouseCapture, LeaveAlternateScreen);
     let _ = disable_raw_mode();
-    let mut out = io::stdout();
-    let _ = execute!(out, LeaveAlternateScreen);
     result
 }
 
-fn interactive<B: Backend>(terminal: &mut Terminal<B>) -> Result<i32, String> {
+fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<i32, String> {
     let mut app = App::new();
     let mut providers = provider_page::ProviderPage::new();
+    providers.load_existing_auth(&data_dir().join("pi/agent"));
     let mut penpot = penpot_page::PenpotPage::new(app.email.clone());
     penpot.load_autostart(&data_dir());
+    let mut fonts =
+        font_page::FontPage::new(&mash_resources(), &data_dir().join("config/ghostty/config"));
+    fonts.theme = theme::Theme::current(&data_dir());
     let mut voice = voice_page::VoicePage::new();
     let mut page = 0;
+    let mut started = false;
+    let mut start_button = Rect::default();
     loop {
         terminal
-            .draw(|frame| match page {
-                0 => draw_choices(frame, &app),
-                1 => providers.draw(frame),
-                2 => penpot.draw(frame),
-                _ => voice.draw(frame),
+            .draw(|frame| {
+                if started {
+                    match page {
+                        0 => draw_choices(frame, &app),
+                        1 => providers.draw(frame),
+                        2 => penpot.draw(frame),
+                        3 => fonts.draw(frame),
+                        _ => voice.draw(frame),
+                    }
+                } else {
+                    start_button = welcome_page::draw(frame);
+                }
+                if preview && started {
+                    wizard_style::preview_hint(frame);
+                }
             })
             .map_err(|e| e.to_string())?;
-        let Event::Key(key) = event::read().map_err(|e| e.to_string())? else {
-            continue;
-        };
-        if key.kind != KeyEventKind::Press {
+        let event = event::read().map_err(|e| e.to_string())?;
+        if !started {
+            if welcome_page::starts_on(&event, start_button) {
+                started = true;
+            } else if let Event::Key(key) = event {
+                if key.kind == KeyEventKind::Press
+                    && (key.code == KeyCode::Esc
+                        || (key.code == KeyCode::Char('c')
+                            && key.modifiers.contains(KeyModifiers::CONTROL)))
+                    && (preview || confirm_quit(terminal)?)
+                {
+                    return Ok(EXIT_NOT_DONE);
+                }
+            }
             continue;
         }
+        let click = wizard_style::clicked(&event);
+        if let Some(id) = click.filter(|id| *id >= wizard_style::SIDEBAR_BASE) {
+            providers.close_menu();
+            page = id - wizard_style::SIDEBAR_BASE;
+            continue;
+        }
+        if page == 1
+            && providers.menu_open()
+            && click.is_none()
+            && matches!(&event, Event::Mouse(mouse) if mouse.kind == MouseEventKind::Down(MouseButton::Left))
+        {
+            providers.close_menu();
+            continue;
+        }
+        if preview {
+            if let Some(id) = click {
+                // Clicks show real focus and toggles, but a button only turns
+                // the page: nothing is validated or saved in a preview.
+                let step = match page {
+                    0 => app.on_click(id).map(|_| 1),
+                    1 => providers.on_click(id).map(|d| {
+                        if matches!(d, provider_page::Decision::Back) {
+                            -1
+                        } else {
+                            1
+                        }
+                    }),
+                    2 => penpot.on_click(id).map(|d| {
+                        if matches!(d, penpot_page::Decision::Back) {
+                            -1
+                        } else {
+                            1
+                        }
+                    }),
+                    3 => fonts.on_click(id).map(|d| match d {
+                        font_page::Decision::Back => -1,
+                        font_page::Decision::Next => 1,
+                        font_page::Decision::Cancel => 0,
+                    }),
+                    _ => voice.on_click(id).map(|d| {
+                        if matches!(d, voice_page::Decision::Back) {
+                            -1
+                        } else {
+                            0
+                        }
+                    }),
+                };
+                page = (page as isize + step.unwrap_or(0)).clamp(0, 4) as usize;
+            } else if page == 1 && providers.menu_open() && wizard_style::wheel(&event).is_some() {
+                let code = if wizard_style::wheel(&event) == Some(-1) {
+                    KeyCode::Up
+                } else {
+                    KeyCode::Down
+                };
+                let _ = providers.on_key(code, KeyModifiers::NONE);
+            } else if let Event::Key(key) = event {
+                if key.kind == KeyEventKind::Press {
+                    if page == 1
+                        && (providers.menu_open()
+                            || matches!(
+                                key.code,
+                                KeyCode::Enter
+                                    | KeyCode::Char(' ')
+                                    | KeyCode::Tab
+                                    | KeyCode::BackTab
+                            ))
+                        && !(key.code == KeyCode::Char('c')
+                            && key.modifiers.contains(KeyModifiers::CONTROL))
+                    {
+                        let _ = providers.on_key(key.code, key.modifiers);
+                    } else if preview_key(&mut started, &mut page, key.code, key.modifiers) {
+                        return Ok(EXIT_NOT_DONE);
+                    }
+                }
+            }
+            // In preview no save calls or installers run.
+            continue;
+        }
+        // The wheel walks focus exactly like the arrow keys.
+        let key = match (wizard_style::wheel(&event), event) {
+            (Some(-1), _) => Some((KeyCode::Up, KeyModifiers::NONE)),
+            (Some(_), _) => Some((KeyCode::Down, KeyModifiers::NONE)),
+            (None, Event::Key(key)) if key.kind == KeyEventKind::Press => {
+                Some((key.code, key.modifiers))
+            }
+            _ => None,
+        };
+        if click.is_none() && key.is_none() {
+            continue;
+        }
+        let (code, modifiers) = key.unwrap_or((KeyCode::Null, KeyModifiers::NONE));
         match page {
-            0 => match app.on_key(key.code, key.modifiers) {
+            0 => match if let Some(id) = click {
+                app.on_click(id)
+            } else {
+                app.on_key(code, modifiers)
+            } {
                 Some(Outcome::Cancel) => {
                     if confirm_quit(terminal)? {
                         return Ok(EXIT_NOT_DONE);
@@ -322,7 +471,11 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>) -> Result<i32, String> {
                 Some(Outcome::Next) => page = 1,
                 None => {}
             },
-            1 => match providers.on_key(key.code, key.modifiers) {
+            1 => match if let Some(id) = click {
+                providers.on_click(id)
+            } else {
+                providers.on_key(code, modifiers)
+            } {
                 Some(provider_page::Decision::Cancel) => {
                     if confirm_quit(terminal)? {
                         return Ok(EXIT_NOT_DONE);
@@ -332,32 +485,45 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>) -> Result<i32, String> {
                 Some(provider_page::Decision::Save) if providers.validate() => page = 2,
                 _ => {}
             },
-            2 => match penpot.on_key(key.code, key.modifiers) {
+            2 => match if let Some(id) = click {
+                penpot.on_click(id)
+            } else {
+                penpot.on_key(code, modifiers)
+            } {
                 Some(penpot_page::Decision::Cancel) => {
                     if confirm_quit(terminal)? {
                         return Ok(EXIT_NOT_DONE);
                     }
                 }
                 Some(penpot_page::Decision::Back) => page = 1,
-                Some(penpot_page::Decision::Save) if penpot.validate() => {
-                    if let Err(error) = penpot
-                        .save(&data_dir())
-                        .and_then(|()| providers.save(&data_dir()))
-                    {
-                        penpot.show_error(error);
-                    } else {
-                        page = 3;
-                    }
-                }
+                Some(penpot_page::Decision::Save) if penpot.validate() => page = 3,
                 _ => {}
             },
-            _ => match voice.on_key(key.code, key.modifiers) {
+            3 => match if let Some(id) = click {
+                fonts.on_click(id)
+            } else {
+                fonts.on_key(code, modifiers)
+            } {
+                Some(font_page::Decision::Cancel) => {
+                    if confirm_quit(terminal)? {
+                        return Ok(EXIT_NOT_DONE);
+                    }
+                }
+                Some(font_page::Decision::Back) => page = 2,
+                Some(font_page::Decision::Next) => page = 4,
+                None => {}
+            },
+            _ => match if let Some(id) = click {
+                voice.on_click(id)
+            } else {
+                voice.on_key(code, modifiers)
+            } {
                 Some(voice_page::Decision::Cancel) => {
                     if confirm_quit(terminal)? {
                         return Ok(EXIT_NOT_DONE);
                     }
                 }
-                Some(voice_page::Decision::Back) => page = 2,
+                Some(voice_page::Decision::Back) => page = 3,
                 Some(voice_page::Decision::Skip) => break,
                 Some(voice_page::Decision::Save) if voice.validate() => break,
                 _ => {}
@@ -367,8 +533,17 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>) -> Result<i32, String> {
 
     let mut plan = install_plan(app.selections);
     plan.voice = voice.choice();
+    plan.programming = penpot.programming();
+    plan.design = penpot.design();
     let identity = app.identity();
-    match review_and_apply(terminal, &plan, &identity) {
+    match review_and_apply(
+        terminal,
+        &plan,
+        &identity,
+        &fonts,
+        &mut penpot,
+        &mut providers,
+    ) {
         Ok(()) => {
             if app.selections[0] {
                 offer_github_login(terminal)?;
@@ -377,6 +552,37 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>) -> Result<i32, String> {
         }
         Err(ApplyError::Failed(message)) => Err(message),
     }
+}
+
+// A preview shows the pages without letting fields, saves or installers run.
+// Esc returns to the logo, then exits; arrows and 1–5 browse the real pages.
+fn preview_key(
+    started: &mut bool,
+    page: &mut usize,
+    code: KeyCode,
+    modifiers: KeyModifiers,
+) -> bool {
+    if code == KeyCode::Esc
+        || (code == KeyCode::Char('c') && modifiers.contains(KeyModifiers::CONTROL))
+    {
+        if *started {
+            *started = false;
+            *page = 0;
+            return false;
+        }
+        return true;
+    }
+    match code {
+        KeyCode::Right => *page = (*page + 1).min(4),
+        KeyCode::Left => *page = page.saturating_sub(1),
+        KeyCode::Char('1'..='5') => {
+            if let KeyCode::Char(digit) = code {
+                *page = digit as usize - '1' as usize;
+            }
+        }
+        _ => {}
+    }
+    false
 }
 
 // Esc, `q` and Ctrl+C all land here instead of leaving the wizard. Quitting
@@ -418,14 +624,14 @@ fn draw_confirm_quit(frame: &mut Frame) {
             Span::styled(
                 "y",
                 Style::default()
-                    .fg(Color::Yellow)
+                    .fg(wizard_style::YELLOW)
                     .add_modifier(Modifier::BOLD),
             ),
             Span::raw(" quit setup    "),
             Span::styled(
                 "any other key",
                 Style::default()
-                    .fg(Color::Yellow)
+                    .fg(wizard_style::YELLOW)
                     .add_modifier(Modifier::BOLD),
             ),
             Span::raw(" keep going"),
@@ -438,12 +644,17 @@ fn draw_confirm_quit(frame: &mut Frame) {
         Constraint::Fill(1),
     ])
     .areas(area);
+    let body = wizard_style::section(frame, middle, "Mash setup");
     frame.render_widget(
         Paragraph::new(text)
             .alignment(Alignment::Center)
             .wrap(Wrap { trim: true })
-            .block(Block::default().borders(Borders::ALL).title(" Mash setup ")),
-        middle,
+            .style(
+                Style::default()
+                    .fg(wizard_style::TEXT)
+                    .bg(wizard_style::PANEL),
+            ),
+        body,
     );
 }
 
@@ -455,9 +666,24 @@ fn review_and_apply<B: Backend>(
     terminal: &mut Terminal<B>,
     plan: &Plan,
     identity: &Identity,
+    fonts: &font_page::FontPage,
+    penpot: &mut penpot_page::PenpotPage,
+    providers: &mut provider_page::ProviderPage,
 ) -> Result<(), ApplyError> {
     let state_dir = state_dir();
     let mut state = load_state(&state_dir);
+    let prepare = (|| -> Result<(), String> {
+        penpot.save_selection(&data_dir())?;
+        seed_selected_skills()?;
+        penpot.save(&data_dir())?;
+        providers.save(&data_dir())?;
+        Ok(())
+    })();
+    if let Err(error) = prepare {
+        state.error = error;
+        save_state(&state_dir, &state);
+        return Err(ApplyError::Failed(state.error));
+    }
     let missing: Vec<&str> = plan
         .tools
         .iter()
@@ -472,7 +698,7 @@ fn review_and_apply<B: Backend>(
     }
     // After the installers, so `git` exists by the time this runs on a fresh
     // machine.
-    match apply_git_identity(identity) {
+    match apply_git_identity(identity, &data_dir().join("config/git/config")) {
         Ok(note) => {
             if let Ok(mut log) = fs::OpenOptions::new()
                 .create(true)
@@ -488,10 +714,15 @@ fn review_and_apply<B: Backend>(
             return Err(ApplyError::Failed(state.error));
         }
     }
-    state.completed = true;
-    state.error.clear();
-    state.completed_at = now_millis();
-    save_state(&state_dir, &state);
+    if let Err(error) = fonts
+        .save(&data_dir().join("config/ghostty/config"))
+        .and_then(|()| fonts.theme.apply(&data_dir()))
+    {
+        state.error = error;
+        save_state(&state_dir, &state);
+        return Err(ApplyError::Failed(state.error));
+    }
+    mark_complete(&state_dir, &mut state);
     Ok(())
 }
 
@@ -520,6 +751,16 @@ fn load_state(dir: &Path) -> State {
             .unwrap_or_default()
             .to_string(),
     }
+}
+
+fn mark_complete(dir: &Path, state: &mut State) {
+    state.completed = true;
+    state.error.clear();
+    state.completed_at = now_millis();
+    save_state(dir, state);
+    // herdr-pane consumes this once, on the handoff right after setup, to open
+    // the new-workspace popup. Later launches find no marker and skip it.
+    let _ = fs::write(dir.join(OPEN_WORKSPACE_MARKER), "1\n");
 }
 
 fn save_state(dir: &Path, state: &State) {
@@ -584,6 +825,26 @@ fn tools_available(tools: &[&str]) -> bool {
     tools.iter().all(|tool| is_available(tool))
 }
 
+// The bundle already contains the optional suites. Sync only after the final
+// choice has been written, then wire up their runtime paths just as the Linux
+// launcher does. The regular launcher does the same on later opens.
+fn seed_selected_skills() -> Result<(), String> {
+    let res = mash_resources();
+    let data = data_dir();
+    let mut sync = Command::new(res.join("bin/mash-seed-sync"));
+    sync.arg(&res).arg(&data);
+    run_logged(sync)?;
+    let mut setup = Command::new("/bin/bash");
+    setup.args([
+        "-c",
+        "res=$1; d=$2; source \"$res/bin/launch-common.sh\"; mash_seed_programming_skills; mash_seed_design_stack; mash_seed_hindsight",
+        "mash",
+    ]);
+    setup.arg(&res).arg(&data);
+    run_logged(setup)?;
+    Ok(())
+}
+
 // A selected tool that is already on PATH needs no installer. Running one
 // anyway is how the wizard kept reappearing: `npm install --global
 // yaml-language-server` fails with EEXIST when Homebrew already owns that
@@ -619,10 +880,14 @@ fn install_steps(plan: &Plan, missing: &[&str]) -> Vec<String> {
             steps.push("Install CUA Driver".to_string());
         }
     }
-    steps.push(STEP_HINDSIGHT.to_string());
-    steps.push(STEP_HINDSIGHT_DAEMON.to_string());
-    steps.push(STEP_DESIGN.to_string());
-    steps.push(STEP_PENPOT.to_string());
+    if plan.programming {
+        steps.push(STEP_HINDSIGHT.to_string());
+        steps.push(STEP_HINDSIGHT_DAEMON.to_string());
+    }
+    if plan.design {
+        steps.push(STEP_DESIGN.to_string());
+        steps.push(STEP_PENPOT.to_string());
+    }
     // Last, and only when the page chose one: the model is the big download,
     // and it goes straight into the cache Pi Voice reads, so nothing re-runs
     // it when the same file is already there.
@@ -1143,13 +1408,13 @@ fn offer_github_login<B: Backend>(terminal: &mut Terminal<B>) -> Result<(), Stri
     loop {
         terminal
             .draw(|frame| {
+                let body = wizard_style::section(frame, frame.area(), "GitHub (optional)");
                 frame.render_widget(
                     Paragraph::new(format!(
                         "Sign into GitHub for Mash?\n\nPress y to open browser sign-in, or Enter / n / Esc to skip.\n\n{note}"
                     ))
-                    .alignment(Alignment::Center)
-                    .block(Block::default().borders(Borders::ALL).title("GitHub (optional)")),
-                    frame.area(),
+                    .alignment(Alignment::Center),
+                    body,
                 );
             })
             .map_err(|e| e.to_string())?;
@@ -1243,20 +1508,23 @@ fn git_config_value(key: &str) -> String {
 }
 
 // Written into Mash's own git config, which the launcher seeds once and never
-// rewrites. Mash never reads ~/.gitconfig, so without this a commit made in
-// Mash has no author at all.
-fn apply_git_identity(identity: &Identity) -> Result<String, String> {
+// rewrites. Mash never reads ~/.gitconfig, so both identity and signing must
+// be carried into its config for commits made inside Mash.
+fn apply_git_identity(identity: &Identity, config: &Path) -> Result<String, String> {
     let name = identity.name.trim();
     let email = identity.email.trim();
-    if name.is_empty() && email.is_empty() {
-        return Ok("none given; commits stay unattributed".into());
-    }
-    let config = data_dir().join("config").join("git").join("config");
+    let signing_key = identity.signing_key.trim();
+    let signing = (!signing_key.is_empty()).to_string();
     if let Some(parent) = config.parent() {
         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
-    for (key, value) in [("user.name", name), ("user.email", email)] {
-        if value.is_empty() {
+    for (key, value) in [
+        ("user.name", name),
+        ("user.email", email),
+        ("user.signingkey", signing_key),
+        ("commit.gpgsign", signing.as_str()),
+    ] {
+        if value.is_empty() && key != "user.signingkey" {
             continue;
         }
         let mut command = Command::new("git");
@@ -1265,12 +1533,18 @@ fn apply_git_identity(identity: &Identity) -> Result<String, String> {
             .env_remove("GIT_CONFIG_GLOBAL")
             .arg("config")
             .arg("--file")
-            .arg(&config)
+            .arg(config)
+            .arg("--replace-all")
             .arg(key)
             .arg(value);
         run_logged(command)?;
     }
-    Ok(format!("set to {name} <{email}>"))
+    let note = if name.is_empty() && email.is_empty() {
+        "none given; commits stay unattributed".to_string()
+    } else {
+        format!("set to {name} <{email}>")
+    };
+    Ok(format!("{note}; commit.gpgsign={signing}"))
 }
 
 fn run_logged(mut command: Command) -> Result<String, String> {
@@ -1283,94 +1557,65 @@ fn run_logged(mut command: Command) -> Result<String, String> {
 }
 
 fn draw_choices(frame: &mut Frame, app: &App) {
-    let area = frame.area();
+    let area = wizard_style::page_area(frame, Some(0));
     let chunks = Layout::vertical([
         Constraint::Length(3),
         Constraint::Min(8),
         Constraint::Length(3),
     ])
     .split(area);
-    frame.render_widget(
-        Paragraph::new(Line::styled(
-            "Mash first-launch setup — page 1/3",
-            Style::default().add_modifier(Modifier::BOLD),
-        ))
-        .alignment(Alignment::Center)
-        .block(Block::default().borders(Borders::ALL)),
-        chunks[0],
-    );
+    wizard_style::header(frame, chunks[0], "Mash first-launch setup — page 1/5");
 
-    let mut lines = vec![
-        Line::from(
+    let mut lines: Vec<(Line<'static>, Option<usize>)> = vec![
+        (Line::from(
             "Choose tools and Git identity. GitHub sign-in is offered after installation when utilities are selected.",
-        ),
-        Line::from(""),
-        Line::from("Git identity for commits made in Mash:"),
+        ), None),
+        (Line::from(""), None),
+        (Line::from("Git identity for commits made in Mash:"), None),
     ];
     for (focus, label, value) in [
-        (FOCUS_NAME, "Name ", &app.name),
-        (FOCUS_EMAIL, "Email", &app.email),
+        (FOCUS_NAME, "Name       ", &app.name),
+        (FOCUS_EMAIL, "Email      ", &app.email),
+        (FOCUS_SIGNING_KEY, "Signing key", &app.signing_key),
     ] {
         let focused = app.focus == focus;
-        let marker = if focused { ">" } else { " " };
-        lines.push(Line::from(vec![
-            Span::styled(marker, Style::default().fg(Color::Yellow)),
-            Span::styled(
-                format!("{label}: "),
-                Style::default().add_modifier(Modifier::BOLD),
-            ),
-            Span::raw(value.clone()),
-            Span::styled(
-                if focused { "_" } else { "" },
-                Style::default().fg(Color::Yellow),
-            ),
-        ]));
+        lines.push((
+            wizard_style::text_field(focused, label, value.clone()),
+            Some(focus),
+        ));
         if focused {
-            lines.push(Line::from(
-                "      type to edit, Backspace to delete, empty to leave commits unattributed",
+            lines.push((
+                Line::from(if focus == FOCUS_SIGNING_KEY {
+                    "      empty disables commit signing; a key enables it"
+                } else {
+                    "      type to edit, Backspace to delete, empty to leave commits unattributed"
+                }),
+                None,
             ));
         }
     }
-    lines.push(Line::from(""));
+    lines.push((Line::from(""), None));
     for (index, group) in Group::ALL.iter().enumerate() {
-        let checked = if app.selections[index] { "x" } else { " " };
         let focused = app.focus == focus_for_group(index);
-        let marker = if focused { ">" } else { " " };
-        let line = Line::from(vec![
-            Span::styled(marker, Style::default().fg(Color::Yellow)),
-            Span::raw(format!("[{checked}] ")),
-            Span::styled(group.title(), Style::default().add_modifier(Modifier::BOLD)),
-            Span::raw(format!(" — {}", group.summary())),
-        ]);
-        lines.push(line);
+        let mut line = wizard_style::checkbox(focused, group.title(), app.selections[index]);
+        line.spans
+            .push(Span::raw(format!(" — {}", group.summary())));
+        lines.push((line, Some(focus_for_group(index))));
         for (tool, description) in group.tools() {
-            lines.push(Line::from(format!("      {tool:<24} {description}")));
+            lines.push((Line::from(format!("      {tool:<24} {description}")), None));
         }
-        lines.push(Line::from(""));
+        lines.push((Line::from(""), None));
     }
 
-    frame.render_widget(
-        Paragraph::new(lines).wrap(Wrap { trim: true }).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Install choices"),
-        ),
-        chunks[1],
-    );
-
-    let button_style = if app.focus == FOCUS_BUTTON {
-        Style::default().fg(Color::Black).bg(Color::Yellow)
-    } else {
-        Style::default()
-    };
-    frame.render_widget(
-        Paragraph::new(Line::styled(
-            " Next — configure providers ",
-            button_style.add_modifier(Modifier::BOLD),
-        ))
-        .alignment(Alignment::Center)
-        .block(Block::default().borders(Borders::ALL)),
+    let body = wizard_style::section(frame, chunks[1], "Install choices");
+    wizard_style::render_form(frame, body, lines, true);
+    wizard_style::render_buttons(
+        frame,
         chunks[2],
+        &[(
+            wizard_style::button(app.focus == FOCUS_BUTTON, " Next — configure providers "),
+            Some(FOCUS_BUTTON),
+        )],
     );
 }
 
@@ -1382,36 +1627,30 @@ fn draw_apply<B: Backend>(
     messages: &[String],
 ) {
     let _ = terminal.draw(|frame| {
-        let area = frame.area();
+        let area = wizard_style::page_area(frame, None);
         let chunks = Layout::vertical([
             Constraint::Length(3),
             Constraint::Length(3),
             Constraint::Min(5),
         ])
         .split(area);
-        frame.render_widget(
-            Paragraph::new("Mash installation")
-                .alignment(Alignment::Center)
-                .block(Block::default().borders(Borders::ALL)),
-            chunks[0],
-        );
+        wizard_style::header(frame, chunks[0], "Mash installation");
         let ratio = if total == 0 {
             1.0
         } else {
             completed as f64 / total as f64
         };
+        let progress = wizard_style::section(frame, chunks[1], current);
         frame.render_widget(
             Gauge::default()
-                .block(Block::default().borders(Borders::ALL).title(current))
-                .gauge_style(Style::default().fg(Color::Green))
+                .gauge_style(Style::default().fg(wizard_style::GREEN))
                 .ratio(ratio),
-            chunks[1],
+            progress,
         );
+        let log = wizard_style::section(frame, chunks[2], "Progress");
         frame.render_widget(
-            Paragraph::new(messages.join("\n"))
-                .wrap(Wrap { trim: true })
-                .block(Block::default().borders(Borders::ALL).title("Progress")),
-            chunks[2],
+            Paragraph::new(messages.join("\n")).wrap(Wrap { trim: true }),
+            log,
         );
     });
 }
@@ -1436,10 +1675,16 @@ struct Plan {
     tools: Vec<&'static str>,
     /// The dictation model to download, from the last wizard page.
     voice: Option<voice::VoiceChoice>,
+    programming: bool,
+    design: bool,
 }
 
 fn install_plan(selections: [bool; 2]) -> Plan {
-    let mut plan = Plan::default();
+    let mut plan = Plan {
+        programming: true,
+        design: true,
+        ..Plan::default()
+    };
     if is_linux() {
         // The same capability groups, installed without elevation: everything
         // is a pinned component in packaging/assets.json, resolved by the
@@ -1554,6 +1799,43 @@ mod tests {
         let app = App::new();
         assert_eq!(app.name, git_config_value("user.name"));
         assert_eq!(app.email, git_config_value("user.email"));
+        assert_eq!(app.signing_key, git_config_value("user.signingkey"));
+    }
+
+    #[test]
+    fn signing_key_controls_commit_signing_in_mash_config() {
+        let dir = env::temp_dir().join(format!(
+            "mash-wizard-git-{}-{}",
+            std::process::id(),
+            now_millis()
+        ));
+        let config = dir.join("git/config");
+        let identity = Identity {
+            name: "Ada".into(),
+            email: "ada@example.org".into(),
+            signing_key: "ABC123".into(),
+        };
+        let get = |key| {
+            let output = Command::new("git")
+                .args(["config", "--file"])
+                .arg(&config)
+                .arg("--get")
+                .arg(key)
+                .output()
+                .unwrap();
+            assert!(output.status.success());
+            String::from_utf8(output.stdout).unwrap().trim().to_string()
+        };
+        apply_git_identity(&identity, &config).unwrap();
+        assert_eq!(get("user.name"), "Ada");
+        assert_eq!(get("user.email"), "ada@example.org");
+        assert_eq!(get("user.signingkey"), "ABC123");
+        assert_eq!(get("commit.gpgsign"), "true");
+
+        apply_git_identity(&Identity::default(), &config).unwrap();
+        assert_eq!(get("user.signingkey"), "");
+        assert_eq!(get("commit.gpgsign"), "false");
+        fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]
@@ -1564,6 +1846,11 @@ mod tests {
         app.on_key(KeyCode::Backspace, KeyModifiers::NONE);
         assert_eq!(app.email, "ab");
         assert_eq!(app.name, App::new().name);
+        app.focus = FOCUS_SIGNING_KEY;
+        app.signing_key = "ABC".into();
+        app.on_key(KeyCode::Backspace, KeyModifiers::NONE);
+        assert_eq!(app.signing_key, "AB");
+        assert_eq!(app.email, "ab");
     }
 
     #[test]
@@ -1574,7 +1861,7 @@ mod tests {
             app.on_key(KeyCode::Tab, KeyModifiers::NONE);
             seen.push(app.focus);
         }
-        assert_eq!(seen, vec![0, 1, 2, 3, 4, 0]);
+        assert_eq!(seen, vec![0, 1, 2, 3, 4, 5, 0]);
     }
 
     #[test]
@@ -1662,6 +1949,129 @@ mod tests {
     }
 
     #[test]
+    fn clicking_page_one_focuses_fields_toggles_groups_and_advances() {
+        use wizard_style::tests::{click, find};
+        let mut app = App::new();
+        let render = |app: &App| {
+            let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(140, 60)).unwrap();
+            terminal.draw(|frame| draw_choices(frame, app)).unwrap();
+            terminal.backend().buffer().clone()
+        };
+        let at = |app: &App, label| {
+            let (x, y) = find(&render(app), label);
+            wizard_style::clicked(&click(x, y)).expect("label is clickable")
+        };
+        assert!(app.on_click(at(&app, "Email")).is_none());
+        assert_eq!(app.focus, FOCUS_EMAIL);
+        let before = app.selections[0];
+        assert!(app.on_click(at(&app, "Mash utilities")).is_none());
+        assert_ne!(app.selections[0], before);
+        assert!(matches!(
+            app.on_click(at(&app, "Next — configure")),
+            Some(Outcome::Next)
+        ));
+    }
+
+    #[test]
+    fn preview_only_changes_pages_and_returns_to_the_logo() {
+        let mut started = true;
+        let mut page = 0;
+        assert!(!preview_key(
+            &mut started,
+            &mut page,
+            KeyCode::Right,
+            KeyModifiers::NONE
+        ));
+        assert_eq!(page, 1);
+        assert!(!preview_key(
+            &mut started,
+            &mut page,
+            KeyCode::Char('4'),
+            KeyModifiers::NONE,
+        ));
+        assert_eq!(page, 3);
+        assert!(!preview_key(
+            &mut started,
+            &mut page,
+            KeyCode::Char('5'),
+            KeyModifiers::NONE,
+        ));
+        assert_eq!(page, 4);
+        assert!(!preview_key(
+            &mut started,
+            &mut page,
+            KeyCode::Esc,
+            KeyModifiers::NONE
+        ));
+        assert!(!started);
+        assert_eq!(page, 0);
+        assert!(preview_key(
+            &mut started,
+            &mut page,
+            KeyCode::Esc,
+            KeyModifiers::NONE
+        ));
+    }
+
+    #[test]
+    fn completing_setup_leaves_a_one_shot_workspace_popup_marker() {
+        let dir = env::temp_dir().join(format!("mash-complete-test-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let mut state = State::default();
+        mark_complete(&dir, &mut state);
+        assert!(load_state(&dir).completed);
+        assert!(dir.join(OPEN_WORKSPACE_MARKER).is_file());
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn unchecked_suites_add_no_hindsight_or_design_install_steps() {
+        let mut plan = install_plan([false, false]);
+        plan.programming = false;
+        plan.design = false;
+        let steps = install_steps(&plan, &[]);
+        assert!(!steps.iter().any(|step| {
+            [
+                STEP_HINDSIGHT,
+                STEP_HINDSIGHT_DAEMON,
+                STEP_DESIGN,
+                STEP_PENPOT,
+            ]
+            .contains(&step.as_str())
+        }));
+        plan.programming = true;
+        assert!(install_steps(&plan, &[]).contains(&STEP_HINDSIGHT.to_string()));
+        assert!(!install_steps(&plan, &[]).contains(&STEP_DESIGN.to_string()));
+    }
+
+    #[test]
+    fn first_page_uses_sidebar_and_panel_palette() {
+        let app = App {
+            name: "Ada".into(),
+            email: "ada@example.org".into(),
+            signing_key: String::new(),
+            selections: [true, true],
+            focus: FOCUS_NAME,
+        };
+        let mut terminal =
+            ratatui::Terminal::new(ratatui::backend::TestBackend::new(120, 40)).unwrap();
+        terminal.draw(|frame| draw_choices(frame, &app)).unwrap();
+        let buffer = terminal.backend().buffer();
+        let rendered = buffer
+            .content()
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(rendered.contains("Mash first-launch setup — page 1/5"));
+        assert!(rendered.contains("Providers"));
+        assert!(rendered.contains("ada@example.org"));
+        // Sidebar: logo rows 1-10, SETUP, blank, then page 1 on row 13.
+        assert_eq!(buffer[(0, 13)].bg, wizard_style::PANEL);
+        assert_eq!(buffer[(3, 13)].bg, wizard_style::selected().bg.unwrap());
+        assert_eq!(buffer[(40, 5)].bg, wizard_style::PANEL);
+    }
+
+    #[test]
     fn selection_maps_only_the_checkbox_rows() {
         let mut app = App::new();
         app.focus = FOCUS_NAME;
@@ -1714,7 +2124,11 @@ mod tests {
         // step is Homebrew on macOS and Mash's own installer on Linux.
         let full = install_steps(&install_plan([true, true]), &["gopls"]);
         let hindsight = full.iter().position(|s| s == STEP_HINDSIGHT).unwrap();
-        let tool_step = if is_linux() { STEP_LINUX_TOOLS } else { "Install Homebrew packages" };
+        let tool_step = if is_linux() {
+            STEP_LINUX_TOOLS
+        } else {
+            "Install Homebrew packages"
+        };
         let tools = full.iter().position(|s| s == tool_step).unwrap();
         assert!(tools < hindsight, "tools must install first");
     }
@@ -1799,7 +2213,10 @@ mod tests {
             assert!(plan.brew.is_empty(), "linux plan reached for brew");
             assert!(plan.npm.is_empty(), "linux plan reached for global npm");
             assert!(plan.python.is_empty(), "linux plan reached for global pip");
-            assert!(plan.installer.is_empty(), "linux plan used a vendor installer");
+            assert!(
+                plan.installer.is_empty(),
+                "linux plan used a vendor installer"
+            );
         } else {
             assert!(plan.linux.is_empty(), "macOS plan carries Linux components");
             assert!(!plan.brew.is_empty(), "macOS plan has no formulas");

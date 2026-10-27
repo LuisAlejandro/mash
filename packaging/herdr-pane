@@ -59,7 +59,10 @@ trap 'mash_release_instance_window "$home" "$MASH_INSTANCE" "$$"' EXIT HUP INT T
 # Linux launch through this pane entry, so the first opted-in launch works too.
 # mds start can pull/build images; keep it off the window's critical path. It
 # also performs pending Penpot account setup, so never race it with that helper.
-if [ -f "$home/.mash/config/mash/design-autostart" ] &&
+if [ -f "$home/.mash/setup/skills-choice" ] &&
+  grep -qx 'design=false' "$home/.mash/setup/skills-choice"; then
+  : # Design Skills were declined; neither mds nor account setup exists.
+elif [ -f "$home/.mash/config/mash/design-autostart" ] &&
   [ -x "$bin_dir/mash-design-autostart" ]; then
   nohup "$bin_dir/mash-design-autostart" "$home/.mash" </dev/null >/dev/null 2>&1 &
 elif [ -f "$home/.mash/local/share/mash/design/penpot.env" ] &&
@@ -80,6 +83,20 @@ fi
 # window's server itself, so it never delays the window.
 if [ -x "$bin_dir/mash-update-notice" ]; then
   nohup "$bin_dir/mash-update-notice" "$res" "$home/.mash" </dev/null >/dev/null 2>&1 &
+fi
+
+# First handoff after setup only: the wizard leaves a one-shot marker, and the
+# new-workspace popup opens as soon as the server answers. The marker is taken
+# (renamed) before waiting, so a second window cannot open the popup twice.
+once="$home/.mash/setup/open-workspace-once"
+if mv "$once" "$once.taken" 2>/dev/null; then
+  rm -f "$once.taken"
+  (
+    for _ in $(seq 1 50); do
+      sleep 0.2
+      "$bin_dir/herdr" plugin action invoke herdr-workspace.open >/dev/null 2>&1 && exit 0
+    done
+  ) </dev/null >/dev/null 2>&1 &
 fi
 
 # A leftover socket is removed only here, and only when nothing is using it.

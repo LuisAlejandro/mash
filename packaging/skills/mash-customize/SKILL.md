@@ -52,7 +52,7 @@ change plus a rebuild.
 | `~/.mash/config/mash/` | Mash Programming Skills state: `references/`, `venvs/`, `hindsight-pin`, `hindsight-embed.env` |
 | `~/.mash/local/share/mash/design/` | Design stack: the `mds` CLI, `docker-compose.yaml`, `penpot.env` |
 | `~/.mash/local/share/mash/hindsight/` | Hindsight's virtualenv (~1.1 GB) |
-| `~/.mash/setup/` | `state.txt`, `setup.log`, `hindsight-install.log` |
+| `~/.mash/setup/` | `state.txt`, `skills-choice`, `setup.log`, `hindsight-install.log` |
 | `~/.mash/bin/` | Launcher-written helpers, including the `mds` symlink |
 
 Files here persist. The launcher seeds a file only when it is missing
@@ -60,9 +60,19 @@ Files here persist. The launcher seeds a file only when it is missing
 That also means a rebuild will not refresh a file you edited by hand — delete it
 to pick up the new seed.
 
+## Optional skill suites
+
+The first-launch wizard defaults both Programming Skills and Design Skills on.
+Uncheck either to omit its skills, agents, and runtime payload from `~/.mash`.
+Programming Skills off also skips Hindsight installation and startup. Design
+Skills off skips the Penpot account, design dependencies, `mds` and autostart.
+The choice is stored in `~/.mash/setup/skills-choice`; upgrading never silently
+removes files from an existing installation.
+
 ## Starting the design stack with Mash
 
-The setup wizard's Penpot page offers an opt-in checkbox to start Penpot and
+When Design Skills are selected, the setup wizard's Penpot page offers an
+opt-in checkbox to start Penpot and
 OpenDesign when Mash opens. The wizard writes
 `~/.mash/config/mash/design-autostart` for On and removes it for Off. This
 happens after setup finishes, in the background, and does not delay the Mash

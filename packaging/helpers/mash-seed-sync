@@ -81,6 +81,25 @@ record_path = os.path.join(data, "local", "state", "seeded.json")
 LINUX = platform.system() != "Darwin"
 SUFFIX = ".linux" if LINUX else ""
 CHUNK = 1 << 20
+CHOICE_PATH = os.path.join(data, "setup", "skills-choice")
+try:
+    with open(CHOICE_PATH, encoding="utf-8") as fh:
+        choices = fh.read().splitlines()
+except FileNotFoundError:
+    try:
+        with open(os.path.join(data, "setup", "state.txt"), encoding="utf-8") as fh:
+            completed = "completed=true" in fh.read().splitlines()
+    except FileNotFoundError:
+        completed = False
+    choices = [f"{suite}=true" for suite in ("programming", "design")] if completed else []
+ENABLED = {suite: f"{suite}=true" in choices for suite in ("programming", "design")}
+OPTIONAL = {}
+for suite in ENABLED:
+    try:
+        with open(os.path.join(res, "defaults", f"optional-{suite}.txt"), encoding="utf-8") as fh:
+            OPTIONAL[suite] = set(fh.read().splitlines())
+    except FileNotFoundError:
+        OPTIONAL[suite] = set()  # Older bundles did not ship an inventory.
 
 # The trees copied with rsync --ignore-existing by mash_seed_missing and
 # mash_seed_design_stack. Simple file seeds and their path substitutions live in
@@ -186,6 +205,7 @@ def load_record():
         safe_json[normalized] = {k: v for k, v in values.items() if isinstance(k, str) and isinstance(v, str)}
     return {
         "version": record.get("version") if isinstance(record.get("version"), str) else "",
+        "selection": record.get("selection") if isinstance(record.get("selection"), dict) else None,
         "files": safe_files,
         "json": safe_json,
     }
@@ -289,11 +309,21 @@ def rendered_bytes(source, target, kind=None, rel_in_tree=""):
 
 def entries():
     for source_rel, dest_rel, kind in SINGLE_SEEDS:
+        if not ENABLED["programming"] and source_rel in (
+            "defaults/mash-config/hindsight-pin", "defaults/mash-config/hindsight-embed.env"
+        ):
+            continue
         source = os.path.join(res, source_rel)
         if os.path.isfile(source):
             yield source, dest_rel, kind, ""
 
     for source_rel, dest_rel in TREES:
+        if source_rel == "defaults/design-stack" and not ENABLED["design"]:
+            continue
+        if source_rel == "defaults/mash-config/references" and not ENABLED["programming"]:
+            continue
+        if source_rel in ("defaults/mash-config/headless", "defaults/mash-config/node_modules") and not ENABLED["design"]:
+            continue
         root = os.path.join(res, source_rel)
         if not os.path.isdir(root):
             continue
@@ -306,6 +336,18 @@ def entries():
                 if not os.path.islink(source) and not os.path.isfile(source):
                     continue
                 rel = os.path.relpath(source, root)
+                if source_rel == "defaults/pi" and any(
+                    not ENABLED[suite] and any(
+                        rel == path or rel.startswith(path + os.sep)
+                        for path in OPTIONAL[suite]
+                    )
+                    for suite in ENABLED
+                ):
+                    continue
+                if source_rel == "defaults/mash-config/venvs" and not (
+                    ENABLED["programming"] if rel.startswith("mash-parallel/") else ENABLED["design"]
+                ):
+                    continue
                 if source_rel == "defaults/fresh" and rel == "config.json":
                     continue  # platform-specific version is a single seed above
                 if source_rel == "defaults/pi" and rel == "extensions/keybindings-quickref.txt":
@@ -435,7 +477,7 @@ def main():
         return 0
     record = load_record()
     files = record["files"]
-    if record["version"] == version:
+    if record["version"] == version and record.get("selection") == ENABLED:
         return 0
 
     shipped = list(entries())
@@ -473,7 +515,26 @@ def main():
 
     removed = 0
     for key in list(files):
-        if key in seen:
+        # Opting out prevents future installation, never silently deletes an
+        # existing user's files or credentials. Bundled removals still work
+        # while their suite remains selected.
+        if key in seen or any(
+            not ENABLED[suite] and (
+                key.startswith("pi/agent/" + path + "/") or key == "pi/agent/" + path
+            )
+            for suite in ENABLED for path in OPTIONAL[suite]
+        ) or (
+            not ENABLED["programming"] and (
+                key.startswith("config/mash/references/") or
+                key.startswith("config/mash/venvs/mash-parallel/") or
+                key in ("config/mash/hindsight-pin", ".hindsight/embed")
+            )
+        ) or (
+            not ENABLED["design"] and (
+                key.startswith(("local/share/mash/design/", "config/mash/headless/", "config/mash/node_modules/")) or
+                (key.startswith("config/mash/venvs/") and not key.startswith("config/mash/venvs/mash-parallel/"))
+            )
+        ):
             continue
         target = safe_target(key)
         if target is None:
@@ -491,6 +552,7 @@ def main():
         # restores the shipped bytes, a subsequent release can safely remove it.
 
     record["version"] = version
+    record["selection"] = ENABLED
     record["files"] = files
     os.makedirs(os.path.dirname(record_path), exist_ok=True)
     tmp = record_path + ".tmp"
