@@ -19,19 +19,30 @@ export MASH_PANE=1
 # MASH_USER_SHELL stands in for the account's shell in tests, so the branch
 # below can be exercised without a pty or a second account.
 user_shell="${MASH_USER_SHELL:-$(mash_real_shell)}"
-# The account's shell startup is not read, the same way zsh panes already ignore
-# it: a ~/.bashrc that prepends ~/.local/bin or /opt/homebrew/bin runs after
-# isolation and puts a host pi back in front of the bundled one. zsh needs
-# nothing here (ZDOTDIR already points at Mash's config directory, which ships
-# no .zshrc, and an interactive zsh reads $ZDOTDIR/.zshrc; /etc/zshrc still
-# runs). bash has no ZDOTDIR equivalent, so it starts with --norc. fish reads
-# $XDG_CONFIG_HOME/fish/config.fish, and XDG_CONFIG_HOME already points at
-# Mash's tree.
-# ponytail: the cost is the account's aliases, prompt and atuin init for bash
-# panes. Upgrade path if that matters: ship $d/config/bash/bashrc mirroring
-# .zshenv (prepend MASH_BIN, `eval "$(atuin init bash)"`) and start bash with
-# --rcfile instead.
+# Every shell starts in Mash's own startup, never the account's:
+#   zsh  -- ZDOTDIR points at Mash's config directory, which ships .zshenv and
+#           .zshrc and no user files. /etc/zshrc still runs (zsh has no flag to
+#           skip it).
+#   fish -- XDG_CONFIG_HOME points at Mash's config directory, which ships
+#           fish/config.fish. /etc/fish/config.fish still runs on Linux.
+#   bash -- has neither variable, so it is started with --rcfile naming Mash's
+#           bashrc; that file is what /etc/bash.bashrc (where the build has one)
+#           would otherwise precede. --norc is the fallback for a data folder
+#           seeded before this file existed.
+# The point is not just isolation: a ~/.bashrc that prepends ~/.local/bin or
+# /opt/homebrew/bin runs after isolation and puts a host pi back in front of the
+# bundled one. Each rc re-prepends MASH_BIN so that cannot happen.
 case "$(basename -- "$user_shell")" in
-bash) exec "$user_shell" --norc ;;
+bash)
+	# Relative to this script, not to $home: mash-shell is copied to $d/bin by the
+	# launcher, so $d is one level up and the startup file sits beside it. Using
+	# the script's own location keeps this right even when the account's home
+	# comes from the directory service rather than $HOME.
+	rc="$(cd "$here/.." && pwd)/config/bash/bashrc"
+	if [ -f "$rc" ]; then
+		exec "$user_shell" --rcfile "$rc"
+	fi
+	exec "$user_shell" --norc
+	;;
 *) exec "$user_shell" ;;
 esac

@@ -26,6 +26,8 @@ in `Resources/bin/lib.sh`:
 | `GIT_CONFIG_GLOBAL` | `~/.mash/config/git/config` |
 | `GH_CONFIG_DIR` | `~/.mash/config/gh` |
 | `ZDOTDIR` | `~/.mash/config/zsh` |
+| `STARSHIP_CONFIG` | `~/.mash/config/starship.toml` |
+| `STARSHIP_CACHE` | `~/.mash/cache/starship` |
 | `HERDR_CONFIG_PATH` | `~/.mash/config/herdr/config.toml` |
 | `MASH_CONFIG_DIR` | `~/.mash/config/mash` |
 | `MASH_FRESH_CONFIG_DIR` | `~/.mash/config/fresh` |
@@ -47,7 +49,8 @@ change plus a rebuild.
 | `~/.mash/config/ghostty/` | Terminal config and themes |
 | `~/.mash/config/fresh/` | Editor config, `init.ts`, plugins, themes |
 | `~/.mash/config/git/config` | Mash's git config — pager, credential helper, `user.name`/`user.email` |
-| `~/.mash/config/{pet,lazydocker,lazygit,atuin,zsh}/` | Those tools' configs |
+| `~/.mash/config/{pet,lazydocker,lazygit,atuin,zsh,bash,fish}/` | Those tools' configs |
+| `~/.mash/config/starship.toml` | Shared prompt for bash, zsh and fish |
 | `~/.mash/config/mash/` | Mash Programming Skills state: `references/`, `venvs/`, `hindsight-pin`, `hindsight-embed.env` |
 | `~/.mash/local/share/mash/hindsight/` | Hindsight's virtualenv (~1.1 GB) |
 | `~/.mash/setup/` | `state.txt`, `skills-choice`, `setup.log`, `hindsight-install.log` |

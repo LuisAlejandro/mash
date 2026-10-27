@@ -74,6 +74,14 @@ working-directory = inherit
 auto-update = on
 EOF
   printf 'zsh %s\n' "$version" >"$res/defaults/zsh/.zshenv"
+  # The three pane-shell startup files: zsh's interactive half, bash's --rcfile
+  # target and fish's config. All three are single seeds, so they must exist in
+  # the fixture or the count below stops covering them.
+  printf 'zsh prompt %s\n' "$version" >"$res/defaults/zsh/.zshrc"
+  mkdir -p "$res/defaults/bash" "$res/defaults/fish"
+  printf 'bash rc %s\n' "$version" >"$res/defaults/bash/bashrc"
+  printf 'fish config %s\n' "$version" >"$res/defaults/fish/config.fish"
+  printf 'starship %s\n' "$version" >"$res/defaults/starship.toml"
   printf 'git %s\n' "$version" >"$res/defaults/git/config"
   printf 'ignore %s\n' "$version" >"$res/defaults/git/ignore"
   printf 'snippet %s\n' "$version" >"$res/defaults/pet/snippet.toml"
@@ -107,9 +115,9 @@ run_sync >/dev/null 2>&1
 chk "seed copies shipped files" '[ -f "$d/pi/agent/skills/demo/SKILL.md" ]'
 chk "record written" '[ -f "$record" ]'
 chk "record names the version" '[ "$(rec_version)" = "1.0.0" ]'
-# 17 on both platforms: the .linux variants inside copied trees are themselves
+# 21 on both platforms: the .linux variants inside copied trees are themselves
 # seeded (as mash_seed_missing's rsync already does) and so are recorded too.
-chk "record digests copied trees, configs and venv" '[ "$(rec_count)" = 17 ]'
+chk "record digests copied trees, configs and venv" '[ "$(rec_count)" = 21 ]'
 chk "record tracks bundled MCP servers separately" 'python3 - "$record" <<PY
 import json,sys
 servers=json.load(open(sys.argv[1]))["json"]["pi/agent/mcp.json"]

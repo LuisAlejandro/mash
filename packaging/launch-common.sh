@@ -180,6 +180,7 @@ mash_seed_configs() {
   # shell on macOS. The .linux variants sit beside the originals.
   [ "$(uname -s)" = "Darwin" ] || suffix=".linux"
   mkdir -p "$d/config/herdr" "$d/config/ghostty" "$d/config/zsh" \
+    "$d/config/bash" "$d/config/fish" \
     "$d/config/git" "$d/config/pet"
   if [ ! -f "$d/config/herdr/config.toml" ]; then
     sed -e "s#__MASH_SHELL__#$d/bin/mash-shell#g" \
@@ -202,6 +203,18 @@ mash_seed_configs() {
   fi
   [ -f "$d/config/zsh/.zshenv" ] ||
     cp "$res/defaults/zsh/.zshenv" "$d/config/zsh/.zshenv"
+  # The pane shell's own startup, one file per dialect: MASH_BIN first,
+  # native completion, atuin and Starship. Each is found through a redirect the
+  # launcher already establishes -- ZDOTDIR for zsh, XDG_CONFIG_HOME for fish,
+  # --rcfile in mash-shell for bash -- so no other code names them. zsh keeps
+  # path work in .zshenv because non-interactive pane scripts need it too.
+  # STARSHIP_CONFIG points every shell at the one seeded prompt config.
+  [ -f "$d/config/starship.toml" ] ||
+    cp "$res/defaults/starship.toml" "$d/config/starship.toml"
+  for shell_rc in zsh/.zshrc bash/bashrc fish/config.fish; do
+    [ -f "$d/config/$shell_rc" ] ||
+      cp "$res/defaults/$shell_rc" "$d/config/$shell_rc"
+  done
   [ -f "$d/config/git/config" ] ||
     cp "$res/defaults/git/config" "$d/config/git/config"
   # git's default global excludes file lives under the XDG directory Mash pins

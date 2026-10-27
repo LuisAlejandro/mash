@@ -1,0 +1,21 @@
+# Mash's shared prompt for bash, zsh and fish. STARSHIP_CONFIG points here.
+# Keep it portable: no remote commands, and no modules that read personal shell
+# startup files. Users can edit this seeded copy in ~/.mash/config.
+add_newline = false
+format = "$directory$git_branch$git_status$character"
+
+[character]
+success_symbol = "[❯](green)"
+error_symbol = "[❯](red)"
+
+[directory]
+style = "green"
+truncation_length = 0
+truncate_to_repo = false
+
+[git_branch]
+format = "[$symbol$branch]($style) "
+style = "purple"
+
+[git_status]
+style = "red"

@@ -182,6 +182,10 @@ mash_isolate() {
   export XDG_STATE_HOME="$d/local/state"
   export XDG_DATA_HOME="$d/local/share"
   export XDG_CACHE_HOME="$d/cache"
+  # One prompt config for bash, zsh and fish; Starship's session/cache files
+  # stay in the data folder rather than the account's ~/.cache.
+  export STARSHIP_CONFIG="$d/config/starship.toml"
+  export STARSHIP_CACHE="$d/cache/starship"
   export HERDR_CONFIG_PATH="$d/config/herdr/config.toml"
   # The instance decides the socket and the Herdr session; every path above and
   # below is shared by all instances, which is what "separate workspaces, one

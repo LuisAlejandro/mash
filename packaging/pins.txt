@@ -23,6 +23,8 @@ jq 1.8.1
 gh 2.95.0
 delta 0.19.2
 atuin 18.23.0
+starship 1.27.0
+zsh-autosuggestions 0.7.1
 gopls 0.23.0
 rust-analyzer 2026-09-27
 marksman 2026-02-08

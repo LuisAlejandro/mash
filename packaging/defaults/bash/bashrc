@@ -1,0 +1,55 @@
+# Mash pane startup, bash side.
+#
+# mash-shell starts bash with --rcfile pointing here, so this is the only
+# personal startup bash runs: ~/.bashrc is never read. On builds compiled with
+# SYS_BASHRC (Debian/Ubuntu) /etc/bash.bashrc runs first, exactly like
+# /etc/zshrc for zsh and /etc/fish/config.fish for fish on Linux.
+#
+# Four jobs, the same four the zsh and fish files do:
+#   1. MASH_BIN to the front of PATH
+#   2. native completion
+#   3. atuin's shell hook
+#   4. the Starship prompt
+# tests/test_pane_shell_rc.sh fails when the three drift apart.
+#
+# macOS /bin/bash is 3.2, so this is the version floor: no [[ -v ]], no
+# associative arrays, no ${x^^}.
+
+# MASH_BIN holds the bundle's program directories, in order (herdr-pane built
+# it, mash-shell augmented it). Prepending it AFTER the system rc has had its
+# turn is what keeps a bundled pi ahead of a Homebrew twin on PATH.
+if [ -n "${MASH_BIN:-}" ]; then
+	PATH="$MASH_BIN:$PATH"
+	export PATH
+fi
+
+# History lives inside the Mash data folder, matching zsh (HISTFILE under
+# ZDOTDIR, set by /etc/zshrc) and fish (XDG_DATA_HOME). The directory is seeded
+# by the launcher; the fallback only keeps a hand-run shell from failing.
+: "${MASH_DATA_DIR:=$HOME/.mash}"
+HISTFILE="$MASH_DATA_DIR/config/bash/.bash_history"
+HISTSIZE=2000
+HISTFILESIZE=4000
+
+# bash-completion is optional on macOS; when a distribution or Homebrew ships it,
+# use it. Bash's built-in programmable completion still works without it.
+for completion in /usr/share/bash-completion/bash_completion \
+	/etc/bash_completion /opt/homebrew/etc/profile.d/bash_completion.sh \
+	/usr/local/etc/profile.d/bash_completion.sh; do
+	if [ -r "$completion" ]; then
+		. "$completion"
+		break
+	fi
+done
+unset completion
+
+if command -v atuin >/dev/null 2>&1; then
+	eval "$(atuin init bash)"
+fi
+
+# Starship owns the shared prompt. The plain prompt remains a startup fallback
+# for a data folder or bundle that does not have it yet.
+PS1='\[\e[32m\]\w\[\e[0m\] ❯ '
+if command -v starship >/dev/null 2>&1; then
+	eval "$(starship init bash)"
+fi
