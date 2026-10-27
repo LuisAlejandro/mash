@@ -1,12 +1,17 @@
-# The Linux update notice popup. Opened by bin/mash-update-notice, which decides
-# from the local APT cache that a newer letsmash exists and passes both versions
-# through --env. Read-only: Mash never runs the upgrade itself.
+# The update notice popup, opened by bin/mash-update-notice once it has decided
+# a newer version exists. Both versions and the platform's verdict arrive
+# through --env.
+#
+# Two panes because the platforms end differently. Linux opens `notice`, which
+# is read-only: apt owns installing, so the popup only names the command. macOS
+# opens `update`, which offers the update itself, since there is no package
+# manager to hand off to.
 id = "mash-update-notice"
 name = "Mash Update Notice"
-version = "0.1.0"
+version = "0.2.0"
 min_herdr_version = "0.9.0"
-description = "Tell the user, once per version, that a newer Mash package is available"
-platforms = ["linux"]
+description = "Tell the user, once per version, that a newer Mash is available"
+platforms = ["linux", "macos"]
 
 [[panes]]
 id = "notice"
@@ -15,3 +20,21 @@ placement = "popup"
 width = 56
 height = 9
 command = ["bash", "notice.sh"]
+
+# Taller than the notice: this one shows download progress, verification and a
+# confirmation in the same box.
+[[panes]]
+id = "update"
+title = "Mash update"
+placement = "popup"
+width = 64
+height = 16
+command = ["bash", "update.sh"]
+
+[[panes]]
+id = "updated"
+title = "Mash updated"
+placement = "popup"
+width = 56
+height = 9
+command = ["bash", "updated.sh"]

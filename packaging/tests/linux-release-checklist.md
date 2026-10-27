@@ -74,3 +74,18 @@ tab, workspace, pane and annotation commands, each showing its Herdr chord.
 Choosing an item, or pressing its shortcut, does the Herdr command exactly once
 in that window only. Settings opens Herdr's settings, Reload Configuration
 reloads Ghostty and Herdr, and Detach closes the window and frees its instance.
+
+**macOS self-update sign-off (blocking for a macOS release):** Install an older
+Developer ID-signed Mash.app that already contains this updater in a writable
+location, then publish a newer signed, notarized DMG. Builds predating this
+feature (including 0.1.1) need one manual upgrade and cannot self-update. Launch the old app: a centered update
+popup and a desktop notification appear once. Press `u`: the DMG downloads with
+progress and is verified, then one confirmation names how many Mash windows
+will close. With two windows open, confirm: both terminal windows and all
+bundled Herdr servers exit, the installed app is exchanged, and the new Mash
+reopens with a one-time confirmation of the running version. Check that
+`~/.mash` workspaces, user edits and credentials are intact. Repeat using a
+signed DMG from another Team ID and a read-only mounted DMG: verification must
+reject the former before quitting, and the latter must show the notice without
+an update key. The app on disk must remain usable after every refusal. A real
+notarized pair is required; stub tests cannot prove Gatekeeper or process exit.
