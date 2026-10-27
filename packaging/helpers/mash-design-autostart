@@ -26,6 +26,10 @@ log="$setup/design-autostart.log"
 lock="$setup/design-autostart.lock"
 account_lock="$setup/penpot-account-setup.lock"
 [ -f "$marker" ] || exit 0
+# A failed/retried wizard may leave an old marker; the final suite choice wins.
+if [ -f "$setup/skills-choice" ] && grep -qx 'design=false' "$setup/skills-choice"; then
+  exit 0
+fi
 mkdir -p "$setup"
 umask 077
 say() { printf '%s %s\n' "$(date -u +%FT%TZ)" "$*" >>"$log"; }

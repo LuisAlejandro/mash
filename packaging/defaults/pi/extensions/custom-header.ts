@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
-const COLOR = "accent";
+const COLOR = "muted";
 
 const ART = ["[MASH]"];
 

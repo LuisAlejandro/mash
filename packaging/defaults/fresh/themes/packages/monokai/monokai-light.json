@@ -1,0 +1,509 @@
+{
+  "name": "Monokai Light",
+  "extends": "builtin://light",
+  "editor": {
+    "bg": [
+      250,
+      250,
+      247
+    ],
+    "fg": [
+      39,
+      40,
+      34
+    ],
+    "cursor": [
+      39,
+      40,
+      34
+    ],
+    "inactive_cursor": [
+      107,
+      103,
+      86
+    ],
+    "selection_bg": [
+      193,
+      192,
+      182
+    ],
+    "current_line_bg": [
+      205,
+      204,
+      193
+    ],
+    "line_number_fg": [
+      117,
+      117,
+      111
+    ],
+    "line_number_bg": [
+      250,
+      250,
+      247
+    ],
+    "diff_add_bg": [
+      203,
+      219,
+      195
+    ],
+    "diff_remove_bg": [
+      215,
+      185,
+      193
+    ],
+    "diff_modify_bg": [
+      213,
+      211,
+      195
+    ],
+    "ruler_bg": [
+      205,
+      204,
+      193
+    ],
+    "whitespace_indicator_fg": [
+      193,
+      192,
+      182
+    ]
+  },
+  "syntax": {
+    "keyword": [
+      196,
+      38,
+      94
+    ],
+    "string": [
+      138,
+      100,
+      0
+    ],
+    "comment": [
+      107,
+      103,
+      86
+    ],
+    "function": [
+      79,
+      114,
+      0
+    ],
+    "type": [
+      0,
+      121,
+      154
+    ],
+    "variable": [
+      39,
+      40,
+      34
+    ],
+    "variable_builtin": [
+      173,
+      82,
+      0
+    ],
+    "constant": [
+      122,
+      79,
+      208
+    ],
+    "operator": [
+      196,
+      38,
+      94
+    ],
+    "punctuation_bracket": [
+      39,
+      40,
+      34
+    ],
+    "punctuation_delimiter": [
+      39,
+      40,
+      34
+    ]
+  },
+  "search": {
+    "match_bg": [
+      229,
+      217,
+      167
+    ],
+    "match_fg": [
+      39,
+      40,
+      34
+    ],
+    "label_bg": [
+      196,
+      38,
+      94
+    ],
+    "label_fg": [
+      250,
+      250,
+      247
+    ]
+  },
+  "diagnostic": {
+    "error_fg": [
+      196,
+      38,
+      94
+    ],
+    "error_bg": [
+      233,
+      195,
+      201
+    ],
+    "warning_fg": [
+      173,
+      82,
+      0
+    ],
+    "warning_bg": [
+      237,
+      227,
+      200
+    ],
+    "info_fg": [
+      0,
+      121,
+      154
+    ],
+    "info_bg": [
+      209,
+      223,
+      227
+    ],
+    "hint_fg": [
+      107,
+      103,
+      86
+    ],
+    "hint_bg": [
+      205,
+      204,
+      193
+    ]
+  },
+  "ui": {
+    "tab_active_fg": [
+      39,
+      40,
+      34
+    ],
+    "tab_active_bg": [
+      250,
+      250,
+      247
+    ],
+    "tab_inactive_fg": [
+      95,
+      93,
+      80
+    ],
+    "tab_inactive_bg": [
+      226,
+      227,
+      224
+    ],
+    "tab_separator_bg": [
+      226,
+      227,
+      224
+    ],
+    "tab_close_hover_fg": [
+      196,
+      38,
+      94
+    ],
+    "tab_hover_bg": [
+      205,
+      204,
+      193
+    ],
+    "menu_bg": [
+      226,
+      227,
+      224
+    ],
+    "menu_fg": [
+      39,
+      40,
+      34
+    ],
+    "menu_active_bg": [
+      205,
+      204,
+      193
+    ],
+    "menu_active_fg": [
+      39,
+      40,
+      34
+    ],
+    "menu_dropdown_bg": [
+      226,
+      227,
+      224
+    ],
+    "menu_dropdown_fg": [
+      39,
+      40,
+      34
+    ],
+    "menu_highlight_bg": [
+      193,
+      192,
+      182
+    ],
+    "menu_highlight_fg": [
+      39,
+      40,
+      34
+    ],
+    "menu_border_fg": [
+      193,
+      192,
+      182
+    ],
+    "menu_separator_fg": [
+      205,
+      204,
+      193
+    ],
+    "menu_hover_bg": [
+      205,
+      204,
+      193
+    ],
+    "menu_hover_fg": [
+      39,
+      40,
+      34
+    ],
+    "menu_disabled_fg": [
+      107,
+      103,
+      86
+    ],
+    "menu_disabled_bg": [
+      226,
+      227,
+      224
+    ],
+    "status_bar_fg": [
+      39,
+      40,
+      34
+    ],
+    "status_bar_bg": [
+      226,
+      227,
+      224
+    ],
+    "status_palette_fg": [
+      39,
+      40,
+      34
+    ],
+    "status_palette_bg": [
+      205,
+      204,
+      193
+    ],
+    "prompt_fg": [
+      39,
+      40,
+      34
+    ],
+    "prompt_bg": [
+      226,
+      227,
+      224
+    ],
+    "prompt_selection_fg": [
+      39,
+      40,
+      34
+    ],
+    "prompt_selection_bg": [
+      193,
+      192,
+      182
+    ],
+    "popup_border_fg": [
+      193,
+      192,
+      182
+    ],
+    "popup_bg": [
+      226,
+      227,
+      224
+    ],
+    "popup_selection_bg": [
+      193,
+      192,
+      182
+    ],
+    "popup_selection_fg": [
+      39,
+      40,
+      34
+    ],
+    "popup_text_fg": [
+      39,
+      40,
+      34
+    ],
+    "text_input_selection_bg": [
+      193,
+      192,
+      182
+    ],
+    "suggestion_bg": [
+      226,
+      227,
+      224
+    ],
+    "suggestion_fg": [
+      39,
+      40,
+      34
+    ],
+    "suggestion_selected_bg": [
+      193,
+      192,
+      182
+    ],
+    "help_bg": [
+      226,
+      227,
+      224
+    ],
+    "help_fg": [
+      39,
+      40,
+      34
+    ],
+    "help_key_fg": [
+      0,
+      121,
+      154
+    ],
+    "help_separator_fg": [
+      193,
+      192,
+      182
+    ],
+    "help_indicator_fg": [
+      39,
+      40,
+      34
+    ],
+    "help_indicator_bg": [
+      226,
+      227,
+      224
+    ],
+    "inline_code_bg": [
+      205,
+      204,
+      193
+    ],
+    "split_separator_fg": [
+      193,
+      192,
+      182
+    ],
+    "split_separator_hover_fg": [
+      0,
+      121,
+      154
+    ],
+    "scrollbar_track_fg": [
+      226,
+      227,
+      224
+    ],
+    "scrollbar_thumb_fg": [
+      193,
+      192,
+      182
+    ],
+    "scrollbar_track_hover_fg": [
+      205,
+      204,
+      193
+    ],
+    "scrollbar_thumb_hover_fg": [
+      107,
+      103,
+      86
+    ],
+    "compose_margin_bg": [
+      226,
+      227,
+      224
+    ],
+    "semantic_highlight_bg": [
+      205,
+      204,
+      193
+    ],
+    "terminal_bg": [
+      250,
+      250,
+      247
+    ],
+    "terminal_fg": [
+      39,
+      40,
+      34
+    ],
+    "settings_selected_bg": [
+      193,
+      192,
+      182
+    ],
+    "settings_selected_fg": [
+      39,
+      40,
+      34
+    ],
+    "file_status_added_fg": [
+      79,
+      114,
+      0
+    ],
+    "file_status_modified_fg": [
+      138,
+      100,
+      0
+    ],
+    "file_status_deleted_fg": [
+      196,
+      38,
+      94
+    ],
+    "file_status_renamed_fg": [
+      0,
+      121,
+      154
+    ],
+    "file_status_untracked_fg": [
+      107,
+      103,
+      86
+    ],
+    "file_status_conflicted_fg": [
+      173,
+      82,
+      0
+    ]
+  }
+}

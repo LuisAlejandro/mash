@@ -3,12 +3,12 @@
 //! lets the install run begin.
 
 use crate::voice::{self, Role};
+use crate::wizard_style;
 use ratatui::{
     crossterm::event::{KeyCode, KeyModifiers},
-    layout::{Alignment, Constraint, Layout},
-    style::{Color, Modifier, Style},
+    layout::{Constraint, Layout},
+    style::{Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Paragraph, Wrap},
     Frame,
 };
 
@@ -127,8 +127,24 @@ impl VoicePage {
     }
 
     fn move_row(&mut self, direction: isize) {
-        let count = self.row_count() as isize;
-        self.row = (self.row as isize + direction).rem_euclid(count) as usize;
+        self.row = wizard_style::focus_step(self.row, self.row_count(), direction, true);
+    }
+
+    /// Click target `row`: a language toggles, a role is chosen, and the
+    /// buttons act like Enter.
+    pub fn on_click(&mut self, row: usize) -> Option<Decision> {
+        if row >= self.row_count() {
+            return None;
+        }
+        self.row = row;
+        if let Some(index) = self.language_at(row) {
+            self.languages[index].checked = !self.languages[index].checked;
+            self.recompute();
+            return None;
+        }
+        let decision = self.on_key(KeyCode::Enter, KeyModifiers::NONE);
+        self.row = row; // a role click selects it without hopping to the next row
+        decision
     }
 
     pub fn on_key(&mut self, code: KeyCode, modifiers: KeyModifiers) -> Option<Decision> {
@@ -190,37 +206,32 @@ impl VoicePage {
             Constraint::Length(7),
             Constraint::Length(3),
         ])
-        .split(frame.area());
+        .split(wizard_style::page_area(frame, Some(4)));
 
-        frame.render_widget(
-            Paragraph::new("Dictation — page 4/4")
-                .alignment(Alignment::Center)
-                .block(Block::default().borders(Borders::ALL)),
-            parts[0],
-        );
+        wizard_style::header(frame, parts[0], "Dictation — page 5/5");
 
         self.draw_languages(frame, parts[1]);
         self.draw_pick(frame, parts[2]);
 
-        let button = |row: usize, label: &str| {
-            let style = if self.row == row {
-                Style::default().fg(Color::Black).bg(Color::Yellow)
-            } else {
-                Style::default()
-            };
-            Span::styled(label.to_string(), style.add_modifier(Modifier::BOLD))
-        };
-        frame.render_widget(
-            Paragraph::new(Line::from(vec![
-                button(self.back_row(), " Back "),
-                Span::raw("  "),
-                button(self.skip_row(), " Skip dictation "),
-                Span::raw("  "),
-                button(self.save_row(), " Download and continue "),
-            ]))
-            .alignment(Alignment::Center)
-            .block(Block::default().borders(Borders::ALL)),
+        wizard_style::render_buttons(
+            frame,
             parts[3],
+            &[
+                (
+                    wizard_style::button(self.row == self.back_row(), " Back "),
+                    Some(self.back_row()),
+                ),
+                (Span::raw("  "), None),
+                (
+                    wizard_style::button(self.row == self.skip_row(), " Skip dictation "),
+                    Some(self.skip_row()),
+                ),
+                (Span::raw("  "), None),
+                (
+                    wizard_style::button(self.row == self.save_row(), " Download and continue "),
+                    Some(self.save_row()),
+                ),
+            ],
         );
     }
 
@@ -246,98 +257,97 @@ impl VoicePage {
         };
         let end = (start + viewport).min(count);
 
-        let mut lines = Vec::new();
+        let mut lines: Vec<(Line<'static>, Option<usize>)> = Vec::new();
         for index in start..end {
             let language = &self.languages[index];
             let focused = self.row == index;
-            let marker = if focused { ">" } else { " " };
-            lines.push(Line::from(vec![
-                Span::styled(marker, Style::default().fg(Color::Yellow)),
-                Span::raw(format!("[{}] ", if language.checked { "x" } else { " " })),
-                Span::styled(
-                    language.name.clone(),
-                    if focused {
-                        Style::default().add_modifier(Modifier::BOLD)
-                    } else {
-                        Style::default()
-                    },
-                ),
-            ]));
+            lines.push((
+                wizard_style::checkbox(focused, &language.name, language.checked),
+                Some(index),
+            ));
         }
         let hidden = count.saturating_sub(end);
         if hidden > 0 {
-            lines.push(Line::from(Span::styled(
-                format!("  {hidden} more — keep moving down"),
-                Style::default().fg(Color::DarkGray),
-            )));
+            lines.push((
+                Line::from(Span::styled(
+                    format!("  {hidden} more — scroll or keep moving down"),
+                    Style::default().fg(wizard_style::MUTED),
+                )),
+                None,
+            ));
         }
 
-        frame.render_widget(
-            Paragraph::new(lines).wrap(Wrap { trim: false }).block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title("Languages you will dictate in"),
-            ),
-            area,
-        );
+        let body = wizard_style::section(frame, area, "Languages you will dictate in");
+        wizard_style::render_form(frame, body, lines, false);
     }
 
     fn draw_pick(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
-        let mut lines = Vec::new();
+        let mut lines: Vec<(Line<'static>, Option<usize>)> = Vec::new();
         match &self.pick {
-            None if self.selected().is_empty() => lines.push(Line::from(Span::styled(
-                "Pick at least one language.",
-                Style::default().fg(Color::Red),
-            ))),
-            None => lines.push(Line::from(Span::styled(
-                "No model covers that combination. Remove a language.",
-                Style::default().fg(Color::Red),
-            ))),
+            None if self.selected().is_empty() => lines.push((
+                Line::from(Span::styled(
+                    "Pick at least one language.",
+                    Style::default().fg(wizard_style::RED),
+                )),
+                None,
+            )),
+            None => lines.push((
+                Line::from(Span::styled(
+                    "No model covers that combination. Remove a language.",
+                    Style::default().fg(wizard_style::RED),
+                )),
+                None,
+            )),
             Some(pick) => {
                 for role in [Role::Best, Role::Fast] {
                     let row = self.role_row(role);
                     let focused = self.row == row;
-                    // A preselected role needs its own marker; the language rows
-                    // above already use `>` for focus.
+                    // (*) marks the selected model; background marks keyboard focus.
                     let radio = if self.role == role { "(*)" } else { "( )" };
-                    let marker = if focused { ">" } else { " " };
-                    lines.push(Line::from(vec![
-                        Span::styled(marker, Style::default().fg(Color::Yellow)),
-                        Span::raw(format!("{radio} {:<5}", role.label())),
-                        Span::styled(
-                            pick.model(role).row(),
-                            Style::default().add_modifier(Modifier::BOLD),
-                        ),
-                    ]));
+                    lines.push((
+                        Line::from(vec![
+                            Span::raw(format!("{radio} {:<5}", role.label())),
+                            Span::styled(
+                                pick.model(role).row(),
+                                Style::default().add_modifier(Modifier::BOLD),
+                            ),
+                        ])
+                        .style(if focused {
+                            wizard_style::selected()
+                        } else {
+                            Style::default()
+                        }),
+                        Some(row),
+                    ));
                     if focused {
-                        lines.push(Line::from(format!("      {}", role.summary())));
+                        lines.push((Line::from(format!("      {}", role.summary())), None));
                     }
                 }
                 if pick.same_model() {
-                    lines.push(Line::from(Span::styled(
-                        "  Both roles are the same model here.",
-                        Style::default().fg(Color::DarkGray),
-                    )));
+                    lines.push((
+                        Line::from(Span::styled(
+                            "  Both roles are the same model here.",
+                            Style::default().fg(wizard_style::MUTED),
+                        )),
+                        None,
+                    ));
                 }
                 if pick.needs_detector {
-                    lines.push(Line::from(Span::styled(
-                        format!(
-                            "  adds the {} language detector for auto-detect",
-                            voice::human_size(voice::detector_bytes())
-                        ),
-                        Style::default().fg(Color::DarkGray),
-                    )));
+                    lines.push((
+                        Line::from(Span::styled(
+                            format!(
+                                "  adds the {} language detector for auto-detect",
+                                voice::human_size(voice::detector_bytes())
+                            ),
+                            Style::default().fg(wizard_style::MUTED),
+                        )),
+                        None,
+                    ));
                 }
             }
         }
-        frame.render_widget(
-            Paragraph::new(lines).wrap(Wrap { trim: false }).block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title("Model to download"),
-            ),
-            area,
-        );
+        let body = wizard_style::section(frame, area, "Model to download");
+        wizard_style::render_form(frame, body, lines, false);
     }
 }
 
@@ -438,8 +448,40 @@ mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect::<String>();
-        assert!(rendered.contains("Dictation — page 4/4"));
+        assert!(rendered.contains("Dictation — page 5/5"));
         assert!(rendered.contains("MiB"));
         assert!(rendered.contains("English"));
+    }
+
+    #[test]
+    fn clicks_toggle_languages_pick_roles_and_press_buttons() {
+        use wizard_style::tests::{click, find};
+        let mut page = VoicePage::new();
+        let render = |page: &VoicePage| {
+            let mut terminal =
+                ratatui::Terminal::new(ratatui::backend::TestBackend::new(120, 34)).unwrap();
+            terminal.draw(|frame| page.draw(frame)).unwrap();
+            terminal.backend().buffer().clone()
+        };
+        let at = |page: &VoicePage, label| {
+            let (x, y) = find(&render(page), label);
+            wizard_style::clicked(&click(x, y)).expect("label is clickable")
+        };
+        let name = page.languages[1].name.clone();
+        let before = page.languages[1].checked;
+        assert!(page.on_click(at(&page, &name)).is_none());
+        assert_ne!(page.languages[1].checked, before);
+        assert!(page.on_click(at(&page, "( ) ")).is_none());
+        assert!(page.role == Role::Fast);
+        assert_eq!(page.row, page.fast_row());
+        assert!(matches!(
+            page.on_click(at(&page, "Back")),
+            Some(Decision::Back)
+        ));
+        assert!(matches!(
+            page.on_click(at(&page, "Skip dictation")),
+            Some(Decision::Skip)
+        ));
+        assert!(page.choice().is_none());
     }
 }

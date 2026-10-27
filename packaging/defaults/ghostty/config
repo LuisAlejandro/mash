@@ -181,6 +181,13 @@ keybind = super+alt+w=unbind
 # bound cmd+d.)
 keybind = super+d=unbind
 
+# Release cmd+shift+d as well: it stayed bound to new_split:down while nothing
+# downstream wanted it, but a stray press then opens a Ghostty split beside the
+# herdr surface -- a terminal Mash does not manage, with no herdr in it. Released
+# so the chord does nothing instead of doing something surprising. Ghostty clears
+# the matching app-menu shortcut too once the action has no binding.
+keybind = super+shift+d=unbind
+
 # Release all FOUR cmd+alt+arrow chords so Herdr's
 # focus_pane_left/right/up/down receive them. The up/down pair moved off
 # cmd+alt+k / cmd+alt+j onto the arrow keys to complete the arrow set, but
@@ -215,18 +222,10 @@ keybind = super+k=unbind
 # of its value here once Herdr took over selection copy.
 keybind = super+shift+v=unbind
 
-# Font: match the Cursor IDE's integrated terminal so the same shell looks the
-# same in both places.
-#   Cursor terminal : "terminal.integrated.fontFamily": "MesloLGS NF"
-#                     (size untouched -> its default, which resolves to 14 on
-#                     macOS: the schema is `default: uLp` and `uLp = ki?12:14`)
-#   Ghostty default : JetBrains Mono 13 (bundled; font-family was unset)
-# MesloLGS NF is installed at Mash and Ghostty resolves it (checked
-# with `ghostty +list-fonts`), so naming it is enough -- no fallback needed.
-# This font has no ligatures of its own, and font-feature below disables the
-# feature classes anyway, so Ghostty and Cursor's terminal match here too.
+# MesloLGS NF ships with Mash. The first-launch wizard offers other installed
+# terminal fonts and sizes; 13 is its default when the user keeps Meslo.
 font-family = "MesloLGS NF"
-font-size = 14
+font-size = 13
 
 # Belt-and-braces only. MesloLGS NF ships NO ligature features (its GSUB has a
 # lone `rtla`; no liga/calt/dlig, and no morx/mort), so nothing is substituted

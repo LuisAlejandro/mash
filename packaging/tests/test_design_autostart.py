@@ -76,6 +76,14 @@ class DesignAutostartTest(unittest.TestCase):
         self.assertEqual(self.invocations(), "")
         self.assertEqual(self.log(), "")
 
+    def test_design_skills_opt_out_blocks_even_an_old_autostart_marker(self):
+        self.enable()
+        (self.data / "setup/skills-choice").write_text("programming=true\ndesign=false\n")
+        result = self.run_helper()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.invocations(), "")
+        self.assertEqual(self.log(), "")
+
     def test_docker_stopped_logs_and_retries_next_launch(self):
         self.enable()
         self.set_docker(available=False)
@@ -152,7 +160,9 @@ class DesignAutostartTest(unittest.TestCase):
         )
         wizard.chmod(0o755)
         herdr = self.bin / "herdr"
-        herdr.write_text("#!/bin/sh\nexit 0\n")
+        herdr.write_text(
+            '#!/bin/sh\n[ "$#" -gt 0 ] && printf "%s\\n" "$*" >> "$HOME/.mash/setup/herdr-calls"\nexit 0\n'
+        )
         herdr.chmod(0o755)
         account = self.bin / "mash-penpot-account-setup"
         account.write_text('#!/bin/sh\necho account >> "$HOME/.mash/setup/helper-runs"\n')
@@ -194,6 +204,51 @@ class DesignAutostartTest(unittest.TestCase):
             time.sleep(0.02)
         self.assertEqual((self.data / "setup/helper-runs").read_text().strip(), "account")
         self.assertEqual(self.invocations(), "")
+
+    def test_pane_skips_account_retry_when_design_skills_are_off(self):
+        pane = self.install_pane_entry(wizard_writes_marker=False)
+        (self.stack / "penpot.env").write_text("PENPOT_ACCESS_TOKEN=\n")
+        (self.data / "setup/skills-choice").write_text("programming=false\ndesign=false\n")
+        result = subprocess.run(
+            [str(pane)],
+            env={**os.environ, "HOME": str(self.home), "PATH": f"{self.bin}:/usr/bin:/bin", "MASH_INSTANCE": "default"},
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse((self.data / "setup/helper-runs").exists())
+        self.assertEqual(self.invocations(), "")
+
+    def run_pane(self, pane):
+        return subprocess.run(
+            [str(pane)],
+            env={**os.environ, "HOME": str(self.home), "PATH": f"{self.bin}:/usr/bin:/bin", "MASH_INSTANCE": "default"},
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+
+    def herdr_calls(self):
+        path = self.data / "setup/herdr-calls"
+        for _ in range(100):
+            if path.exists():
+                break
+            time.sleep(0.02)
+        return path.read_text() if path.exists() else ""
+
+    def test_first_handoff_opens_workspace_popup_once(self):
+        pane = self.install_pane_entry(wizard_writes_marker=False)
+        (self.data / "setup/skills-choice").write_text("programming=true\ndesign=false\n")
+        marker = self.data / "setup/open-workspace-once"
+        marker.write_text("1\n")
+        self.assertEqual(self.run_pane(pane).returncode, 0)
+        self.assertEqual(self.herdr_calls().strip(), "plugin action invoke herdr-workspace.open")
+        self.assertFalse(marker.exists())
+        (self.data / "setup/herdr-calls").unlink()
+        self.assertEqual(self.run_pane(pane).returncode, 0)
+        time.sleep(0.5)
+        self.assertFalse((self.data / "setup/herdr-calls").exists())
 
     def test_refuses_a_data_dir_outside_mash(self):
         outside = Path(self.tmp.name) / "elsewhere"

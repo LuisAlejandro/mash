@@ -1,39 +1,36 @@
-── Workspaces ──                                         ── Agents ──
-  ⌘⌃N        New workspace (layout profile picker)         ⌃⇧↑ / ⌃⇧↓  Previous / next agent
-  ⌘⌃⇧N       New worktree (layout profile picker)          ⌃⇧1-9      Focus agent N
-  ⌘⌃R        Rename workspace
-  ⌘⌃W        Close workspace                             ── Addons ──
-  ⌘⌃⌫        Remove worktree                               ⌃⇧G        Source control
-  ⌘⌃[ / ⌘⌃]  Previous / next workspace                     ⌘⇧O        Container status
-  ⌘⌃1-9      Switch to workspace N                         ⌘⌥P        Snippets (snippet executor)
-  ⌘⌃G        Goto (session navigator)                      ⌘P         File finder
-  ⌘⌃O        Workspace picker (sessions / workspaces)      ⌘⇧P        Command palette
-                                                           ⌘⌥L        Session search
-── Tabs ──                                                 ⌘K / ⌘L    Annotate -- capture / paste
-  ⌘T / ⌘⇧N   New dev tab (editor + agent)                  ⌘⇧L        Annotate -- manage
-  ⌘⌥T / ⌘⌥N  New agent tab                                 ⌥G         Pick link or ID
-  ⌘⇧R        New review tab (diff + agent)                 ⌘⇧X        Plugin manager
-  ⌘⇧T        New plain shell tab                           ⌘⌥Y        Fork agent from message
-  ⌘⇧[ / ⌘⇧]  Previous / next tab
-  ⌘⇧1-9      Switch to tab N                             ── Global ──
-  ⌘⇧M        Rename tab                                    ⌘⇧I        Help
-  ⌘⇧W        Close tab                                     ⌘I         Settings
-                                                           ⌘U         Detach
-── Panes ──                                                ⌘R         Reload config
-  ⌘⌥← ↓ ↑ →  Focus pane left / down / up / right           ⌘Y         Open notification target
-  ⌘⌥[ / ⌘⌥]  Cycle pane previous / next                    ⌘B         Toggle sidebar
-  ⌘⌥\ ⌘⌥-    Split vertical / horizontal
-  ⌘⌥W        Close pane
-  ⌘⌥Z        Zoom pane
+── Workspaces ──                                        ── Agents ──
+  ⌘⌃N        New workspace (layout profile picker)      ⌃⇧↑ / ⌃⇧↓  Previous / next agent
+  ⌘⌃⇧N       New worktree (layout profile picker)       ⌃⇧1-9      Focus agent N
+  ⌘⌃R        Rename workspace                           Esc        Interrupt
+  ⌘⌃W        Close workspace                            ⌃C         Clear / exit
+  ⌘⌃⌫        Remove worktree                            ⇧Tab       Cycle thinking level
+  ⌘⌃[ / ⌘⌃]  Previous / next workspace                  ⌃O         Expand tool output
+  ⌘⌃1-9      Switch to workspace N                      ⌃P         Cycle models
+  ⌘⌃G        Goto (session navigator)                   ⌃G         External editor
+  ⌘⌃O        Workspace picker (sessions / workspaces)   ⌃⇧F        Search transcript
+── Tabs ──                                              ⌥↵         Queue follow-up
+  ⌘T / ⌘⇧N   New dev tab (editor + agent)               ⌃⌥Z        Dictation (Pi Voice)
+  ⌘⌥T / ⌘⌥N  New agent tab
+  ⌘⇧R        New review tab (diff + agent)              ── Addons ──
+  ⌘⇧T        New plain shell tab                        ⌃⇧G        Source control
+  ⌘⇧[ / ⌘⇧]  Previous / next tab                        ⌘⇧O        Container status
+  ⌘⇧1-9      Switch to tab N                            ⌘⌥P        Snippets (snippet executor)
+  ⌘⇧M        Rename tab                                 ⌘P         File finder
+  ⌘⇧W        Close tab                                  ⌘⇧P        Command palette
+── Panes ──                                             ⌘⌥L        Session search
+  ⌘⌥← ↓ ↑ →  Focus pane left / down / up / right        ⌘K / ⌘L    Annotate -- capture / paste
+  ⌘⌥[ / ⌘⌥]  Cycle pane previous / next                 ⌘⇧L        Annotate -- manage
+  ⌘⌥\ ⌘⌥-    Split vertical / horizontal                ⌥G         Pick link or ID
+  ⌘⌥W        Close pane                                 ⌘⇧X        Plugin manager
+  ⌘⌥Z        Zoom pane                                  ⌘⌥Y        Fork agent from message
   ⌘⌥R        Resize mode
-
-── Editor ──                                               ── Agent ──
-  ⌘O         Open file                                      Esc        Interrupt
-  ⌘S         Save                                           ⌃C         Clear / exit
-  ⌘F         Find / replace in buffer                      ⇧Tab       Cycle thinking level
-  ⌘⇧F        Find / replace in files                       ⌃O         Expand tool output
-  ⌘⇧E        Toggle file explorer                           ⌃P         Cycle models
-  ⌘D         Add cursor to next match                      ⌃G         External editor
-  ⌘⌥C        Copy file path                                 ⌃⇧F       Search transcript
-  ⌥⇧↓        Duplicate line                                 ⌥↵        Queue follow-up
-                                                            ⌃⌥Z        Dictation (Pi Voice)
+                                                        ── Global ──
+── Editor ──                                            ⌘⇧I        Help
+  ⌘O         Open file                                  ⌘I         Settings
+  ⌘S         Save                                       ⌘U         Detach
+  ⌘F         Find / replace in buffer                   ⌘R         Reload config
+  ⌘⇧F        Find / replace in files                    ⌘Y         Open notification target
+  ⌘⇧E        Toggle file explorer                       ⌘B         Toggle sidebar
+  ⌘D         Add cursor to next match
+  ⌘⌥C        Copy file path
+  ⌥⇧↓        Duplicate line

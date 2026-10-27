@@ -1543,6 +1543,28 @@ mash_install_design_skills() {
     echo "the design stack must not carry penpot.env" >&2
     exit 1
   fi
+
+  # Runtime copies only selected suites into ~/.mash. Keep the inventory
+  # beside the staged defaults so launchers and ownership sync agree, even if
+  # a future pinned release adds a skill or agent with a new name.
+  {
+    printf '%s\n' AGENTS.md APPEND_SYSTEM.md \
+      extensions/mash-hindsight-daemon.ts scripts/ensure-hindsight-daemon.sh
+    for name in "$(mash_skills_src)/src/skills"/*; do
+      [ -d "$name" ] && printf 'skills/%s\n' "$(basename "$name")"
+    done
+    for name in "$(mash_skills_src)/src/agents"/*; do
+      [ -f "$name" ] && printf 'agents/%s\n' "$(basename "$name")"
+    done
+  } >"$(mash_res)/defaults/optional-programming.txt"
+  {
+    for name in "$src/src/skills"/*; do
+      [ -d "$name" ] && printf 'skills/%s\n' "$(basename "$name")"
+    done
+    for name in "$src/src/agents"/*; do
+      [ -f "$name" ] && printf 'agents/%s\n' "$(basename "$name")"
+    done
+  } >"$(mash_res)/defaults/optional-design.txt"
 }
 
 mash_write_pins() {
