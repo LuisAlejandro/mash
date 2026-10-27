@@ -617,19 +617,19 @@
       "when": "normal"
     },
     {
-      "key": "Up",
+      "key": "k",
       "modifiers": [
-        "ctrl",
-        "alt"
+        "alt",
+        "shift"
       ],
       "action": "add_cursor_above",
       "when": "normal"
     },
     {
-      "key": "Down",
+      "key": "j",
       "modifiers": [
-        "ctrl",
-        "alt"
+        "alt",
+        "shift"
       ],
       "action": "add_cursor_below",
       "when": "normal"

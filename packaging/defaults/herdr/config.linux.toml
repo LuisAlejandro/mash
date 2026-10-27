@@ -66,7 +66,12 @@ open_notification_target = "ctrl+alt+y"
 # being absent from [keys] (which would leave the prefix default active).
 new_workspace = ""
 new_worktree = ""
-rename_workspace = "ctrl+alt+shift+r"
+# NOT ctrl+alt+shift+r: gnome-shell registers that as show-screen-recording-ui
+# (org.gnome.shell.keybindings, js/ui/screenshot.js), so pressing it started a
+# screencast instead of renaming anything -- GNOME grabs in the compositor,
+# before the window, and no client-side unbind can win that. Moved onto the same
+# "m" rename_tab uses.
+rename_workspace = "ctrl+alt+shift+m"
 switch_workspace = "ctrl+alt+shift+1..9"
 
 # Sequential workspace movement, list-relative so it reaches workspace 10+,
@@ -97,19 +102,30 @@ split_vertical = "ctrl+alt+backslash"
 split_horizontal = "ctrl+alt+minus"
 
 # modifier with the arrow keys -- a uniform arrow set for all four directions.
-# Requires ALL FOUR goto_split unbinds in Ghostty (super+alt+arrow_left,
-# arrow_right, arrow_up, arrow_down). Ghostty binds goto_split to every one of
-# the four arrows by default and, being non-`performable:`, consumes the chord
-# unconditionally -- so an unbind is required per direction, not just for the
-# two that moved.
-# Releasing up/down also orphans Fresh's add_cursor_above/below, which lived
-# on that exact chord; reassigned to ctrl+alt+up/down in Fresh's own config,
-# reclaiming Fresh's own stock-keymap fallback for the same actions.
 # REPLACES ctrl+b h/j/k/l.
-focus_pane_left = "ctrl+alt+left"
-focus_pane_down = "ctrl+alt+down"
-focus_pane_up = "ctrl+alt+up"
-focus_pane_right = "ctrl+alt+right"
+#
+# NOT ctrl+alt+arrows. GNOME owns all four in the compositor:
+#   org.gnome.desktop.wm.keybindings
+#     switch-to-workspace-left/right = <Super>Page_Up/Down, <Super><Alt>Left/Right,
+#                                      <Control><Alt>Left/Right
+#     switch-to-workspace-up/down    = <Control><Alt>Up/Down
+#     move-to-workspace-*            = the same chords with Shift added
+# mutter runs its handler and returns CLUTTER_EVENT_STOP
+# (src/core/keybindings.c), so the key never reaches the window: pane focus was
+# unreachable by keyboard, and with a single workspace the up/down pair silently
+# did nothing. The move-to-workspace-* Shift variants rule out
+# ctrl+alt+shift+arrows as well, so the family moves to ctrl+super, free in
+# GNOME (its one clash, ctrl+super+up = maximize, belongs to the Unity profile,
+# not Ubuntu's), in Ghostty's Linux defaults, in the GTK menu and in Fresh.
+# The four goto_split unbinds in Ghostty stay load-bearing: goto_split is in
+# mash_removed_ui, and a binding whose action performs nothing still consumes
+# its chord unless it carries `performable:`.
+# Fresh's add_cursor_above/below also lived on ctrl+alt+up/down; they moved to
+# alt+shift+k/j in config.linux.json, the vim direction.
+focus_pane_left = "ctrl+super+left"
+focus_pane_down = "ctrl+super+down"
+focus_pane_up = "ctrl+super+up"
+focus_pane_right = "ctrl+super+right"
 
 # pair down. Free in Ghostty and Herdr both, so no unbind is required.
 # REPLACES the prefix defaults ctrl+b tab / ctrl+b shift+tab.

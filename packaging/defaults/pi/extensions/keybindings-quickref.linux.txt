@@ -1,17 +1,20 @@
 Mash on Linux — keyboard
 
 Ctrl is the editing modifier, so Mash's own families live on Ctrl+Alt and
-Ctrl+Shift, which GNOME leaves alone. Inside a pane the shell keeps every
-bare Ctrl chord (Ctrl+C, Ctrl+R, Ctrl+U) and Fresh keeps the editing ones.
+Ctrl+Shift. Two GNOME grabs sit in that space and cannot be won back -- GNOME
+reads the key in the compositor, before Mash exists -- so pane focus uses
+Ctrl+Super instead, and workspace rename avoids Ctrl+Alt+Shift+R. Inside a pane
+the shell keeps every bare Ctrl chord (Ctrl+C, Ctrl+R, Ctrl+U) and Fresh keeps
+the editing ones.
 
   Ctrl+Alt+W       Close pane
   Ctrl+Shift+W     Close tab
   Ctrl+Alt+Shift+W Close workspace
   Ctrl+Alt+U       Detach
-  Ctrl+Alt+Down    Focus pane down
-  Ctrl+Alt+Left    Focus pane left
-  Ctrl+Alt+Right   Focus pane right
-  Ctrl+Alt+Up      Focus pane up
+  Ctrl+Super+Down  Focus pane down
+  Ctrl+Super+Left  Focus pane left
+  Ctrl+Super+Right Focus pane right
+  Ctrl+Super+Up    Focus pane up
   Ctrl+Alt+Shift+G Go to session
   Ctrl+Shift+I     Help
   Ctrl+Shift+Down  Next agent
@@ -26,7 +29,7 @@ bare Ctrl chord (Ctrl+C, Ctrl+R, Ctrl+U) and Fresh keeps the editing ones.
   Ctrl+Alt+Shift+K Reload config
   Ctrl+Alt+Shift+⌫ Remove worktree
   Ctrl+Shift+M     Rename tab
-  Ctrl+Alt+Shift+R Rename workspace
+  Ctrl+Alt+Shift+M Rename workspace
   Ctrl+Alt+R       Resize mode
   Ctrl+Alt+I       Settings
   Ctrl+Alt+-       Split pane horizontally
