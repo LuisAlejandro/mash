@@ -660,9 +660,18 @@ mash_build_plugins() {
   if [ "$(uname -s)" = "Darwin" ]; then
     git clone --depth 1 https://github.com/dot/herdr-terminal-notifier.git "$work/src/notifier"
     mash_copy_tree "$work/src/notifier" "$plugins/dot.terminal-notifier"
-    local plist="$plugins/dot.terminal-notifier/assets/HerdrNotify.app/Contents/Info.plist"
+    local notifier="$plugins/dot.terminal-notifier/assets/HerdrNotify.app"
+    local plist="$notifier/Contents/Info.plist"
     /usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier app.mash.notify' "$plist"
-    codesign --force --deep --sign - "$plugins/dot.terminal-notifier/assets/HerdrNotify.app"
+    # Notification Center draws the alert's name and icon from the bundle that
+    # posted it, which upstream ships as "herdr" with Ghostty's Terminal.icns.
+    # Mash posts these, so they carry Mash's name and artwork instead.
+    /usr/libexec/PlistBuddy -c 'Set :CFBundleName Mash' "$plist"
+    /usr/libexec/PlistBuddy -c 'Set :CFBundleDisplayName Mash' "$plist"
+    /usr/libexec/PlistBuddy -c 'Set :CFBundleIconFile Mash' "$plist"
+    cp "$root/packaging/Mash.icns" "$notifier/Contents/Resources/Mash.icns"
+    rm -f "$notifier/Contents/Resources/Terminal.icns"
+    codesign --force --deep --sign - "$notifier"
   fi
 
   git clone --depth 1 https://github.com/plannotator/herdr-annotate.git "$work/src/annotate"
@@ -823,6 +832,8 @@ mash_install_skills() {
     "APPEND_SYSTEM.md is missing ask_user argument guidance"
   mash_require_text "$pi/APPEND_SYSTEM.md" 'uv_cwd' \
     "APPEND_SYSTEM.md is missing codemode cwd guidance"
+  mash_require_text "$pi/APPEND_SYSTEM.md" '^## Review a finished session$' \
+    "APPEND_SYSTEM.md is missing the review-tab suggestion"
   mash_require_text "$pi/APPEND_SYSTEM.md" 'HOME. is not changed' \
     "APPEND_SYSTEM.md is missing the Mash environment section"
   # The rewrite pass must not have touched the sentence that names the user's
@@ -950,7 +961,7 @@ EOF
 }
 
 mash_write_append_system() {
-  local src="$1" dest="$2" mdc name description
+  local src="$1" dest="$2" mdc name description review_chord
   {
     echo "# Mash Programming Skills — always-on rules"
     echo
@@ -994,7 +1005,17 @@ for everyone live in the bundle and are added through the build instead.
 For the full map — every config path, how to author an extension or skill, how
 to install a package, which machine tools Mash borrows, and what must go through
 the repository instead — load the `mash-customize` skill.
-
+EOF
+    # The review-tab chord is the one platform difference in this guidance, and
+    # it is the point of the suggestion, so it is printed here rather than
+    # written into the quoted heredocs around it.
+    if [ "$(uname -s)" = "Darwin" ]; then
+      review_chord='⌘⇧R'
+    else
+      review_chord='Ctrl+Shift+R'
+    fi
+    printf '## Review a finished session\n\nWhen a session changes two or more files, close it by suggesting the user\nopen a review tab (`%s`): the tab pairs the session diff with an agent, so the\nwork gets read instead of trusted. One short line, once per session. Skip it\nfor a single-file or trivial edit.\n\n' "$review_chord"
+    cat <<'EOF'
 ## Tool-call recovery
 
 - For `ask_user`, use exactly one form: `question` for one question, or
