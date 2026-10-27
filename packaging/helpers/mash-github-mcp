@@ -1,0 +1,109 @@
+#!/bin/bash
+# Register GitHub's MCP server in Mash's Pi -- only while Mash's own gh is
+# signed in.
+#
+#   mash-github-mcp <data-dir>
+#
+# The first-launch wizard signs `gh` into ~/.mash/config/gh, and the mash-pr
+# skill expects a GitHub MCP. This connects the two without ever writing the
+# token down: the Authorization header is a Pi command value, run each time Pi
+# connects, that asks Mash's isolated gh for its current token. Pi never keeps
+# the token in mcp.json, and a rotated or revoked login is picked up on the next
+# connection.
+#
+# Run by the wizard right after sign-in, and by every launch so existing
+# installs (whose wizard already finished) are brought in too, and a later
+# `gh auth logout` takes the server away again. Only an entry Mash wrote -- it
+# carries a marker -- is ever replaced or removed; a user's own `github` server
+# is left exactly as it is. Every failure is silent.
+set -u
+
+d="${1:-}"
+[ -n "$d" ] && [ -d "$d" ] || exit 0
+mcp="$d/pi/agent/mcp.json"
+gh_dir="$d/config/gh"
+[ -f "$mcp" ] || exit 0
+
+# Signed in means Mash's own gh can produce a token. Inherited tokens are
+# removed so a token from the surrounding shell can never stand in for one.
+signed_in=0
+if command -v gh >/dev/null 2>&1 &&
+  env -u GH_TOKEN -u GITHUB_TOKEN -u GH_ENTERPRISE_TOKEN -u GH_HOST \
+    GH_CONFIG_DIR="$gh_dir" gh auth token --hostname github.com >/dev/null 2>&1; then
+  signed_in=1
+fi
+
+python=""
+for candidate in "$(dirname "$0")/../python/bin/python3" python3; do
+  if command -v "$candidate" >/dev/null 2>&1; then
+    python="$candidate"
+    break
+  fi
+done
+[ -n "$python" ] || exit 0
+
+PYTHONDONTWRITEBYTECODE=1 "$python" - "$mcp" "$gh_dir" "$signed_in" <<'PY' 2>/dev/null || true
+import json
+import os
+import shlex
+import sys
+
+path, gh_dir, signed_in = sys.argv[1], sys.argv[2], sys.argv[3] == "1"
+MARK = "mash-github"
+
+try:
+    with open(path, encoding="utf-8") as fh:
+        config = json.load(fh)
+except (OSError, ValueError):
+    sys.exit(0)  # never rewrite a file we cannot parse
+servers = config.get("mcpServers") if isinstance(config, dict) else None
+if not isinstance(servers, dict):
+    sys.exit(0)
+
+# The token comes from Mash's own gh at connection time and is never written
+# down. `|| true` keeps a lost sign-in from producing a bare "Bearer " header:
+# with no token, the whole value is empty and Pi reports the server as failing
+# to authenticate rather than sending a malformed credential.
+token = (
+    "env -u GH_TOKEN -u GITHUB_TOKEN -u GH_ENTERPRISE_TOKEN -u GH_HOST "
+    f"GH_CONFIG_DIR={shlex.quote(gh_dir)} gh auth token --hostname github.com"
+)
+wanted = {
+    "type": "http",
+    "url": "https://api.githubcopilot.com/mcp/",
+    "headers": {
+        "Authorization": f'!t="$({token} 2>/dev/null)" && [ -n "$t" ] && printf "Bearer %s" "$t"',
+    },
+    "description": "GitHub: repositories, pull requests, issues and Actions, signed in through Mash's gh login",
+    "x-mash": MARK,
+}
+
+current = servers.get("github")
+ours = isinstance(current, dict) and current.get("x-mash") == MARK
+if current is not None and not ours:
+    sys.exit(0)  # the user's own github server is not ours to manage
+
+if signed_in:
+    if current == wanted:
+        sys.exit(0)
+    servers["github"] = wanted
+elif ours:
+    del servers["github"]
+else:
+    sys.exit(0)
+
+mode = os.stat(path).st_mode & 0o777
+tmp = f"{path}.mash-github-{os.getpid()}"
+try:
+    with open(tmp, "w", encoding="utf-8") as fh:
+        json.dump(config, fh, indent=2)
+        fh.write("\n")
+    os.chmod(tmp, mode)
+    os.replace(tmp, path)
+finally:
+    try:
+        os.unlink(tmp)
+    except FileNotFoundError:
+        pass
+PY
+exit 0

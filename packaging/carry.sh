@@ -155,7 +155,7 @@ mash_pins_check() {
 
 mash_require_sources() {
   local name font plugins="$root/packaging/plugins"
-  for name in cache-hit dev-tab fingers fork-from-message herdr-orchestration pr-watch-focus herdr-workspace telescope; do
+  for name in cache-hit dev-tab fingers fork-from-message herdr-orchestration pr-watch-focus herdr-workspace telescope mash-update-notice; do
     [ -f "$plugins/$name/herdr-plugin.toml" ] || {
       echo "missing plugin source $plugins/$name" >&2
       exit 1
@@ -356,6 +356,110 @@ mash_ghostty_trim_check() {
     status=1
   fi
 
+  # Second pass: menu items that do not fit a Herdr host, and the code that the
+  # first pass left compiled behind its rejected actions.
+  local xib="$src/macos/Sources/App/MainMenu.xib"
+  for item in "Make Ghostty the Default Terminal" "Check for Updates..." \
+    "Undo" "Redo" "Change Terminal Title..." "Float on Top" \
+    "Use as Default" "Ghostty Help" "About Ghostty" "Hide Ghostty" \
+    "Quit Ghostty"; do
+    if grep -qF "title=\"$item\"" "$xib" 2>/dev/null; then
+      echo "Ghostty fork reintroduced the macOS menu item '$item'" >&2
+      status=1
+    fi
+  done
+  # Items Mash keeps, including the renamed app-menu entries.
+  for item in "About Mash" "Hide Mash" "Quit Mash" "Close Window" "Copy" \
+    "Paste" "Show/Hide All Terminals" "Terminal Read-only"; do
+    grep -qF "title=\"$item\"" "$xib" 2>/dev/null || {
+      echo "Ghostty fork lost the macOS menu item '$item'" >&2
+      status=1
+    }
+  done
+  # The terminal right-click menu is built in Swift, not the xib.
+  local surface_view="$src/macos/Sources/Ghostty/Surface View/SurfaceView_AppKit.swift"
+  for item in "Split Right" "Split Left" "Split Down" "Split Up" \
+    "Toggle Terminal Inspector" "Change Tab Title..." "Change Terminal Title..."; do
+    if grep -qF "withTitle: \"$item\"" "$surface_view" 2>/dev/null; then
+      echo "Ghostty fork reintroduced '$item' in the macOS terminal context menu" >&2
+      status=1
+    fi
+  done
+  if grep -qF 'title: "Rename Tab..."' \
+    "$src/macos/Sources/Features/Terminal/Window Styles/TerminalWindow.swift" 2>/dev/null; then
+    echo "Ghostty fork reintroduced the macOS 'Rename Tab...' tab menu item" >&2
+    status=1
+  fi
+  for path in "macos/Sources/Features/QuickTerminal" \
+    "macos/Sources/Features/Command Palette" "macos/Sources/Features/Update" \
+    "macos/Sources/Features/App Intents/QuickTerminalIntent.swift" \
+    "macos/Sources/Features/App Intents/CommandPaletteIntent.swift" \
+    "macos/Sources/Ghostty/Surface View/InspectorView.swift" \
+    "src/apprt/gtk/class/command_palette.zig" \
+    "src/apprt/gtk/class/inspector_widget.zig" \
+    "src/apprt/gtk/class/inspector_window.zig" \
+    "src/apprt/gtk/class/imgui_widget.zig" \
+    "src/apprt/gtk/class/search_overlay.zig" \
+    "src/apprt/gtk/class/title_dialog.zig" \
+    "src/cli/toggle_quick_terminal.zig"; do
+    if [ -e "$src/$path" ]; then
+      echo "Ghostty fork still ships $path" >&2
+      status=1
+    fi
+  done
+  if grep -qi 'sparkle' "$src/macos/Ghostty.xcodeproj/project.pbxproj" 2>/dev/null; then
+    echo "Ghostty fork still links the Sparkle updater" >&2
+    status=1
+  fi
+  if grep -q '<key>SU' "$src/macos/Ghostty-Info.plist" 2>/dev/null; then
+    echo "Ghostty fork still carries Sparkle keys in Info.plist" >&2
+    status=1
+  fi
+  # The undo registrations stay in tab and window code; a zero expiry is what
+  # turns every one of them into a no-op, so a closed window frees its instance.
+  grep -qF 'mash: no Ghostty undo' \
+    "$src/macos/Sources/Features/Terminal/BaseTerminalController.swift" 2>/dev/null || {
+    echo "Ghostty fork re-enabled undo of closed windows" >&2
+    status=1
+  }
+  for name in undo redo check_for_updates toggle_window_float_on_top \
+    prompt_surface_title prompt_tab_title prompt_window_title set_surface_title; do
+    awk '/^(pub )?const mash_removed_ui/,/^}\);/' "$src/src/Surface.zig" 2>/dev/null |
+      grep -qE "^[[:space:]]*\.$name," || {
+      echo "Ghostty fork no longer rejects the '$name' action" >&2
+      status=1
+    }
+  done
+  for needle in 'win.prompt-surface-title' 'win.prompt-window-title' \
+    'label: _("About Ghostty")'; do
+    if grep -qF "$needle" "$gtk_window" "$gtk_surface" 2>/dev/null; then
+      echo "Ghostty fork reintroduced '$needle' in the GTK menus" >&2
+      status=1
+    fi
+  done
+  grep -qF 'label: _("About Mash Terminal")' "$gtk_window" 2>/dev/null || {
+    echo "Ghostty fork lost the GTK 'About Mash Terminal' menu item" >&2
+    status=1
+  }
+
+  # Mash's own menus: every item invokes a Herdr command by sending its chord
+  # through mash_send_key. Losing the action or either menu table drops the
+  # whole menu set on that platform.
+  grep -qE '^    mash_send_key: \[\]const u8,' "$src/src/input/Binding.zig" 2>/dev/null || {
+    echo "Ghostty fork lost the mash_send_key action Mash's menus depend on" >&2
+    status=1
+  }
+  grep -qF 'MashMenus.install' "$src/macos/Sources/App/AppDelegate.swift" 2>/dev/null &&
+    [ -f "$src/macos/Sources/App/MashMenus.swift" ] || {
+    echo "Ghostty fork lost Mash's macOS menu items" >&2
+    status=1
+  }
+  grep -qF 'action: "win.mash-send-key"' "$gtk_window" 2>/dev/null &&
+    grep -qF '.init("mash-send-key", ' "$src/src/apprt/gtk/class/window.zig" 2>/dev/null || {
+    echo "Ghostty fork lost Mash's GTK menu items" >&2
+    status=1
+  }
+
   return "$status"
 }
 
@@ -500,6 +604,9 @@ mash_build_plugins() {
     image-popup pr-watch-focus; do
     mash_copy_tree "$src/$name" "$plugins/$name"
   done
+  # Both platforms use one popup plugin: Linux's notice pane is read-only;
+  # macOS's update pane downloads a verified release before installation.
+  mash_copy_tree "$src/mash-update-notice" "$plugins/mash-update-notice"
 
   mash_copy_tree "$src/herdr-workspace" "$plugins/herdr-workspace"
   if ! patch -p1 -d "$plugins/herdr-workspace" \
@@ -752,7 +859,10 @@ mash_install_skills() {
       exit 1
     }
   done
-  if grep -q 'github' "$pi/mcp.json"; then
+  # GitHub's MCP is added per user by mash-github-mcp after sign-in, never
+  # shipped. What must never ship is a credential, so look for the token
+  # shapes themselves rather than the word "github".
+  if grep -qE 'gh[opsu]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}' "$pi/mcp.json"; then
     echo "mcp.json must not carry a GitHub token" >&2
     exit 1
   fi

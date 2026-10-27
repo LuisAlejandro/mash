@@ -388,9 +388,11 @@ mash_stage_portable_payload() {
 
   # Only the shipped helpers: their tests and bytecode live beside them.
   for helper in "$root/packaging/helpers"/*; do
-    # macOS-only: takes the click payload of the terminal-notifier plugin, which
-    # is not staged on Linux. A no-op there is still payload nobody can use.
-    case "$(basename "$helper")" in mash-notify) continue ;; esac
+    # macOS-only: these use the native desktop update path or notifier app.
+    # Linux keeps APT and the read-only notice; no swap or download helper.
+    case "$(basename "$helper")" in
+      mash-notify|mash-update-verify|mash-update-apply|mash-update-swap.c) continue ;;
+    esac
     [ -f "$helper" ] || continue
     case "$helper" in
     *.pyc) continue ;;

@@ -39,11 +39,11 @@ bare Ctrl chord (Ctrl+C, Ctrl+R, Ctrl+U) and Fresh keeps the editing ones.
   ── Launchers ──
   Ctrl+Shift+T     new plain shell tab
   Ctrl+Alt+T       new dev tab (editor + agent)
-  Ctrl+Alt+T       new agent tab
+  Ctrl+Alt+Shift+T new agent tab
   Ctrl+Alt+P       File finder
   Ctrl+Shift+G     Source control
   Ctrl+Shift+O     Container status
-  Ctrl+Alt+P       Snippets
+  Ctrl+Alt+Shift+P Snippets
   Ctrl+Shift+R     new review tab (diff + agent)
   Ctrl+Alt+K       annotate text
   Ctrl+Alt+L       paste annotations into this tab's agent and archive them
@@ -51,11 +51,11 @@ bare Ctrl chord (Ctrl+C, Ctrl+R, Ctrl+U) and Fresh keeps the editing ones.
   Alt+G            Pick link or ID
   Ctrl+Shift+X     Plugin manager
   Ctrl+Alt+Shift+N New workspace (layout profile)
-  Ctrl+Alt+Shift+N New worktree (layout profile)
+  Ctrl+Alt+Shift+E New worktree (layout profile)
   Ctrl+Alt+Shift+O Workspace picker
   Ctrl+Shift+P     Command palette
-  Ctrl+Alt+Y       Fork agent from message
-  Ctrl+Alt+L       Session search
+  Ctrl+Alt+Shift+Y Fork agent from message
+  Ctrl+Alt+Shift+L Session search
 
 Copy/paste: Ctrl+Shift+C / Ctrl+Shift+V, or the mouse. Fresh's own save,
 undo and search chords are unchanged from the macOS build.

@@ -28,11 +28,24 @@ def load_herdr() -> dict:
 
 
 def herdr_chords(config: dict) -> list[tuple[str, str]]:
+    """Every chord with its owner: built-in actions and [[keys.command]] entries.
+
+    Custom commands live in a list under keys.command rather than as scalar
+    keys, so a scan of scalars alone misses them -- which is how five Linux
+    chords once shipped bound to two commands each.
+    """
     pairs = []
     for action, value in config.get("keys", {}).items():
+        if action == "command":
+            continue
         for chord in value if isinstance(value, list) else [value]:
             if isinstance(chord, str) and chord:
                 pairs.append((action, chord))
+    for command in config.get("keys", {}).get("command", []):
+        keys = command.get("key", [])
+        for chord in keys if isinstance(keys, list) else [keys]:
+            if chord:
+                pairs.append((command.get("description", "?"), chord))
     return pairs
 
 

@@ -1,0 +1,110 @@
+#!/bin/bash
+# After the user confirms: stop every process from this Mash bundle, atomically
+# exchange the prepared app with the installed one, and reopen Mash. This file
+# and mash-update-swap run from a temporary directory, outside the bundle they
+# replace. Only call it after mash-update-verify has checked the downloaded app.
+set -u
+
+staged="" dest="" data="" work="" version=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+  --app) staged="${2:-}" ;;
+  --dest) dest="${2:-}" ;;
+  --data) data="${2:-}" ;;
+  --work) work="${2:-}" ;;
+  --version) version="${2:-}" ;;
+  *) exit 2 ;;
+  esac
+  shift 2
+done
+
+# The path checks keep even a bad caller from turning a rm -rf into a broad
+# deletion. The work directory must be distinct from the app and its parent.
+case "$dest" in *.app) ;; *) exit 2 ;; esac
+case "$(basename "$work")" in mash-update-??????) ;; *) exit 2 ;; esac
+[ "$staged" = "$work/Mash.app" ] && [ -d "$dest/Contents" ] &&
+  [ ! -L "$dest" ] && [ ! -L "$work" ] && [ -d "$staged/Contents" ] &&
+  [ -d "$work" ] && [ -x "$work/mash-update-swap" ] || exit 2
+# Keep the caller's logical path: on macOS /var is a symlink to /private/var,
+# so pwd -P would reject a legitimate writable bundle under /var.
+parent="$(cd "$(dirname "$dest")" && pwd -L)" || exit 2
+[ "$dest" = "$parent/$(basename "$dest")" ] && [ -w "$parent" ] || exit 2
+case "$work/" in "$parent/$(basename "$dest")/"*) exit 2 ;; esac
+
+record="$data/local/state/update-notice"
+sibling=""
+cleanup() {
+  # On success the sibling contains the old app; on failure it contains a
+  # partially copied new one. The destination is never removed by cleanup.
+  [ -n "$sibling" ] && rm -rf "$sibling"
+  [ -n "$work" ] && rm -rf "$work"
+}
+trap cleanup EXIT
+
+failure() {
+  local reason="$1"
+  if [ "$(cat "$record" 2>/dev/null)" = "$version" ]; then
+    rm -f "$record"
+    printf '%s\n' "$version" >"$data/local/state/update-retry"
+  fi
+  rm -f "$data/local/state/update-pending"
+  osascript -e "display notification \"$reason\" with title \"Mash update failed\"" >/dev/null 2>&1 || true
+  exit 1
+}
+
+# Save Herdr's per-instance state before stopping panes. `server stop` is
+# cooperative; TERM for any remaining executable under this bundle is also a
+# graceful signal, never SIGKILL. No process from the bundle can remain when
+# the swap begins, including a plugin or another window's separate server.
+herdr="$dest/Contents/Resources/bin/herdr"
+if [ -x "$herdr" ]; then
+  for socket in "$data/run/herdr.sock" "$data/run/"*/herdr.sock; do
+    [ -S "$socket" ] || continue
+    HERDR_SOCKET_PATH="$socket" "$herdr" server stop >/dev/null 2>&1 || true
+  done
+fi
+osascript -e 'tell application id "app.mash.ghostty" to quit' >/dev/null 2>&1 || true
+
+# `comm` is the executable path, not argv: matching argv would catch an
+# unrelated editor or terminal whose command mentions Mash.app as a filename.
+processes() {
+  ps -ax -o pid=,comm= 2>/dev/null | while read -r pid exe; do
+    case "$exe" in "$dest/"*) printf '%s\n' "$pid" ;; esac
+  done
+}
+for _ in $(seq 1 60); do
+  active="$(processes)"
+  [ -z "$active" ] && break
+  while read -r pid; do
+    case "$pid" in '' | *[!0-9]*) continue ;; esac
+    kill -TERM "$pid" 2>/dev/null || true
+  done <<<"$active"
+  sleep 1
+done
+[ -z "$(processes)" ] || failure "Mash did not quit; the old app is still in place."
+
+# Copy the already verified app onto the installed app's volume first. The
+# atomic exchange never spans volumes. No installed path is moved or deleted
+# until the copy and its own signature/ Gatekeeper checks succeed.
+sibling="$(mktemp -d "$parent/.mash-update-XXXXXX")" ||
+  failure "Could not prepare the update beside Mash."
+ditto "$staged" "$sibling/Mash.app" >/dev/null 2>&1 ||
+  failure "Could not copy the update beside Mash."
+codesign --verify --deep --strict "$sibling/Mash.app" >/dev/null 2>&1 ||
+  failure "The copied app failed signature verification."
+spctl --assess --type execute "$sibling/Mash.app" >/dev/null 2>&1 ||
+  failure "Gatekeeper rejected the copied app."
+
+# macOS RENAME_SWAP exchanges both complete directories in one filesystem
+# operation. Unsupported filesystems fail without touching either. Never use
+# `mv old aside; mv new into place`: a crash between them loses the app path.
+"$work/mash-update-swap" "$sibling/Mash.app" "$dest" >/dev/null 2>&1 ||
+  failure "This disk cannot atomically update Mash; the old app is intact."
+# The installed path now holds the new app. The sibling holds the old app, so
+# even a crash here leaves a working app at the usual path. A marker consumed
+# on the first new window confirms to the user which version is now running.
+[ -n "$version" ] && printf '%s\n' "$version" >"$data/local/state/update-success"
+rm -f "$data/local/state/update-pending" "$data/local/state/update-retry"
+open "$dest" >/dev/null 2>&1 ||
+  failure "The new Mash is installed, but could not be reopened. Open it manually."
+exit 0

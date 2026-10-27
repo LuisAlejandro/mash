@@ -39,8 +39,10 @@ used.
 | Capability | Why it cannot be automated |
 | --- | --- |
 | Cross-window focus behaviour | a headless compositor has one window; assertions about focus stealing between workspaces need two |
-| Mash Terminal menus and second instance | On both GNOME Xorg and Wayland, inspect the titlebar, main menu, and terminal right-click menu: no Ghostty tab/overview, split, command palette, find, Quick Terminal, or inspector affordance; New Window remains and opens another Mash instance with its own Herdr workspaces |
+| Mash Terminal menus and second instance | On both GNOME Xorg and Wayland, inspect the titlebar, main menu, and terminal right-click menu: no Ghostty tab/overview, split, command palette, find, Quick Terminal, inspector, or Change Title affordance; the main menu reads "About Mash Terminal"; New Window remains and opens another Mash instance with its own Herdr workspaces |
 | Herdr input and clipboard | In a Herdr shell and a Fresh pane, verify mouse clicks, right-click routing, scrolling, selection copy and clipboard paste still work; the headless config check cannot prove event delivery |
+| Mash menu items | Open the titlebar main menu: File, Edit, View, Go and Tools submenus and Settings, Reload Configuration, Detach and Mash Help each show their chord. Pick one item per submenu and confirm Herdr does what the shortcut does. With two Mash windows open, an item acts only in the window whose menu was used. Edit Herdr's config and pick Reload Configuration: the change applies without a restart, and Fresh panes are untouched. A chord rebound by the user leaves its menu item inert; that is expected |
+| Update notice | On GNOME Xorg and Wayland, install an older `letsmash`, make a newer one the APT candidate (published, or a scratch repository as in `packaging/tests/apt-upgrade-smoke.sh`), and open Mash: one centered popup and one desktop notification name both versions and `sudo apt install --only-upgrade letsmash`, and any key closes the popup. Open a second window and relaunch: nothing appears. Delete `/etc/apt/sources.list.d/letsmash.sources`, run `apt-get update`, and relaunch: nothing appears. The popup is drawn by the attached client and the notification surface is not observable headlessly |
 | CUA background input into an occluded window | depends on compositor policy a headless backend does not implement |
 | Notification delivery appearance | the session bus is observable, the notification surface is not |
 | Font rendering | needs a real GPU/screen to judge, not only fontconfig discovery |
@@ -59,3 +61,31 @@ instance, but Ghostty tabs, splits, palette, find, Quick Terminal, and inspector
 are absent. Ask AppleScript to create a `new tab` or `split`; each must fail or do
 nothing, without creating another Ghostty surface. Confirm copy/paste and Herdr
 mouse input still work in a shell pane and in Fresh.
+
+The app menu reads About Mash, Hide Mash, and Quit Mash, with no Check for Updates,
+Make Ghostty the Default Terminal, or Help menu. Edit has no Undo or Redo, and View
+and Window have no Change Terminal Title, Float on Top, or Use as Default; Show/Hide
+All Terminals remains. Close a Mash window, then press Cmd+Z: nothing reopens and a
+new icon click reuses the freed instance slot. The bundle carries no
+`Sparkle.framework` and its Info.plist no `SU*` keys.
+
+The menu bar adds Go, Tools and Help menus, and File, Edit and View carry Mash's
+tab, workspace, pane and annotation commands, each showing its Herdr chord.
+Choosing an item, or pressing its shortcut, does the Herdr command exactly once
+in that window only. Settings opens Herdr's settings, Reload Configuration
+reloads Ghostty and Herdr, and Detach closes the window and frees its instance.
+
+**macOS self-update sign-off (blocking for a macOS release):** Install an older
+Developer ID-signed Mash.app that already contains this updater in a writable
+location, then publish a newer signed, notarized DMG. Builds predating this
+feature (including 0.1.1) need one manual upgrade and cannot self-update. Launch the old app: a centered update
+popup and a desktop notification appear once. Press `u`: the DMG downloads with
+progress and is verified, then one confirmation names how many Mash windows
+will close. With two windows open, confirm: both terminal windows and all
+bundled Herdr servers exit, the installed app is exchanged, and the new Mash
+reopens with a one-time confirmation of the running version. Check that
+`~/.mash` workspaces, user edits and credentials are intact. Repeat using a
+signed DMG from another Team ID and a read-only mounted DMG: verification must
+reject the former before quitting, and the latter must show the notice without
+an update key. The app on disk must remain usable after every refusal. A real
+notarized pair is required; stub tests cannot prove Gatekeeper or process exit.
