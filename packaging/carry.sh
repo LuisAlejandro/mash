@@ -155,7 +155,7 @@ mash_pins_check() {
 
 mash_require_sources() {
   local name font plugins="$root/packaging/plugins"
-  for name in cache-hit dev-tab fingers fork-from-message herdr-orchestration pr-watch-focus herdr-workspace telescope; do
+  for name in cache-hit dev-tab fingers fork-from-message herdr-orchestration pr-watch-focus herdr-workspace telescope mash-update-notice; do
     [ -f "$plugins/$name/herdr-plugin.toml" ] || {
       echo "missing plugin source $plugins/$name" >&2
       exit 1
@@ -604,6 +604,9 @@ mash_build_plugins() {
     image-popup pr-watch-focus; do
     mash_copy_tree "$src/$name" "$plugins/$name"
   done
+  # Both platforms use one popup plugin: Linux's notice pane is read-only;
+  # macOS's update pane downloads a verified release before installation.
+  mash_copy_tree "$src/mash-update-notice" "$plugins/mash-update-notice"
 
   mash_copy_tree "$src/herdr-workspace" "$plugins/herdr-workspace"
   if ! patch -p1 -d "$plugins/herdr-workspace" \

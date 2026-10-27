@@ -68,6 +68,13 @@ elif [ -f "$home/.mash/local/share/mash/design/penpot.env" ] &&
   nohup "$bin_dir/mash-penpot-account-setup" "$home/.mash" </dev/null >/dev/null 2>&1 &
 fi
 
+# A newer version is announced once per release: the local APT cache on Linux,
+# the rate-limited GitHub release check on macOS. The helper waits for this
+# window's server itself, so it never delays the window.
+if [ -x "$bin_dir/mash-update-notice" ]; then
+  nohup "$bin_dir/mash-update-notice" "$res" "$home/.mash" </dev/null >/dev/null 2>&1 &
+fi
+
 # A leftover socket is removed only here, and only when nothing is using it.
 if [ -S "$HERDR_SOCKET_PATH" ] && command -v lsof >/dev/null 2>&1; then
   if ! lsof "$HERDR_SOCKET_PATH" >/dev/null 2>&1; then

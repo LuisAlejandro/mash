@@ -62,6 +62,9 @@ ship_helpers=(
   mash-voice-model
   mash-notify
   mash-seed-sync
+  mash-update-notice
+  mash-update-verify
+  mash-update-apply
 )
 
 for name in "${ship_helpers[@]}"; do
@@ -393,6 +396,11 @@ for name in "${ship_helpers[@]}"; do
   cp "$root/packaging/helpers/$name" "$app/Contents/Resources/bin/$name"
   chmod 755 "$app/Contents/Resources/bin/$name"
 done
+# Native atomic directory exchange. RENAME_SWAP has no window where the app
+# path is absent; the executable is signed with the rest of the app below.
+xcrun --sdk macosx clang -Wall -Wextra -Werror -O2 -mmacosx-version-min=14.0 \
+  -o "$app/Contents/Resources/bin/mash-update-swap" \
+  "$root/packaging/helpers/mash-update-swap.c"
 cp "$root/packaging/lib.sh" "$app/Contents/Resources/bin/lib.sh"
 cp "$root/packaging/herdr-pane" "$app/Contents/Resources/bin/herdr-pane"
 cp "$root/packaging/mash-shell" "$app/Contents/Resources/bin/mash-shell"
