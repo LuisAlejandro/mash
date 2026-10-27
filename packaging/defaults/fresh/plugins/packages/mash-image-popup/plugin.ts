@@ -18,10 +18,11 @@
  *     --env IMAGE_POPUP_FILE=<file>
  *
  * `--placement split` rather than `popup` on purpose: a popup is a CLIENT-side
- * surface, rendered by the terminal window, and only a keybinding can open one
- * -- `plugin pane open --placement popup` from a helper returns ok and draws
- * nothing, and a plugin action runs its command without opening a manifest
- * pane. A split is server-side and works from anywhere.
+ * surface, rendered by the terminal window. On herdr 0.9.3 a helper's
+ * `plugin pane open --placement popup` does draw while a client is attached
+ * (see .mash/insights/herdr-popup-from-background.md), but whether it draws
+ * with no client attached is unproven. A split is server-side and works from
+ * anywhere, and an image wants the room.
  *
  * `--direction right` is a VERTICAL split: the image lands beside the editor,
  * not under it. `down` would stack them.

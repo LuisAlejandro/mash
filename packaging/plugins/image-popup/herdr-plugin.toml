@@ -1,11 +1,12 @@
 # Show an image file in a Herdr popup with real pixels (Kitty graphics).
 #
 # A popup is a client-side surface: it is rendered by the terminal window the
-# user is looking at, not stored as a pane on the server. That is why opening it
-# with `herdr plugin pane open --placement popup` from a background helper
-# returns "ok" and draws nothing -- there is no client on that call. The pane
-# appears when it is opened by a plugin ACTION, which runs in the client's own
-# context. The Fresh plugin therefore invokes the action below.
+# user is looking at, not stored as a pane on the server. On herdr 0.9.3,
+# `herdr plugin pane open --placement popup` from a background helper or an
+# event hook does draw, centered, while a client is attached; only a call with
+# no client attached is unproven, and is the likely source of the earlier
+# "returns ok and draws nothing" observation. See
+# .mash/insights/herdr-popup-from-background.md.
 id = "image-popup"
 name = "Image Popup"
 version = "0.1.0"
