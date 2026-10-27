@@ -178,8 +178,13 @@ mash_show_notice() {
     sleep 0.2
   done
   sleep 2
+  local width=56 height=9
+  if [ "$entrypoint" = update ]; then
+    width=64
+    height=16
+  fi
   "$herdr" plugin pane open --plugin mash-update-notice --entrypoint "$entrypoint" \
-    --placement popup --width 56 --height 9 --focus \
+    --placement popup --width "$width" --height "$height" --focus \
     --env "MASH_UPDATE_INSTALLED=$installed" \
     --env "MASH_UPDATE_CANDIDATE=$candidate" \
     --env "MASH_UPDATE_CAN_APPLY=$can_apply" \

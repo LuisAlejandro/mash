@@ -190,6 +190,8 @@ check "the request names the latest release endpoint" \
 check "macOS notifies once" test "$(count notify)" = 1
 check "macOS opens the interactive update pane" \
   grep -q 'popup plugin pane open --plugin mash-update-notice --entrypoint update' "$calls"
+check "the interactive popup has room for download and confirmation" \
+  grep -q 'popup plugin pane open --plugin mash-update-notice --entrypoint update --placement popup --width 64 --height 16' "$calls"
 check "the pane receives both versions" \
   grep -q 'MASH_UPDATE_INSTALLED=0.1.1 .*MASH_UPDATE_CANDIDATE=0.2.0' "$calls"
 
