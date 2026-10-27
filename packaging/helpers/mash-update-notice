@@ -1,0 +1,86 @@
+#!/bin/bash
+# Tell a Linux user, once per version, that a newer letsmash is available.
+#
+#   mash-update-notice <resource-root> <data-dir>
+#
+# Started in the background by herdr-pane for every window. The only source of
+# "a newer version exists" is the APT cache Ubuntu already refreshes on its
+# own: nothing here touches the network, refreshes the cache or writes package
+# state, so a user who removed the letsmash source simply has no candidate and
+# never sees a notice.
+#
+# Once per version, across every window: the version is recorded under a lock
+# before either surface fires, so two windows opening together cannot both
+# announce it, and a version is never announced twice even when both surfaces
+# fail. Every failure is silent -- this must never get in the way of a launch.
+set -u
+
+[ "$(uname -s 2>/dev/null)" = Linux ] || exit 0
+res="${1:-}"
+d="${2:-}"
+[ -n "$res" ] && [ -n "$d" ] && [ -d "$d" ] || exit 0
+
+# The Candidate: label is localized, and the installed version must be exactly
+# what dpkg reports, so parse in the C locale.
+export LC_ALL=C
+installed="$(dpkg-query -W -f='${Version}' letsmash 2>/dev/null)" || exit 0
+candidate="$(apt-cache policy letsmash 2>/dev/null | sed -n 's/^ *Candidate: *//p' | head -n 1)"
+[ -n "$installed" ] && [ -n "$candidate" ] && [ "$candidate" != "(none)" ] || exit 0
+dpkg --compare-versions "$candidate" gt "$installed" 2>/dev/null || exit 0
+
+# Claim the version. The same portable mkdir lock as mash-seed-sync: flock is
+# not on macOS, and the shared scripts run there too.
+state="$d/local/state"
+record="$state/update-notice"
+lock="$state/update-notice.lock"
+mkdir -p "$state" 2>/dev/null || exit 0
+tries=0
+while ! mkdir "$lock" 2>/dev/null; do
+  owner="$(cat "$lock/pid" 2>/dev/null || true)"
+  if [[ "$owner" =~ ^[0-9]+$ ]] && ! kill -0 "$owner" 2>/dev/null; then
+    rm -rf "$lock"
+    continue
+  fi
+  tries=$((tries + 1))
+  [ "$tries" -ge 50 ] && exit 0
+  sleep 0.1
+done
+echo "$$" >"$lock/pid"
+if [ "$(cat "$record" 2>/dev/null)" = "$candidate" ]; then
+  rm -rf "$lock"
+  exit 0
+fi
+echo "$candidate" >"$record.tmp" && mv "$record.tmp" "$record"
+rm -rf "$lock"
+
+command="sudo apt install --only-upgrade letsmash"
+title="Mash $candidate is available"
+body="You have $installed. To upgrade, run: $command"
+
+# Desktop notification. notify-send (libnotify-bin) is not guaranteed; gdbus
+# ships with every Ubuntu desktop and speaks the same freedesktop interface.
+if command -v notify-send >/dev/null 2>&1; then
+  notify-send --app-name=Mash "$title" "$body" >/dev/null 2>&1
+elif command -v gdbus >/dev/null 2>&1; then
+  gdbus call --session --dest org.freedesktop.Notifications \
+    --object-path /org/freedesktop/Notifications \
+    --method org.freedesktop.Notifications.Notify \
+    Mash 0 '' "$title" "$body" '[]' '{}' 5000 >/dev/null 2>&1
+fi
+
+# The popup is drawn by the attached window, so wait until this window's server
+# answers and its client has had a moment to attach. A popup opened with no
+# client attached is not guaranteed to draw (see
+# .mash/insights/herdr-popup-from-background.md).
+herdr="$res/bin/herdr"
+[ -x "$herdr" ] || exit 0
+for _ in $(seq 1 50); do
+  "$herdr" status server 2>/dev/null | grep -q 'status: running' && break
+  sleep 0.2
+done
+sleep 2
+"$herdr" plugin pane open --plugin mash-update-notice --entrypoint notice \
+  --placement popup --width 56 --height 9 --focus \
+  --env "MASH_UPDATE_INSTALLED=$installed" \
+  --env "MASH_UPDATE_CANDIDATE=$candidate" >/dev/null 2>&1
+exit 0

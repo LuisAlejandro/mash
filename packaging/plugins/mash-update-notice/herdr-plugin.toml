@@ -1,0 +1,17 @@
+# The Linux update notice popup. Opened by bin/mash-update-notice, which decides
+# from the local APT cache that a newer letsmash exists and passes both versions
+# through --env. Read-only: Mash never runs the upgrade itself.
+id = "mash-update-notice"
+name = "Mash Update Notice"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+description = "Tell the user, once per version, that a newer Mash package is available"
+platforms = ["linux"]
+
+[[panes]]
+id = "notice"
+title = "Mash update"
+placement = "popup"
+width = 56
+height = 9
+command = ["bash", "notice.sh"]
