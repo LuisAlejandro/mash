@@ -101,6 +101,45 @@ for suite in ENABLED:
     except FileNotFoundError:
         OPTIONAL[suite] = set()  # Older bundles did not ship an inventory.
 
+# First-launch keybinding mode. The wizard writes this only when setup
+# completes, so a cancelled or failed run records no mode and the next launch
+# seeds the Cursor-style defaults again. No mode at all means an installation
+# that completed before the choice existed: it stays on Cursor-style.
+MODE_PATH = os.path.join(data, "setup", "keybindings-mode")
+try:
+    with open(MODE_PATH, encoding="utf-8") as fh:
+        mode_lines = fh.read().splitlines()
+except FileNotFoundError:
+    mode_lines = []
+NATIVE = "mode=native" in mode_lines
+MODE = "native" if NATIVE else "mash"
+SELECTION = {"programming": ENABLED["programming"], "keybindings": MODE}
+
+# Native keeps the Fresh bindings whose actions Fresh's own keymaps never bind
+# (crates/fresh-editor-core/keymaps/default.json plus macos.json upstream), so
+# Mash's extra editor capabilities survive. Everything else in Mash's list moves
+# a stock action onto a Cursor-style chord, which Native drops so Fresh's
+# built-in map applies. The clipboards are kept deliberately: cmd+c, cmd+v,
+# cmd+x and cmd+a are the platform's own editing conventions, and the Cursor
+# chords Mash uses for them are the ones a user expects to keep working.
+NATIVE_FRESH_KEEP = {
+    "copy",
+    "copy_file_path",
+    "cut",
+    "duplicateLineUp",
+    "duplicate_line",
+    "file_explorer_copy_full_path",
+    "freshCloakToggleSetting",
+    "paste",
+    "save_all",
+    "save_as",
+    "select_all",
+    "start_search_replace_in_buffer",
+    "toggle_compose_mode",
+}
+
+
+
 # The trees copied with rsync --ignore-existing by mash_seed_missing. Simple
 # file seeds and their path substitutions live in SINGLE_SEEDS below.
 TREES = [
@@ -126,12 +165,11 @@ SINGLE_SEEDS = [
     ("defaults/pet/config.toml", "config/pet/config.toml", "pet"),
     ("defaults/pet/snippet.toml", "config/pet/snippet.toml", None),
     (f"defaults/fresh/config{SUFFIX}.json", "config/fresh/config.json", "fresh"),
+    # Native re-renders only this sheet's editor block; see rendered_bytes.
     (
-        "defaults/pi/extensions/keybindings-quickref.linux.txt"
-        if LINUX
-        else "defaults/pi/extensions/keybindings-quickref.txt",
+        "defaults/pi/extensions/keybindings-quickref" + (".linux.txt" if LINUX else ".txt"),
         "pi/agent/extensions/keybindings-quickref.txt",
-        None,
+        "quickref",
     ),
     ("defaults/mash-config/hindsight-pin", "config/mash/hindsight-pin", None),
     ("defaults/mash-config/hindsight-embed.env", ".hindsight/embed", None),
@@ -266,7 +304,44 @@ def rendered_bytes(source, target, kind=None, rel_in_tree=""):
         config = json.loads(raw.decode("utf-8"))
         config["check_for_updates"] = False
         config["self_update"] = False
+        if NATIVE and isinstance(config.get("keybindings"), list):
+            config["keybindings"] = [
+                entry
+                for entry in config["keybindings"]
+                if entry.get("action") == "unbind" or entry.get("action") in NATIVE_FRESH_KEEP
+            ]
         raw = (json.dumps(config, indent=2) + "\n").encode("utf-8")
+    elif kind == "quickref" and NATIVE and not LINUX:
+        # The sheet's editor block shares its rows with the tail of the right
+        # column, so only the left column is replaced: Fresh's Cursor-style
+        # chords give way to the stock map Mash leaves in place.
+        text = raw.decode("utf-8")
+        lines = text.splitlines(keepends=True)
+        cut = next((i for i, line in enumerate(lines) if line.startswith("── Editor")), None)
+        column = lines[0].find("── Agents") if lines else -1
+        try:
+            with open(
+                os.path.join(res, "defaults", "pi", "extensions", "keybindings-quickref.editor-native.txt"),
+                encoding="utf-8",
+            ) as fh:
+                block = fh.read().splitlines(keepends=True)
+        except FileNotFoundError:
+            block = []  # Older bundle: keep the Cursor-style block.
+        if cut is not None and column > 0 and block:
+            def row(left, source):
+                right = source[column:].rstrip() if source else ""
+                if not right:
+                    return left.rstrip() + "\n"
+                return left.rstrip("\n").ljust(column) + "  " + right + "\n"
+
+            out = lines[:cut]
+            for offset, line in enumerate(block):
+                index = cut + offset
+                out.append(row(line, lines[index] if index < len(lines) else ""))
+            for line in lines[cut + len(block):]:
+                out.append(row("", line))
+            text = "".join(out)
+        raw = text.encode("utf-8")
     elif kind == "notifier" and not LINUX and os.path.isfile(os.path.join(res, "bin", "mash-notify")):
         lines = [line for line in raw.decode("utf-8").splitlines() if not line.startswith("NOTIFIER=")]
         lines.append("NOTIFIER=" + os.path.join(res, "bin", "mash-notify"))
@@ -340,8 +415,11 @@ def entries():
                     continue
                 if source_rel == "defaults/fresh" and rel == "config.json":
                     continue  # platform-specific version is a single seed above
-                if source_rel == "defaults/pi" and rel == "extensions/keybindings-quickref.txt":
-                    continue  # Linux selects its platform variant above
+                if source_rel == "defaults/pi" and rel in (
+                    "extensions/keybindings-quickref.txt",
+                    "extensions/keybindings-quickref.editor-native.txt",
+                ):
+                    continue  # The mode's variant is a single seed above
                 if source_rel == "defaults/pi" and rel == "mcp.json":
                     continue  # MCP servers are merged per key below
                 venv_rel = rel if source_rel == "defaults/mash-config/venvs" else ""
@@ -467,7 +545,7 @@ def main():
         return 0
     record = load_record()
     files = record["files"]
-    if record["version"] == version and record.get("selection") == ENABLED:
+    if record["version"] == version and record.get("selection") == SELECTION:
         return 0
 
     shipped = list(entries())
@@ -539,7 +617,7 @@ def main():
         # restores the shipped bytes, a subsequent release can safely remove it.
 
     record["version"] = version
-    record["selection"] = ENABLED
+    record["selection"] = SELECTION
     record["files"] = files
     os.makedirs(os.path.dirname(record_path), exist_ok=True)
     tmp = record_path + ".tmp"

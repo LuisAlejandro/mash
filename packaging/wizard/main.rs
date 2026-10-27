@@ -326,6 +326,7 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
     let mut fonts =
         font_page::FontPage::new(&mash_resources(), &data_dir().join("config/ghostty/config"));
     fonts.theme = theme::Theme::current(&data_dir());
+    fonts.keybindings = font_page::Keybindings::current(&data_dir());
     let mut voice = voice_page::VoicePage::new();
     let mut page = 0;
     let mut started = false;
@@ -671,6 +672,9 @@ fn review_and_apply<B: Backend>(
     let state_dir = state_dir();
     let mut state = load_state(&state_dir);
     let prepare = (|| -> Result<(), String> {
+        // The keybinding mode comes first: the seed sync below renders Fresh's
+        // map for it, and the launcher opens Mash right after this returns.
+        fonts.save_mode(&data_dir())?;
         skills.save_selection(&data_dir())?;
         seed_selected_skills()?;
         providers.save(&data_dir())?;

@@ -50,7 +50,7 @@ change plus a rebuild.
 | `~/.mash/config/{pet,lazydocker,lazygit,atuin,zsh}/` | Those tools' configs |
 | `~/.mash/config/mash/` | Mash Programming Skills state: `references/`, `venvs/`, `hindsight-pin`, `hindsight-embed.env` |
 | `~/.mash/local/share/mash/hindsight/` | Hindsight's virtualenv (~1.1 GB) |
-| `~/.mash/setup/` | `state.txt`, `skills-choice`, `setup.log`, `hindsight-install.log` |
+| `~/.mash/setup/` | `state.txt`, `skills-choice`, `keybindings-mode`, `setup.log`, `hindsight-install.log` |
 | `~/.mash/bin/` | Launcher-written helpers |
 
 Files here persist. The launcher seeds a file only when it is missing
@@ -65,6 +65,30 @@ skills, agents, and runtime payload from `~/.mash`; that also skips Hindsight
 installation and startup. The choice is stored in
 `~/.mash/setup/skills-choice`; upgrading never silently removes files from an
 existing installation.
+
+## Keybinding modes
+
+The first-launch wizard also asks once between **Mash / Cursor-style** shortcuts
+(the default, and what Mash has always shipped) and **Native** shortcuts. The
+answer is stored in `~/.mash/setup/keybindings-mode` when setup completes; there
+is no post-setup switch, and an installation that completed before the choice
+existed keeps Cursor-style.
+
+Both modes keep Mash's architecture: Herdr owns workspaces, tabs and panes with
+the same chords, and Ghostty keeps the unbinds that hand those chords down to
+Herdr and Fresh. Only Fresh's own keys differ:
+
+- **Mash / Cursor-style** seeds Fresh's Cursor-style map — `Cmd` chords for
+  editing, buffers and the file explorer.
+- **Native** drops those overrides, so Fresh's built-in keymap applies (`Ctrl`
+  chords on macOS, Fresh's own defaults on Linux). Mash's additions that Fresh
+  never binds — cloak toggle, compose/preview, save as/all, duplicate line, copy
+  file path, in-buffer replace — stay bound, and so do the clipboard chords, so
+  `Cmd+C`/`Cmd+V`/`Cmd+X`/`Cmd+A` still work in the editor.
+
+To change it after setup, edit `~/.mash/config/fresh/config.json` directly: the
+seeded file is yours once you touch it, and the ownership record leaves it
+alone. Deleting it re-seeds it for the recorded mode.
 
 ## Customizing Pi
 

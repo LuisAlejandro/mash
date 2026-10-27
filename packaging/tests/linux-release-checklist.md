@@ -19,6 +19,7 @@ display, claims the packaged app-id, and exits without leaving a server behind.
 | Shutdown | no Herdr process outlives the launcher |
 | Package identity | `StartupWMClass` equals the class the terminal seeds |
 | Keymap integrity | `test_linux_defaults.py`: no Command chords, no bare Ctrl+letter, no duplicates, action families present |
+| Keybinding modes | `test_keybinding_modes.py`: an installation without a mode keeps today's Cursor-style output, Native keeps Ghostty's pass-through unbinds and Mash's Fresh-only capabilities while dropping Fresh's Cursor-style chords, a cancelled setup leaves no mode, and a hand-edited config survives the next release |
 | GTK window startup | `linux-session-smoke.sh`: no GTK template-child error or panic while opening Mash under Xorg and Wayland; source-only Blueprint compilation cannot prove a window instantiates |
 | Terminal input wiring | `linux-session-smoke.sh` reads Ghostty's effective config: mouse reporting and clipboard access remain enabled, with Ctrl+Shift+C/V bound to copy/paste; real delivery is checked below |
 | Notifications | delivery mode asserted on the seeded Herdr config |
@@ -39,6 +40,7 @@ used.
 | Capability | Why it cannot be automated |
 | --- | --- |
 | Cross-window focus behaviour | a headless compositor has one window; assertions about focus stealing between workspaces need two |
+| Keybinding mode end to end | completing setup in each mode needs the wizard, and judging the resulting chords needs real keypresses in Herdr, Fresh and a shell: on a disposable HOME, run setup twice (default, then Native) and confirm Fresh takes its own map, `Ctrl+Shift+T` still opens the dev tab, and Pi's header sheet lists the mode's editor chords |
 | Mash Terminal menus and second instance | On both GNOME Xorg and Wayland, inspect the titlebar, main menu, and terminal right-click menu: no Ghostty tab/overview, split, command palette, find, Quick Terminal, inspector, or Change Title affordance; the main menu reads "About Mash Terminal"; New Window remains and opens another Mash instance with its own Herdr workspaces |
 | Herdr input and clipboard | In a Herdr shell and a Fresh pane, verify mouse clicks, right-click routing, scrolling, selection copy and clipboard paste still work; the headless config check cannot prove event delivery |
 | Mash menu items | Open the titlebar main menu: File, Edit, View, Go and Tools submenus and Settings, Reload Configuration, Detach and Mash Help each show their chord. Pick one item per submenu and confirm Herdr does what the shortcut does. With two Mash windows open, an item acts only in the window whose menu was used. Edit Herdr's config and pick Reload Configuration: the change applies without a restart, and Fresh panes are untouched. A chord rebound by the user leaves its menu item inert; that is expected |

@@ -18,11 +18,53 @@ const DEFAULT_FONT: &str = "MesloLGS NF";
 const MIN_SIZE: u8 = 6;
 const MAX_SIZE: u8 = 72;
 const THEME: u8 = 0;
-const LIST: u8 = 1;
-const SIZE: u8 = 2;
-const BACK: u8 = 3;
-const NEXT: u8 = 4;
-const FOCUS_COUNT: u8 = 5;
+const KEYBINDINGS: u8 = 1;
+const LIST: u8 = 2;
+const SIZE: u8 = 3;
+const BACK: u8 = 4;
+const NEXT: u8 = 5;
+const FOCUS_COUNT: u8 = 6;
+
+/// The first-launch shortcut preset. Both modes keep Mash's Herdr functions and
+/// Ghostty's pass-through unbinds; they differ in whether Fresh's stock editing
+/// keymap applies or Mash's Cursor-style chords override it.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Keybindings {
+    Mash,
+    Native,
+}
+
+impl Keybindings {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Mash => "Mash / Cursor-style",
+            Self::Native => "Native",
+        }
+    }
+
+    fn value(self) -> &'static str {
+        match self {
+            Self::Mash => "mash",
+            Self::Native => "native",
+        }
+    }
+
+    fn other(self) -> Self {
+        match self {
+            Self::Mash => Self::Native,
+            Self::Native => Self::Mash,
+        }
+    }
+
+    /// A retried setup must reopen on the choice that was made before, and a
+    /// first run -- no file yet -- starts on Cursor-style.
+    pub fn current(root: &Path) -> Self {
+        match fs::read_to_string(root.join("setup/keybindings-mode")) {
+            Ok(text) if text.lines().any(|line| line == "mode=native") => Self::Native,
+            _ => Self::Mash,
+        }
+    }
+}
 
 pub enum Decision {
     Back,
@@ -38,6 +80,7 @@ pub struct FontPage {
     focus: u8,
     warning: Option<String>,
     pub theme: Theme,
+    pub keybindings: Keybindings,
 }
 
 impl FontPage {
@@ -110,6 +153,7 @@ impl FontPage {
             focus: LIST,
             warning,
             theme: Theme::Dark,
+            keybindings: Keybindings::Mash,
         }
     }
 
@@ -173,6 +217,12 @@ impl FontPage {
             };
         } else if id == self.fonts.len() + 6 {
             self.focus = LIST;
+        } else if id == self.fonts.len() + 7 {
+            self.focus = KEYBINDINGS;
+            self.keybindings = Keybindings::Mash;
+        } else if id == self.fonts.len() + 8 {
+            self.focus = KEYBINDINGS;
+            self.keybindings = Keybindings::Native;
         }
         None
     }
@@ -211,6 +261,10 @@ impl FontPage {
                         as u8;
                 None
             }
+            KeyCode::Left | KeyCode::Right | KeyCode::Char(' ') if self.focus == KEYBINDINGS => {
+                self.keybindings = self.keybindings.other();
+                None
+            }
             KeyCode::Left | KeyCode::Right | KeyCode::Char(' ') if self.focus == THEME => {
                 self.theme = self.theme.other();
                 None
@@ -237,7 +291,11 @@ impl FontPage {
             }
             KeyCode::Enter | KeyCode::Char(' ') => match self.focus {
                 THEME => {
-                    self.focus = LIST;
+                    self.focus = KEYBINDINGS;
+                    None
+                }
+                KEYBINDINGS => {
+                    self.keybindings = self.keybindings.other();
                     None
                 }
                 LIST => {
@@ -253,6 +311,15 @@ impl FontPage {
             },
             _ => None,
         }
+    }
+
+    /// Written with the rest of the setup, so a cancelled or failed run leaves
+    /// no mode behind and the next launch seeds the Cursor-style defaults.
+    pub fn save_mode(&self, root: &Path) -> Result<(), String> {
+        crate::provider_page::write_private(
+            &root.join("setup/keybindings-mode"),
+            &format!("mode={}\n", self.keybindings.value()),
+        )
     }
 
     pub fn save(&self, config: &Path) -> Result<(), String> {
@@ -309,6 +376,7 @@ impl FontPage {
         let parts = Layout::vertical([
             Constraint::Length(3),
             Constraint::Length(3),
+            Constraint::Length(4),
             Constraint::Length(3),
             Constraint::Min(3),
             Constraint::Length(3),
@@ -317,7 +385,8 @@ impl FontPage {
         .split(wizard_style::page_area(frame, Some(3)));
         wizard_style::header(frame, parts[0], "Appearance — page 4/5");
         self.draw_theme(frame, parts[1]);
-        let parts = &parts[1..];
+        self.draw_keybindings(frame, parts[2]);
+        let parts = &parts[2..];
         let hint = wizard_style::section(frame, parts[1], "Fonts on this computer");
         let mut filter =
             wizard_style::text_field(self.focus == LIST, "Filter fonts", self.filter.clone());
@@ -396,6 +465,44 @@ impl FontPage {
                 row,
             );
         }
+    }
+
+    fn draw_keybindings(&self, frame: &mut Frame, area: Rect) {
+        let body =
+            wizard_style::section(frame, area, "Keybindings (permanent once setup completes)");
+        let mut x = body.x + 2;
+        let mut spans = vec![Span::raw("  ")];
+        for (index, mode) in [Keybindings::Mash, Keybindings::Native]
+            .into_iter()
+            .enumerate()
+        {
+            let label = format!(
+                "({}) {}",
+                if self.keybindings == mode { "*" } else { " " },
+                mode.label()
+            );
+            let width = label.chars().count() as u16;
+            wizard_style::target(Rect::new(x, body.y, width, 1), self.fonts.len() + 7 + index);
+            x += width + 4;
+            let style = if self.focus == KEYBINDINGS && self.keybindings == mode {
+                wizard_style::selected()
+            } else {
+                Style::default()
+            };
+            spans.push(Span::styled(label, style));
+            spans.push(Span::raw("    "));
+        }
+        spans.push(Span::styled(
+            "←/→",
+            Style::default().fg(wizard_style::MUTED),
+        ));
+        frame.render_widget(Paragraph::new(Line::from(spans)), body);
+        let note = Rect::new(body.x + 2, body.y + 1, body.width.saturating_sub(2), 1);
+        frame.render_widget(
+            Paragraph::new("Cursor's chords, or each app's own keys.")
+                .style(Style::default().fg(wizard_style::MUTED)),
+            note,
+        );
     }
 
     fn draw_theme(&self, frame: &mut Frame, area: Rect) {
@@ -523,5 +630,38 @@ mod tests {
         page.focus = THEME;
         page.on_key(KeyCode::Left, KeyModifiers::NONE);
         assert_eq!(page.theme, Theme::Dark);
+    }
+
+    #[test]
+    fn keybinding_mode_defaults_to_mash_and_changes_by_keyboard_and_click() {
+        let mut page = FontPage::with_fonts(vec!["JetBrains Mono".into()], None);
+        assert_eq!(page.keybindings, Keybindings::Mash);
+        let mut terminal = Terminal::new(TestBackend::new(80, 28)).unwrap();
+        terminal.draw(|frame| page.draw(frame)).unwrap();
+        let buffer = terminal.backend().buffer();
+        wizard_style::tests::find(buffer, "Mash / Cursor-style");
+        wizard_style::tests::find(buffer, "permanent");
+        let (x, y) = wizard_style::tests::find(buffer, "Native");
+        page.on_click(wizard_style::clicked(&wizard_style::tests::click(x, y)).unwrap());
+        assert_eq!(page.keybindings, Keybindings::Native);
+        page.focus = KEYBINDINGS;
+        page.on_key(KeyCode::Left, KeyModifiers::NONE);
+        assert_eq!(page.keybindings, Keybindings::Mash);
+    }
+
+    #[test]
+    fn mode_is_absent_until_written_and_a_retry_reads_it_back() {
+        let dir = std::env::temp_dir().join(format!("mash-mode-test-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        let mut page = FontPage::with_fonts(vec!["JetBrains Mono".into()], None);
+        assert_eq!(Keybindings::current(&dir), Keybindings::Mash);
+        page.keybindings = Keybindings::Native;
+        page.save_mode(&dir).unwrap();
+        assert_eq!(Keybindings::current(&dir), Keybindings::Native);
+        assert_eq!(
+            fs::read_to_string(dir.join("setup/keybindings-mode")).unwrap(),
+            "mode=native\n"
+        );
+        let _ = fs::remove_dir_all(&dir);
     }
 }
