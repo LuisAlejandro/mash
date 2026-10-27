@@ -1,0 +1,60 @@
+#!/bin/sh
+# Open a shell pane stacked under the Fresh pane of the active tab.
+#
+# Bound to ctrl+shift+backtick in Mash's Herdr config (config/herdr/config.toml)
+# as a `shell` custom command. A dev tab (cmd+t) is Fresh on the left and pi on
+# the right, so splitting Fresh downward gives Fresh on top of a shell with pi
+# untouched beside them.
+#
+# Why a script and not a native action: `split_horizontal` splits whichever pane
+# is FOCUSED, unconditionally, and Herdr has no per-binding conditions -- so it
+# would split pi when pi has focus, and split a pane in any other tab type. This
+# resolves the tab's Fresh pane first, and does nothing when there is none, which
+# is what makes the chord tab-type-specific.
+#
+# The new pane needs no command: Herdr runs terminal.default_shell (mash-shell)
+# in every new pane, so the split IS the shell pane.
+#
+# Chord spelling matters: Herdr rejects `grave`, `grave_accent` and `backquote`
+# at load time ("invalid keybinding ... disabling binding", visible in its server
+# log), and `herdr config check` accepts them anyway, so it cannot be used to
+# verify the name. `backtick` is the accepted spelling.
+set -eu
+
+herdr="${HERDR_BIN_PATH:-herdr}"
+# The bundle's own python3, matching herdr-dev-tab-fill: a host 3.x can be a
+# different minor or build, and Mash pins and tests the one it ships.
+py="$(mash-bin python3 2>/dev/null || printf '%s' python3)"
+
+# HERDR_ACTIVE_TAB_ID is exported to `[[keys.command]]` custom commands, so this
+# needs no lookup there; `pane current` is the fallback for a hand-run shell.
+tab="${HERDR_ACTIVE_TAB_ID:-}"
+if [ -z "$tab" ]; then
+  tab="$("$herdr" pane current | "$py" -c '
+import json, sys
+print(json.load(sys.stdin)["result"]["pane"]["tab_id"])
+')"
+fi
+
+# Fresh first, then its cwd: the split inherits nothing, so pass the directory
+# explicitly rather than landing the shell in Herdr's own working directory.
+# Detection reads the agent Herdr already recorded for the pane, which is the
+# same signal the sidebar and `herdr agent` use -- no new heuristics here.
+found="$("$herdr" pane list | "$py" -c '
+import json, sys
+tab = sys.argv[1]
+for p in json.load(sys.stdin)["result"]["panes"]:
+    if p.get("tab_id") == tab and p.get("agent") == "fresh":
+        print(p["pane_id"])
+        print(p.get("cwd") or "")
+        break
+' "$tab")"
+[ -n "$found" ] || exit 0 # not a dev tab: the chord is a no-op
+
+fresh="$(printf '%s\n' "$found" | sed -n 1p)"
+cwd="$(printf '%s\n' "$found" | sed -n 2p)"
+
+if [ -n "$cwd" ]; then
+  exec "$herdr" pane split "$fresh" --direction down --cwd "$cwd" --focus
+fi
+exec "$herdr" pane split "$fresh" --direction down --focus

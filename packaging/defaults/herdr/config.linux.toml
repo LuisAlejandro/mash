@@ -231,6 +231,28 @@ type = "shell"
 command = "herdr-new-dev-tab"
 description = "new dev tab (editor + agent)"
 
+# Shell pane stacked under a dev tab's Fresh pane, Fresh on top and pi untouched
+# beside them. A custom command rather than split_horizontal, which splits
+# whichever pane is FOCUSED -- it would split pi whenever pi has focus, and would
+# split a pane in any other tab type. herdr-fresh-shell-pane resolves the tab's
+# Fresh pane first and no-ops when there is none, which is what makes the chord
+# dev-tab-only. The new pane needs no command: it runs terminal.default_shell
+# (mash-shell) on its own.
+#
+# The key name is `backtick`, NOT `grave`, `grave_accent` or `backquote`: Herdr
+# rejects those three at load time as an invalid keybinding and silently
+# disables it, while `herdr config check` still reports "config: ok", so the
+# wrong spelling fails only at press time. No Ghostty unbind is needed -- the
+# Linux keybind table releases the ctrl+shift family it binds, and never bound
+# backtick -- and Herdr asks for the kitty keyboard protocol (CSI > 7u) on
+# startup, which is what makes the shifted punctuation distinguishable from a
+# bare control byte.
+[[keys.command]]
+key = "ctrl+shift+backtick"
+type = "shell"
+command = "herdr-fresh-shell-pane"
+description = "new shell pane under Fresh"
+
 # New agent tab. macOS pairs Cmd+T (dev tab) with Cmd+Alt+T (agent tab); both
 # land on Ctrl+Alt+T here, so the agent tab takes Ctrl+Alt+Shift+T. Neither
 # chord is a Ghostty default, so no unbind is required.

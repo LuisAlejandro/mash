@@ -52,6 +52,7 @@ ship_helpers=(
   pr-watch-repo
   herdr-shell-greeting
   herdr-dev-tab-fill
+  herdr-fresh-shell-pane
   herdr-annotate-paste
   herdr-orchestration
   mash-hindsight-install
