@@ -64,8 +64,20 @@ keybind = ctrl+shift+x=unbind
 keybind = ctrl+shift+g=unbind
 keybind = ctrl+shift+i=unbind
 
-# Ctrl+Alt chords carry the pane family. Ghostty binds goto_split to
-# ctrl+alt+arrows, which would consume pane focus before Herdr sees it.
+# Ctrl+Shift+Up/Down carry Herdr's previous_agent / next_agent. Ghostty's own
+# Linux defaults bind them to jump_to_prompt with set.put, not set.putFlags, so
+# the binding is not `performable:` and consumes the chord even though
+# src/Surface.zig rejects the action itself (mash_removed_ui: "Herdr keeps its
+# own scrollback, so these chords belong to Herdr"). Unbinding is what frees
+# them -- without it both the chord and the "Previous/Next Agent" menu items
+# that send it went nowhere.
+keybind = ctrl+shift+arrow_up=unbind
+keybind = ctrl+shift+arrow_down=unbind
+
+# Ctrl+Alt chords carry the pane family. Ghostty binds goto_split to all four
+# ctrl+alt+arrows; goto_split is in mash_removed_ui too, and the binding still
+# consumes the chord, so these unbinds stay load-bearing even though pane focus
+# itself moved to ctrl+super (GNOME owns ctrl+alt+arrows).
 keybind = ctrl+alt+arrow_left=unbind
 keybind = ctrl+alt+arrow_right=unbind
 keybind = ctrl+alt+arrow_up=unbind
