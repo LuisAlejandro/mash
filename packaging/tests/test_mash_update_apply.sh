@@ -21,7 +21,7 @@ check() {
 
 tools="$tmp/tools"
 mkdir -p "$tools"
-for t in bash cat mkdir rm mv dirname basename sed grep awk ps kill sleep cp chmod mktemp seq; do
+for t in bash cat mkdir rm mv dirname basename sed grep awk ps kill sleep cp chmod mktemp seq diff; do
   ln -s "$(command -v "$t")" "$tools/$t"
 done
 fake="$tmp/fake"
@@ -69,12 +69,18 @@ dest="$tmp/Applications/Mash.app"
 data="$tmp/data"
 
 reset() {
-  rm -rf "$tmp/Applications" "$tmp/mash-update-ABCDEF" "$tmp/data"
-  mkdir -p "$dest/Contents" "$tmp/mash-update-ABCDEF/Mash.app/Contents" "$data/local/state"
+  rm -rf "$tmp/Applications" "$tmp/mash-update-ABCDEF" "$tmp/data" "$tmp/user-owned-before"
+  mkdir -p "$dest/Contents" "$tmp/mash-update-ABCDEF/Mash.app/Contents" \
+    "$data/local/state" "$data/workspaces/project" "$data/config/mash" "$data/config/gh"
   echo old >"$dest/Contents/marker"
   echo new >"$tmp/mash-update-ABCDEF/Mash.app/Contents/marker"
   echo 0.2.0 >"$data/local/state/update-notice"
   echo 0.2.0 >"$data/local/state/update-pending"
+  echo 'unsaved task context' >"$data/workspaces/project/session.txt"
+  echo 'user edit' >"$data/config/mash/user-settings"
+  echo 'credential placeholder (not a secret)' >"$data/config/gh/hosts.yml"
+  mkdir -p "$tmp/user-owned-before"
+  cp -R "$data/workspaces" "$data/config" "$tmp/user-owned-before/"
   : >"$calls"
   work="$tmp/mash-update-ABCDEF"
   cp "$tmp/real-swap" "$work/mash-update-swap"
@@ -93,7 +99,11 @@ check "success reopens Mash" grep -q "^open $dest" "$calls"
 check "success records version for first new window" grep -qx 0.2.0 "$data/local/state/update-success"
 check "success consumes the pending marker" test ! -e "$data/local/state/update-pending"
 check "success leaves no sibling copy" test -z "$(find "$tmp/Applications" -maxdepth 1 -name '.mash-update-*' -print)"
-check "success leaves data except record untouched" grep -qx 0.2.0 "$data/local/state/update-notice"
+check "success leaves user-owned files untouched" \
+  diff -rq "$data/workspaces" "$tmp/user-owned-before/workspaces"
+check "success leaves user edits untouched" \
+  diff -rq "$data/config" "$tmp/user-owned-before/config"
+check "success preserves the announcement record" grep -qx 0.2.0 "$data/local/state/update-notice"
 
 reset
 run FAKE_DITTO_RC=4
@@ -103,6 +113,8 @@ check "copy failure clears record" test ! -e "$data/local/state/update-notice"
 check "copy failure marks this version for retry" grep -qx 0.2.0 "$data/local/state/update-retry"
 check "copy failure clears pending state" test ! -e "$data/local/state/update-pending"
 check "copy failure notifies" grep -q 'osascript .*display notification' "$calls"
+check "copy failure keeps user-owned files" \
+  diff -rq "$data/workspaces" "$tmp/user-owned-before/workspaces"
 
 reset
 # An executable that refuses the exchange simulates unsupported filesystems.
@@ -112,6 +124,8 @@ run
 check "swap refusal keeps old app" grep -qx old "$dest/Contents/marker"
 check "swap refusal clears record" test ! -e "$data/local/state/update-notice"
 check "swap refusal notifies" grep -q 'osascript .*display notification' "$calls"
+check "swap refusal keeps user edits" \
+  diff -rq "$data/config" "$tmp/user-owned-before/config"
 
 reset
 run FAKE_STUCK=1
