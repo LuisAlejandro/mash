@@ -119,19 +119,6 @@ index 8c5e055..883719e 100644
                  "website",
                  website,
                  @as(?*anyopaque, null),
-diff --git a/src/apprt/gtk/ui/1.5/inspector-window.blp b/src/apprt/gtk/ui/1.5/inspector-window.blp
-index a7625bc..ee1b15f 100644
---- a/src/apprt/gtk/ui/1.5/inspector-window.blp
-+++ b/src/apprt/gtk/ui/1.5/inspector-window.blp
-@@ -3,7 +3,7 @@ using Adw 1;
- 
- template $GhosttyInspectorWindow: Adw.ApplicationWindow {
-   title: _("Ghostty: Terminal Inspector");
--  icon-name: "com.mitchellh.ghostty";
-+  icon-name: "app.mash.Mash";
-   default-width: 1000;
-   default-height: 600;
- 
 diff --git a/src/apprt/gtk/winproto/x11.zig b/src/apprt/gtk/winproto/x11.zig
 index 11cce24..9700a8b 100644
 --- a/src/apprt/gtk/winproto/x11.zig
