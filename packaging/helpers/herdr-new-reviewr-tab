@@ -17,6 +17,8 @@ refuse() {
 	exit 1
 }
 
+pi_cmd="$("$(dirname "$0")/mash-bin" --bundled pi)" ||
+	refuse "bundled pi is missing"
 if ! git -C "$cwd" rev-parse --show-toplevel >/dev/null 2>&1; then
 	refuse "not a git repo: $cwd"
 fi
@@ -61,7 +63,6 @@ fi
 # `pane run` and keep the tab. That fallback names the bundled pi by absolute
 # path -- `pane run` hands the string to the pane, where a bare `pi` resolves
 # through a PATH that may hold Homebrew's copy first. See mash-bin.
-pi_cmd="$(mash-bin pi 2>/dev/null || printf '%s' pi)"
 agent_name="$("$(dirname "$0")/herdr-agent-name" pi 2>/dev/null || true)"
 if [[ -z "$agent_name" ]] ||
 	! "$herdr" agent start "$agent_name" --kind pi --pane "$right" >/dev/null 2>&1; then

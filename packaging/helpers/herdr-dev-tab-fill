@@ -28,6 +28,9 @@ here="$(cd "$(dirname "$0")" && pwd)"
 py="$(mash-bin python3 2>/dev/null || printf '%s' python3)"
 
 left="${1:?usage: herdr-dev-tab-fill <left-pane-id>}"
+# Do not create half a dev tab or fall back to a host pi if the bundle is
+# missing its copy.
+pi_cmd="$("$here/mash-bin" --bundled pi)" || exit 1
 
 pane_id() {
 	# pane split returns .result.pane.pane_id
@@ -120,7 +123,6 @@ start_agent() {
 # Absolute, because `pane run` hands the string to the pane and a bare `pi`
 # there resolves through PATH, where Homebrew's pi sits unless Mash's own
 # directories lead it. See mash-bin.
-pi_cmd="$(mash-bin pi 2>/dev/null || printf '%s' pi)"
 if ! start_agent "$right" pi pi "$pi_cmd"; then
 	# Untracked (or unfocused) pi: there is no agent name to hand to `agent
 	# focus`, so fall back to the layout's own geometry -- pi's pane is the

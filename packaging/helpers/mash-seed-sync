@@ -91,8 +91,8 @@ except FileNotFoundError:
             completed = "completed=true" in fh.read().splitlines()
     except FileNotFoundError:
         completed = False
-    choices = [f"{suite}=true" for suite in ("programming", "design")] if completed else []
-ENABLED = {suite: f"{suite}=true" in choices for suite in ("programming", "design")}
+    choices = ["programming=true"] if completed else []
+ENABLED = {"programming": "programming=true" in choices}
 OPTIONAL = {}
 for suite in ENABLED:
     try:
@@ -101,9 +101,8 @@ for suite in ENABLED:
     except FileNotFoundError:
         OPTIONAL[suite] = set()  # Older bundles did not ship an inventory.
 
-# The trees copied with rsync --ignore-existing by mash_seed_missing and
-# mash_seed_design_stack. Simple file seeds and their path substitutions live in
-# SINGLE_SEEDS below.
+# The trees copied with rsync --ignore-existing by mash_seed_missing. Simple
+# file seeds and their path substitutions live in SINGLE_SEEDS below.
 TREES = [
     ("defaults/ghostty/themes", "config/ghostty/themes"),
     ("defaults/fresh", "config/fresh"),
@@ -112,10 +111,7 @@ TREES = [
     ("defaults/atuin", "config/atuin"),
     ("defaults/lazydocker", "config/lazydocker"),
     ("defaults/mash-config/references", "config/mash/references"),
-    ("defaults/mash-config/headless", "config/mash/headless"),
-    ("defaults/mash-config/node_modules", "config/mash/node_modules"),
     ("defaults/mash-config/venvs", "config/mash/venvs"),
-    ("defaults/design-stack", "local/share/mash/design"),
 ]
 
 # Source, destination, template substitutions. These are the single files the
@@ -125,6 +121,10 @@ SINGLE_SEEDS = [
     (f"defaults/herdr/config{SUFFIX}.toml", "config/herdr/config.toml", "herdr"),
     (f"defaults/ghostty/config{SUFFIX}", "config/ghostty/config", "ghostty"),
     ("defaults/zsh/.zshenv", "config/zsh/.zshenv", None),
+    ("defaults/zsh/.zshrc", "config/zsh/.zshrc", None),
+    ("defaults/bash/bashrc", "config/bash/bashrc", None),
+    ("defaults/fish/config.fish", "config/fish/config.fish", None),
+    ("defaults/starship.toml", "config/starship.toml", None),
     ("defaults/git/config", "config/git/config", None),
     ("defaults/git/ignore", "config/git/ignore", None),
     ("defaults/pet/config.toml", "config/pet/config.toml", "pet"),
@@ -318,11 +318,7 @@ def entries():
             yield source, dest_rel, kind, ""
 
     for source_rel, dest_rel in TREES:
-        if source_rel == "defaults/design-stack" and not ENABLED["design"]:
-            continue
         if source_rel == "defaults/mash-config/references" and not ENABLED["programming"]:
-            continue
-        if source_rel in ("defaults/mash-config/headless", "defaults/mash-config/node_modules") and not ENABLED["design"]:
             continue
         root = os.path.join(res, source_rel)
         if not os.path.isdir(root):
@@ -344,9 +340,7 @@ def entries():
                     for suite in ENABLED
                 ):
                     continue
-                if source_rel == "defaults/mash-config/venvs" and not (
-                    ENABLED["programming"] if rel.startswith("mash-parallel/") else ENABLED["design"]
-                ):
+                if source_rel == "defaults/mash-config/venvs" and not ENABLED["programming"]:
                     continue
                 if source_rel == "defaults/fresh" and rel == "config.json":
                     continue  # platform-specific version is a single seed above
@@ -530,10 +524,7 @@ def main():
                 key in ("config/mash/hindsight-pin", ".hindsight/embed")
             )
         ) or (
-            not ENABLED["design"] and (
-                key.startswith(("local/share/mash/design/", "config/mash/headless/", "config/mash/node_modules/")) or
-                (key.startswith("config/mash/venvs/") and not key.startswith("config/mash/venvs/mash-parallel/"))
-            )
+            not ENABLED["programming"] and key.startswith("config/mash/venvs/")
         ):
             continue
         target = safe_target(key)

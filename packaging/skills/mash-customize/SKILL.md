@@ -26,9 +26,10 @@ in `Resources/bin/lib.sh`:
 | `GIT_CONFIG_GLOBAL` | `~/.mash/config/git/config` |
 | `GH_CONFIG_DIR` | `~/.mash/config/gh` |
 | `ZDOTDIR` | `~/.mash/config/zsh` |
+| `STARSHIP_CONFIG` | `~/.mash/config/starship.toml` |
+| `STARSHIP_CACHE` | `~/.mash/cache/starship` |
 | `HERDR_CONFIG_PATH` | `~/.mash/config/herdr/config.toml` |
 | `MASH_CONFIG_DIR` | `~/.mash/config/mash` |
-| `MASH_DESIGN_STACK` | `~/.mash/local/share/mash/design` |
 | `MASH_FRESH_CONFIG_DIR` | `~/.mash/config/fresh` |
 
 Two directories keep a leading dot because Hindsight names them itself:
@@ -48,44 +49,25 @@ change plus a rebuild.
 | `~/.mash/config/ghostty/` | Terminal config and themes |
 | `~/.mash/config/fresh/` | Editor config, `init.ts`, plugins, themes |
 | `~/.mash/config/git/config` | Mash's git config — pager, credential helper, `user.name`/`user.email` |
-| `~/.mash/config/{pet,lazydocker,lazygit,atuin,zsh}/` | Those tools' configs |
+| `~/.mash/config/{pet,lazydocker,lazygit,atuin,zsh,bash,fish}/` | Those tools' configs |
+| `~/.mash/config/starship.toml` | Shared prompt for bash, zsh and fish |
 | `~/.mash/config/mash/` | Mash Programming Skills state: `references/`, `venvs/`, `hindsight-pin`, `hindsight-embed.env` |
-| `~/.mash/local/share/mash/design/` | Design stack: the `mds` CLI, `docker-compose.yaml`, `penpot.env` |
 | `~/.mash/local/share/mash/hindsight/` | Hindsight's virtualenv (~1.1 GB) |
 | `~/.mash/setup/` | `state.txt`, `skills-choice`, `setup.log`, `hindsight-install.log` |
-| `~/.mash/bin/` | Launcher-written helpers, including the `mds` symlink |
+| `~/.mash/bin/` | Launcher-written helpers |
 
 Files here persist. The launcher seeds a file only when it is missing
 (`rsync --ignore-existing`), so local edits are never overwritten by a rebuild.
 That also means a rebuild will not refresh a file you edited by hand — delete it
 to pick up the new seed.
 
-## Optional skill suites
+## Optional skills
 
-The first-launch wizard defaults both Programming Skills and Design Skills on.
-Uncheck either to omit its skills, agents, and runtime payload from `~/.mash`.
-Programming Skills off also skips Hindsight installation and startup. Design
-Skills off skips the Penpot account, design dependencies, `mds` and autostart.
-The choice is stored in `~/.mash/setup/skills-choice`; upgrading never silently
-removes files from an existing installation.
-
-## Starting the design stack with Mash
-
-When Design Skills are selected, the setup wizard's Penpot page offers an
-opt-in checkbox to start Penpot and
-OpenDesign when Mash opens. The wizard writes
-`~/.mash/config/mash/design-autostart` for On and removes it for Off. This
-happens after setup finishes, in the background, and does not delay the Mash
-window. If Docker is unavailable, it logs to
-`~/.mash/setup/design-autostart.log` and retries on the next Mash launch;
-Mash does not start Docker itself.
-
-On an existing installation the wizard is already complete, so enable it with
-`printf '1\n' > ~/.mash/config/mash/design-autostart` (create the parent
-folder if needed). Disable it with `rm ~/.mash/config/mash/design-autostart`.
-The signed app must be rebuilt and reinstalled before its launcher knows about
-this setting. The helper's full output, including potential credentials, stays
-in the private `~/.mash/setup/design-autostart-mds.log`.
+The first-launch wizard defaults Programming Skills on. Uncheck it to omit its
+skills, agents, and runtime payload from `~/.mash`; that also skips Hindsight
+installation and startup. The choice is stored in
+`~/.mash/setup/skills-choice`; upgrading never silently removes files from an
+existing installation.
 
 ## Customizing Pi
 
@@ -171,8 +153,7 @@ Mash ships one: `extensions/mash-hindsight-daemon.ts`, the session warm-start.
 ### MCP servers
 
 `~/.mash/pi/agent/mcp.json`. Mash ships `context7`, `sentrux`, `cua-driver`,
-`agent-browser` and `chrome-devtools`; `penpot-local` is added by the launcher
-once the design stack is seeded. Keep a token out of this file if the bundle
+`agent-browser` and `chrome-devtools`. Keep a token out of this file if the bundle
 might ever be shared — a build assertion rejects a `github` entry.
 
 ### Instructions
@@ -215,7 +196,7 @@ Writing anywhere under these is a repo change, not a runtime one:
 
 - anything in `Contents/` — binaries, plugins, the `defaults/` seeds
 - `pins.txt` and the bundled versions
-- the design stack, Hindsight's venv, and the plugin set
+- Hindsight's venv and the plugin set
 
 The flow is `bash packaging/build.sh`, then reinstall the app. The build refuses
 to replace a running `Mash.app`.

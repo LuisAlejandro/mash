@@ -1,8 +1,8 @@
 # Maintainer Guide
 
-Quick reminders for Mash. The workflow skills come from two pinned checkouts,
-`mash-programming-skills` and `mash-design-skills`, and are staged into the app
-at `Contents/Resources/defaults/pi/skills` — they are not in this repo. Fleet
+Quick reminders for Mash. The workflow skills come from one pinned checkout,
+`mash-programming-skills`, and are staged into the app at
+`Contents/Resources/defaults/pi/skills` — they are not in this repo. Fleet
 setup lives in **maintainer-tools**.
 
 ## Feature work
@@ -102,12 +102,12 @@ secrets and in the gitignored `.env` for local runs, never in a tracked file.
 ### What the build pulls in
 
 `artifacts.yml` pins all of it, so a release is reproducible: Zig `0.16.0`, the
-Ghostty fork at a fixed commit, **two** skills checkouts pinned to a release tag
-(`mash-programming-skills` and `mash-design-skills`, both required by the build),
-and the Metal Toolchain (downloaded per run, ~840 MB).
+Ghostty fork at a fixed commit, the skills checkout pinned to a release tag
+(`mash-programming-skills`, required by the build), and the Metal Toolchain
+(downloaded per run, ~840 MB).
 
-Both skills repos cut releases and tag them, so the pin is a tag (`SKILLS_REF`,
-`DESIGN_SKILLS_REF`) rather than a commit SHA: a tag names a released, tested
+The skills repo cuts releases and tags them, so the pin is a tag (`SKILLS_REF`)
+rather than a commit SHA: a tag names a released, tested
 state; a commit only names where a branch happened to be. Bumping the pin means
 cutting a release there first, then pointing `SKILLS_VERSION`/`SKILLS_REF` (and
 the matching values in `packaging/carry.sh` and `packaging/pins.txt`) at it.

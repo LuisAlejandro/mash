@@ -182,6 +182,10 @@ mash_isolate() {
   export XDG_STATE_HOME="$d/local/state"
   export XDG_DATA_HOME="$d/local/share"
   export XDG_CACHE_HOME="$d/cache"
+  # One prompt config for bash, zsh and fish; Starship's session/cache files
+  # stay in the data folder rather than the account's ~/.cache.
+  export STARSHIP_CONFIG="$d/config/starship.toml"
+  export STARSHIP_CACHE="$d/cache/starship"
   export HERDR_CONFIG_PATH="$d/config/herdr/config.toml"
   # The instance decides the socket and the Herdr session; every path above and
   # below is shared by all instances, which is what "separate workspaces, one
@@ -230,11 +234,10 @@ mash_isolate() {
   export ZDOTDIR="$d/config/zsh"
   export MASH_FRESH_CONFIG_DIR="$d/config/fresh"
   export MASH_FRESH_DATA_DIR="$d/local/share/fresh"
-  # The design stack. `mds` and every design skill read these, and mds falls
-  # back to the real ~/.config/mash and ~/.local/share when they are absent —
-  # which would put compose state and Penpot secrets outside the data folder.
+  # Mash's own config tree: the Hindsight pin, shared references and the
+  # mash-parallel venv live here, and tools fall back to the real
+  # ~/.config/mash when it is absent.
   export MASH_CONFIG_DIR="$d/config/mash"
-  export MASH_DESIGN_STACK="$d/local/share/mash/design"
   # Hindsight resolves its own state through Path.home(), and Mash never moves
   # HOME. The warm-start script re-exports HOME for the Hindsight tree alone;
   # this is the path it derives from.

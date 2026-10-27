@@ -305,6 +305,16 @@ case "$not_ours" in
 	;;
 esac
 
+# Mash-owned launches use --bundled: a host decoy is a failure, not a fallback.
+mkdir -p "$tmp/fixture/host"
+printf '#!/bin/sh\nexit 0\n' >"$tmp/fixture/host/pi"
+chmod 755 "$tmp/fixture/host/pi"
+if PATH="$tmp/fixture/host:$PATH" MASH_BIN="$tmp/fixture/bin" \
+	"$mash_bin" --bundled pi >/dev/null 2>&1; then
+	printf 'mash-bin --bundled accepted a host pi\n' >&2
+	exit 1
+fi
+
 # mash-shell must keep the MASH_BIN herdr-pane built. Rebuilding it from its
 # own directory alone is the clobbered shape above: the bundled pi, node and
 # python3 then stay on PATH only because the inherited PATH still holds them,
@@ -322,11 +332,15 @@ EOF
 	chmod 755 "$stub_dir/$name"
 done
 
+# $1 is the shell to stand in for, $2 the mash-shell copy to run. The second
+# argument matters: mash-shell resolves its startup files relative to its own
+# directory, so the --rcfile case has to run the copy that sits in an
+# app-shaped layout rather than the one in packaging/.
 run_pane_shell() {
 	env -i HOME="$home" PATH="/usr/bin:/bin" \
 		MASH_BIN="$tmp/app/bin:$tmp/app/node/bin:$home/.mash/bin" \
 		MASH_USER_SHELL="$1" \
-		bash "$shell_root/mash-shell"
+		bash "${2:-$shell_root/mash-shell}"
 }
 
 pane_shell="$(run_pane_shell "$stub_dir/stub-shell")"
@@ -346,10 +360,25 @@ for host in /opt/homebrew/bin /usr/local/bin; do
 	done
 done
 
-# bash has no ZDOTDIR, so it is the one shell whose own startup could reorder
-# PATH after isolation; it must be started with --norc. zsh is covered by
-# ZDOTDIR pointing at Mash's config directory instead.
-bash_shell="$(run_pane_shell "$stub_dir/bash")"
+# bash has neither ZDOTDIR nor XDG_CONFIG_HOME, so mash-shell names its startup
+# file directly with --rcfile. It must point at the data folder's copy -- the
+# same $d/config/bash/bashrc the launcher seeds -- and not at the packaged
+# default. zsh and fish need no flag of their own: ZDOTDIR and
+# XDG_CONFIG_HOME already redirect them (see tests/test_pane_shell_rc.sh, which
+# runs the three files for real).
+# The layout is the real one, relative to the script: mash-shell runs from $d/bin
+# and reads the startup file the launcher seeded at $d/config/bash/bashrc --
+# beside it, not packaging's copy, which may be a different version.
+mkdir -p "$tmp/app/bin" "$tmp/app/config/bash"
+cp "$shell_root/mash-shell" "$shell_root/lib.sh" "$tmp/app/bin/"
+cp "$shell_root/defaults/bash/bashrc" "$tmp/app/config/bash/bashrc"
+bash_shell="$(run_pane_shell "$stub_dir/bash" "$tmp/app/bin/mash-shell")"
+assert_value "$bash_shell" ARGS "--rcfile $tmp/app/config/bash/bashrc"
+
+# A data folder seeded before that file existed must still start a shell: the
+# fallback keeps the old --norc behaviour instead of failing to launch.
+rm -f "$tmp/app/config/bash/bashrc"
+bash_shell="$(run_pane_shell "$stub_dir/bash" "$tmp/app/bin/mash-shell")"
 assert_value "$bash_shell" ARGS --norc
 
 # A shipped program must not be reachable by bare name through PATH when the

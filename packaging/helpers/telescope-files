@@ -282,6 +282,8 @@ pane_rightclick_to_fresh() {
 # it from adding a third pane. The label is renamed away at the end so Herdr
 # resumes auto-naming from the Fresh pane.
 open_in_new_dev_tab() {
+	# Absolute and bundled-only: this process's PATH leads with Homebrew.
+	pi_cmd="$("$(dirname "$0")/mash-bin" --bundled pi)" || return 1
 	created="$("$herdr" tab create --label "herdr-tab-launcher-telescope" \
 		${HERDR_ACTIVE_WORKSPACE_ID:+--workspace "$HERDR_ACTIVE_WORKSPACE_ID"} \
 		--cwd "$cwd" --focus)"
@@ -292,9 +294,6 @@ open_in_new_dev_tab() {
 		--cwd "$cwd" --no-focus | pane_id)"
 	[ -n "$right" ] || return 1
 	"$herdr" pane run "$left" 'herdr-fresh-pane .'
-	# Absolute, because this function is reached from a process whose PATH leads
-	# with Homebrew: a bare `pi` would run that copy. See mash-bin.
-	pi_cmd="$(mash-bin pi 2>/dev/null || printf '%s' pi)"
 	"$herdr" pane run "$right" "$pi_cmd"
 	[ -n "$tab" ] && "$herdr" tab rename "$tab" "" || true
 	# The wrapper sets routing itself; this only covers the case where it is not

@@ -119,12 +119,25 @@ mash_stage_runtimes() {
   # The interactive companions the macOS build bundles. All are pinned per
   # architecture in the manifest, so the same call serves both platforms.
   local tool
-  for tool in lazygit lazydocker pet atuin; do
+  for tool in lazygit lazydocker pet atuin starship; do
     mash_fetch_pinned "$tool" "$target" "$res/bin" || {
       echo "could not stage $tool for $target" >&2
       return 1
     }
   done
+
+  # zsh plugin code is shipped read-only; Mash's zshrc sources it from here.
+  local zsh_plugin
+  zsh_plugin="$(mktemp -d)"
+  mash_fetch_tree zsh-autosuggestions "$target" "$zsh_plugin" || {
+    rm -rf "$zsh_plugin"
+    echo "could not stage zsh-autosuggestions for $target" >&2
+    return 1
+  }
+  rm -rf "$res/share/zsh/zsh-autosuggestions"
+  mkdir -p "$res/share/zsh"
+  cp -R "$zsh_plugin/zsh-autosuggestions-0.7.1" "$res/share/zsh/zsh-autosuggestions"
+  rm -rf "$zsh_plugin"
 
   echo "staged node, python, the Pi packages and the bundled tools for $target"
 }

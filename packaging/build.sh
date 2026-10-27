@@ -56,10 +56,6 @@ ship_helpers=(
   herdr-annotate-paste
   herdr-orchestration
   mash-hindsight-install
-  mash-design-deps
-  mash-design-pi-sync
-  mash-penpot-account-setup
-  mash-design-autostart
   mash-voice-model
   mash-notify
   mash-seed-sync
@@ -216,6 +212,18 @@ unpack_bin atuin \
   "https://github.com/atuinsh/atuin/releases/download/v18.23.0/atuin-aarch64-apple-darwin.tar.gz" \
   "c988be1cde19cd7295ce64bc8b955d42fb1855e5227cb640c87fc09c8408c3fc" \
   "atuin-aarch64-apple-darwin/atuin"
+unpack_bin starship \
+  "https://github.com/starship/starship/releases/download/v1.27.0/starship-aarch64-apple-darwin.tar.gz" \
+  "5362da8cb2928f98f3ce0ffda697cf0f8de70081db000dae316d6d3a404f6cf0" \
+  "starship"
+
+# zsh-autosuggestions is source, not an executable: keep its whole pinned tree
+# beside the program directory so zsh can source it from the read-only bundle.
+fetch "https://github.com/zsh-users/zsh-autosuggestions/archive/refs/tags/v0.7.1.tar.gz" \
+  "$work/zsh-autosuggestions.tar.gz" \
+  "0df7affff21cd87ed298e6a3970ed08a1dd66a6efa676454ee5b091ad503badf"
+mkdir -p "$work/zsh-autosuggestions"
+tar -xzf "$work/zsh-autosuggestions.tar.gz" -C "$work/zsh-autosuggestions"
 
 # Host utilities (git, gh, fzf, fd, bat, rg, jq, delta, eza, zoxide) and
 # Fresh's formatters and language servers are installed on the user's machine
@@ -270,6 +278,7 @@ tools=(
   "lazydocker:$work/tools/lazydocker"
   "pet:$work/tools/pet"
   "atuin:$work/tools/atuin"
+  "starship:$work/tools/starship"
 )
 
 if ps -ax -o command= | grep -F "$dest/" | grep -v grep >/dev/null; then
@@ -414,6 +423,10 @@ chmod 755 "$app/Contents/MacOS/mash" \
   "$app/Contents/Resources/bin/mash-wizard"
 cp "$root/packaging/Mash.icns" "$app/Contents/Resources/Mash.icns"
 cp -R "$root/packaging/defaults" "$app/Contents/Resources/defaults"
+# zsh plugin code is shipped read-only; Mash's zshrc sources it from here.
+mkdir -p "$app/Contents/Resources/share/zsh"
+cp -R "$work/zsh-autosuggestions/zsh-autosuggestions-0.7.1" \
+  "$app/Contents/Resources/share/zsh/zsh-autosuggestions"
 # The wizard embeds this catalog at compile time and mash-voice-model reads it
 # at runtime from Resources/defaults/pi/catalog. Both have to match the pi-voice
 # the bundle actually ships, or the wizard would offer a model the extension
@@ -450,7 +463,6 @@ env HOME="$work/home" \
   "$app/Contents/Resources/node/bin/npm" install --prefix "$app/Contents/Resources/defaults/pi" \
   typebox@1.3.36
 mash_install_skills
-mash_install_design_skills
 export PATH="$work/rustc/bin:$work/go/bin:$app/Contents/Resources/bin:$PATH"
 # The downloaded Go owns its own standard library. An inherited GOROOT (for
 # example a Homebrew Go on PATH) makes its `compile` tool disagree with the
@@ -585,6 +597,24 @@ done < <(find \
   -type f)
 codesign --force --deep --sign - \
   "$app/Contents/Resources/plugins/dot.terminal-notifier/assets/HerdrNotify.app"
+
+# Notification Center names and illustrates an alert from the bundle that
+# posted it, so the notifier's own identity is what the user reads -- not
+# Mash.app's. Upstream ships it as "herdr" with Ghostty's Terminal.icns.
+notifier_plist="$app/Contents/Resources/plugins/dot.terminal-notifier/assets/HerdrNotify.app/Contents/Info.plist"
+for key in CFBundleName CFBundleDisplayName; do
+  got="$(/usr/libexec/PlistBuddy -c "Print :$key" "$notifier_plist" 2>/dev/null || true)"
+  [ "$got" = "Mash" ] || {
+    echo "notifier $key is '$got', not Mash: alerts would be attributed to it" >&2
+    exit 1
+  }
+done
+notifier_icon="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "$notifier_plist" 2>/dev/null || true)"
+[ "$notifier_icon" = "Mash" ] &&
+  [ -f "$app/Contents/Resources/plugins/dot.terminal-notifier/assets/HerdrNotify.app/Contents/Resources/Mash.icns" ] || {
+  echo "notifier icon is '$notifier_icon'; alerts would show Ghostty's artwork" >&2
+  exit 1
+}
 
 # Reject the OpenCode and Rosey programs. pi ships provider modules whose
 # filenames mention opencode; those are not the OpenCode app. Hindsight is no

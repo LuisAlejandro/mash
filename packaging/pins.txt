@@ -23,6 +23,8 @@ jq 1.8.1
 gh 2.95.0
 delta 0.19.2
 atuin 18.23.0
+starship 1.27.0
+zsh-autosuggestions 0.7.1
 gopls 0.23.0
 rust-analyzer 2026-09-27
 marksman 2026-02-08
@@ -51,7 +53,6 @@ herdr-workspace 0.1.2
 telescope 0.1.2
 ray.plugin-manager 0.5.0
 mash-programming-skills 0.5.15
-mash-design-skills 0.1.1
 sentrux 0.5.7
 hindsight-embed 0.8.3
 hindsight-api 0.8.3

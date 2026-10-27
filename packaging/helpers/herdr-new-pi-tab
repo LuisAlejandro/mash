@@ -10,6 +10,9 @@ set -eu
 herdr="${HERDR_BIN_PATH:-herdr}"
 cwd="${HERDR_ACTIVE_PANE_CWD:-$HOME}"
 here="$(dirname "$0")"
+# Fail before creating a tab if the bundled pi is missing: a host pi is not a
+# valid fallback for Mash's pi launcher.
+pi_cmd="$("$here/mash-bin" --bundled pi)" || exit 1
 
 # Start pi as a TRACKED agent (herdr agent start) rather than just running the
 # binary (herdr pane run). Tracked means Herdr knows the pane holds an agent:
@@ -42,6 +45,5 @@ created="$("$herdr" tab create --label "herdr-tab-launcher-pi" \
 tab="$(printf '%s' "$created" | sed -n 's/.*"tab_id":"\([^"]*\)".*/\1/p' | head -n 1)"
 pane="$(printf '%s' "$created" | sed -n 's/.*"pane_id":"\([^"]*\)".*/\1/p' | head -n 1)"
 
-pi_cmd="$(mash-bin pi 2>/dev/null || printf '%s' pi)"
 start_agent "$pane" pi pi "$pi_cmd"
 [ -n "$tab" ] && "$herdr" tab rename "$tab" "" || true

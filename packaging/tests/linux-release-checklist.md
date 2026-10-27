@@ -47,7 +47,6 @@ used.
 | Notification delivery appearance | the session bus is observable, the notification surface is not |
 | Font rendering | needs a real GPU/screen to judge, not only fontconfig discovery |
 | Audio capture from a microphone | the harness uses a virtual source; hardware wake-up and permissions are a machine concern |
-| Docker/design stack | needs a running Docker daemon, which the runner does not provide |
 
 **Blocking:** publication requires every row above to be signed off. If a row
 cannot be signed off for an architecture, that architecture must not be

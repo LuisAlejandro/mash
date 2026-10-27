@@ -660,9 +660,18 @@ mash_build_plugins() {
   if [ "$(uname -s)" = "Darwin" ]; then
     git clone --depth 1 https://github.com/dot/herdr-terminal-notifier.git "$work/src/notifier"
     mash_copy_tree "$work/src/notifier" "$plugins/dot.terminal-notifier"
-    local plist="$plugins/dot.terminal-notifier/assets/HerdrNotify.app/Contents/Info.plist"
+    local notifier="$plugins/dot.terminal-notifier/assets/HerdrNotify.app"
+    local plist="$notifier/Contents/Info.plist"
     /usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier app.mash.notify' "$plist"
-    codesign --force --deep --sign - "$plugins/dot.terminal-notifier/assets/HerdrNotify.app"
+    # Notification Center draws the alert's name and icon from the bundle that
+    # posted it, which upstream ships as "herdr" with Ghostty's Terminal.icns.
+    # Mash posts these, so they carry Mash's name and artwork instead.
+    /usr/libexec/PlistBuddy -c 'Set :CFBundleName Mash' "$plist"
+    /usr/libexec/PlistBuddy -c 'Set :CFBundleDisplayName Mash' "$plist"
+    /usr/libexec/PlistBuddy -c 'Set :CFBundleIconFile Mash' "$plist"
+    cp "$root/packaging/Mash.icns" "$notifier/Contents/Resources/Mash.icns"
+    rm -f "$notifier/Contents/Resources/Terminal.icns"
+    codesign --force --deep --sign - "$notifier"
   fi
 
   git clone --depth 1 https://github.com/plannotator/herdr-annotate.git "$work/src/annotate"
@@ -823,6 +832,8 @@ mash_install_skills() {
     "APPEND_SYSTEM.md is missing ask_user argument guidance"
   mash_require_text "$pi/APPEND_SYSTEM.md" 'uv_cwd' \
     "APPEND_SYSTEM.md is missing codemode cwd guidance"
+  mash_require_text "$pi/APPEND_SYSTEM.md" '^## Review a finished session$' \
+    "APPEND_SYSTEM.md is missing the review-tab suggestion"
   mash_require_text "$pi/APPEND_SYSTEM.md" 'HOME. is not changed' \
     "APPEND_SYSTEM.md is missing the Mash environment section"
   # The rewrite pass must not have touched the sentence that names the user's
@@ -907,6 +918,20 @@ mash_install_skills() {
     echo "Hindsight warm-start calls hindsight-embed by name, not by path" >&2
     exit 1
   fi
+
+  # Runtime copies only the programming suite into ~/.mash. Keep the inventory
+  # beside the staged defaults so launchers and ownership sync agree, even if
+  # a future pinned release adds a skill or agent with a new name.
+  {
+    printf '%s\n' AGENTS.md APPEND_SYSTEM.md \
+      extensions/mash-hindsight-daemon.ts scripts/ensure-hindsight-daemon.sh
+    for name in "$(mash_skills_src)/src/skills"/*; do
+      [ -d "$name" ] && printf 'skills/%s\n' "$(basename "$name")"
+    done
+    for name in "$(mash_skills_src)/src/agents"/*; do
+      [ -f "$name" ] && printf 'agents/%s\n' "$(basename "$name")"
+    done
+  } >"$(mash_res)/defaults/optional-programming.txt"
 }
 
 mash_write_pi_guidance() {
@@ -936,7 +961,7 @@ EOF
 }
 
 mash_write_append_system() {
-  local src="$1" dest="$2" mdc name description
+  local src="$1" dest="$2" mdc name description review_chord
   {
     echo "# Mash Programming Skills — always-on rules"
     echo
@@ -980,7 +1005,17 @@ for everyone live in the bundle and are added through the build instead.
 For the full map — every config path, how to author an extension or skill, how
 to install a package, which machine tools Mash borrows, and what must go through
 the repository instead — load the `mash-customize` skill.
-
+EOF
+    # The review-tab chord is the one platform difference in this guidance, and
+    # it is the point of the suggestion, so it is printed here rather than
+    # written into the quoted heredocs around it.
+    if [ "$(uname -s)" = "Darwin" ]; then
+      review_chord='⌘⇧R'
+    else
+      review_chord='Ctrl+Shift+R'
+    fi
+    printf '## Review a finished session\n\nWhen a session changes two or more files, close it by suggesting the user\nopen a review tab (`%s`): the tab pairs the session diff with an agent, so the\nwork gets read instead of trusted. One short line, once per session. Skip it\nfor a single-file or trivial edit.\n\n' "$review_chord"
+    cat <<'EOF'
 ## Tool-call recovery
 
 - For `ask_user`, use exactly one form: `question` for one question, or
@@ -1367,204 +1402,6 @@ PY
     *) "$venv/bin/python" -c 'import sys' ;;
     esac
   done
-}
-
-# --- design stack ---------------------------------------------------------
-#
-# A second toolkit, installed the way the first one is: copy the payload, build
-# the dependencies, never run its installer. That installer also writes
-# ~/.cursor/mcp.json and a manifest, and Mash ships neither.
-mash_require_design_skills() {
-  local src ver
-  src="$(mash_design_src)"
-  if [ ! -f "$src/VERSION" ]; then
-    echo "Design skills checkout is missing at $src." >&2
-    echo "Set MASH_DESIGN_SRC to a checkout of the pinned release." >&2
-    exit 1
-  fi
-  ver="$(tr -d '[:space:]' <"$src/VERSION")"
-  if [ "$ver" != "0.1.1" ]; then
-    echo "Design skills VERSION is $ver, want 0.1.1." >&2
-    exit 1
-  fi
-}
-
-# Overridable so CI can point at its own clone, the way MASH_SKILLS_SRC is.
-# Without this the path is pinned to a maintainer's home, which no runner has.
-mash_design_src() { printf '%s\n' "${MASH_DESIGN_SRC:-$home/Development/mash-design-skills}"; }
-
-# npm from the staged bundle, never the host's. HOME and the npm cache stay in
-# the build workdir so nothing is written to the user's account.
-mash_bundled_npm() {
-  local home_dir cache_dir
-  if [ -n "${work:-}" ]; then
-    home_dir="$work/home"
-    cache_dir="$work/npm-cache"
-  else
-    home_dir="$(mktemp -d "$root/dist/.design-npm.XXXXXX")"
-    cache_dir="$home_dir/cache"
-  fi
-  mkdir -p "$home_dir" "$cache_dir"
-  # npm's entry point is `#!/usr/bin/env node`, so the runtime it belongs to has
-  # to be on PATH or it reports a missing interpreter instead of doing the work.
-  env HOME="$home_dir" npm_config_cache="$cache_dir" npm_config_update_notifier=false \
-    PATH="$(mash_res)/node/bin:$PATH" \
-    "$(mash_res)/node/bin/npm" "$@"
-}
-
-# The penpot-local MCP server. Built at build time because it needs tsc; the
-# launcher only ever starts the compiled server.
-mash_build_design_headless() {
-  local src="$1" dest="$2"
-  local node_runtime="$(mash_res)/node/bin/node"
-  [ -d "$src" ] || {
-    echo "design headless source is missing" >&2
-    exit 1
-  }
-  rm -rf "$dest"
-  mkdir -p "$dest"
-  tar -C "$src" --exclude node_modules --exclude dist --exclude .git -cf - . |
-    tar -C "$dest" -xf -
-  mash_bundled_npm install --prefix "$dest"
-  (cd "$dest" && mash_bundled_npm run build) || {
-    echo "headless build failed" >&2
-    exit 1
-  }
-  [ -f "$dest/dist/server.js" ] || {
-    echo "headless server.js was not produced" >&2
-    exit 1
-  }
-  # The build needs tsc and vitest and the bundler trees behind them; the
-  # server does not. `npm run build` is a plain `tsc`, and every runtime import
-  # in dist/ is either relative or one of the three packages under
-  # `dependencies`. Dropping devDependencies takes this tree from 108 MB to
-  # 27 MB and leaves the server's module graph intact.
-  mash_bundled_npm prune --omit=dev --prefix "$dest"
-  # Prove the pruned tree still loads before the app is signed. This is a stdio
-  # server, so it is given its own deadline: a check that waits on stdin would
-  # hang the build instead of reporting anything.
-  "$node_runtime" -e "
-    const guard = setTimeout(() => {
-      console.error('headless load check timed out');
-      process.exit(1);
-    }, 20000);
-    const p = '$dest/dist/server.js';
-    import(require('node:url').pathToFileURL(p).href).catch((e) => {
-      // A missing PENPOT_* configuration is expected: this only proves the
-      // module graph resolved. Anything else is a real packaging fault.
-      if (!/penpot-local configuration/.test(String(e && e.message))) {
-        clearTimeout(guard);
-        console.error('headless server failed to load: ' + e);
-        process.exit(1);
-      }
-    }).then(() => {
-      clearTimeout(guard);
-      process.exit(0);
-    });
-  " || {
-    echo "the pruned headless server no longer loads" >&2
-    exit 1
-  }
-}
-
-mash_install_design_skills() {
-  local src pi cfg stack name skill
-  mash_require_design_skills
-  src="$(mash_design_src)"
-  pi="$(mash_res)/defaults/pi"
-  cfg="$(mash_res)/defaults/mash-config"
-  stack="$(mash_res)/defaults/design-stack"
-  case "$pi" in
-  "$(mash_res)/defaults/pi") ;;
-  *)
-    echo "refusing to install design skills outside the staged app" >&2
-    exit 1
-    ;;
-  esac
-  mkdir -p "$pi/skills" "$pi/agents" "$cfg/node_modules" "$cfg/venvs" "$stack"
-
-  tar -C "$src/src/agents" --exclude '.git' -cf - . | tar -C "$pi/agents" -xf -
-
-  for name in "$src/src/skills"/*; do
-    [ -d "$name" ] || continue
-    skill="$(basename "$name")"
-    rm -rf "$pi/skills/$skill"
-    mkdir -p "$pi/skills/$skill"
-    tar -C "$name" \
-      --exclude '.venv' --exclude 'node_modules' --exclude '__pycache__' \
-      --exclude '.pytest_cache' --exclude '.git' --exclude 'target' \
-      -cf - . | tar -C "$pi/skills/$skill" -xf -
-    # The design stack's Python and npm dependencies are deliberately NOT built
-    # here. They are about 175 MB, and they are useless until `mds setup` has
-    # run — which itself needs Docker and network. `mds` calls mash-design-deps,
-    # which installs them into the data folder on demand.
-    #
-    # The headless MCP server below is the exception: it is small once its
-    # devDependencies are pruned, and the penpot-local entry needs it as soon as
-    # setup finishes, so it ships.
-  done
-
-  mash_build_design_headless "$src/headless" "$cfg/headless"
-
-  for name in bin lib docker docker-compose.yaml convert.sh .env.example \
-    penpot.env.example NOTICE LICENSE README.md; do
-    [ -e "$src/$name" ] || continue
-    tar -C "$src" --exclude '.git' --exclude node_modules -cf - "$name" |
-      tar -C "$stack" -xf -
-  done
-  # Patch only the staged copy; the pinned toolkit checkout stays read-only.
-  "$(mash_res)/python/bin/python3" \
-    "$root/packaging/patch-design-pi.py" "$stack" "$src"
-  # `mds setup` generates the real one, with PENPOT_SECRET_KEY and OD_API_TOKEN
-  # inside. The toolkit checkout may carry one; it must never ship.
-  rm -f "$stack/penpot.env"
-
-  # Same rewrite the first toolkit gets, so the design skills' ~/.config/mash
-  # references land in the data folder too.
-  mash_rewrite_skill_paths "$pi"
-
-  [ -f "$pi/skills/mash-design-setup/SKILL.md" ] || {
-    echo "mash-design-setup was not staged" >&2
-    exit 1
-  }
-  [ -f "$stack/bin/mds" ] || {
-    echo "the design stack CLI was not staged" >&2
-    exit 1
-  }
-  [ -f "$stack/docker-compose.yaml" ] || {
-    echo "the design compose file was not staged" >&2
-    exit 1
-  }
-  [ -f "$cfg/headless/dist/server.js" ] || {
-    echo "the headless Penpot server was not built" >&2
-    exit 1
-  }
-  if [ -f "$stack/penpot.env" ]; then
-    echo "the design stack must not carry penpot.env" >&2
-    exit 1
-  fi
-
-  # Runtime copies only selected suites into ~/.mash. Keep the inventory
-  # beside the staged defaults so launchers and ownership sync agree, even if
-  # a future pinned release adds a skill or agent with a new name.
-  {
-    printf '%s\n' AGENTS.md APPEND_SYSTEM.md \
-      extensions/mash-hindsight-daemon.ts scripts/ensure-hindsight-daemon.sh
-    for name in "$(mash_skills_src)/src/skills"/*; do
-      [ -d "$name" ] && printf 'skills/%s\n' "$(basename "$name")"
-    done
-    for name in "$(mash_skills_src)/src/agents"/*; do
-      [ -f "$name" ] && printf 'agents/%s\n' "$(basename "$name")"
-    done
-  } >"$(mash_res)/defaults/optional-programming.txt"
-  {
-    for name in "$src/src/skills"/*; do
-      [ -d "$name" ] && printf 'skills/%s\n' "$(basename "$name")"
-    done
-    for name in "$src/src/agents"/*; do
-      [ -f "$name" ] && printf 'agents/%s\n' "$(basename "$name")"
-    done
-  } >"$(mash_res)/defaults/optional-design.txt"
 }
 
 mash_write_pins() {

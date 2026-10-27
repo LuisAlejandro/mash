@@ -64,9 +64,7 @@ jobs:
           done
 
           for t in \
-            packaging/tests/test_first_launch_layout.py \
-            packaging/tests/test_design_pi_sync.py \
-            packaging/tests/test_penpot_account_setup.py
+            packaging/tests/test_first_launch_layout.py
           do
             if python3 "$t"; then
               echo "PASS $t"

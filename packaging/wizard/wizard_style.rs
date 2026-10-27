@@ -174,7 +174,7 @@ const ACTIVE_ROW: Color = Color::Rgb(51, 51, 51);
 const PAGES: [&str; 5] = [
     "Tools & identity",
     "Providers",
-    "Penpot",
+    "Skills",
     "Appearance",
     "Dictation",
 ];
@@ -499,7 +499,7 @@ pub mod tests {
                     Rect::new(0, 0, 60, 4),
                     vec![
                         (text_field(true, "API key", "••••".into()), Some(4)),
-                        (checkbox(true, "Install Design Skills", true), Some(5)),
+                        (checkbox(true, "Install Skills", true), Some(5)),
                         (checkbox(false, "Install Programming Skills", true), Some(7)),
                         (text_field(true, "Email", String::new()), Some(8)),
                     ],
@@ -515,7 +515,7 @@ pub mod tests {
         let buffer = terminal.backend().buffer();
         for (label, id) in [
             ("API key", 4),
-            ("Install Design Skills", 5),
+            ("Install Skills", 5),
             ("Install Programming Skills", 7),
             ("Email", 8),
             ("Continue", 6),
@@ -586,7 +586,7 @@ pub mod tests {
             .map(|cell| cell.symbol())
             .collect::<String>();
         assert!(text.contains("Tools & identity"));
-        assert!(text.contains("Penpot"));
+        assert!(text.contains("Skills"));
         assert_eq!(form.x, 31); // flush against the separator column
         assert_eq!((form.y, form.width, form.height), (0, 89, 30));
         // Logo rows 1-10, SETUP 11, blank 12, pages from 13: third page is 15.

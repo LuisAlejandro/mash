@@ -2,7 +2,7 @@
 # Print the absolute path of a program Mash ships, resolved through Mash's own
 # program directories rather than through PATH.
 #
-#   command="$(mash-bin pi)"
+#   command="$(mash-bin --bundled pi)"  # fail rather than run a host pi
 #   "$command" --session "$session"
 #
 # Why this exists: almost every program Mash ships has a twin a user may have
@@ -19,12 +19,17 @@
 # order. Resolving through it means the copy Mash was built and tested with is
 # the copy that runs, whatever PATH looks like at the call site.
 #
-# Falls back to `command -v`, then to the bare name, so a helper run outside a
-# Mash session still works -- and so a failure to resolve is visible as the
-# program-not-found it is, instead of silently becoming a different version.
+# By default, falls back to `command -v`, then the bare name for callers that
+# deliberately allow host programs. Use --bundled for Mash-owned executables:
+# it fails closed when the bundled copy is missing.
 set -eu
 
-name="${1:?usage: mash-bin <program>}"
+bundled_only=false
+if [ "${1:-}" = --bundled ]; then
+	bundled_only=true
+	shift
+fi
+name="${1:?usage: mash-bin [--bundled] <program>}"
 
 # `tr` plus `read` rather than `for dir in $(...)`: MASH_BIN is a colon list of
 # absolute paths, and word-splitting it would break on a Mash installed under a
@@ -44,4 +49,8 @@ if [ -n "$resolved" ]; then
 	exit 0
 fi
 
+if [ "$bundled_only" = true ]; then
+	printf 'mash-bin: bundled %s is missing from MASH_BIN\n' "$name" >&2
+	exit 1
+fi
 command -v "$name" 2>/dev/null || printf '%s\n' "$name"
