@@ -1,1 +1,3 @@
-Mash assembles a macOS arm64 app at dist/Mash.app. The build downloads pinned programs and ships the Herdr plugins, helpers, and fonts in this repo. It does not start Herdr.
+Mash is a desktop workspace for AI-assisted coding. It brings a customized Ghostty terminal, Herdr workspaces, the Fresh editor, Pi, and pinned development tools into one app. The first-launch wizard configures your workspace, while settings and sessions stay in `~/.mash`, separate from your other tools.
+
+Mash supports Apple silicon Macs running macOS 14 or newer and Ubuntu 24.04 with GNOME on amd64 or arm64. The macOS app is signed and notarized; the Linux package configures Mash's signed APT repository for subsequent updates. User-edited settings and user-installed resources are preserved across upgrades.
