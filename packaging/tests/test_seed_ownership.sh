@@ -58,6 +58,8 @@ json.dump({"mcpServers":{"mcp-a":{"url":f"https://a/{version}"},"mcp-b":{"url":f
 PY
   mkdir -p "$res/defaults/ghostty/themes"
   printf 'theme %s\n' "$version" >"$res/defaults/ghostty/themes/Monokai"
+  # carry.sh writes this inventory into every bundle beside the staged defaults.
+  : >"$res/defaults/optional-programming.txt"
   mkdir -p "$res/defaults/herdr" "$res/defaults/ghostty" "$res/defaults/zsh" \
     "$res/defaults/git" "$res/defaults/pet" "$res/defaults/fresh"
   cat >"$res/defaults/herdr/config.toml" <<'EOF'
@@ -220,19 +222,21 @@ import json,sys
 d=json.load(open(sys.argv[1]))["mcpServers"];sys.exit(0 if "user-server" in d and "user-mcp" in d else 1)
 PY'
 
-echo "-- an installation predating the record adopts it without touching anything"
+echo "-- a file Mash never wrote is never claimed, even when it matches"
 rm -rf "$d"
-mkdir -p "$d/pi/agent/skills/legacy"
-printf 'pre-existing user content\n' >"$d/pi/agent/skills/legacy/SKILL.md"
-sum_before="$(sha256sum "$d/pi/agent/skills/legacy/SKILL.md" | cut -d' ' -f1)"
+mkdir -p "$d/pi/agent/skills/demo" "$d/pi/agent/skills/other"
+# Byte-identical to what this build ships, yet with no record entry it is the
+# user's: Mash has no evidence it wrote it, so it stays unclaimed and untouched.
+printf 'v1 content\n' >"$d/pi/agent/skills/demo/SKILL.md"
+printf 'user content\n' >"$d/pi/agent/skills/other/SKILL.md"
+sum_before="$(sha256sum "$d/pi/agent/skills/other/SKILL.md" | cut -d' ' -f1)"
 mkres 1.0.0 "v1 content"
 run_sync >/dev/null 2>&1
-sum_after="$(sha256sum "$d/pi/agent/skills/legacy/SKILL.md" | cut -d' ' -f1)"
+sum_after="$(sha256sum "$d/pi/agent/skills/other/SKILL.md" | cut -d' ' -f1)"
 chk "pre-existing file keeps its content" '[ "$sum_before" = "$sum_after" ]'
-# The file was there before Mash ever kept a record, so Mash cannot vouch for it
-# and must not claim it. Files this run created are new and are recorded.
-chk "pre-existing file is not claimed" '! rec_has pi/agent/skills/legacy/SKILL.md'
-chk "newly seeded files are claimed" 'rec_has pi/agent/skills/demo/SKILL.md'
+chk "pre-existing file is not claimed" '! rec_has pi/agent/skills/other/SKILL.md'
+chk "a matching but unrecorded file is not claimed either" '! rec_has pi/agent/skills/demo/SKILL.md'
+chk "newly seeded files are claimed" 'rec_has config/ghostty/themes/Monokai'
 
 echo "-- a corrupt record is rebuilt rather than aborting the launch"
 printf 'not json' >"$record"
@@ -244,7 +248,7 @@ echo "-- a build with no VERSION never deletes anything"
 mkres "x" "no version"
 : >"$res/VERSION"
 run_sync >/dev/null 2>&1
-chk "files still present" '[ -f "$d/pi/agent/skills/legacy/SKILL.md" ]'
+chk "files still present" '[ -f "$d/pi/agent/skills/other/SKILL.md" ]'
 
 # Record keys are user-writable data, not authority to delete arbitrary paths.
 echo "-- malformed record paths cannot escape ~/.mash"
@@ -309,13 +313,13 @@ printf 'programming=false\n' >"$d/setup/skills-choice"
 run_sync >/dev/null 2>&1
 chk "changing preference never deletes existing files" '[ -f "$d/pi/agent/skills/programming/SKILL.md" ]'
 
-echo "-- legacy completed installations without a choice retain the suite"
-d="$tmp/legacy-complete"
+echo "-- a completed wizard with no choice file seeds no optional suite"
+d="$tmp/no-choice"
 mkdir -p "$d/setup"
 printf 'completed=true\n' >"$d/setup/state.txt"
 run_sync >/dev/null 2>&1
 mash_seed_pi
-chk "legacy installation gets the optional skills" '[ -f "$d/pi/agent/skills/programming/SKILL.md" ]'
+chk "only setup/skills-choice enables the optional skills" '[ ! -e "$d/pi/agent/skills/programming/SKILL.md" ]'
 
 echo
 if [ "$failures" -eq 0 ]; then

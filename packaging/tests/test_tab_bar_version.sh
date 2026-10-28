@@ -46,6 +46,8 @@ mkdir -p "$res/defaults/herdr" "$res/defaults/ghostty" "$res/defaults/pet" \
 d="$tmp/data"
 mkdir -p "$d/bin"
 printf '9.9.9\n' >"$res/VERSION"          # a sentinel, not the real version
+# carry.sh stages this inventory into every bundle beside the defaults.
+: >"$res/defaults/optional-programming.txt"
 cp "$root/packaging/defaults/herdr/config.toml" "$res/defaults/herdr/config.toml"
 cp "$root/packaging/defaults/ghostty/config" "$res/defaults/ghostty/config"
 # mash_seed_configs also stages pet, the zone file and the pane shell; supply them
