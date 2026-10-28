@@ -1,0 +1,39 @@
+#!/bin/bash
+# Mash's `hindsight-embed`: every call reaches Mash's own Hindsight, never the
+# owner's.
+#
+# Hindsight resolves its config, profiles, daemon log and embedded Postgres
+# through Path.home(), and Mash never changes HOME. A bare `hindsight-embed`
+# would therefore be the owner's install reading the owner's ~/.hindsight/embed
+# and talking to the owner's daemon -- which is exactly what the skills used to
+# do, so memories from Mash sessions landed in the owner's personal database
+# while Mash's own daemon on 8998 sat idle.
+#
+# This sits on MASH_BIN, ahead of ~/.local/bin and Homebrew, and does what the
+# warm-start script (ensure-hindsight-daemon.sh) already does: HOME is the data
+# folder for the Hindsight process tree only, and the executable is Mash's
+# install by absolute path, never a PATH lookup that could land on the owner's.
+set -eu
+
+data="${MASH_DATA_DIR:-}"
+if [ -z "$data" ] && [ -n "${PI_CODING_AGENT_DIR:-}" ]; then
+	data="$(cd "$PI_CODING_AGENT_DIR/../.." 2>/dev/null && pwd)" || data=""
+fi
+if [ -z "$data" ] || [ ! -d "$data" ]; then
+	echo "hindsight-embed: not in a Mash session (MASH_DATA_DIR is unset)" >&2
+	exit 1
+fi
+
+# Installed by mash-hindsight-install on first launch, programming suite only.
+embed="$data/.local/bin/hindsight-embed"
+if [ ! -x "$embed" ]; then
+	echo "hindsight-embed: Mash's Hindsight is not installed ($embed)" >&2
+	exit 1
+fi
+
+# The same caches the warm-start pins: HOME does not imply either, and both
+# default outside the data folder.
+export HOME="$data"
+export HF_HOME="${HF_HOME:-$data/cache/huggingface}"
+export HINDSIGHT_API_RERANKER_FLASHRANK_CACHE_DIR="${HINDSIGHT_API_RERANKER_FLASHRANK_CACHE_DIR:-$data/cache/flashrank}"
+exec "$embed" "$@"

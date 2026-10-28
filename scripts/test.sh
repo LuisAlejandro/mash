@@ -57,6 +57,10 @@ fi
 run "packaging/plugins/fork-from-message/tests/test_fork_from_message.py" \
   python3 packaging/plugins/fork-from-message/tests/test_fork_from_message.py
 
+# Mash's own orchestration loop: renamed CLI and state are part of this repo.
+run "packaging/plugins/mash-orchestration/tests/test_orchestration.py" \
+  python3 packaging/plugins/mash-orchestration/tests/test_orchestration.py
+
 # Other vendored plugins are not run here. They are other projects' code with
 # their own upstream CI, and scripts/preflight.sh already excludes
 # packaging/plugins from its parsing for the same reason: their failures are

@@ -54,7 +54,7 @@ def require_state() -> Path:
     # Herdr server.
     if "/.mash/" not in root:
         die("Mash state directory is not set")
-    path = Path(root) / "herdr-orchestration"
+    path = Path(root) / "mash-orchestration"
     path.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -283,7 +283,7 @@ def preamble(run_id: str, task_id: str, dispatch_id: str, spec: str) -> str:
         "Do not call ask_user. Do not answer a question by typing into a pane "
         "with herdr agent send-keys.\n"
         "When the task is finished, run exactly once:\n"
-        "herdr-orchestration worker-done --outcome succeeded --summary "
+        "mash-orchestration worker-done --outcome succeeded --summary "
         "\"<three sentences: work, findings, remaining>\"\n"
         "Use --outcome failed when the task failed. Then stop. "
         "Idle is not completion.\n"
@@ -687,7 +687,7 @@ def parse_options(raw: str | None) -> list[str]:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="herdr-orchestration")
+    parser = argparse.ArgumentParser(prog="mash-orchestration")
     sub = parser.add_subparsers(dest="command", required=True)
 
     run_create = sub.add_parser("run-create")
