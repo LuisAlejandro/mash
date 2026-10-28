@@ -12,7 +12,10 @@ res="$ROOT/Resources"
 
 home="$(mash_real_home)"
 d="$home/.mash"
-mkdir -p "$d"
+# 0700, not the umask's 0755: the data folder holds agent transcripts and logs
+# written by tools Mash does not own, and +x on this directory is what gates
+# every one of them. Runs on every launch so an existing 0755 install is fixed.
+mash_protect_data_dir "$d"
 # Nothing may grow inside the bundle after it is signed. The bundled
 # interpreter is on every pane's PATH, and Python writes __pycache__ next to
 # the module it imports -- the Hindsight daemon alone laid down 34 files in

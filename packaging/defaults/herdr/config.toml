@@ -360,7 +360,13 @@ prompt_new_tab_name = false
 # `text` is a literal string, and herdr also supports zoom/hostname/datetime
 # and command entries. An untagged `{ text = "..." }` is a TOML parse error --
 # the tag is required.
-tab_bar_right = [{ type = "text", text = "Mash" }]
+#
+# The version is substituted from the bundle's VERSION when this file is seeded,
+# so it follows a release without anyone editing this line. `command` is the only
+# entry type that could read it at runtime, and herdr runs those through a login
+# shell on a timer -- a whole shell per refresh for a string that cannot change
+# while the app is running. See mash_seed_configs and mash-seed-sync.
+tab_bar_right = [{ type = "text", text = "Mash __MASH_VERSION__" }]
 
 # Collapsed sidebar presentation. cmd+b collapses the sidebar; with this set to
 # "hidden" the collapse removes it entirely instead of leaving a compact strip.

@@ -174,17 +174,22 @@ mash_seed_hindsight() {
 #
 #   mash_seed_configs <resource-root> <data-dir>
 mash_seed_configs() {
-  local res="$1" d="$2" suffix=""
+  local res="$1" d="$2" suffix="" version=""
   # The three keymaps are platform-specific: Command chords and the macOS
   # notification app make no sense on Linux, and Ctrl chords would shadow the
   # shell on macOS. The .linux variants sit beside the originals.
   [ "$(uname -s)" = "Darwin" ] || suffix=".linux"
+  # The tab bar shows this, so read it once. Empty when the bundle carries no
+  # VERSION, which leaves the placeholder visible rather than printing a stray
+  # date or a stale number.
+  [ -f "$res/VERSION" ] && version="$(tr -d '[:space:]' <"$res/VERSION")"
   mkdir -p "$d/config/herdr" "$d/config/ghostty" "$d/config/zsh" \
     "$d/config/bash" "$d/config/fish" \
     "$d/config/git" "$d/config/pet"
   if [ ! -f "$d/config/herdr/config.toml" ]; then
     sed -e "s#__MASH_SHELL__#$d/bin/mash-shell#g" \
       -e "s#__MASH_CONFIG__#$d/config#g" \
+      -e "s#__MASH_VERSION__#$version#g" \
       "$res/defaults/herdr/config${suffix}.toml" >"$d/config/herdr/config.toml"
   fi
   # The terminal config names herdr-pane by absolute path, so the placeholder is
@@ -243,6 +248,24 @@ mash_seed_configs() {
   chmod 755 "$d/bin/lib.sh" "$d/bin/launch-common.sh" "$d/bin/mash-shell"
 }
 
+# Protect the data directory itself.
+#
+# ~/.mash holds agent conversation transcripts, logs and credentials, and most of
+# those files are written by tools Mash does not own -- Pi writes session
+# transcripts mode 0644, Fresh writes one log per editor. Tightening each file is
+# neither possible nor necessary: reaching any of them requires +x on this
+# directory, so 0700 on the root closes the whole tree whatever mode its contents
+# carry. It also has to run on every launch, because `mkdir -p` never changes the
+# mode of a directory that already exists -- installs made before this existed
+# stay world-traversable until something chmods them.
+#
+#   mash_protect_data_dir <data-dir>
+mash_protect_data_dir() {
+  local d="$1"
+  mkdir -p "$d" || return 1
+  chmod 700 "$d" 2>/dev/null || true
+}
+
 # Seed the whole data directory, in the order the launcher needs it: plain
 # config first, then the skill payloads that reference it, then the pieces that
 # depend on a runtime being in place.
@@ -250,6 +273,7 @@ mash_seed_configs() {
 #   mash_seed_all <resource-root> <data-dir> <account-home>
 mash_seed_all() {
   local res="$1" d="$2" home="$3"
+  mash_protect_data_dir "$d"
   mkdir -p \
     "$d/config/herdr" "$d/config/ghostty" "$d/config/git" "$d/config/gh" \
     "$d/config/fresh" "$d/config/zsh" "$d/config/pet" "$d/config/atuin" \
