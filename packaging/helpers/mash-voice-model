@@ -181,6 +181,12 @@ mkdir -p "$agent"
   const wanted = [...new Set(langs.split(",").filter(Boolean).map(base))];
   const exact = (l) => model.languages.find((c) => c.toLowerCase() === l) ||
     model.languages.find((c) => base(c) === l) || l;
+  // Auto is safe when either the model detects languages itself or the
+  // external detector is being shipped for it. The wizard only asks for the
+  // detector when the model lacks native detection, so testing `detector`
+  // alone forced a fixed language onto every native-detection model and made
+  // the second preferred language unusable.
+  const auto = detector === "1" || model.capabilities?.languageDetection === true;
   const locale = (Intl.DateTimeFormat().resolvedOptions().locale || "en").toLowerCase().split("-");
   const chineseOutput = (locale.includes("hk") || locale.includes("mo"))
     ? "traditional-hong-kong"
@@ -190,7 +196,7 @@ mkdir -p "$agent"
     backend: { type: "transcribe-cpp" },
     shortcut: "ctrl+alt+z",
     preferredLanguages: wanted,
-    transcriptionLanguage: detector === "1" ? "auto" : exact(wanted[0] || "en"),
+    transcriptionLanguage: auto ? "auto" : exact(wanted[0] || "en"),
     chineseOutput,
     microphone: { type: "system-default" },
     voiceActivityDetection: true,

@@ -34,7 +34,8 @@ while IFS= read -r test_file; do
 done < <(find packaging/tests -maxdepth 1 -name 'test_*.py' | sort)
 
 # Shell: the launcher, isolation and helpers. Both directories are globbed, so
-# a new suite is picked up by being added, not by being listed here.
+# a new suite is picked up by being added, not by being listed here. This also
+# runs the voice-model and tool-install suites added on develop.
 while IFS= read -r test_file; do
   run "$test_file" bash "$test_file"
 done < <(find packaging/helpers/tests -maxdepth 1 -name 'test-*.sh' | sort)

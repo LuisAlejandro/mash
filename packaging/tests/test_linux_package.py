@@ -93,6 +93,15 @@ class BuildScriptContractTest(unittest.TestCase):
         # its own copy; dropping this flag breaks the build on the baseline.
         self.assertIn("-fno-sys=gtk4-layer-shell", self.text)
 
+    def test_ghostty_terminal_container_is_not_a_top_bar(self):
+        # The fork removed the tab bar but left the terminal box marked [top].
+        # A ToolbarView top bar gets its natural height, which is two rows, and
+        # the rest of the window stays empty. The layout patch makes it content.
+        self.assertIn("ghostty-gtk-window-layout.patch", self.text)
+        patch = (PACKAGING / "patches" / "ghostty-gtk-window-layout.patch").read_text()
+        self.assertIn("-      [top]", patch)
+        self.assertIn("       Box {", patch)
+
     def test_rpath_is_rewritten_before_packaging(self):
         # zig installs lib/libgtk4-layer-shell.so but leaves the binary looking
         # in .zig-cache, so an installed tree cannot start without this.
@@ -117,6 +126,28 @@ class BuildScriptContractTest(unittest.TestCase):
         # matters is that it never writes into it.
         self.assertNotIn("$stage/usr/bin", self.text)
         self.assertNotIn('mkdir -p "$stage/usr/bin"', self.text)
+
+
+class SharedPayloadCatalogTest(unittest.TestCase):
+    """The runtime catalog must travel with every payload, not just macOS.
+
+    mash-voice-model reads defaults/pi/catalog from the resource root. The macOS
+    adapter used to copy it itself and the Linux adapter never did, so dictation
+    setup failed on Linux with "catalog.json is missing from the bundle".
+    """
+
+    def test_both_adapters_use_the_shared_stager(self):
+        common = (PACKAGING / "build-common.sh").read_text()
+        self.assertIn("mash_stage_pi_voice_catalog()", common)
+        self.assertIn('mash_stage_pi_voice_catalog "$res"', common)
+        self.assertIn(
+            'mash_stage_pi_voice_catalog "$app/Contents/Resources"',
+            (PACKAGING / "build.sh").read_text(),
+        )
+
+    def test_payload_verifier_requires_the_catalog(self):
+        common = (PACKAGING / "build-common.sh").read_text()
+        self.assertIn("defaults/pi/catalog/catalog.json", common)
 
 
 class AptPublishWorkflowTest(unittest.TestCase):

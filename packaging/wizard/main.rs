@@ -71,6 +71,31 @@ const FORMATTERS: &[(&str, &str)] = &[
     ),
 ];
 
+// The formatter group covers more servers than the rows above name
+// individually. macOS installs these through its npm plan; Linux resolves the
+// same pinned components into Mash's data folder. Each entry is the manifest
+// component and the binaries a pane or Fresh looks for.
+const LINUX_EXTRA_FORMATTERS: &[(&str, &[&str])] = &[
+    (
+        "typescript-language-server",
+        &["typescript-language-server"],
+    ),
+    ("yaml-language-server", &["yaml-language-server"]),
+    ("svelte-language-server", &["svelteserver"]),
+    (
+        "vscode-langservers-extracted",
+        &[
+            "vscode-css-language-server",
+            "vscode-json-language-server",
+            "vscode-html-language-server",
+        ],
+    ),
+    (
+        "tailwindcss-language-server",
+        &["tailwindcss-language-server"],
+    ),
+];
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Group {
     Utilities,
@@ -1641,9 +1666,11 @@ fn install_plan(selections: [bool; 2]) -> Plan {
         ..Plan::default()
     };
     if is_linux() {
-        // The same capability groups, installed without elevation: everything
-        // is a pinned component in packaging/assets.json, resolved by the
-        // helper, so nothing here can drift to a host version.
+        // The same capability groups, installed without elevation. Every
+        // component named here is pinned in packaging/assets.json; the helper
+        // reports a system-package component instead of installing a host
+        // version. latexindent has no pinned component (TeX Live owns it) and
+        // stays in `tools` only so the final report can name it as missing.
         if selections[0] {
             for &(name, _) in UTILITIES {
                 plan.tools.push(name);
@@ -1653,7 +1680,19 @@ fn install_plan(selections: [bool; 2]) -> Plan {
         if selections[1] {
             for &(name, _) in FORMATTERS {
                 plan.tools.push(name);
-                plan.linux.push(name);
+                match name {
+                    // TeX Live owns latexindent; the manifest has no component
+                    // for it, and asking the installer for one fails the whole
+                    // step before it can report the tool as missing.
+                    "latexindent" => {}
+                    // The manifest names the package, the binary is pylsp.
+                    "pylsp" => plan.linux.push("python-lsp-server"),
+                    other => plan.linux.push(other),
+                }
+            }
+            for &(component, tools) in LINUX_EXTRA_FORMATTERS {
+                plan.linux.push(component);
+                plan.tools.extend(tools.iter().copied());
             }
         }
         return plan;
@@ -2171,6 +2210,44 @@ mod tests {
         assert!(plan.brew.is_empty());
         assert!(plan.npm.is_empty());
         assert!(plan.python.is_empty());
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn linux_formatters_use_pinned_components_and_keep_binary_names() {
+        let plan = install_plan([false, true]);
+
+        // Every name handed to mash-tool-install must resolve in assets.py.
+        // latexindent has no component, and pylsp's component is named after
+        // the Python package.
+        for component in [
+            "python-lsp-server",
+            "typescript-language-server",
+            "yaml-language-server",
+            "svelte-language-server",
+            "vscode-langservers-extracted",
+            "tailwindcss-language-server",
+        ] {
+            assert!(
+                plan.linux.contains(&component),
+                "{component} missing from plan.linux"
+            );
+        }
+        assert!(!plan.linux.contains(&"pylsp"));
+        assert!(!plan.linux.contains(&"latexindent"));
+
+        // The availability check still speaks in binary names: `pylsp` and
+        // `svelteserver` are what Fresh and the panes run.
+        for tool in [
+            "pylsp",
+            "svelteserver",
+            "latexindent",
+            "vscode-css-language-server",
+            "vscode-json-language-server",
+            "vscode-html-language-server",
+        ] {
+            assert!(plan.tools.contains(&tool), "{tool} missing from plan.tools");
+        }
     }
 
     // macOS installer routing: Linux installs every tool through plan.linux,

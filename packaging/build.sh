@@ -433,22 +433,8 @@ cp -R "$work/zsh-autosuggestions/zsh-autosuggestions-0.7.1" \
   "$app/Contents/Resources/share/zsh/zsh-autosuggestions"
 # The wizard embeds this catalog at compile time and mash-voice-model reads it
 # at runtime from Resources/defaults/pi/catalog. Both have to match the pi-voice
-# the bundle actually ships, or the wizard would offer a model the extension
-# cannot resolve. Refreshing pi-voice therefore means refreshing the vendored
-# copy under packaging/wizard/data first.
-pi_voice_catalog="$app/Contents/Resources/node/lib/node_modules/@earendil-works/pi-voice/catalog"
-[ -d "$pi_voice_catalog" ] || {
-  echo "the bundled pi-voice has no catalog directory" >&2
-  exit 1
-}
-mkdir -p "$app/Contents/Resources/defaults/pi/catalog"
-for catalog_file in catalog.json recommendations.json; do
-  diff -q "$pi_voice_catalog/$catalog_file" "$root/packaging/wizard/data/$catalog_file" >/dev/null || {
-    echo "packaging/wizard/data/$catalog_file is stale; refresh it from the bundled pi-voice" >&2
-    exit 1
-  }
-  cp "$pi_voice_catalog/$catalog_file" "$app/Contents/Resources/defaults/pi/catalog/$catalog_file"
-done
+# the bundle actually ships; the shared stager checks that and copies them.
+mash_stage_pi_voice_catalog "$app/Contents/Resources"
 cp "$root/packaging/uninstall" "$app/Contents/Resources/uninstall"
 chmod 755 "$app/Contents/Resources/uninstall"
 # The agent directory needs its own node_modules for exactly one thing: the

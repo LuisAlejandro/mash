@@ -94,6 +94,26 @@ grep -qF '"transcriptionLanguage": "auto"' "$settings" || {
 	exit 1
 }
 
+# A model that detects languages natively needs Auto even without the external
+# detector. Passing the detector flag only for those models forced English onto
+# a Spanish+English selection.
+multilingual="parakeet-ultra"
+multi_plan="$(run --plan "$data" "$multilingual" en,es)"
+IFS=$'\t' read -r multi_path multi_bytes _ <<<"$multi_plan"
+mkdir -p "$(dirname "$multi_path")"
+/usr/bin/truncate -s "$multi_bytes" "$multi_path"
+run "$data" "$multilingual" en,es 0
+grep -qF '"transcriptionLanguage": "auto"' "$settings" || {
+	echo "a native-detection model did not select auto-detect" >&2
+	cat "$settings" >&2
+	exit 1
+}
+grep -qF '"preferredLanguages": [' "$settings" || {
+	echo "native-detection settings lost preferredLanguages" >&2
+	cat "$settings" >&2
+	exit 1
+}
+
 # A data path Mash does not own is refused, and so is a model absent from the
 # catalog the bundle ships.
 if run "$tmp/elsewhere" "$model" en >/dev/null 2>&1; then
