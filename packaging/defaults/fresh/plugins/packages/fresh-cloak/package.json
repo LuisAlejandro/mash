@@ -9,18 +9,9 @@
   "engines": {
     "node": ">=22.18.0"
   },
-  "scripts": {
-    "test": "node --test \"tests/**/*.test.ts\"",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
-    "check": "npm run typecheck && npm test"
-  },
   "fresh": {
     "entry": "plugin.ts",
     "min_version": "0.5.1",
     "min_api_version": 2
-  },
-  "devDependencies": {
-    "@types/node": "^22.0.0",
-    "typescript": "^5.6.0"
   }
 }
