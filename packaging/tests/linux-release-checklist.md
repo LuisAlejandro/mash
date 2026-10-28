@@ -15,7 +15,7 @@ display, claims the packaged app-id, and exits without leaving a server behind.
 | Capability | How it is proven |
 | --- | --- |
 | Launch and relaunch | launcher runs under Xvfb and weston headless; asserts it reaches the display and leaves no process |
-| Seeding | 36 skills, configs, agent directory and shims present in a clean HOME |
+| Seeding | Clean pre-setup HOME gets core skills, configs, agent directory and shims; `test_seed_ownership.sh` covers optional-suite opt-in and opt-out |
 | Shutdown | no Herdr process outlives the launcher |
 | Package identity | `StartupWMClass` equals the class the terminal seeds |
 | Keymap integrity | `test_linux_defaults.py`: no Command chords, no bare Ctrl+letter, no duplicates, action families present |
