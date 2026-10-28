@@ -75,7 +75,7 @@ jobs:
     timeout-minutes: 90
     steps:
       - name: Checkout release tag
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.setup.outputs.tag }}
 
@@ -153,7 +153,7 @@ jobs:
           git -C "$dest" log --oneline -1
 
       - name: Clone the pinned skills checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ${{ env.SKILLS_REPO }}
           ref: ${{ env.SKILLS_REF }}
@@ -214,7 +214,7 @@ jobs:
           VERSION: ${{ needs.setup.outputs.version }}
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: macos-release-artifacts
           path: release-artifacts/
@@ -238,7 +238,7 @@ jobs:
     timeout-minutes: 120
     steps:
       - name: Checkout release tag
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.setup.outputs.tag }}
 
@@ -293,7 +293,7 @@ jobs:
           echo "MASH_GHOSTTY_SRC=$dest" >>"$GITHUB_ENV"
 
       - name: Clone the pinned skills checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ${{ env.SKILLS_REPO }}
           ref: ${{ env.SKILLS_REF }}
@@ -327,7 +327,7 @@ jobs:
       # file to this workflow, commit and tag, which no embedded .deb signature
       # would do for a direct download.
       - name: Attest build provenance
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
         with:
           subject-path: dist/*.deb
 
@@ -343,7 +343,7 @@ jobs:
           VERSION: ${{ needs.setup.outputs.version }}
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: linux-${{ matrix.debarch }}-release-artifacts
           path: release-artifacts/
@@ -355,7 +355,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
           pattern: "*-release-artifacts"
           path: artifacts/
@@ -454,12 +454,12 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout release tag
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.setup.outputs.tag }}
 
       - name: Download the Linux packages
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
           pattern: "linux-*-release-artifacts"
           path: artifacts/
