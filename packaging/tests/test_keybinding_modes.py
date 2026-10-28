@@ -62,6 +62,8 @@ class SeedFixture:
         (self.res / "defaults" / "herdr").mkdir(parents=True)
         (self.res / "defaults" / "ghostty").mkdir(parents=True)
         (self.res / "VERSION").write_text("1.0.0\n")
+        # carry.sh stages this inventory into every bundle beside the defaults.
+        (self.res / "defaults" / "optional-programming.txt").write_text("")
         self.data.mkdir(parents=True)
         shutil.copy(
             DEFAULTS / "fresh" / f"config{SUFFIX}.json",

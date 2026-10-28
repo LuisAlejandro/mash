@@ -41,37 +41,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Run the wizard tests
-        run: cargo test --locked --manifest-path packaging/wizard/Cargo.toml
-      - name: Run the helper and packaging tests
-        run: |
-          set -euo pipefail
-          failed=0
-
-          for t in \
-            packaging/tests/test_mash_isolate.sh \
-            packaging/tests/test_mash_force_updates.sh \
-            packaging/helpers/tests/test-annotate-paste-target.sh \
-            packaging/helpers/tests/test-telescope-files-path.sh \
-            packaging/helpers/tests/test-mash-voice-model.sh
-          do
-            if (cd "$(dirname "$t")" && bash "$(basename "$t")"); then
-              echo "PASS $t"
-            else
-              echo "FAIL $t"
-              failed=1
-            fi
-          done
-
-          for t in \
-            packaging/tests/test_first_launch_layout.py
-          do
-            if python3 "$t"; then
-              echo "PASS $t"
-            else
-              echo "FAIL $t"
-              failed=1
-            fi
-          done
-
-          exit "$failed"
+      # One runner for every suite, shared with `make test` and the push gate,
+      # so a test cannot run here and be skipped there (or the reverse).
+      - name: Run every suite
+        run: ./scripts/test.sh

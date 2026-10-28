@@ -121,7 +121,7 @@ files=(
     packaging/entitlements.plist
     packaging/entitlements-ghostty.plist
     packaging/entitlements-python.plist
-    packaging/patch-ghostty-menu.py
+    packaging/check-nib-branding.py
     packaging/fresh-gpl-notice.txt
     packaging/pins.txt
     packaging/assets.json

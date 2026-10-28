@@ -18,15 +18,11 @@ mash_seed_missing() {
   rsync -a --ignore-existing "$src/" "$dest/"
 }
 
-# An undecided first launch seeds neither optional suite. Completed legacy
-# installs with no choice file keep both; a cancelled wizard stays undecided.
+# An undecided first launch seeds neither optional suite: the wizard writes
+# setup/skills-choice only once every page is complete, so a cancelled run
+# records no choice and nothing optional is seeded.
 mash_skill_enabled() {
-  local choice="$d/setup/skills-choice"
-  if [ -f "$choice" ]; then
-    grep -qx "$1=true" "$choice"
-  else
-    [ -f "$d/setup/state.txt" ] && grep -qx 'completed=true' "$d/setup/state.txt"
-  fi
+  grep -qx "$1=true" "$d/setup/skills-choice" 2>/dev/null
 }
 
 mash_seed_pi() {
@@ -34,7 +30,6 @@ mash_seed_pi() {
   set --
   for suite in programming; do
     if ! mash_skill_enabled "$suite"; then
-      [ -f "$res/defaults/optional-$suite.txt" ] || continue
       while IFS= read -r path; do
         [ -n "$path" ] && set -- "$@" "--exclude=/$path"
       done <"$res/defaults/optional-$suite.txt"
@@ -42,22 +37,6 @@ mash_seed_pi() {
   done
   mkdir -p "$d/pi/agent"
   rsync -a --ignore-existing "$@" "$res/defaults/pi/" "$d/pi/agent/"
-}
-
-# Herdr's own integration installer can replace this one Mash-patched extension
-# with upstream. The ownership sync runs first and preserves user edits; this
-# repair only restores the Mash patch when the marker is absent. Other defaults
-# use the general provenance/digest path below.
-mash_repair_pi_integration() {
-  local src="$1" d="$2" bundled installed marker
-  bundled="$src/defaults/pi/extensions/herdr-agent-state.ts"
-  installed="$d/pi/agent/extensions/herdr-agent-state.ts"
-  [ -f "$bundled" ] || return 0
-  marker="$(sed -n 's/.*\(MASH_PATCH=restore-resume\).*/\1/p' "$bundled" | head -n 1)"
-  [ -n "$marker" ] || return 0
-  grep -qF -- "$marker" "$installed" 2>/dev/null && return 0
-  mkdir -p "$d/pi/agent/extensions"
-  cp "$bundled" "$installed"
 }
 
 # The notifier's click runs from Notification Center, which has none of the
@@ -291,7 +270,6 @@ mash_seed_all() {
   mash_seed_missing "$res/defaults/ghostty/themes" "$d/config/ghostty/themes"
   mash_seed_missing "$res/defaults/fresh" "$d/config/fresh"
   mash_seed_pi
-  mash_repair_pi_integration "$res" "$d"
   mash_seed_missing "$res/defaults/plugins" "$d/config/herdr/plugins/config"
   mash_write_notifier_config "$res" "$d"
   mash_seed_missing "$res/defaults/atuin" "$d/config/atuin"

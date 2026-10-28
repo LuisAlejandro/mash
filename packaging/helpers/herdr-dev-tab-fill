@@ -2,7 +2,7 @@
 # Shape an existing single-pane tab into the cmd+t layout: fresh on the left
 # (run through herdr-fresh-pane, which routes right-clicks to Fresh and reports
 # its resume command) and a tracked pi agent on the right. Focus ends on pi,
-# once pi is ready -- see the focus notes on start_agent below.
+# once pi is ready -- see the focus notes below.
 #
 #   herdr-dev-tab-fill <left-pane-id>
 #
@@ -22,87 +22,23 @@ set -eu
 herdr="${HERDR_BIN_PATH:-herdr}"
 ratio="${FRESH_RATIO:-0.6}"
 here="$(cd "$(dirname "$0")" && pwd)"
-# The bundle's own python3, not whatever PATH resolves: a host 3.x can be a
-# different minor or a different build, and Mash pins and tests the one it
-# ships. See mash-bin.
-py="$(mash-bin python3 2>/dev/null || printf '%s' python3)"
 
 left="${1:?usage: herdr-dev-tab-fill <left-pane-id>}"
 # Do not create half a dev tab or fall back to a host pi if the bundle is
 # missing its copy.
 pi_cmd="$("$here/mash-bin" --bundled pi)" || exit 1
 
-pane_id() {
-	# pane split returns .result.pane.pane_id
-	sed -n 's/.*"pane_id":"\([^"]*\)".*/\1/p' | head -n 1
-}
-
-# Inherit the left pane's cwd and workspace. Both callers end up here with a
-# pane whose directory is already the intended one (the launcher created the
-# tab with --cwd, the hook found an existing tab's root pane).
-#
-# Read these from the pane rather than from HERDR_ACTIVE_PANE_CWD /
-# HERDR_ACTIVE_WORKSPACE_ID: those are set for `[[keys.command]]` custom
-# commands but NOT for plugin event hooks, so a hook-only caller would
-# otherwise fall back to the hook's own working directory (the plugin
-# directory) and name the agent after it -- observed producing `dev-tab-pi`
-# instead of a workspace-derived name before this was fixed.
-pane_json="$("$herdr" pane get "$left" 2>/dev/null || true)"
-read_cwd="$(printf '%s' "$pane_json" | "$py" -c '
-import json, sys
-try:
-    print(json.load(sys.stdin)["result"]["pane"].get("cwd") or "")
-except Exception:
-    print("")
-' 2>/dev/null || true)"
-workspace_id="$(printf '%s' "$pane_json" | "$py" -c '
-import json, sys
-try:
-    print(json.load(sys.stdin)["result"]["pane"].get("workspace_id") or "")
-except Exception:
-    print("")
-' 2>/dev/null || true)"
+# Inherit the left pane's cwd. Both callers end up here with a pane whose
+# directory is already the intended one (the launcher created the tab with
+# --cwd, the hook found an existing tab's root pane). Read it from the pane
+# rather than from HERDR_ACTIVE_PANE_CWD, which is set for `[[keys.command]]`
+# custom commands but NOT for plugin event hooks.
+read_cwd="$("$herdr" pane get "$left" 2>/dev/null | "$here/herdr-json" cwd)"
 cwd="${read_cwd:-$HOME}"
 
 right="$("$herdr" pane split "$left" --direction right --ratio "$ratio" \
-	--cwd "$cwd" --no-focus 2>/dev/null | pane_id)"
+	--cwd "$cwd" --no-focus 2>/dev/null | "$here/herdr-json" pane_id)"
 [ -n "$right" ] || exit 1
-
-# Start pi as a TRACKED agent (herdr agent start) rather than just running the
-# binary (herdr pane run). Tracked means Herdr knows the pane holds an agent:
-# real idle/working/blocked status in the sidebar, and `herdr agent prompt
-# <name>` can drive it. Name comes from herdr-agent-name, which matches the
-# herdr-workspace plugin's "<workspace-slug>-<role>" scheme and resolves
-# collisions, since this layout can be created repeatedly.
-#
-# agent start is best-effort: it waits for the agent to become interactive and
-# fails if the name is taken or pi never gets ready. A failure there must not
-# cost the user the tab, so fall back to the old untracked `pane run`.
-#
-# Returns 0 only when pi is both tracked AND focused. Every other outcome is
-# reported to the caller, which owns the geometric focus fallback.
-start_agent() {
-	_pane="$1" _role="$2" _kind="$3" _cmd="$4"
-	_name="$("$here/herdr-agent-name" "$_role" "$workspace_id" "$cwd" 2>/dev/null || true)"
-	if [ -n "$_name" ] &&
-		"$herdr" agent start "$_name" --kind "$_kind" --pane "$_pane" >/dev/null 2>&1; then
-		# Focus pi NOW, not at split time. agent start returns only after Herdr
-		# has seen the agent at an interactive prompt, so a character typed
-		# between the tab appearing and pi being ready cannot reach the shell
-		# pi is launched from. Dropping --no-focus from the split would have
-		# exactly that failure mode: the pane would be focused while `agent
-		# start` is still typing `pi` into that shell, and typed text would
-		# concatenate with it.
-		#
-		# agent focus rather than pane focus: it takes the live agent name, and
-		# Herdr marks the target seen. Best-effort -- if it fails, fall through
-		# to the caller's geometric fallback instead of leaving fresh focused.
-		"$herdr" agent focus "$_name" >/dev/null 2>&1 && return 0
-		return 1
-	fi
-	"$herdr" pane run "$_pane" "$_cmd" || true
-	return 1
-}
 
 # The trailing `.` is load-bearing, NOT redundant with --cwd. Fresh only shows
 # its file explorer for a bare directory launch when the directory arrives as a
@@ -120,10 +56,23 @@ start_agent() {
 # have a persisted workspace still honours its recorded visibility, so a
 # deliberately-closed explorer stays closed.
 "$herdr" pane run "$left" 'herdr-fresh-pane .'
-# Absolute, because `pane run` hands the string to the pane and a bare `pi`
-# there resolves through PATH, where Homebrew's pi sits unless Mash's own
-# directories lead it. See mash-bin.
-if ! start_agent "$right" pi pi "$pi_cmd"; then
+# Start pi as a tracked agent (@see herdr-agent-start: that helper owns the
+# tracked-vs-untracked rationale, including why the command is an absolute
+# path). It prints the agent name only when tracking worked.
+#
+# Focus pi NOW, not at split time. agent start returns only after Herdr has
+# seen the agent at an interactive prompt, so a character typed between the tab
+# appearing and pi being ready cannot reach the shell pi is launched from.
+# Dropping --no-focus from the split would have exactly that failure mode: the
+# pane would be focused while `agent start` is still typing `pi` into that
+# shell, and typed text would concatenate with it.
+#
+# agent focus rather than pane focus: it takes the live agent name, and Herdr
+# marks the target seen. Best-effort -- if it fails, or the agent was never
+# tracked, fall through to the geometric fallback instead of leaving fresh
+# focused.
+name="$("$here/herdr-agent-start" "$right" pi pi "$pi_cmd")" || true
+if [ -z "$name" ] || ! "$herdr" agent focus "$name" >/dev/null 2>&1; then
 	# Untracked (or unfocused) pi: there is no agent name to hand to `agent
 	# focus`, so fall back to the layout's own geometry -- pi's pane is the
 	# right-hand neighbor of the pane this layout split it from. Guarded:

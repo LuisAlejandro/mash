@@ -14,36 +14,14 @@ here="$(dirname "$0")"
 # valid fallback for Mash's pi launcher.
 pi_cmd="$("$here/mash-bin" --bundled pi)" || exit 1
 
-# Start pi as a TRACKED agent (herdr agent start) rather than just running the
-# binary (herdr pane run). Tracked means Herdr knows the pane holds an agent:
-# real idle/working/blocked status in the sidebar, and `herdr agent prompt
-# <name>` can drive it. Name comes from herdr-agent-name, which matches the
-# herdr-workspace plugin's "<workspace-slug>-<role>" scheme and resolves
-# collisions, since these launchers are pressed repeatedly.
-#
-# agent start is best-effort: it waits for the agent to become interactive and
-# fails if the name is taken or pi never gets ready. A failure there must not
-# cost the user the tab, so fall back to the old untracked `pane run`.
-#
-# The fallback command is the absolute path of the bundled pi, not the bare
-# name: `pane run` hands the string to the pane, so a bare `pi` there resolves
-# through the pane's PATH, where Homebrew's pi sits unless Mash's own
-# directories lead it. See mash-bin.
-start_agent() {
-	_pane="$1" _role="$2" _kind="$3" _cmd="$4"
-	_name="$("$here/herdr-agent-name" "$_role" 2>/dev/null || true)"
-	if [ -n "$_name" ] &&
-		"$herdr" agent start "$_name" --kind "$_kind" --pane "$_pane" >/dev/null 2>&1; then
-		return 0
-	fi
-	"$herdr" pane run "$_pane" "$_cmd"
-}
-
 created="$("$herdr" tab create --label "herdr-tab-launcher-pi" \
 	${HERDR_ACTIVE_WORKSPACE_ID:+--workspace "$HERDR_ACTIVE_WORKSPACE_ID"} \
 	--cwd "$cwd" --focus)"
-tab="$(printf '%s' "$created" | sed -n 's/.*"tab_id":"\([^"]*\)".*/\1/p' | head -n 1)"
-pane="$(printf '%s' "$created" | sed -n 's/.*"pane_id":"\([^"]*\)".*/\1/p' | head -n 1)"
+tab="$(printf '%s' "$created" | "$here/herdr-json" tab_id)"
+pane="$(printf '%s' "$created" | "$here/herdr-json" pane_id)"
 
-start_agent "$pane" pi pi "$pi_cmd"
+# Start pi as a tracked agent; herdr-agent-start owns the tracked-vs-untracked
+# rationale and the absolute-path fallback. Its stdout is the agent name, for
+# callers that then focus it -- this tab is created focused, so discard it.
+"$here/herdr-agent-start" "$pane" pi pi "$pi_cmd" >/dev/null
 [ -n "$tab" ] && "$herdr" tab rename "$tab" "" || true

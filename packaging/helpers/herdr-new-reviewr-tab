@@ -6,6 +6,7 @@ set -euo pipefail
 herdr="${HERDR_BIN_PATH:-herdr}"
 cwd="${HERDR_ACTIVE_PANE_CWD:-$HOME}"
 ratio="${REVIEWR_RATIO:-0.6}"
+here="$(dirname "$0")"
 
 # `type = "shell"` custom commands run detached: no pane, no toast, stderr
 # discarded. Every failure below would be invisible at the keybinding, so each
@@ -17,15 +18,11 @@ refuse() {
 	exit 1
 }
 
-pi_cmd="$("$(dirname "$0")/mash-bin" --bundled pi)" ||
+pi_cmd="$("$here/mash-bin" --bundled pi)" ||
 	refuse "bundled pi is missing"
 if ! git -C "$cwd" rev-parse --show-toplevel >/dev/null 2>&1; then
 	refuse "not a git repo: $cwd"
 fi
-
-pane_id() {
-	sed -n 's/.*"pane_id":"\([^"]*\)".*/\1/p' | head -n 1
-}
 
 open_args=(
 	plugin pane open
@@ -40,32 +37,20 @@ if [[ -n "${HERDR_ACTIVE_WORKSPACE_ID:-}" ]]; then
 fi
 
 open_json="$("$herdr" "${open_args[@]}")"
-left="$(printf '%s' "$open_json" | pane_id)"
-tab="$(printf '%s' "$open_json" | sed -n 's/.*"tab_id":"\([^"]*\)".*/\1/p' | head -n 1)"
+left="$(printf '%s' "$open_json" | "$here/herdr-json" pane_id)"
+tab="$(printf '%s' "$open_json" | "$here/herdr-json" tab_id)"
 if [[ -z "$left" || -z "$tab" ]]; then
 	refuse "failed to create tab"
 fi
 
-right="$("$herdr" pane split "$left" --direction right --ratio "$ratio" --cwd "$cwd" --no-focus | pane_id)"
+right="$("$herdr" pane split "$left" --direction right --ratio "$ratio" --cwd "$cwd" --no-focus | "$here/herdr-json" pane_id)"
 if [[ -z "$right" ]]; then
 	refuse "failed to create pi pane"
 fi
 
-# Start pi as a TRACKED agent (herdr agent start) rather than just running the
-# binary (herdr pane run). Tracked means Herdr knows the pane holds an agent:
-# real idle/working/blocked status in the sidebar, and `herdr agent prompt
-# <name>` can drive it. Name comes from herdr-agent-name, matching the
-# herdr-workspace plugin's "<workspace-slug>-<role>" scheme with collision
-# retry, since this launcher is pressed repeatedly.
-#
-# Unlike the refuse() failures above, a failed agent start is NOT fatal: the
-# reviewr pane is already up and useful, so fall back to the old untracked
-# `pane run` and keep the tab. That fallback names the bundled pi by absolute
-# path -- `pane run` hands the string to the pane, where a bare `pi` resolves
-# through a PATH that may hold Homebrew's copy first. See mash-bin.
-agent_name="$("$(dirname "$0")/herdr-agent-name" pi 2>/dev/null || true)"
-if [[ -z "$agent_name" ]] ||
-	! "$herdr" agent start "$agent_name" --kind pi --pane "$right" >/dev/null 2>&1; then
-	"$herdr" pane run "$right" "$pi_cmd"
-fi
+# Start pi as a tracked agent; herdr-agent-start owns the tracked-vs-untracked
+# rationale and the absolute-path fallback. Its stdout is the agent name, for
+# callers that then focus it -- reviewr, not pi, must keep the caret here, and
+# the tab focus below owns that, so discard it.
+"$here/herdr-agent-start" "$right" pi pi "$pi_cmd" >/dev/null
 "$herdr" tab focus "$tab"

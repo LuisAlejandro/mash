@@ -1,0 +1,47 @@
+#!/bin/sh
+# Start a TRACKED Herdr agent in an existing pane, falling back to a plain
+# `pane run` when tracking is not possible.
+#
+#   herdr-agent-start <pane-id> <role> <kind> <cmd>
+#
+# Tracked (herdr agent start) rather than just running the binary (herdr pane
+# run) means Herdr knows the pane holds an agent: real idle/working/blocked
+# status in the sidebar, and `herdr agent prompt <name>` can drive it. The name
+# comes from herdr-agent-name, which matches the herdr-workspace plugin's
+# "<workspace-slug>-<role>" scheme and resolves collisions, since these
+# launchers are pressed repeatedly.
+#
+# That name is built from the PANE's workspace and directory, not from
+# HERDR_ACTIVE_PANE_CWD / HERDR_ACTIVE_WORKSPACE_ID: those are set for
+# `[[keys.command]]` custom commands but NOT for plugin event hooks, so a
+# hook-only caller named the agent after its own working directory -- observed
+# producing `dev-tab-pi` instead of a workspace-derived name. When the pane
+# cannot be read both stay empty and herdr-agent-name keeps its HERDR_ACTIVE_* /
+# $PWD chain.
+#
+# agent start is best-effort: it waits for the agent to become interactive and
+# fails if the name is taken or the agent never gets ready. That must not cost
+# the caller its tab, so fall back to the old untracked `pane run`, which is why
+# <cmd> is an absolute path: it reaches the pane's own PATH, see mash-bin.
+#
+# On success prints the agent name (callers that want it focused pass it to
+# `herdr agent focus`) and exits 0; on fallback prints nothing and exits with
+# the `pane run` status.
+set -eu
+
+herdr="${HERDR_BIN_PATH:-herdr}"
+here="$(cd "$(dirname "$0")" && pwd)"
+
+pane="${1:?usage: herdr-agent-start <pane> <role> <kind> <cmd>}" role="$2" kind="$3" cmd="$4"
+
+info="$("$herdr" pane get "$pane" 2>/dev/null || true)"
+name="$("$here/herdr-agent-name" "$role" \
+	"$(printf '%s' "$info" | "$here/herdr-json" workspace_id)" \
+	"$(printf '%s' "$info" | "$here/herdr-json" cwd)" 2>/dev/null || true)"
+
+if [ -n "$name" ] &&
+	"$herdr" agent start "$name" --kind "$kind" --pane "$pane" >/dev/null 2>&1; then
+	printf '%s\n' "$name"
+	exit 0
+fi
+"$herdr" pane run "$pane" "$cmd" >/dev/null

@@ -7,9 +7,10 @@
  *
  * Three channels, chosen by what the file is made of:
  *
- *   text  (.md, logs, source, csv, json ...)  -> the Fresh editor beside this
- *         pane, with an optional note attached. Fresh renders it properly:
- *         syntax, line numbers, the lot.
+ *   text  (.md, logs, source, csv, json, svg ...) -> the Fresh editor beside
+ *         this pane, with an optional note attached. Fresh renders it properly:
+ *         syntax, line numbers, the lot. SVG belongs here rather than with the
+ *         images: it is XML, and `viu` cannot decode it.
  *
  *   image (png, jpg, gif, webp ...)           -> a vertical split beside the
  *         editor, drawn with real pixels. Fresh cannot do this -- it is a text
@@ -38,14 +39,18 @@ import { basename, extname, isAbsolute, resolve } from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+// Raster formats only. SVG is deliberately absent: it is XML, and the image
+// popup decodes with `viu`, which rejects it outright
+// (`Unsupported(PathExtension("svg"))`). It is listed as text below, where the
+// editor shows the markup the person can actually read and edit.
 const IMAGE_EXTENSIONS = new Set([
-	"png", "jpg", "jpeg", "gif", "webp", "bmp", "tiff", "tif", "ico", "avif", "svg",
+	"png", "jpg", "jpeg", "gif", "webp", "bmp", "tiff", "tif", "ico", "avif",
 ]);
 
 const TEXT_EXTENSIONS = new Set([
 	"md", "markdown", "txt", "log", "csv", "tsv", "json", "jsonl", "yaml", "yml", "toml",
 	"rs", "ts", "tsx", "js", "jsx", "py", "sh", "bash", "zsh", "go", "rb", "java", "kt",
-	"c", "h", "cpp", "hpp", "css", "scss", "html", "xml", "sql", "zig", "swift", "lua",
+	"c", "h", "cpp", "hpp", "css", "scss", "html", "xml", "svg", "sql", "zig", "swift", "lua",
 	"diff", "patch", "ini", "cfg", "env",
 ]);
 

@@ -25,8 +25,6 @@ import tty
 import termios
 import tomllib
 from pathlib import Path
-from rich.console import Console
-from rich.text import Text
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -317,26 +315,36 @@ def assign_keys(items: list[tuple[str, str, int]]) -> list[tuple[str, str, int, 
 # Display
 # ---------------------------------------------------------------------------
 
-# Color mapping for different item types
+# ANSI colour code per item type (plain SGR, no styling library).
 TYPE_COLORS = {
-    "uuid": "magenta",
-    "sha": "magenta",
-    "ip": "cyan",
-    "url": "blue",
-    "kubernetes": "cyan",
-    "path": "green",
-    "hex": "yellow",
-    "digit": "yellow",
-    "git-status": "red",
-    "git-status-branch": "red",
-    "diff": "red",
+    "uuid": "35",   # magenta
+    "sha": "35",
+    "ip": "36",     # cyan
+    "url": "34",    # blue
+    "kubernetes": "36",
+    "path": "32",   # green
+    "hex": "33",    # yellow
+    "digit": "33",
+    "git-status": "31",         # red
+    "git-status-branch": "31",
+    "diff": "31",
 }
 
+# Styling is for humans at a terminal only — never emit escapes into a pipe.
+USE_COLOR = sys.stdout.isatty() and not os.environ.get("NO_COLOR")
 
-def format_display(items_with_keys: list[tuple[str, str, int, str]]) -> list[Text]:
-    """Format items grouped by type for display using rich."""
+
+def styled(text: str, *codes: str) -> str:
+    """Wrap text in SGR codes, or return it untouched when colour is off."""
+    if not USE_COLOR or not codes:
+        return text
+    return f"\x1b[{';'.join(codes)}m{text}\x1b[0m"
+
+
+def format_display(items_with_keys: list[tuple[str, str, int, str]]) -> list[str]:
+    """Format items grouped by type for display, ANSI-styled on a terminal."""
     if not items_with_keys:
-        return [Text("No items found.")]
+        return ["No items found."]
 
     # Group by type
     from collections import OrderedDict
@@ -345,26 +353,22 @@ def format_display(items_with_keys: list[tuple[str, str, int, str]]) -> list[Tex
         type_name = item[0]
         groups.setdefault(type_name, []).append(item)
 
-    output: list[Text] = []
-    output.append(Text(f"Found {len(items_with_keys)} items. Press a key to copy:"))
-    output.append(Text())  # blank line
+    output: list[str] = []
+    output.append(f"Found {len(items_with_keys)} items. Press a key to copy:")
+    output.append("")  # blank line
 
     for type_name, group in groups.items():
-        color = TYPE_COLORS.get(type_name, "white")
-        header = Text(f"  {type_name} ({len(group)}):", style=color)
-        header.stylize("bold")
-        output.append(header)
+        color = TYPE_COLORS.get(type_name, "37")
+        output.append(styled(f"  {type_name} ({len(group)}):", "1", color))
 
         for _, value, _, key in group:
             # Truncate long values
             display_value = value if len(value) <= 60 else value[:57] + "..."
-            line = Text(f"    {key}: ", style="bold cyan")
-            line.append(display_value)
-            output.append(line)
+            output.append(styled(f"    {key}: {display_value}", "1", "36"))
 
-        output.append(Text())  # blank line
+        output.append("")  # blank line
 
-    output.append(Text("Esc: cancel", style="dim"))
+    output.append(styled("Esc: cancel", "2"))
     return output
 
 
@@ -572,9 +576,8 @@ def main():
                 file=sys.stderr,
             )
             display_lines = format_display(items_with_keys)
-            console = Console()
             for line in display_lines:
-                console.print(line)
+                print(line)
 
             # Read keystroke (existing letter-key logic)
             print("\nWaiting for key...", file=sys.stderr)

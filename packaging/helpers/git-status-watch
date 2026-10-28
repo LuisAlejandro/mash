@@ -46,11 +46,15 @@
 #   git-status-watch --workspace ID   poll one workspace, for the focus hook
 #   git-status-watch --no-fetch       skip the fetch step (debugging only)
 
-import json
 import os
 import subprocess
 import sys
 from pathlib import Path
+
+# herdr_state.py ships beside this script in both layouts (packaging/helpers/
+# in the repo, bin/ in the bundle), so resolve it from our own directory.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import herdr_state  # noqa: E402
 
 SOURCE = "git-status-watch"
 TOKEN = "git"
@@ -93,22 +97,6 @@ GIT_ENV = {k: v for k, v in os.environ.items() if k != "GITHUB_TOKEN"}
 # hang on a username/password or passphrase prompt that nothing is there to
 # answer.
 GIT_ENV["GIT_TERMINAL_PROMPT"] = "0"
-
-
-def herdr(*args):
-    out = subprocess.run(["herdr", *args], capture_output=True, text=True)
-    if out.returncode != 0:
-        return None
-    try:
-        return json.loads(out.stdout)["result"]
-    except (json.JSONDecodeError, KeyError):
-        return None
-
-
-def repo_root(path):
-    r = subprocess.run(["git", "-C", path, "rev-parse", "--show-toplevel"],
-                        capture_output=True, text=True)
-    return r.stdout.strip() if r.returncode == 0 else None
 
 
 def current_branch(root):
@@ -165,17 +153,14 @@ def ahead_behind(root, branch, upstream):
 
 
 def main():
-    panes = herdr("pane", "list")
+    panes = herdr_state.herdr("pane", "list")
     if not panes:
         return 1
     dirs = {}
     for p in panes["panes"]:
         dirs.setdefault(p["workspace_id"], p.get("foreground_cwd") or p.get("cwd"))
 
-    try:
-        previous = json.loads(STATE.read_text())
-    except (OSError, json.JSONDecodeError):
-        previous = {}
+    previous = herdr_state.load_state(STATE)
 
     current = {}
     for ws, path in dirs.items():
@@ -185,7 +170,7 @@ def main():
             continue
         if not path or not os.path.isdir(path):
             continue
-        root = repo_root(path)
+        root = herdr_state.repo_root(path)
         if not root:
             continue
 
@@ -223,10 +208,9 @@ def main():
             args += ["--token", f"{TOKEN}_behind={BEHIND_ICON}{behind}"]
         else:
             args += ["--clear-token", f"{TOKEN}_behind"]
-        herdr(*args)
+        herdr_state.herdr(*args)
 
-    STATE.parent.mkdir(parents=True, exist_ok=True)
-    STATE.write_text(json.dumps(current, indent=1))
+    herdr_state.save_state(STATE, current)
     print(f"{len(current)} workspace(s) polled" + (f" (refreshed {ONLY})" if ONLY else ""))
     return 0
 

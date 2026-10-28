@@ -60,5 +60,7 @@ the editing ones.
   Ctrl+Alt+Shift+Y Fork agent from message
   Ctrl+Alt+Shift+L Session search
 
-Copy/paste: Ctrl+Shift+C / Ctrl+Shift+V, or the mouse. Fresh's own save,
-undo and search chords are unchanged from the macOS build.
+Copy/paste: Ctrl+Shift+C / Ctrl+Shift+V, or the mouse. Fresh's own editing
+chords depend on the keybinding mode chosen at first launch: Mash/Cursor-style
+seeds Mash's map, Native leaves Fresh's built-in keys. Run `fresh --cmd config
+paths` or open Fresh's keymap to see which is in effect.

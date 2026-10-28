@@ -37,7 +37,6 @@ mash_seed_all "$res" "$d" "$home"
 # Mash ships its own terminal, Herdr and Fresh, so self-updates are pinned off
 # as they are on macOS. Never replaces a file, only flips existing keys.
 mash_force_updates "$home"
-mash_force_window_command "$home" "$res"
 
 # Point every included tool at ~/.mash before anything starts.
 mash_isolate "$home"

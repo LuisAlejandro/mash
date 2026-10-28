@@ -43,8 +43,7 @@ import { getAgentDir, type ExtensionAPI, type SessionEntry } from "@earendil-wor
 
 const MAX_LABEL_WORDS = 5;
 const MAX_LABEL_CHARS = 55;
-const TITLE_TRUNCATE_AT = 40;
-const TITLE_KEEP_CHARS = 37;
+const TITLE_MAX_CHARS = 40;
 const COMPRESS_MODEL = process.env.OMNIROUTE_TITLE_MODEL || "ollama-cloud/gemma4:31b";
 const COMPRESS_TIMEOUT_MS = 4_000;
 
@@ -127,7 +126,8 @@ function lastAssistantText(entries: readonly SessionEntry[]): string | undefined
 }
 
 function formatTitle(text: string): string {
-	return text.length > TITLE_TRUNCATE_AT ? `${text.slice(0, TITLE_KEEP_CHARS)}…` : text;
+	// Keeps 37 + "…": the 40-char threshold only pays past a real width saving.
+	return text.length > TITLE_MAX_CHARS ? `${text.slice(0, TITLE_MAX_CHARS - 3)}…` : text;
 }
 
 export default function (pi: ExtensionAPI) {

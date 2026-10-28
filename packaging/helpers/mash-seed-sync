@@ -11,10 +11,8 @@
 # The record lives at ~/.mash/local/state/seeded.json and stores each shipped
 # destination path, the digest of the installed bytes (after platform path
 # substitutions and Mash's forced update settings), and the version that wrote
-# it. On an install that predates this record, only files byte-identical to this
-# build's rendered defaults are adopted. Mismatches have unknown provenance and
-# are left alone: we cannot recover what an older package wrote, so guessing
-# "Mash-owned" could overwrite a user edit.
+# it. A file with no record entry is the user's: Mash never wrote it, so it is
+# left alone.
 #
 # Mash seeds from several shapes: copied trees, generated config files whose
 # templates contain a few install paths, and virtualenvs whose Python links and
@@ -86,25 +84,16 @@ try:
     with open(CHOICE_PATH, encoding="utf-8") as fh:
         choices = fh.read().splitlines()
 except FileNotFoundError:
-    try:
-        with open(os.path.join(data, "setup", "state.txt"), encoding="utf-8") as fh:
-            completed = "completed=true" in fh.read().splitlines()
-    except FileNotFoundError:
-        completed = False
-    choices = ["programming=true"] if completed else []
+    choices = []
 ENABLED = {"programming": "programming=true" in choices}
 OPTIONAL = {}
 for suite in ENABLED:
-    try:
-        with open(os.path.join(res, "defaults", f"optional-{suite}.txt"), encoding="utf-8") as fh:
-            OPTIONAL[suite] = set(fh.read().splitlines())
-    except FileNotFoundError:
-        OPTIONAL[suite] = set()  # Older bundles did not ship an inventory.
+    with open(os.path.join(res, "defaults", f"optional-{suite}.txt"), encoding="utf-8") as fh:
+        OPTIONAL[suite] = set(fh.read().splitlines())
 
 # First-launch keybinding mode. The wizard writes this only when setup
 # completes, so a cancelled or failed run records no mode and the next launch
-# seeds the Cursor-style defaults again. No mode at all means an installation
-# that completed before the choice existed: it stays on Cursor-style.
+# seeds the Cursor-style defaults again.
 MODE_PATH = os.path.join(data, "setup", "keybindings-mode")
 try:
     with open(MODE_PATH, encoding="utf-8") as fh:
@@ -577,12 +566,8 @@ def main():
             files[key] = new_digest
             updated += 1
         elif recorded is None:
-            # Legacy/adopted install: exact match is safe to adopt; any mismatch
-            # has unknown provenance and stays user-owned.
-            if current == new_digest:
-                files[key] = new_digest
-            else:
-                kept += 1
+            # Mash never wrote this file, so it is the user's.
+            kept += 1
         elif current != recorded:
             # The user changed the file after Mash wrote it.
             kept += 1

@@ -18,7 +18,16 @@ class FirstLaunchLayoutTest(unittest.TestCase):
             self.assertNotIn("migrate-layout", path.read_text())
 
     def test_launcher_seeds_current_layout_and_preserves_hindsight_dirs(self):
-        launcher = (PACKAGING / "mash").read_text()
+        # Both launchers seed through launch-common.sh, so the layout lives
+        # there; packaging/mash used to carry its own copy of this list.
+        shared = (PACKAGING / "launch-common.sh").read_text()
+        for launcher in ("mash", "linux/launcher"):
+            with self.subTest(launcher=launcher):
+                self.assertIn(
+                    "mash_seed_all",
+                    (PACKAGING / launcher).read_text(),
+                    f"{launcher} must seed through the shared module",
+                )
         for path in (
             '"$d/config/herdr"',
             '"$d/cache"',
@@ -30,7 +39,7 @@ class FirstLaunchLayoutTest(unittest.TestCase):
             '"$d/.pg0"',
         ):
             with self.subTest(path=path):
-                self.assertIn(path, launcher)
+                self.assertIn(path, shared)
 
     def test_pi_settings_pins_match_the_manifest(self):
         settings = json.loads((PACKAGING / "defaults/pi/settings.json").read_text())
