@@ -121,6 +121,12 @@ already() {
   [ -f "$marker" ]
 }
 
+# macOS ships Bash 3.2, which has arrays but no mapfile.
+names=()
+while IFS= read -r name; do
+  names+=("$name")
+done < <(shim_names "$component")
+
 case "$STRATEGY" in
 package)
   # The platform supplies this one. Mash does not vendor it and does not ask for
@@ -140,7 +146,6 @@ package)
 
 binary)
   dest="$data/local/tools/$component/$VERSION"
-  mapfile -t names < <(shim_names "$component")
   name="${names[0]:-}"
   [ -n "$name" ] || {
     say "$component has no executable to shim"
@@ -205,7 +210,6 @@ binary)
 npm)
   prefix="$data/local/npm"
   marker="$prefix/.mash-version-$component"
-  mapfile -t names < <(shim_names "$component")
   if [ -f "$marker" ] && [ "$(cat "$marker")" = "$VERSION" ]; then
     say "$component $VERSION is already installed"
   else
@@ -246,20 +250,21 @@ npm)
   # A symlink into the package that was just rewritten still points at it, so
   # only the shim outside the prefix has to be refreshed. A package can expose
   # several binaries (vscode-langservers-extracted) or none (a plugin).
-  for name in "${names[@]}"; do
-    target_bin="$prefix/bin/$name"
-    [ -x "$target_bin" ] || {
-      say "$component did not provide bin/$name"
-      exit 1
-    }
-    ln -sfn "$target_bin" "$data/bin/$name"
-  done
+  if [ "${#names[@]}" -gt 0 ]; then
+    for name in "${names[@]}"; do
+      target_bin="$prefix/bin/$name"
+      [ -x "$target_bin" ] || {
+        say "$component did not provide bin/$name"
+        exit 1
+      }
+      ln -sfn "$target_bin" "$data/bin/$name"
+    done
+  fi
   ;;
 
 pip)
   venv="$data/local/venv/$component"
   marker="$venv/.mash-version"
-  mapfile -t names < <(shim_names "$component")
   if [ -f "$marker" ] && [ "$(cat "$marker")" = "$VERSION" ]; then
     say "$component $VERSION is already installed"
   else
@@ -314,7 +319,6 @@ esac
 
 # A tool that landed but does not run is worse than one that failed loudly: the
 # wizard would record setup complete and the pane would break later.
-mapfile -t names < <(shim_names "$component")
 if [ "${#names[@]}" -eq 0 ]; then
   say "$component is ready (library only)"
   exit 0

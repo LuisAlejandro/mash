@@ -36,7 +36,7 @@ elif args[:1] == ["resolve-shell"]:
         print("STRATEGY=pip")
         print("VERSION=1.0")
         print("PACKAGE=fake-pylsp")
-    elif component == "svelte-language-server":
+    elif component in ("svelte-language-server", "prettier-plugin-svelte"):
         print("STRATEGY=npm")
         print("VERSION=1.0")
     elif component == "vscode-langservers-extracted":
@@ -126,6 +126,14 @@ run() {
 run svelte-language-server
 [ -x "$data/bin/svelteserver" ] || {
   echo "svelte-language-server did not create a svelteserver shim" >&2
+  exit 1
+}
+
+# A library-only npm package has no shim names. Bash 3.2 with nounset must not
+# expand an empty array in the post-install loop.
+run prettier-plugin-svelte
+[ ! -e "$data/bin/prettier-plugin-svelte" ] || {
+  echo "prettier-plugin-svelte unexpectedly created a shim" >&2
   exit 1
 }
 
