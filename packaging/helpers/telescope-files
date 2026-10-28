@@ -36,10 +36,7 @@
 set -euo pipefail
 
 herdr="${HERDR_BIN_PATH:-herdr}"
-# The bundle's own python3, not whatever PATH resolves: this script prepends
-# Homebrew ahead of Mash's directories below, for its own fzf, fd and bat. See
-# mash-bin.
-py="$(mash-bin python3 2>/dev/null || printf '%s' python3)"
+here="$(dirname "$0")"
 # Herdr custom commands have a minimal PATH; restore its binary directory and
 # Homebrew's standard macOS prefixes so host tools (fzf, fd, bat, Fresh) resolve.
 PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
@@ -88,8 +85,7 @@ fi
 # --- origin cwd -----------------------------------------------------------------
 cwd="${HERDR_ACTIVE_PANE_CWD:-}"
 if [ -z "$cwd" ] || [ ! -d "$cwd" ]; then
-	cwd="$("$herdr" pane current 2>/dev/null |
-		sed -n 's/.*"foreground_cwd":"\([^"]*\)".*/\1/p' | head -n 1)"
+	cwd="$("$herdr" pane current 2>/dev/null | "$here/herdr-json" foreground_cwd)"
 fi
 [ -n "$cwd" ] && [ -d "$cwd" ] || cwd="$PWD"
 
@@ -182,24 +178,20 @@ abs="$(printf '%s' "$line" | awk -F'\t' '{print $2}')"
 # Fresh-only. The daemon and the Fresh+pi layout have no meaning for another
 # editor, so anything else keeps the previous behaviour.
 #
-pane_id() { sed -n 's/.*"pane_id":"\([^"]*\)".*/\1/p' | head -n 1; }
-
 editor_name="${editor##*/}"
 origin="${HERDR_ACTIVE_PANE_ID:-}"
-[ -n "$origin" ] || origin="$("$herdr" pane current 2>/dev/null | pane_id)"
+[ -n "$origin" ] ||
+	origin="$("$herdr" pane current 2>/dev/null | "$here/herdr-json" pane_id)"
 
 # Only the split/new-tab fallbacks below need this; the Fresh paths quote $abs.
 target="$(printf '%s' "$abs" | sed "s/'/'\\\\''/g")"
 
-# First JSON string value for a key, or empty. `|| true` because pipefail would
-# otherwise abort the script through `set -e` when the key is absent.
-jstr() { grep -o "\"$1\":\"[^\"]*\"" | head -n 1 | sed 's/.*:"//; s/"$//' || true; }
-
+# Echo $1's Fresh pid, or return 1 when that pane's foreground is not Fresh.
 # Echo $1's Fresh pid, or return 1 when that pane's foreground is not Fresh.
 pane_fresh_pid() {
 	info="$("$herdr" pane process-info --pane "$1" 2>/dev/null || true)"
-	[ "$(printf '%s' "$info" | jstr name)" = "fresh" ] || return 1
-	pid="$(printf '%s' "$info" | grep -o '"pid":[0-9]*' | head -n 1 | sed 's/.*://' || true)"
+	[ "$(printf '%s' "$info" | "$here/herdr-json" name)" = "fresh" ] || return 1
+	pid="$(printf '%s' "$info" | "$here/herdr-json" pid)"
 	[ -n "$pid" ] || return 1
 	printf '%s' "$pid"
 }
@@ -283,15 +275,15 @@ pane_rightclick_to_fresh() {
 # resumes auto-naming from the Fresh pane.
 open_in_new_dev_tab() {
 	# Absolute and bundled-only: this process's PATH leads with Homebrew.
-	pi_cmd="$("$(dirname "$0")/mash-bin" --bundled pi)" || return 1
+	pi_cmd="$("$here/mash-bin" --bundled pi)" || return 1
 	created="$("$herdr" tab create --label "herdr-tab-launcher-telescope" \
 		${HERDR_ACTIVE_WORKSPACE_ID:+--workspace "$HERDR_ACTIVE_WORKSPACE_ID"} \
 		--cwd "$cwd" --focus)"
-	left="$(printf '%s' "$created" | pane_id)"
-	tab="$(printf '%s' "$created" | sed -n 's/.*"tab_id":"\([^"]*\)".*/\1/p' | head -n 1)"
+	left="$(printf '%s' "$created" | "$here/herdr-json" pane_id)"
+	tab="$(printf '%s' "$created" | "$here/herdr-json" tab_id)"
 	[ -n "$left" ] || return 1
 	right="$("$herdr" pane split "$left" --direction right --ratio 0.6 \
-		--cwd "$cwd" --no-focus | pane_id)"
+		--cwd "$cwd" --no-focus | "$here/herdr-json" pane_id)"
 	[ -n "$right" ] || return 1
 	"$herdr" pane run "$left" 'herdr-fresh-pane .'
 	"$herdr" pane run "$right" "$pi_cmd"
@@ -322,12 +314,12 @@ if [ "$editor_name" = "fresh" ]; then
 elif [ "$key" = "ctrl-o" ]; then
 	new="$("$herdr" tab create \
 		${HERDR_ACTIVE_WORKSPACE_ID:+--workspace "$HERDR_ACTIVE_WORKSPACE_ID"} \
-		--cwd "$cwd" --focus | pane_id)"
+		--cwd "$cwd" --focus | "$here/herdr-json" pane_id)"
 	[ -n "$new" ] || exit 1
 	"$herdr" pane run "$new" "$editor" "$target"
 else
 	[ -n "$origin" ] || exit 1
-	new="$("$herdr" pane split "$origin" --direction right --ratio 0.6 --cwd "$cwd" --no-focus | pane_id)"
+	new="$("$herdr" pane split "$origin" --direction right --ratio 0.6 --cwd "$cwd" --no-focus | "$here/herdr-json" pane_id)"
 	[ -n "$new" ] || exit 1
 	"$herdr" pane run "$new" "$editor" "$target"
 fi

@@ -1,0 +1,47 @@
+#!/bin/sh
+# Print the first value for a key anywhere in a Herdr JSON reply, read on stdin.
+#
+#   printf '%s' "$pane_json" | herdr-json pane_id
+#
+# Herdr answers one call with one JSON document, so "first match in document
+# order" is the field these launchers mean. That is what the `sed -n
+# 's/.*"key":"\([^"]*\)".*/\1/p' | head -n 1` extractors imitated, except that
+# their greedy `.*` took the LAST match on the line (a reply carrying several
+# `pane_id`s resolved to the wrong pane) and the pattern is line-based, so it
+# matched nothing on a pretty-printed reply. This is the `json.load` idiom
+# herdr-agent-name and herdr-fresh-shell-pane already use. A missing key,
+# malformed reply or empty stdin print nothing and exit 0, so a caller treats
+# empty output as absent without needing `|| true`.
+set -eu
+
+field="${1:?usage: herdr-json <field>}"
+here="$(cd "$(dirname "$0")" && pwd)"
+# The bundle's own python3, not whatever PATH resolves: a host 3.x can be a
+# different minor or a different build, and Mash pins and tests the one it
+# ships. See mash-bin.
+py="$("$here/mash-bin" python3 2>/dev/null || printf '%s' python3)"
+
+"$py" -c '
+import json, sys
+
+key = sys.argv[1]
+
+def walk(node):
+    if isinstance(node, dict):
+        for k, v in node.items():
+            if k == key and not isinstance(v, (dict, list)):
+                print(v)
+                return True
+            if walk(v):
+                return True
+    elif isinstance(node, list):
+        for v in node:
+            if walk(v):
+                return True
+    return False
+
+try:
+    walk(json.load(sys.stdin))
+except Exception:
+    pass
+' "$field"

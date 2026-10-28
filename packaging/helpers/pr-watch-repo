@@ -31,6 +31,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+# herdr_state.py ships beside this script in both layouts (packaging/helpers/
+# in the repo, bin/ in the bundle), so resolve it from our own directory.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import herdr_state  # noqa: E402
+
 SOURCE = "pr-watch-repo"
 TOKEN = "pr"
 _state_root = os.environ.get("XDG_STATE_HOME", "")
@@ -63,22 +68,6 @@ if "--workspace" in sys.argv:
 # value there makes every call fail as though logged out — indistinguishable
 # from "no PRs" without this. Scrub it for every gh invocation in this script.
 GH_ENV = {k: v for k, v in os.environ.items() if k != "GITHUB_TOKEN"}
-
-
-def herdr(*args):
-    out = subprocess.run(["herdr", *args], capture_output=True, text=True)
-    if out.returncode != 0:
-        return None
-    try:
-        return json.loads(out.stdout)["result"]
-    except (json.JSONDecodeError, KeyError):
-        return None
-
-
-def repo_root(path):
-    r = subprocess.run(["git", "-C", path, "rev-parse", "--show-toplevel"],
-                       capture_output=True, text=True)
-    return r.stdout.strip() if r.returncode == 0 else None
 
 
 LIST_FAILED = "list-failed"
@@ -223,7 +212,7 @@ def changed(old, new):
 
 
 def main():
-    panes = herdr("pane", "list")
+    panes = herdr_state.herdr("pane", "list")
     if not panes:
         return 1
     dirs = {}
@@ -231,12 +220,9 @@ def main():
         dirs.setdefault(p["workspace_id"], p.get("foreground_cwd") or p.get("cwd"))
 
     labels = {w["workspace_id"]: w.get("label") or w["workspace_id"]
-              for w in (herdr("workspace", "list") or {}).get("workspaces", [])}
+              for w in (herdr_state.herdr("workspace", "list") or {}).get("workspaces", [])}
 
-    try:
-        previous = json.loads(STATE.read_text())
-    except (OSError, json.JSONDecodeError):
-        previous = {}
+    previous = herdr_state.load_state(STATE)
 
     current = {}
     for ws, path in dirs.items():
@@ -246,7 +232,7 @@ def main():
             continue
         if not path or not os.path.isdir(path):
             continue
-        root = repo_root(path)
+        root = herdr_state.repo_root(path)
         if not root:
             continue
         prs = prs_for(root)
@@ -267,15 +253,14 @@ def main():
                 args += ["--token", f"{TOKEN}_{name}={PR_ICON}{n}"]
             else:
                 args += ["--clear-token", f"{TOKEN}_{name}"]
-        herdr(*args)
+        herdr_state.herdr(*args)
 
         note = changed(previous.get(ws), counts)
         if note and not QUIET:
-            herdr("notification", "show", f"PR buckets changed",
-                  "--body", f"{labels.get(ws, ws)} — {note}")
+            herdr_state.herdr("notification", "show", f"PR buckets changed",
+                              "--body", f"{labels.get(ws, ws)} — {note}")
 
-    STATE.parent.mkdir(parents=True, exist_ok=True)
-    STATE.write_text(json.dumps(current, indent=1))
+    herdr_state.save_state(STATE, current)
     print(f"{len(current)} workspace(s) polled" + (f" (refreshed {ONLY})" if ONLY else ""))
     return 0
 

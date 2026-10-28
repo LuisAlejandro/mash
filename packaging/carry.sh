@@ -459,6 +459,13 @@ mash_ghostty_trim_check() {
     echo "Ghostty fork lost Mash's GTK menu items" >&2
     status=1
   }
+  # Presence is not enough: an item whose chord no longer matches the shipped
+  # Herdr config opens a menu, sends a keystroke nothing binds, and fails
+  # silently. Compare both menu tables against both configs.
+  local packaging
+  packaging="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  "${MASH_PYTHON:-python3}" "$packaging/menu-chords.py" "$src" "$packaging" ||
+    status=1
 
   return "$status"
 }

@@ -24,22 +24,20 @@ dev_tab_fill="${DEV_TAB_FILL_BIN:-$(command -v herdr-dev-tab-fill || true)}"
 json="${HERDR_PLUGIN_EVENT_JSON:-}"
 [ -n "$json" ] || exit 0
 
-field() {
-	printf '%s' "$json" | python3 -c '
+# tab_id, label and pane_count all live in this one payload, so read them in a
+# single interpreter start rather than three.
+fields="$(printf '%s' "$json" | python3 -c '
 import json, sys
-key = sys.argv[1]
 try:
     tab = (json.load(sys.stdin).get("data") or {}).get("tab") or {}
 except Exception:
     tab = {}
-val = tab.get(key)
-print("" if val is None else val)
-' "$1" 2>/dev/null || true
-}
-
-tab_id="$(field tab_id)"
-label="$(field label)"
-pane_count="$(field pane_count)"
+# 0x1f is not IFS whitespace, so an empty label keeps its own field instead of
+# collapsing into the next one.
+print("\x1f".join("" if tab.get(k) is None else str(tab.get(k))
+                  for k in ("tab_id", "label", "pane_count")))
+' 2>/dev/null || true)"
+IFS=$'\x1f' read -r tab_id label pane_count <<<"$fields" || true
 
 [ -n "$tab_id" ] || exit 0
 

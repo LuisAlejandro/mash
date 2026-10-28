@@ -11,10 +11,6 @@ here="$(dirname "$0")"
 # split ratio, the load-bearing `.` argument that makes Fresh show its explorer)
 # lives in bin/herdr-dev-tab-fill, shared with the "+" tab button's tab.created
 # hook -- see that script. FRESH_RATIO passes through to it via the environment.
-pane_id() {
-	# tab create returns .result.root_pane.pane_id, pane split returns .result.pane.pane_id
-	sed -n 's/.*"pane_id":"\([^"]*\)".*/\1/p' | head -n 1
-}
 
 # --label marks this tab for the dev-tab plugin's tab.created hook, which must
 # skip it: this script builds its own layout, and letting the hook enrich the
@@ -25,8 +21,8 @@ pane_id() {
 created="$("$herdr" tab create --label "herdr-tab-launcher-dev" \
 	${HERDR_ACTIVE_WORKSPACE_ID:+--workspace "$HERDR_ACTIVE_WORKSPACE_ID"} \
 	--cwd "$cwd" --focus)"
-tab="$(printf '%s' "$created" | sed -n 's/.*"tab_id":"\([^"]*\)".*/\1/p' | head -n 1)"
-left="$(printf '%s' "$created" | pane_id)"
+tab="$(printf '%s' "$created" | "$here/herdr-json" tab_id)"
+left="$(printf '%s' "$created" | "$here/herdr-json" pane_id)"
 
 # Build the two-pane layout (see the note above).
 "$here/herdr-dev-tab-fill" "$left"

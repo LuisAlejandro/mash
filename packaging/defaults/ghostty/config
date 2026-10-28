@@ -26,6 +26,19 @@ working-directory = home
 
 theme = Monokai Cursor
 
+# Quit when the last window closes.
+#
+# Ghostty defaults this to false on macOS ("standard behavior for a macOS
+# application") and true on Linux, so without it closing the last window leaves
+# a windowless Mash in the Dock while its Herdr server keeps the panes running --
+# two different meanings for the same gesture depending on the platform. Mash
+# runs one window per instance, so closing the window is that instance's exit.
+#
+# This does not touch the panes: the server outlives the window on purpose, so a
+# relaunch reattaches to it. Only `herdr server stop` ends those, and this is why
+# the updater stops them before swapping the bundle.
+quit-after-last-window-closed = true
+
 # Why these unbinds stay after Mash removed the features outright: a Ghostty
 # binding that performs nothing still consumes its chord unless it carries the
 # `performable:` prefix. The unbind is therefore what frees the key for Herdr

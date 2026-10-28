@@ -9,8 +9,9 @@ unreachable by keyboard and the up/down pair silently did nothing; and
 rename_workspace was on Ctrl+Alt+Shift+R, which is GNOME's screen recorder.
 
 Nothing here needs the Ghostty checkout: the GNOME table below is the grab list
-this repo has to stay off, and the tests read only files in this repository. The
-menu-drift test is the one exception and skips when the fork is not around.
+this repo has to stay off, and the tests read only files in this repository.
+Menu-chord drift is checked by packaging/menu-chords.py, which covers both
+platforms and is driven by test_menu_chords.py.
 """
 
 import json
@@ -274,47 +275,6 @@ class QuickrefTest(unittest.TestCase):
     def test_quickref_does_not_claim_gnome_leaves_ctrl_alt_alone(self):
         text = (DEFAULTS / "pi" / "extensions" / "keybindings-quickref.linux.txt").read_text()
         self.assertNotIn("which GNOME leaves alone", text)
-
-
-class MenuAcceleratorTest(unittest.TestCase):
-    """The GTK menu is a second copy of herdr's chord table: it sends a fixed
-    chord to the pty. Needs the Ghostty fork, so it skips without it."""
-
-    def _blp(self):
-        candidates = []
-        if __import__("os").environ.get("MASH_GHOSTTY_SRC"):
-            candidates.append(Path(__import__("os").environ["MASH_GHOSTTY_SRC"]))
-        candidates.append(Path.home() / "Development" / "ghostty")
-        for root in candidates:
-            path = root / "src" / "apprt" / "gtk" / "ui" / "1.5" / "window.blp"
-            if path.is_file():
-                return path
-        return None
-
-    def test_every_menu_chord_is_one_herdr_binds(self):
-        blp = self._blp()
-        if blp is None:
-            self.skipTest("Ghostty fork not available (set MASH_GHOSTTY_SRC)")
-        text = blp.read_text()
-        bound = herdr_linux()
-        items = re.findall(
-            r'label:\s*_\("([^"]+)"\);(.*?)(?=\n\s*label:|\Z)', text, re.S)
-        checked = 0
-        for label, body in items:
-            if 'win.mash-send-key' not in body:
-                continue                  # a real GTK action, not a chord replay
-            target = re.search(r'target:\s*"([^"]+)"', body)
-            if not target:
-                continue
-            c = chord(target.group(1))
-            with self.subTest(item=label):
-                self.assertIn(
-                    c, bound,
-                    f"menu item {label!r} sends {target.group(1)}, which herdr "
-                    "does not bind any more",
-                )
-            checked += 1
-        self.assertGreater(checked, 30, "the menu parser stopped matching the blp")
 
 
 if __name__ == "__main__":
