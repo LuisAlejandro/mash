@@ -174,17 +174,22 @@ mash_seed_hindsight() {
 #
 #   mash_seed_configs <resource-root> <data-dir>
 mash_seed_configs() {
-  local res="$1" d="$2" suffix=""
+  local res="$1" d="$2" suffix="" version=""
   # The three keymaps are platform-specific: Command chords and the macOS
   # notification app make no sense on Linux, and Ctrl chords would shadow the
   # shell on macOS. The .linux variants sit beside the originals.
   [ "$(uname -s)" = "Darwin" ] || suffix=".linux"
+  # The tab bar shows this, so read it once. Empty when the bundle carries no
+  # VERSION, which leaves the placeholder visible rather than printing a stray
+  # date or a stale number.
+  [ -f "$res/VERSION" ] && version="$(tr -d '[:space:]' <"$res/VERSION")"
   mkdir -p "$d/config/herdr" "$d/config/ghostty" "$d/config/zsh" \
     "$d/config/bash" "$d/config/fish" \
     "$d/config/git" "$d/config/pet"
   if [ ! -f "$d/config/herdr/config.toml" ]; then
     sed -e "s#__MASH_SHELL__#$d/bin/mash-shell#g" \
       -e "s#__MASH_CONFIG__#$d/config#g" \
+      -e "s#__MASH_VERSION__#$version#g" \
       "$res/defaults/herdr/config${suffix}.toml" >"$d/config/herdr/config.toml"
   fi
   # The terminal config names herdr-pane by absolute path, so the placeholder is
