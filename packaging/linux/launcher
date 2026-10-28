@@ -13,8 +13,13 @@ d="$home/.mash"
 
 # shellcheck source=lib.sh
 . "$res/bin/lib.sh"
+# shellcheck source=launch-common.sh
+. "$res/bin/launch-common.sh"
 
-mkdir -p "$d"
+# 0700, not the umask's 0755: the data folder holds agent transcripts and logs
+# written by tools Mash does not own, and +x on this directory is what gates
+# every one of them. Runs on every launch so an existing 0755 install is fixed.
+mash_protect_data_dir "$d"
 # Nothing may grow inside the package after it is installed, and the bundled
 # interpreter is on every pane's PATH, so bytecode writes are refused here and
 # forwarded to the panes.
@@ -27,7 +32,6 @@ export MASH_BIN="$res/bin:$res/node/bin:$res/python/bin:$d/bin"
 # Seeds only what is missing, so a user's own files are never replaced. This is
 # the step that makes the package usable: without it ~/.mash has no config, no
 # skills and no plugins, and Herdr would start against an empty tree.
-. "$res/bin/launch-common.sh"
 mash_seed_all "$res" "$d" "$home"
 
 # Mash ships its own terminal, Herdr and Fresh, so self-updates are pinned off

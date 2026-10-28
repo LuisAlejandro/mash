@@ -155,7 +155,7 @@ mash_pins_check() {
 
 mash_require_sources() {
   local name font plugins="$root/packaging/plugins"
-  for name in cache-hit dev-tab fingers fork-from-message herdr-orchestration pr-watch-focus herdr-workspace telescope mash-update-notice; do
+  for name in cache-hit dev-tab fingers fork-from-message mash-orchestration pr-watch-focus herdr-workspace telescope mash-update-notice; do
     [ -f "$plugins/$name/herdr-plugin.toml" ] || {
       echo "missing plugin source $plugins/$name" >&2
       exit 1
@@ -600,7 +600,7 @@ mash_build_plugins() {
   # defaults/fresh/plugins/packages/mash-image-popup opens a Herdr pane with
   # `--plugin image-popup`, so leaving the Herdr half out registered that pane
   # from the build machine's source checkout and broke show_file anywhere else.
-  for name in cache-hit dev-tab fingers fork-from-message herdr-orchestration \
+  for name in cache-hit dev-tab fingers fork-from-message mash-orchestration \
     image-popup pr-watch-focus; do
     mash_copy_tree "$src/$name" "$plugins/$name"
   done
@@ -660,9 +660,18 @@ mash_build_plugins() {
   if [ "$(uname -s)" = "Darwin" ]; then
     git clone --depth 1 https://github.com/dot/herdr-terminal-notifier.git "$work/src/notifier"
     mash_copy_tree "$work/src/notifier" "$plugins/dot.terminal-notifier"
-    local plist="$plugins/dot.terminal-notifier/assets/HerdrNotify.app/Contents/Info.plist"
+    local notifier="$plugins/dot.terminal-notifier/assets/HerdrNotify.app"
+    local plist="$notifier/Contents/Info.plist"
     /usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier app.mash.notify' "$plist"
-    codesign --force --deep --sign - "$plugins/dot.terminal-notifier/assets/HerdrNotify.app"
+    # Notification Center draws the alert's name and icon from the bundle that
+    # posted it, which upstream ships as "herdr" with Ghostty's Terminal.icns.
+    # Mash posts these, so they carry Mash's name and artwork instead.
+    /usr/libexec/PlistBuddy -c 'Set :CFBundleName Mash' "$plist"
+    /usr/libexec/PlistBuddy -c 'Set :CFBundleDisplayName Mash' "$plist"
+    /usr/libexec/PlistBuddy -c 'Set :CFBundleIconFile Mash' "$plist"
+    cp "$root/packaging/Mash.icns" "$notifier/Contents/Resources/Mash.icns"
+    rm -f "$notifier/Contents/Resources/Terminal.icns"
+    codesign --force --deep --sign - "$notifier"
   fi
 
   git clone --depth 1 https://github.com/plannotator/herdr-annotate.git "$work/src/annotate"
@@ -823,6 +832,8 @@ mash_install_skills() {
     "APPEND_SYSTEM.md is missing ask_user argument guidance"
   mash_require_text "$pi/APPEND_SYSTEM.md" 'uv_cwd' \
     "APPEND_SYSTEM.md is missing codemode cwd guidance"
+  mash_require_text "$pi/APPEND_SYSTEM.md" '^## Review a finished session$' \
+    "APPEND_SYSTEM.md is missing the review-tab suggestion"
   mash_require_text "$pi/APPEND_SYSTEM.md" 'HOME. is not changed' \
     "APPEND_SYSTEM.md is missing the Mash environment section"
   # The rewrite pass must not have touched the sentence that names the user's
@@ -837,6 +848,26 @@ mash_install_skills() {
     "$pi/skills/mash-customize" >/dev/null 2>&1; then
     echo "Mash's pi guidance names a path on the build machine" >&2
     exit 1
+  fi
+  # Hindsight commands in the skills must reach Mash's daemon: nothing may put
+  # the owner's ~/.local/bin ahead of Mash's wrapper or read the owner's
+  # ~/.hindsight/embed. See the rewrites in mash_rewrite_skill_paths.
+  if grep -rlE '\$\{?HOME\}?/\.local/bin|~/\.local/bin|\$\{?HOME\}?/\.hindsight/' \
+    "$pi/skills" "$pi/agents" "$pi/APPEND_SYSTEM.md" 2>/dev/null |
+    grep -v '/mash-customize/' | grep -q .; then
+    echo "a skill still routes hindsight-embed to the owner's Hindsight" >&2
+    exit 1
+  fi
+  # Sentrux resolves a relative path against the MCP server's own working
+  # directory, so a skill that still teaches `.` silently scans the wrong tree.
+  if [ -f "$pi/skills/mash-sentrux/SKILL.md" ]; then
+    if grep -qE 'run relative to the workspace root|typically `"\."`' \
+      "$pi/skills/mash-sentrux/SKILL.md"; then
+      echo "mash-sentrux still tells agents to pass a relative scan path" >&2
+      exit 1
+    fi
+    mash_require_text "$pi/skills/mash-sentrux/SKILL.md" 'absolute path' \
+      "mash-sentrux does not require an absolute Sentrux scan path"
   fi
   [ -d "$pi/agents" ] || {
     echo "agents were not staged" >&2
@@ -950,7 +981,7 @@ EOF
 }
 
 mash_write_append_system() {
-  local src="$1" dest="$2" mdc name description
+  local src="$1" dest="$2" mdc name description review_chord
   {
     echo "# Mash Programming Skills — always-on rules"
     echo
@@ -994,7 +1025,17 @@ for everyone live in the bundle and are added through the build instead.
 For the full map — every config path, how to author an extension or skill, how
 to install a package, which machine tools Mash borrows, and what must go through
 the repository instead — load the `mash-customize` skill.
-
+EOF
+    # The review-tab chord is the one platform difference in this guidance, and
+    # it is the point of the suggestion, so it is printed here rather than
+    # written into the quoted heredocs around it.
+    if [ "$(uname -s)" = "Darwin" ]; then
+      review_chord='⌘⇧R'
+    else
+      review_chord='Ctrl+Shift+R'
+    fi
+    printf '## Review a finished session\n\nWhen a session changes two or more files, close it by suggesting the user\nopen a review tab (`%s`): the tab pairs the session diff with an agent, so the\nwork gets read instead of trusted. One short line, once per session. Skip it\nfor a single-file or trivial edit.\n\n' "$review_chord"
+    cat <<'EOF'
 ## Tool-call recovery
 
 - For `ask_user`, use exactly one form: `question` for one question, or
@@ -1047,6 +1088,45 @@ repls = (
     (b"~/.config/mash", b"~/.mash/config/mash"),
     (b"~/.pi/agent", b"~/.mash/pi/agent"),
     (b"~/.hindsight", b"~/.mash/.hindsight"),
+    # Mash never changes HOME, so the skills' own spelling of Hindsight's home
+    # is the owner's: ${HOME}/.hindsight/embed is the owner's config and port,
+    # and prepending ${HOME}/.local/bin puts the owner's hindsight-embed ahead
+    # of Mash's wrapper on MASH_BIN. The wrapper (helpers/hindsight-embed) runs
+    # Mash's install with HOME pointed at the data folder, so every command
+    # reaches Mash's daemon on 8998 and not the owner's.
+    (b'export PATH="${HOME}/.local/bin:${PATH}"\n', b""),
+    (b'"${HOME}/.hindsight/embed"', b'"${MASH_DATA_DIR:-$HOME/.mash}/.hindsight/embed"'),
+    (b'port="${port:-8888}"', b'port="${port:-8998}"'),
+    (b" (prepend `~/.local/bin` to PATH)", b""),
+    (b"; PATH includes `${HOME}/.local/bin`", b""),
+    # Sentrux's MCP server is one long-lived process with its own working
+    # directory, so a relative path is resolved against that, not against the
+    # pane or the repository under discussion. When the server happens to start
+    # in the repository the two agree and the advice looks correct; started
+    # anywhere else, `scan {path: "."}` silently reports a different tree --
+    # 4448 files of /tmp, or 100000 files for `/` -- with no error, and those
+    # numbers reach topology.json and the plan's architecture baseline.
+    # Absolute paths are the only safe instruction.
+    (
+        b"All Sentrux commands run relative to the workspace root directory (e.g., `.`).",
+        b"Pass the workspace root as an **absolute path** to every Sentrux MCP tool\n"
+        b"(resolve it once with `git rev-parse --show-toplevel`). The MCP server is a\n"
+        b"long-lived process with its own working directory, so a relative path such as\n"
+        b"`.` is resolved against that directory and silently scans the wrong tree.",
+    ),
+    (
+        b'Use one key for the actual scan root (typically `"."`).',
+        b"Key the map by the same absolute workspace-root path passed to the tools.",
+    ),
+    (b'# From the workspace root (.), not a subdirectory such as src/.',
+     b"# From the workspace root, named absolutely, not a subdirectory such as src/."),
+    (b"sentrux gate --save .", b'sentrux gate --save "$(git rev-parse --show-toplevel)"'),
+    (b"sentrux gate .", b'sentrux gate "$(git rev-parse --show-toplevel)"'),
+    # The schema examples are what an agent copies when it writes the artifact,
+    # so they have to show an absolute key too.
+    (b'    ".": {', b'    "/abs/path/to/workspace": {'),
+    (b'  ".": "started"', b'  "/abs/path/to/workspace": "started"'),
+    (b"| . | pass (6772", b"| /abs/path/to/workspace | pass (6772"),
 )
 skip = {"venvs", "__pycache__", ".pytest_cache", ".git", "node_modules", ".venv"}
 for root in sys.argv[1:]:

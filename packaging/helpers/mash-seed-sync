@@ -160,6 +160,10 @@ SINGLE_SEEDS = [
     (f"defaults/herdr/config{SUFFIX}.toml", "config/herdr/config.toml", "herdr"),
     (f"defaults/ghostty/config{SUFFIX}", "config/ghostty/config", "ghostty"),
     ("defaults/zsh/.zshenv", "config/zsh/.zshenv", None),
+    ("defaults/zsh/.zshrc", "config/zsh/.zshrc", None),
+    ("defaults/bash/bashrc", "config/bash/bashrc", None),
+    ("defaults/fish/config.fish", "config/fish/config.fish", None),
+    ("defaults/starship.toml", "config/starship.toml", None),
     ("defaults/git/config", "config/git/config", None),
     ("defaults/git/ignore", "config/git/ignore", None),
     ("defaults/pet/config.toml", "config/pet/config.toml", "pet"),
@@ -290,6 +294,12 @@ def rendered_bytes(source, target, kind=None, rel_in_tree=""):
         if kind == "herdr":
             text = text.replace("__MASH_SHELL__", os.path.join(data, "bin", "mash-shell"))
             text = text.replace("__MASH_CONFIG__", os.path.join(data, "config"))
+            # The tab bar reads "Mash <version>". Substituted rather than left to
+            # a `command` entry, which herdr runs through a login shell on a
+            # timer; a version cannot change while the app is running, and this
+            # file is refreshed on upgrade (main() returns early while the
+            # recorded bundle version is unchanged).
+            text = text.replace("__MASH_VERSION__", bundle_version())
             text = force_assignment(text, "version_check", "false")
             text = force_assignment(text, "manifest_check", "false")
         elif kind == "ghostty":

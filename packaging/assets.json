@@ -55,6 +55,8 @@
     "gh",
     "delta",
     "atuin",
+    "starship",
+    "zsh-autosuggestions",
     "gopls",
     "rust-analyzer",
     "marksman",
@@ -641,6 +643,44 @@
           "sha256": "ef758ae7c6cf9267c9c0ef080b8965f453d89ab2d25d9eb22de4405925238768",
           "archive": "tar.gz",
           "member": "."
+        }
+      }
+    },
+    "starship": {
+      "version": "1.27.0",
+      "strategy": "binary",
+      "install": "bundled",
+      "artifacts": {
+        "macos-arm64": {
+          "url": "https://github.com/starship/starship/releases/download/v1.27.0/starship-aarch64-apple-darwin.tar.gz",
+          "sha256": "5362da8cb2928f98f3ce0ffda697cf0f8de70081db000dae316d6d3a404f6cf0",
+          "archive": "tar.gz",
+          "member": "starship"
+        },
+        "linux-amd64": {
+          "url": "https://github.com/starship/starship/releases/download/v1.27.0/starship-x86_64-unknown-linux-musl.tar.gz",
+          "sha256": "10c8eb4cb3b761d9bf59ea828444c2dab36c900b7d69a69e08814b286969df89",
+          "archive": "tar.gz",
+          "member": "starship"
+        },
+        "linux-arm64": {
+          "url": "https://github.com/starship/starship/releases/download/v1.27.0/starship-aarch64-unknown-linux-musl.tar.gz",
+          "sha256": "341f5cbf24699fa0b27ec88965ad25f862ea09e15d35a543fd6ffdff1d2aa00d",
+          "archive": "tar.gz",
+          "member": "starship"
+        }
+      }
+    },
+    "zsh-autosuggestions": {
+      "version": "0.7.1",
+      "strategy": "binary",
+      "install": "bundled",
+      "artifacts": {
+        "*": {
+          "url": "https://github.com/zsh-users/zsh-autosuggestions/archive/refs/tags/v0.7.1.tar.gz",
+          "sha256": "0df7affff21cd87ed298e6a3970ed08a1dd66a6efa676454ee5b091ad503badf",
+          "archive": "tar.gz",
+          "member": "zsh-autosuggestions-0.7.1/zsh-autosuggestions.zsh"
         }
       }
     }

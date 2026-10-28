@@ -8,6 +8,7 @@
   ],
   "lastChangelogVersion": "1.1.0",
   "defaultThinkingLevel": "medium",
+  "shellCommandPrefix": "if [ -n \"${MASH_BIN:-}\" ]; then PATH=\"$MASH_BIN:$PATH\"; export PATH; fi",
   "theme": "Monokai Pro (CE)",
   "quietStartup": false,
   "defaultTools": [

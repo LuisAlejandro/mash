@@ -514,6 +514,11 @@ if [ -z "$target" ]; then
 	target="${HERDR_ACTIVE_WORKSPACE_ID:-}"
 fi
 
+pi_cmd="$("$here/mash-bin" --bundled pi)" || {
+	toast "bundled pi is missing"
+	exit 1
+}
+
 # Same shape as herdr-new-pi-tab: one Pi pane, marked so the dev-tab hook does
 # not split Fresh in beside it. The label is cleared so Herdr names the tab.
 created="$("$herdr" tab create --label "herdr-tab-launcher-pi" \
@@ -529,10 +534,6 @@ pane="$(printf '%s' "$created" | sed -n 's/.*"pane_id":"\([^"]*\)".*/\1/p' | hea
 name="$("$here/herdr-agent-name" pi "$target" "$cwd" 2>/dev/null || true)"
 if [ -z "$name" ] || ! "$herdr" agent start "$name" --kind pi --pane "$pane" -- --session "$path" >/dev/null 2>&1; then
 	quoted="$(printf '%s' "$path" | sed "s/'/'\\\\''/g")"
-	# Absolute, because `pane run` hands this string to the pane and a bare `pi`
-	# there resolves through PATH, where Homebrew's pi sits unless Mash's own
-	# directories lead it. See mash-bin.
-	pi_cmd="$(mash-bin pi 2>/dev/null || printf '%s' pi)"
 	"$herdr" pane run "$pane" "$pi_cmd --session '$quoted'"
 fi
 [ -n "$tab" ] && "$herdr" tab rename "$tab" "" || true
