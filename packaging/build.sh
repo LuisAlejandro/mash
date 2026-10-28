@@ -40,6 +40,8 @@ home="$(dscl . -read "/Users/$(id -un)" NFSHomeDirectory | awk '{print $2}')"
 
 ship_helpers=(
   mash-bin
+  herdr-json
+  herdr-agent-start
   herdr-new-plain-tab
   herdr-new-dev-tab
   herdr-new-pi-tab
@@ -50,6 +52,7 @@ ship_helpers=(
   telescope-sessions
   git-status-watch
   pr-watch-repo
+  herdr_state.py
   herdr-shell-greeting
   herdr-dev-tab-fill
   herdr-fresh-shell-pane
@@ -505,10 +508,9 @@ nested_version="$(tr -d '[:space:]' <"$root/VERSION")"
 # Bundled artwork and menus. Both edit files inside the copy, so they belong
 # before any signing.
 cp "$root/packaging/Mash.icns" "$app/Contents/Resources/$terminal_app/Contents/Resources/Mash.icns"
-# The menu bar still says Ghostty in five places. Those strings are compiled
-# into MainMenu.nib and About.nib, which plutil cannot read and the Command
-# Line Tools cannot recompile, so the patcher rewrites the NIBArchive itself.
-"$app/Contents/Resources/python/bin/python3" "$root/packaging/patch-ghostty-menu.py" \
+# The fork's MainMenu.xib carries the Mash names, so nothing is rewritten here.
+# This only asserts the result: no compiled nib may still show Ghostty to a user.
+"$app/Contents/Resources/python/bin/python3" "$root/packaging/check-nib-branding.py" \
   "$app/Contents/Resources/$terminal_app"
 mash_install_fonts
 

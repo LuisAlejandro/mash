@@ -33,8 +33,11 @@ while IFS= read -r test_file; do
   run "$test_file" python3 "$test_file"
 done < <(find packaging/tests -maxdepth 1 -name 'test_*.py' | sort)
 
-# Shell: the launcher, isolation and packaging helpers.
-run "packaging/helpers/tests/test-mash-voice-model.sh" bash packaging/helpers/tests/test-mash-voice-model.sh
+# Shell: the launcher, isolation and helpers. Both directories are globbed, so
+# a new suite is picked up by being added, not by being listed here.
+while IFS= read -r test_file; do
+  run "$test_file" bash "$test_file"
+done < <(find packaging/helpers/tests -maxdepth 1 -name 'test-*.sh' | sort)
 while IFS= read -r test_file; do
   # A build gate, not a suite: it needs a resource root, and the build runs it
   # against the staged bundle (build.sh, build-common.sh).

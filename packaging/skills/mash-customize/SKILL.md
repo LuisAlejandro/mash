@@ -69,6 +69,29 @@ installation and startup. The choice is stored in
 `~/.mash/setup/skills-choice`; upgrading never silently removes files from an
 existing installation.
 
+## Mash Terminal menus
+
+The menu bar (macOS) and the titlebar menu (Linux) carry Mash's own commands,
+not Ghostty's: File, Edit, View, Go and Tools hold the tab, workspace, pane,
+navigation, annotation and tool commands, and the app menu holds Settings,
+Reload Configuration, Detach and Mash Help. Ghostty's own tabs, splits, command
+palette, find bar, Quick Terminal and inspector are not there — Herdr and Fresh
+own those jobs in Mash.
+
+Every item works by sending the keyboard shortcut it displays into the focused
+terminal, so choosing an item and pressing the shortcut do the same thing, and
+an item only ever acts on the window whose menu was used. The shortcuts are the
+ones in `~/.mash/config/herdr/config.toml` as shipped: **rebind a chord there
+and its menu item stops working**, because the item still sends the old one. The
+build checks the menu tables against the shipped config, so the two cannot drift
+in a release, but it cannot follow a local rebinding.
+
+Two items do more than replay a chord. Settings opens Herdr's settings rather
+than Ghostty's config file, which Mash manages; Reload Configuration reloads
+Ghostty's config and Herdr's. Fresh is not reloaded — it has no configuration
+reload, only a script re-run that drops its timers, so an edited Fresh config
+needs the editor reopened.
+
 ## Keybinding modes
 
 The first-launch wizard also asks once between **Mash / Cursor-style** shortcuts

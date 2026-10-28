@@ -60,6 +60,20 @@ jobs:
         with:
           node-version: "24"
 
+      # Mash's menus live in the fork and replay chords this repository binds,
+      # so the suite that compares the two needs the fork checked out. Without
+      # it that test skips, and a menu item pointing at an unbound chord would
+      # only surface at release time.
+      - name: Clone the pinned Ghostty fork
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: LuisAlejandro/ghostty
+          ref: fork-main
+          path: ghostty-fork
+
+      - name: Point the suite at the fork
+        run: echo "MASH_GHOSTTY_SRC=$GITHUB_WORKSPACE/ghostty-fork" >>"$GITHUB_ENV"
+
       # The wizard picks the dictation model from a vendored catalog, so a
       # refreshed pi-voice that drifts from packaging/wizard/data must fail here
       # rather than at a user's first launch. scripts/test.sh runs this itself;

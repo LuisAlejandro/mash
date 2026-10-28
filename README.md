@@ -1,6 +1,12 @@
-# Mash
+![](https://raw.githubusercontent.com/LuisAlejandro/mash/develop/branding/banner.svg)
 
-Mash is a desktop workspace for AI-assisted coding. It brings a customized Ghostty terminal, Herdr workspaces, the Fresh editor, Pi, and pinned development tools into one app. Your settings and sessions live in `~/.mash`, separate from the tools you use outside Mash.
+---
+
+[![](https://img.shields.io/github/release/LuisAlejandro/mash.svg)](https://github.com/LuisAlejandro/mash/releases) [![](https://img.shields.io/github/actions/workflow/status/LuisAlejandro/mash/push.yml)](https://github.com/LuisAlejandro/mash/actions/workflows/push.yml) [![](https://img.shields.io/discord/809504357359157288.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/4Wc7xphH5e) [![](https://cla-assistant.io/readme/badge/LuisAlejandro/mash)](https://cla-assistant.io/LuisAlejandro/mash)
+
+Current version: 0.1.1
+
+*Mash* is a desktop workspace for AI-assisted coding. It brings a customized Ghostty terminal, Herdr workspaces, the Fresh editor, Pi, and pinned development tools into one app. Your settings and sessions live in `~/.mash`, separate from the tools you use outside Mash.
 
 ## Install
 
@@ -30,8 +36,31 @@ On first launch, the setup wizard configures your workspace. Mash keeps its data
 - `packaging/wizard/` contains the first-launch wizard. `packaging/defaults/` contains the settings and themes shipped with the app.
 - `packaging/assets.json` pins the external components. `.github/workflows/` builds, verifies, and publishes releases.
 
-For local checks, run `make test` and `make release-preflight`. Release artifacts are built in GitHub Actions; see [MAINTAINER.md](MAINTAINER.md) for build, signing, and publication details. See [HISTORY.md](HISTORY.md) for changes.
+## Testing
+
+Run the full suite and the release gate from the repository root:
+
+```sh
+make test
+make release-preflight
+```
+
+Release artifacts are built in GitHub Actions; see [MAINTAINER.md](MAINTAINER.md) for build, signing, and publication details.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Report issues at [github.com/LuisAlejandro/mash/issues](https://github.com/LuisAlejandro/mash/issues).
+
+## Releases
+
+Changelog: [HISTORY.md](HISTORY.md). GitHub release blurbs: [RELEASE_DESCRIPTION.md](RELEASE_DESCRIPTION.md). Maintainers use `make release-patch`, `make release-minor`, `make release-major`, and `make undo-release` (see [MAINTAINER.md](MAINTAINER.md)).
 
 ## License
 
 Mash is licensed under [GPL-3.0](LICENSE). Bundled third-party components retain their own licenses.
+
+## Made with 💖 and 🍔
+
+![Banner](https://raw.githubusercontent.com/LuisAlejandro/mash/develop/branding/author-banner.svg)
+
+> Web [luisalejandro.org](http://luisalejandro.org/) · GitHub [@LuisAlejandro](https://github.com/LuisAlejandro) · Twitter [@LuisAlejandro](https://twitter.com/LuisAlejandro)
