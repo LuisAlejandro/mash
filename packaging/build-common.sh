@@ -114,6 +114,8 @@ mash_stage_runtimes() {
   rm -rf "$npm_env_home"
   "$root/packaging/tests/test_pi_runtime.sh" "$res" || return 1
 
+  mash_stage_pi_voice_catalog "$res" || return 1
+
   mash_write_runtime_shims "$res"
 
   # The interactive companions the macOS build bundles. All are pinned per
@@ -140,6 +142,30 @@ mash_stage_runtimes() {
   rm -rf "$zsh_plugin"
 
   echo "staged node, python, the Pi packages and the bundled tools for $target"
+}
+
+# The wizard embeds the Pi Voice catalog at compile time, and mash-voice-model
+# reads it at runtime from defaults/pi/catalog. Both have to match the pi-voice
+# the bundle actually ships, or the wizard would offer a model the extension
+# cannot resolve. Refreshing pi-voice therefore means refreshing the vendored
+# copy under packaging/wizard/data first.
+#
+#   mash_stage_pi_voice_catalog <resource-root>
+mash_stage_pi_voice_catalog() {
+  local res="$1" src catalog_file
+  src="$res/node/lib/node_modules/@earendil-works/pi-voice/catalog"
+  [ -d "$src" ] || {
+    echo "the bundled pi-voice has no catalog directory" >&2
+    return 1
+  }
+  mkdir -p "$res/defaults/pi/catalog"
+  for catalog_file in catalog.json recommendations.json; do
+    diff -q "$src/$catalog_file" "$root/packaging/wizard/data/$catalog_file" >/dev/null || {
+      echo "packaging/wizard/data/$catalog_file is stale; refresh it from the bundled pi-voice" >&2
+      return 1
+    }
+    cp "$src/$catalog_file" "$res/defaults/pi/catalog/$catalog_file"
+  done
 }
 
 # Interpreter and package-manager entry points every pane expects on PATH.
@@ -451,6 +477,10 @@ mash_verify_portable_payload() {
   }
   [ -f "$res/VERSION" ] || {
     echo "payload is missing VERSION" >&2
+    missing=1
+  }
+  [ -f "$res/defaults/pi/catalog/catalog.json" ] || {
+    echo "payload is missing defaults/pi/catalog/catalog.json" >&2
     missing=1
   }
   [ "$missing" -eq 0 ] || return 1

@@ -1,0 +1,12 @@
+diff --git a/src/apprt/gtk/ui/1.5/window.blp b/src/apprt/gtk/ui/1.5/window.blp
+index 3b0904d..a86dd51 100644
+--- a/src/apprt/gtk/ui/1.5/window.blp
++++ b/src/apprt/gtk/ui/1.5/window.blp
+@@ -62,7 +62,6 @@ template $GhosttyWindow: Adw.ApplicationWindow {
+         }
+       }
+ 
+-      [top]
+       Box {
+         orientation: vertical;
+ 

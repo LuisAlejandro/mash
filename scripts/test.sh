@@ -35,6 +35,7 @@ done < <(find packaging/tests -maxdepth 1 -name 'test_*.py' | sort)
 
 # Shell: the launcher, isolation and packaging helpers.
 run "packaging/helpers/tests/test-mash-voice-model.sh" bash packaging/helpers/tests/test-mash-voice-model.sh
+run "packaging/helpers/tests/test-mash-tool-install.sh" bash packaging/helpers/tests/test-mash-tool-install.sh
 while IFS= read -r test_file; do
   # A build gate, not a suite: it needs a resource root, and the build runs it
   # against the staged bundle (build.sh, build-common.sh).

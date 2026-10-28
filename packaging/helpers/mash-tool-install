@@ -87,11 +87,32 @@ eval "$spec"
 
 say "installing $component $VERSION for $target (strategy $STRATEGY)"
 
-# The shim name is what a pane runs; the archive member may differ.
-shim_name() {
+# The names a pane runs for a component. Most packages name their executable
+# after the package; these do not. An empty list means the package is a library
+# with no executable to link or probe.
+shim_names() {
   case "$1" in
   cua-driver) printf 'cua-driver\n' ;;
+  svelte-language-server) printf 'svelteserver\n' ;;
+  python-lsp-server) printf 'pylsp\n' ;;
+  vscode-langservers-extracted)
+    printf '%s\n' \
+      vscode-css-language-server \
+      vscode-json-language-server \
+      vscode-html-language-server
+    ;;
+  prettier-plugin-svelte) ;; # library only
   *) printf '%s\n' "$1" ;;
+  esac
+}
+
+# Some language servers exit nonzero for --version and --help because neither
+# flag is part of their protocol. Their shim existing and being executable is
+# the readiness check; probing them would reject a good install.
+probe_needs_flags() {
+  case "$1" in
+  vscode-langservers-extracted | tailwindcss-language-server) return 1 ;;
+  *) return 0 ;;
   esac
 }
 
@@ -103,18 +124,28 @@ already() {
 case "$STRATEGY" in
 package)
   # The platform supplies this one. Mash does not vendor it and does not ask for
-  # privileges, so the honest answer is to report it and move on.
-  if command -v "$component" >/dev/null 2>&1; then
-    say "$component is provided by the system"
-    exit 0
-  fi
+  # privileges, so the honest answer is to report it and move on. The command a
+  # pane runs can differ from the component name (pylsp, svelteserver), so ask
+  # the same map the other strategies use.
+  while IFS= read -r name; do
+    [ -n "$name" ] || continue
+    if command -v "$name" >/dev/null 2>&1; then
+      say "$component is provided by the system as $name"
+      exit 0
+    fi
+  done < <(shim_names "$component")
   say "$component is expected from the system package manager; not installed by Mash"
   exit 3
   ;;
 
 binary)
   dest="$data/local/tools/$component/$VERSION"
-  name="$(shim_name "$component")"
+  mapfile -t names < <(shim_names "$component")
+  name="${names[0]:-}"
+  [ -n "$name" ] || {
+    say "$component has no executable to shim"
+    exit 1
+  }
   if already "$dest/.mash-installed"; then
     say "$component $VERSION is already installed"
   else
@@ -174,7 +205,7 @@ binary)
 npm)
   prefix="$data/local/npm"
   marker="$prefix/.mash-version-$component"
-  name="$(shim_name "$component")"
+  mapfile -t names < <(shim_names "$component")
   if [ -f "$marker" ] && [ "$(cat "$marker")" = "$VERSION" ]; then
     say "$component $VERSION is already installed"
   else
@@ -197,7 +228,11 @@ npm)
   while IFS= read -r bin_script; do
     resolved="$(readlink -f "$bin_script" 2>/dev/null || printf '%s' "$bin_script")"
     [ -f "$resolved" ] || continue
-    case "$(head -n 1 "$resolved" 2>/dev/null)" in
+    # `read` drops NUL bytes instead of warning the way a command substitution
+    # around head does: bundled JS entry points are not guaranteed to be text.
+    first_line=""
+    IFS= read -r first_line <"$resolved" 2>/dev/null || true
+    case "$first_line" in
     '#!/usr/bin/env node')
       {
         echo "#!$node_real"
@@ -209,20 +244,22 @@ npm)
     esac
   done < <(find "$prefix/bin" \( -type f -o -type l \) 2>/dev/null)
   # A symlink into the package that was just rewritten still points at it, so
-  # only the shim outside the prefix has to be refreshed.
-  ln -sfn "$prefix/bin/$name" "$data/bin/$name"
-  target_bin="$prefix/bin/$name"
-  [ -x "$target_bin" ] || {
-    say "$component did not provide bin/$name"
-    exit 1
-  }
-  ln -sfn "$target_bin" "$data/bin/$name"
+  # only the shim outside the prefix has to be refreshed. A package can expose
+  # several binaries (vscode-langservers-extracted) or none (a plugin).
+  for name in "${names[@]}"; do
+    target_bin="$prefix/bin/$name"
+    [ -x "$target_bin" ] || {
+      say "$component did not provide bin/$name"
+      exit 1
+    }
+    ln -sfn "$target_bin" "$data/bin/$name"
+  done
   ;;
 
 pip)
   venv="$data/local/venv/$component"
   marker="$venv/.mash-version"
-  name="$(shim_name "$component")"
+  mapfile -t names < <(shim_names "$component")
   if [ -f "$marker" ] && [ "$(cat "$marker")" = "$VERSION" ]; then
     say "$component $VERSION is already installed"
   else
@@ -244,12 +281,29 @@ pip)
     mv "$venv.new" "$venv"
     say "$component $VERSION installed"
   fi
-  target_bin="$venv/bin/$name"
-  [ -x "$target_bin" ] || {
-    say "$component did not provide bin/$name"
-    exit 1
-  }
-  ln -sfn "$target_bin" "$data/bin/$name"
+  # pip writes the interpreter it was installed with into every console-script
+  # shebang. It was $venv.new, which no longer exists after the rename, so each
+  # script would fail with ENOENT. Point them at the final venv.
+  while IFS= read -r script; do
+    case "$(head -n 1 "$script" 2>/dev/null)" in
+    "#!$venv.new/bin/python"*)
+      {
+        echo "#!$venv/bin/python"
+        tail -n +2 "$script"
+      } >"$script.mashshebang"
+      chmod 755 "$script.mashshebang"
+      mv "$script.mashshebang" "$script"
+      ;;
+    esac
+  done < <(find "$venv/bin" -maxdepth 1 -type f 2>/dev/null)
+  for name in "${names[@]}"; do
+    target_bin="$venv/bin/$name"
+    [ -x "$target_bin" ] || {
+      say "$component did not provide bin/$name"
+      exit 1
+    }
+    ln -sfn "$target_bin" "$data/bin/$name"
+  done
   ;;
 
 *)
@@ -260,11 +314,24 @@ esac
 
 # A tool that landed but does not run is worse than one that failed loudly: the
 # wizard would record setup complete and the pane would break later.
-shim="$(shim_name "$component")"
-if ! PATH="$res/node/bin:$res/python/bin:$PATH" "$data/bin/$shim" --version >/dev/null 2>&1 &&
-  ! PATH="$res/node/bin:$res/python/bin:$PATH" "$data/bin/$shim" --help >/dev/null 2>&1; then
-  say "$component installed but does not answer --version or --help"
-  exit 1
+mapfile -t names < <(shim_names "$component")
+if [ "${#names[@]}" -eq 0 ]; then
+  say "$component is ready (library only)"
+  exit 0
 fi
+for name in "${names[@]}"; do
+  shim="$data/bin/$name"
+  [ -x "$shim" ] || {
+    say "$component has no executable shim bin/$name"
+    exit 1
+  }
+  if probe_needs_flags "$component"; then
+    if ! PATH="$res/node/bin:$res/python/bin:$PATH" "$shim" --version >/dev/null 2>&1 &&
+      ! PATH="$res/node/bin:$res/python/bin:$PATH" "$shim" --help >/dev/null 2>&1; then
+      say "$component installed but bin/$name does not answer --version or --help"
+      exit 1
+    fi
+  fi
+done
 say "$component is ready"
 exit 0
