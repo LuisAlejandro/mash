@@ -1,5 +1,5 @@
-id = "herdr-orchestration"
-name = "Orchestration"
+id = "mash-orchestration"
+name = "Mash Orchestration"
 version = "0.1.0"
 min_herdr_version = "0.9.0"
 description = "Local supervised loop: agent workers in sibling panes, an inbox for questions, and settlement only on worker_done."

@@ -15,7 +15,7 @@ import { Type } from "typebox";
 const DEFAULT_TIMEOUT_MS = 600_000;
 
 function orchestrationBin(): string {
-	return process.env.HERDR_ORCHESTRATION_BIN || "herdr-orchestration";
+	return process.env.MASH_ORCHESTRATION_BIN || "mash-orchestration";
 }
 
 function runCli(
@@ -101,7 +101,7 @@ export default function (pi: ExtensionAPI) {
 			} catch (error) {
 				const message = error instanceof Error ? error.message : String(error);
 				return textResult(
-					`herdr-orchestration is not available (${message}). Ask the person with ask_user.`,
+					`mash-orchestration is not available (${message}). Ask the person with ask_user.`,
 					true,
 				);
 			}

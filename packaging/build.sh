@@ -54,8 +54,9 @@ ship_helpers=(
   herdr-dev-tab-fill
   herdr-fresh-shell-pane
   herdr-annotate-paste
-  herdr-orchestration
+  mash-orchestration
   mash-hindsight-install
+  hindsight-embed
   mash-voice-model
   mash-notify
   mash-seed-sync
@@ -448,7 +449,7 @@ done
 cp "$root/packaging/uninstall" "$app/Contents/Resources/uninstall"
 chmod 755 "$app/Contents/Resources/uninstall"
 # The agent directory needs its own node_modules for exactly one thing: the
-# herdr-orchestration extension imports `typebox` at runtime, and Node resolves
+# mash-orchestration extension imports `typebox` at runtime, and Node resolves
 # that from the extension's directory upward. It cannot reach pi's own nested
 # copy under node/lib/node_modules/@earendil-works/pi-coding-agent.
 #
@@ -560,7 +561,7 @@ EOF
 # extension directory rather than from pi's nested copy.
 typebox_js="$app/Contents/Resources/defaults/pi/node_modules/typebox/build/index.mjs"
 [ -f "$typebox_js" ] || {
-  echo "typebox is missing from the agent directory; herdr-orchestration cannot load" >&2
+  echo "typebox is missing from the agent directory; mash-orchestration cannot load" >&2
   exit 1
 }
 if ! env PATH="$app/Contents/Resources/node/bin:/usr/bin:/bin" \

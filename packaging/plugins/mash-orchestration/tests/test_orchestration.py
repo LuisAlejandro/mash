@@ -98,10 +98,16 @@ class OrchestrationTests(unittest.TestCase):
         self.assertEqual(prompt[:3], ["agent", "prompt", started["dispatch"]["agent_name"]])
         self.assertNotIn("--wait", prompt)
         self.assertIn("ask_coordinator", prompt[3])
+        self.assertIn("mash-orchestration worker-done", prompt[3])
         self.assertIn("Do not call ask_user", prompt[3])
         self.assertIn("herdr agent send-keys", prompt[3])
         self.assertEqual(created["run"]["coordinator_pane_id"], "w1:p1")
         return started["dispatch"]
+
+    def test_store_uses_mash_name(self) -> None:
+        code, _ = self.run_cli(["run-create", "--objective", "check state directory"])
+        self.assertEqual(code, 0)
+        self.assertTrue((self.state / "mash-orchestration" / "store.json").is_file())
 
     def test_refuses_state_outside_mash(self) -> None:
         proc = subprocess.run(

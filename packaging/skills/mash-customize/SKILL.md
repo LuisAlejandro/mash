@@ -115,7 +115,7 @@ Mash ships `pi-subagents`, `pi-ask-user`, `@krfantasy/pi-monokai-pro`,
 skills, prompts and themes together.
 
 `packaging/defaults/pi/node_modules` deliberately holds **one** package:
-`typebox`, imported at runtime by `extensions/herdr-orchestration.ts`. Node
+`typebox`, imported at runtime by `extensions/mash-orchestration.ts`. Node
 resolves that import from the extension's directory upward, so it cannot reach
 pi's own nested copy under `node/lib/node_modules/`. Everything else about pi
 resolves from the global prefix.
