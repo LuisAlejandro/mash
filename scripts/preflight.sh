@@ -145,8 +145,6 @@ files=(
     packaging/tests/test_seed_ownership.sh
     packaging/patches/ghostty-gtk-branding.patch
     scripts/test.sh
-    packaging/assets.json
-    packaging/assets.py
     packaging/linux/control.in
     packaging/linux/app.desktop.in
     packaging/linux/render-icons.py

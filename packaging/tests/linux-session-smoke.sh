@@ -75,6 +75,9 @@ if [ "$session" = "wayland" ]; then
     exit 2
   fi
   export XDG_RUNTIME_DIR="$tmp/xdg" WAYLAND_DISPLAY="$socket"
+  # Weston headless has no display GPU. Mesa's dma-buf import can fail mmap and
+  # crash Ghostty on hosts with hardware GL; use software GL in this test only.
+  export LIBGL_ALWAYS_SOFTWARE=1
   unset DISPLAY
 else
   display=":$((90 + RANDOM % 9))"
@@ -107,8 +110,26 @@ for path in config/herdr/config.toml config/ghostty/config config/fresh/config.j
   [ -e "$data/$path" ] && ok "seeded $path" || fail "missing $path"
 done
 
+# A fresh HOME has not finished the wizard: optional Programming Skills are
+# intentionally absent. Derive the core count from this package's inventory
+# rather than asserting the opted-in count before a choice exists.
 skills="$(ls "$data/pi/agent/skills" 2>/dev/null | wc -l | tr -d ' ')"
-[ "$skills" -gt 10 ] && ok "seeded $skills skills" || fail "only $skills skills seeded"
+if [ -f "$res/defaults/optional-programming.txt" ]; then
+  core=0
+  for source in "$res/defaults/pi/skills"/*; do
+    [ -f "$source/SKILL.md" ] || continue
+    if ! grep -Fqx "skills/${source##*/}" "$res/defaults/optional-programming.txt"; then
+      core=$((core + 1))
+      [ -f "$data/pi/agent/skills/${source##*/}/SKILL.md" ] ||
+        fail "missing core skill ${source##*/}"
+    fi
+  done
+  [ "$core" -gt 0 ] && [ "$skills" -eq "$core" ] &&
+    ok "seeded $skills core skills before setup" ||
+    fail "seeded $skills skills, expected $core core skills before setup"
+else
+  fail "missing optional skill inventory"
+fi
 
 if grep -qiE 'Failed to open display|Cannot open display|wayland.*display.*refused' "$launch_log"; then
   fail "the terminal could not open the $session display"
