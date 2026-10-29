@@ -80,6 +80,25 @@ else
 	functional=$((functional + 1))
 fi
 
+echo "--- TCC resource access"
+# macOS resolves a prompt raised by a program running inside Mash against the
+# outer bundle, so these two live on Mash.app while Ghostty's own copy of them
+# has been fine all along. Without them tccd refuses to prompt and denies, and
+# CoreAudio answers the denial with a silent stream: recording looks healthy and
+# produces nothing, which is how pi-voice dictation broke in 0.1.1.
+if [ -n "$(/usr/libexec/PlistBuddy -c 'Print :NSMicrophoneUsageDescription' "$app/Contents/Info.plist" 2>/dev/null)" ]; then
+	printf 'declared  Contents/Info.plist NSMicrophoneUsageDescription\n'
+else
+	printf 'MISSING   Contents/Info.plist NSMicrophoneUsageDescription -- no microphone prompt can appear\n'
+	functional=$((functional + 1))
+fi
+if codesign -d --entitlements - "$app" 2>/dev/null | grep -q 'com.apple.security.device.audio-input'; then
+	printf 'entitled  app.mash audio-input\n'
+else
+	printf 'MISSING   app.mash com.apple.security.device.audio-input -- capture is denied silently\n'
+	functional=$((functional + 1))
+fi
+
 echo
 printf 'functional drift: %d   cosmetic: %d\n' "$functional" "$cosmetic"
 [ "$functional" -eq 0 ] || exit 1

@@ -10,5 +10,17 @@
     <true/>
     <key>com.apple.security.cs.disable-library-validation</key>
     <true/>
+    <!-- Mash.app is the outermost bundle, so macOS evaluates every TCC prompt
+         raised by a program running inside it against this signature, not the
+         one Ghostty already carries in entitlements-ghostty.plist. Under the
+         hardened runtime a prompt with no matching entitlement is not merely
+         refused: tccd logs "Policy disallows prompt" and denies, which
+         CoreAudio answers with a silent stream rather than an error, so
+         recording appears to work and transcribes nothing. Observed with
+         pi-voice dictation: 100% digital silence on every device. -->
+    <key>com.apple.security.device.audio-input</key>
+    <true/>
+    <key>com.apple.security.device.camera</key>
+    <true/>
 </dict>
 </plist>
