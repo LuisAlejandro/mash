@@ -19,6 +19,13 @@ default_shell = "__MASH_SHELL__"
 # `super+shift+]=unbind` in Ghostty -- already released there, freed for
 # REPLACE the prefix defaults: ctrl+b n / ctrl+b p no longer cycle tabs.
 [keys]
+# Every `shell` and `popup` command below starts with
+# PATH="${HERDR_BIN_PATH%/*}:$PATH". Herdr runs them through `/bin/sh -lc`
+# (detached_custom_command_process in herdr's src/platform/mod.rs), and on
+# Ubuntu the login shell's /etc/profile overwrites PATH, dropping Mash's bin
+# directory: herdr-new-*-tab, telescope-*, lazygit and pet were "not found" and
+# the chord silently did nothing. HERDR_BIN_PATH is the running herdr binary,
+# which Herdr exports to custom commands and which lives in that directory.
 # No real "disable" exists for the prefix key -- prefix = "", false, "none",
 # "off", "disabled", and [] were all tested and every one is rejected, falling
 # back silently to the ctrl+b default (confirmed via `herdr config check`).
@@ -26,12 +33,16 @@ default_shell = "__MASH_SHELL__"
 # which neuters it in practice. Done because every prefix-mode action already
 # has a direct chord (workspace_picker is the one exception, already unbound
 # at "" -- see further down), so this costs nothing currently in use, and it
-# frees ctrl+b for Pi (cursorLeft, secondary binding) and OpenCode
-# (session_background, its ONLY binding -- otherwise permanently unreachable
-# inside this nesting) in any pane running either one.
+# frees ctrl+b for Pi (cursorLeft, secondary binding) in any pane running it.
 prefix = "f24"
-previous_tab = "ctrl+shift+["
-next_tab = "ctrl+shift+]"
+# Ctrl+Tab / Ctrl+Shift+Tab, Linux Cursor's own tab-cycling chord. Cursor's
+# Ctrl+PgUp/PgDn would be the closer match, but Herdr's key parser
+# (parse_key_combo in src/config/keybinds.rs, 0.9.3) has no PageUp/PageDown,
+# and Fresh keeps Ctrl+PgUp/PgDn for its own buffers. Ghostty binds both chords
+# by default (previous_tab/next_tab, not performable), so config.linux unbinds
+# them. Ctrl+Shift+[ ] is left to Fresh, where Cursor folds/unfolds.
+previous_tab = "ctrl+shift+tab"
+next_tab = "ctrl+tab"
 # claimed by the family (g/l/n/o/p/r/t/w/x/1) -- M for "modify the name".
 # Confirmed free: Herdr config and defaults, Ghostty live and default, Fresh.
 rename_tab = "ctrl+shift+m"
@@ -48,9 +59,9 @@ rename_tab = "ctrl+shift+m"
 # class of trap (Hide / Minimize, both OS-level, both confirmed by testing).
 # set here.
 help = "ctrl+shift+i"
-settings = "ctrl+alt+i"    # mnemonic: "i" as in preferences/info
+settings = "ctrl+comma"    # Cursor's and Ghostty's own settings chord
 detach = "ctrl+alt+u"      # NOT ctrl+q, which the terminal uses to quit
-reload_config = "ctrl+alt+shift+k"
+reload_config = "ctrl+shift+comma"  # Ghostty's own reload chord
 open_notification_target = "ctrl+alt+y"
 
 # workspace action: new/rename/close/goto/sequential-move/indexed-switch.
@@ -121,7 +132,7 @@ split_horizontal = "ctrl+alt+minus"
 # mash_removed_ui, and a binding whose action performs nothing still consumes
 # its chord unless it carries `performable:`.
 # Fresh's add_cursor_above/below also lived on ctrl+alt+up/down; they moved to
-# alt+shift+k/j in config.linux.json, the vim direction.
+# alt+shift+up/down in config.linux.json, Linux Cursor's own chord.
 focus_pane_left = "ctrl+super+left"
 focus_pane_down = "ctrl+super+down"
 focus_pane_up = "ctrl+super+up"
@@ -237,14 +248,14 @@ close_tab = "ctrl+shift+w"
 [[keys.command]]
 key = "ctrl+shift+t"
 type = "shell"
-command = "herdr-new-plain-tab"
+command = "PATH=\"${HERDR_BIN_PATH%/*}:$PATH\"; herdr-new-plain-tab"
 description = "new plain shell tab"
 
 # Requires `keybind = super+t=unbind` in the Ghostty config so Ghostty
 [[keys.command]]
 key = ["ctrl+alt+t", "ctrl+shift+n"]
 type = "shell"
-command = "herdr-new-dev-tab"
+command = "PATH=\"${HERDR_BIN_PATH%/*}:$PATH\"; herdr-new-dev-tab"
 description = "new dev tab (editor + agent)"
 
 # Shell pane stacked under a dev tab's Fresh pane, Fresh on top and pi untouched
@@ -266,7 +277,7 @@ description = "new dev tab (editor + agent)"
 [[keys.command]]
 key = "ctrl+shift+backtick"
 type = "shell"
-command = "herdr-fresh-shell-pane"
+command = "PATH=\"${HERDR_BIN_PATH%/*}:$PATH\"; herdr-fresh-shell-pane"
 description = "new shell pane under Fresh"
 
 # New agent tab. macOS pairs Cmd+T (dev tab) with Cmd+Alt+T (agent tab); both
@@ -275,13 +286,13 @@ description = "new shell pane under Fresh"
 [[keys.command]]
 key = ["ctrl+alt+shift+t", "ctrl+alt+n"]
 type = "shell"
-command = "herdr-new-pi-tab"
+command = "PATH=\"${HERDR_BIN_PATH%/*}:$PATH\"; herdr-new-pi-tab"
 description = "new agent tab"
 
 [[keys.command]]
 key = "ctrl+alt+p"
 type = "popup"
-command = "telescope-files"
+command = "PATH=\"${HERDR_BIN_PATH%/*}:$PATH\"; telescope-files"
 description = "File finder"
 width = "70%"
 height = "70%"
@@ -297,7 +308,7 @@ height = "70%"
 [[keys.command]]
 key = "ctrl+shift+g"
 type = "popup"
-command = "cd \"${HERDR_ACTIVE_PANE_CWD:-.}\" && exec lazygit"
+command = "PATH=\"${HERDR_BIN_PATH%/*}:$PATH\"; cd \"${HERDR_ACTIVE_PANE_CWD:-.}\" && exec lazygit"
 description = "Source control"
 width = "90%"
 height = "85%"
@@ -436,7 +447,7 @@ enabled = false
 [[keys.command]]
 key = "ctrl+shift+o"
 type = "popup"
-command = "cd \"${HERDR_ACTIVE_PANE_CWD:-.}\" && CONFIG_DIR=\"__MASH_CONFIG__/lazydocker\" exec lazydocker"
+command = "PATH=\"${HERDR_BIN_PATH%/*}:$PATH\"; cd \"${HERDR_ACTIVE_PANE_CWD:-.}\" && CONFIG_DIR=\"__MASH_CONFIG__/lazydocker\" exec lazydocker"
 description = "Container status"
 width = "90%"
 height = "85%"
@@ -447,7 +458,7 @@ height = "85%"
 [[keys.command]]
 key = "ctrl+alt+shift+p"
 type = "popup"
-command = "exec pet exec --color"
+command = "PATH=\"${HERDR_BIN_PATH%/*}:$PATH\"; exec pet exec --color"
 description = "Snippets"
 width = "90%"
 height = "85%"
@@ -455,7 +466,7 @@ height = "85%"
 [[keys.command]]
 key = "ctrl+shift+r"
 type = "shell"
-command = "herdr-new-reviewr-tab"
+command = "PATH=\"${HERDR_BIN_PATH%/*}:$PATH\"; herdr-new-reviewr-tab"
 description = "new review tab (diff + agent)"
 
 # Annotate plugin (plannotator/herdr-annotate/lite).
@@ -478,7 +489,7 @@ description = "annotate text"
 [[keys.command]]
 key = "ctrl+alt+l"
 type = "shell"
-command = "herdr-annotate-paste"
+command = "PATH=\"${HERDR_BIN_PATH%/*}:$PATH\"; herdr-annotate-paste"
 description = "paste annotations into this tab's agent and archive them"
 
 [[keys.command]]
@@ -592,7 +603,7 @@ command = "telescope.open-actions"
 description = "Command palette"
 
 # Fork the focused agent's session from an earlier user message. The plugin
-# resolves Pi or OpenCode from the focused pane, so one chord covers both.
+# resolves the agent from the focused pane; Pi is the one it supports today.
 # macOS uses Cmd+Alt+Y beside open_notification_target's Cmd+Y; both would land
 # on Ctrl+Alt+Y here, so the fork moves up to Ctrl+Alt+Shift+Y.
 [[keys.command]]
@@ -606,7 +617,7 @@ description = "Fork agent from message"
 [[keys.command]]
 key = "ctrl+alt+shift+l"
 type = "popup"
-command = "telescope-sessions"
+command = "PATH=\"${HERDR_BIN_PATH%/*}:$PATH\"; telescope-sessions"
 description = "Session search"
 width = "70%"
 height = "70%"

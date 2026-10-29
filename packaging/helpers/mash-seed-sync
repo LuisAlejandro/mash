@@ -76,7 +76,9 @@ import sys
 
 res, data = sys.argv[1], sys.argv[2]
 record_path = os.path.join(data, "local", "state", "seeded.json")
-LINUX = platform.system() != "Darwin"
+# MASH_SEED_PLATFORM lets the tests render the other platform's files on one
+# host; nothing in the app sets it.
+LINUX = (os.environ.get("MASH_SEED_PLATFORM") or platform.system()) != "Darwin"
 SUFFIX = ".linux" if LINUX else ""
 CHUNK = 1 << 20
 CHOICE_PATH = os.path.join(data, "setup", "skills-choice")
@@ -103,31 +105,6 @@ except FileNotFoundError:
 NATIVE = "mode=native" in mode_lines
 MODE = "native" if NATIVE else "mash"
 SELECTION = {"programming": ENABLED["programming"], "keybindings": MODE}
-
-# Native keeps the Fresh bindings whose actions Fresh's own keymaps never bind
-# (crates/fresh-editor-core/keymaps/default.json plus macos.json upstream), so
-# Mash's extra editor capabilities survive. Everything else in Mash's list moves
-# a stock action onto a Cursor-style chord, which Native drops so Fresh's
-# built-in map applies. The clipboards are kept deliberately: cmd+c, cmd+v,
-# cmd+x and cmd+a are the platform's own editing conventions, and the Cursor
-# chords Mash uses for them are the ones a user expects to keep working.
-NATIVE_FRESH_KEEP = {
-    "copy",
-    "copy_file_path",
-    "cut",
-    "duplicateLineUp",
-    "duplicate_line",
-    "file_explorer_copy_full_path",
-    "freshCloakToggleSetting",
-    "paste",
-    "save_all",
-    "save_as",
-    "select_all",
-    "start_search_replace_in_buffer",
-    "toggle_compose_mode",
-}
-
-
 
 # The trees copied with rsync --ignore-existing by mash_seed_missing. Simple
 # file seeds and their path substitutions live in SINGLE_SEEDS below.
@@ -158,9 +135,11 @@ SINGLE_SEEDS = [
     ("defaults/pet/config.toml", "config/pet/config.toml", "pet"),
     ("defaults/pet/snippet.toml", "config/pet/snippet.toml", None),
     (f"defaults/fresh/config{SUFFIX}.json", "config/fresh/config.json", "fresh"),
-    # Native re-renders only this sheet's editor block; see rendered_bytes.
+    # Each mode has its own sheet per platform.
     (
-        "defaults/pi/extensions/keybindings-quickref" + (".linux.txt" if LINUX else ".txt"),
+        "defaults/pi/extensions/keybindings-quickref"
+        + (".native" if NATIVE else "")
+        + (".linux.txt" if LINUX else ".txt"),
         "pi/agent/extensions/keybindings-quickref.txt",
         "quickref",
     ),
@@ -267,6 +246,62 @@ def force_assignment(text, key, value):
     return "".join(out)
 
 
+def native_herdr(text):
+    """Herdr's stock keymap plus Mash's commands on prefix keys.
+
+    Every key the Cursor-style [keys] table assigns is dropped, so Herdr's own
+    defaults apply; keys.native.toml supplies the few stock actions Native sets
+    and the prefix key for each [[keys.command]], matched by description. A
+    command without a Native key fails the render rather than shipping unbound.
+    """
+    import tomllib
+
+    with open(os.path.join(res, "defaults", "herdr", "keys.native.toml"), "rb") as fh:
+        native = tomllib.load(fh)
+    commands = {c["description"]: c for c in tomllib.loads(text).get("keys", {}).get("command", [])}
+    missing = sorted(set(commands) - set(native["commands"]))
+    if missing:
+        raise SystemExit("keys.native.toml has no key for: " + ", ".join(missing))
+    assignment = re.compile(r"^([A-Za-z_]+)[ \t]*=")
+    out, section, block, native_keys_written = [], None, [], False
+
+    def flush_command():
+        description = None
+        for line in block:
+            match = re.match(r'^description[ \t]*=[ \t]*"(.*)"[ 	]*$', line.strip())
+            if match:
+                description = match.group(1)
+        key = native["commands"][description]
+        for line in block:
+            out.append(f'key = "{key}"\n' if re.match(r"^key[ \t]*=", line) else line)
+        block.clear()
+
+    for line in text.splitlines(keepends=True):
+        header = re.match(r"^\s*(\[\[?[^\]]+\]\]?)\s*$", line)
+        if header:
+            if section == "[[keys.command]]":
+                flush_command()
+            section = header.group(1)
+            if section == "[[keys.command]]":
+                block.append(line)
+                continue
+            out.append(line)
+            if section == "[keys]" and not native_keys_written:
+                for name, value in native["keys"].items():
+                    out.append(f'{name} = "{value}"\n')
+                native_keys_written = True
+            continue
+        if section == "[[keys.command]]":
+            block.append(line)
+        elif section == "[keys]" and assignment.match(line):
+            continue
+        else:
+            out.append(line)
+    if section == "[[keys.command]]":
+        flush_command()
+    return "".join(out)
+
+
 def rendered_bytes(source, target, kind=None, rel_in_tree=""):
     if os.path.islink(source):
         if rel_in_tree.startswith("mash-parallel/"):
@@ -291,11 +326,21 @@ def rendered_bytes(source, target, kind=None, rel_in_tree=""):
             text = text.replace("__MASH_VERSION__", bundle_version())
             text = force_assignment(text, "version_check", "false")
             text = force_assignment(text, "manifest_check", "false")
+            if NATIVE:
+                text = native_herdr(text)
         elif kind == "ghostty":
             text = text.replace("__MASH_HERDR_PANE__", os.path.join(res, "bin", "herdr-pane"))
             text = force_assignment(text, "command", os.path.join(res, "bin", "herdr-pane"))
             text = force_assignment(text, "working-directory", "home")
             text = force_assignment(text, "auto-update", "off")
+            if NATIVE:
+                # Ghostty's stock keymap: none of Mash's unbinds or remaps.
+                text = "".join(
+                    line for line in text.splitlines(keepends=True)
+                    if not re.match(r"^[ \t]*keybind[ \t]*=", line)
+                )
+            # The fork's menus send the keys of the mode in use.
+            text = force_assignment(text, "mash-keybindings", "native" if NATIVE else "cursor")
         else:
             text = text.replace("__MASH_PET_SNIPPET__", os.path.join(data, "config", "pet", "snippet.toml"))
         raw = text.encode("utf-8")
@@ -303,44 +348,10 @@ def rendered_bytes(source, target, kind=None, rel_in_tree=""):
         config = json.loads(raw.decode("utf-8"))
         config["check_for_updates"] = False
         config["self_update"] = False
-        if NATIVE and isinstance(config.get("keybindings"), list):
-            config["keybindings"] = [
-                entry
-                for entry in config["keybindings"]
-                if entry.get("action") == "unbind" or entry.get("action") in NATIVE_FRESH_KEEP
-            ]
+        if NATIVE:
+            # Fresh's built-in default keymap, with no Mash entries at all.
+            config.pop("keybindings", None)
         raw = (json.dumps(config, indent=2) + "\n").encode("utf-8")
-    elif kind == "quickref" and NATIVE and not LINUX:
-        # The sheet's editor block shares its rows with the tail of the right
-        # column, so only the left column is replaced: Fresh's Cursor-style
-        # chords give way to the stock map Mash leaves in place.
-        text = raw.decode("utf-8")
-        lines = text.splitlines(keepends=True)
-        cut = next((i for i, line in enumerate(lines) if line.startswith("── Editor")), None)
-        column = lines[0].find("── Agents") if lines else -1
-        try:
-            with open(
-                os.path.join(res, "defaults", "pi", "extensions", "keybindings-quickref.editor-native.txt"),
-                encoding="utf-8",
-            ) as fh:
-                block = fh.read().splitlines(keepends=True)
-        except FileNotFoundError:
-            block = []  # Older bundle: keep the Cursor-style block.
-        if cut is not None and column > 0 and block:
-            def row(left, source):
-                right = source[column:].rstrip() if source else ""
-                if not right:
-                    return left.rstrip() + "\n"
-                return left.rstrip("\n").ljust(column) + "  " + right + "\n"
-
-            out = lines[:cut]
-            for offset, line in enumerate(block):
-                index = cut + offset
-                out.append(row(line, lines[index] if index < len(lines) else ""))
-            for line in lines[cut + len(block):]:
-                out.append(row("", line))
-            text = "".join(out)
-        raw = text.encode("utf-8")
     elif kind == "notifier" and not LINUX and os.path.isfile(os.path.join(res, "bin", "mash-notify")):
         lines = [line for line in raw.decode("utf-8").splitlines() if not line.startswith("NOTIFIER=")]
         lines.append("NOTIFIER=" + os.path.join(res, "bin", "mash-notify"))
@@ -414,11 +425,10 @@ def entries():
                     continue
                 if source_rel == "defaults/fresh" and rel == "config.json":
                     continue  # platform-specific version is a single seed above
-                if source_rel == "defaults/pi" and rel in (
-                    "extensions/keybindings-quickref.txt",
-                    "extensions/keybindings-quickref.editor-native.txt",
-                ):
+                if source_rel == "defaults/pi" and rel.startswith("extensions/keybindings-quickref."):
                     continue  # The mode's variant is a single seed above
+                if source_rel == "defaults/pi" and rel == "keybindings.json" and NATIVE:
+                    continue  # Native leaves Pi on its own keys
                 if source_rel == "defaults/pi" and rel == "mcp.json":
                     continue  # MCP servers are merged per key below
                 venv_rel = rel if source_rel == "defaults/mash-config/venvs" else ""

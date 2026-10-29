@@ -64,6 +64,21 @@ keybind = ctrl+shift+x=unbind
 keybind = ctrl+shift+g=unbind
 keybind = ctrl+shift+i=unbind
 
+# Herdr's tab cycling and its settings/reload chords, on the keys Linux Cursor
+# uses. Ghostty binds all four by default with set.put, not putFlags, so they
+# are not `performable:`: previous_tab/next_tab are in mash_removed_ui and do
+# nothing, open_config and reload_config run, and either way the chord stops
+# here. The menu's Reload Configuration still reloads both Ghostty and Herdr.
+# Ctrl+PgUp/PgDn need no unbind: those defaults are performable, so they fall
+# through to Fresh's buffer switching.
+keybind = ctrl+tab=unbind
+keybind = ctrl+shift+tab=unbind
+keybind = ctrl+,=unbind
+keybind = ctrl+shift+,=unbind
+# Fresh's toggle_file_explorer, Cursor's explorer chord. Ghostty's default is
+# new_split:down (set.put, in mash_removed_ui), which swallowed it.
+keybind = ctrl+shift+e=unbind
+
 # Ctrl+Shift+Up/Down carry Herdr's previous_agent / next_agent. Ghostty's own
 # Linux defaults bind them to jump_to_prompt with set.put, not set.putFlags, so
 # the binding is not `performable:` and consumes the chord even though
@@ -104,7 +119,7 @@ keybind = ctrl+shift+v=paste_from_clipboard
 # Font: the package installs MesloLGS NF into the system font tree, so naming it
 # is enough and no fallback is needed.
 font-family = "MesloLGS NF"
-font-size = 13
+font-size = 10
 font-feature = -liga, -calt, -dlig
 
 window-padding-x = 0

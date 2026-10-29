@@ -1,8 +1,8 @@
 """The first-launch keybinding modes, as mash-seed-sync renders them.
 
-Cursor-style is what Mash has always shipped. Native keeps Mash's Herdr
-functions, Ghostty pass-through and Fresh capabilities, but drops Mash's
-Cursor-style Fresh chords so Fresh's own keymap applies. The choice is recorded
+Cursor-style is what Mash has always shipped. Native leaves Fresh on its own
+default keymap with no Mash entries at all. The Herdr, Ghostty, Pi and sheet
+sides of Native are covered by test_native_keybindings.py. The choice is recorded
 by the wizard only when setup completes, so these tests drive the mode file
 directly and assert the rendered bytes.
 
@@ -23,23 +23,6 @@ SYNC = PACKAGING / "helpers" / "mash-seed-sync"
 LINUX = platform.system() != "Darwin"
 SUFFIX = ".linux" if LINUX else ""
 
-# Kept in Native: Fresh's own keymaps never bind these actions, and the
-# clipboards are the platform's editing convention.
-NATIVE_KEEP = {
-    "copy",
-    "copy_file_path",
-    "cut",
-    "duplicateLineUp",
-    "duplicate_line",
-    "file_explorer_copy_full_path",
-    "freshCloakToggleSetting",
-    "paste",
-    "save_all",
-    "save_as",
-    "select_all",
-    "start_search_replace_in_buffer",
-    "toggle_compose_mode",
-}
 
 
 class SeedFixture:
@@ -74,9 +57,10 @@ class SeedFixture:
             self.res / "defaults" / "pi" / "extensions" / f"keybindings-quickref{SUFFIX}.txt",
         )
         shutil.copy(
-            DEFAULTS / "pi" / "extensions" / "keybindings-quickref.editor-native.txt",
-            self.res / "defaults" / "pi" / "extensions" / "keybindings-quickref.editor-native.txt",
+            DEFAULTS / "pi" / "extensions" / f"keybindings-quickref.native{SUFFIX}.txt",
+            self.res / "defaults" / "pi" / "extensions" / f"keybindings-quickref.native{SUFFIX}.txt",
         )
+        shutil.copy(DEFAULTS / "herdr" / "keys.native.toml", self.res / "defaults" / "herdr" / "keys.native.toml")
         (self.res / "defaults" / "herdr" / f"config{SUFFIX}.toml").write_text(
             '[terminal]\ndefault_shell = "__MASH_SHELL__"\n'
         )
@@ -129,30 +113,15 @@ class KeybindingModeTest(unittest.TestCase):
         self.assertEqual(self.fixture.installed()["keybindings"], self.fixture.shipped()["keybindings"])
         self.assertEqual(self.fixture.selection()["keybindings"], "mash")
 
-    def test_native_drops_cursor_style_chords_and_keeps_the_rest(self) -> None:
+    def test_native_leaves_fresh_on_its_own_keymap(self) -> None:
         self.fixture.set_mode("native")
         self.fixture.sync()
         installed = self.fixture.installed()
-        shipped = self.fixture.shipped()["keybindings"]
-        kept = installed["keybindings"]
-
-        # Everything Mash adds beyond this set moves a stock action onto a
-        # Cursor-style chord, so Native leaves Fresh's own map in charge.
-        for entry in kept:
-            self.assertIn(entry["action"], NATIVE_KEEP | {"unbind"})
-            self.assertIn(entry, shipped)
-        # Ghostty on macOS frees control characters for the terminal; a Fresh
-        # unbind that disappeared would hand Ctrl+C back to Fresh's copy.
-        self.assertEqual(
-            [entry for entry in kept if entry["action"] == "unbind"],
-            [entry for entry in shipped if entry["action"] == "unbind"],
-        )
-        self.assertEqual({entry["action"] for entry in kept} - {"unbind"}, NATIVE_KEEP)
+        self.assertNotIn("keybindings", installed)
         # Nothing outside the keymap is mode-dependent.
-        self.assertEqual(
-            {key: value for key, value in installed.items() if key != "keybindings"},
-            {key: value for key, value in self.fixture.shipped().items() if key != "keybindings"},
-        )
+        shipped = self.fixture.shipped()
+        shipped.pop("keybindings")
+        self.assertEqual(installed, shipped)
 
     def test_the_mode_is_part_of_the_record_so_a_retry_re_renders(self) -> None:
         self.fixture.sync()
@@ -160,7 +129,7 @@ class KeybindingModeTest(unittest.TestCase):
         self.fixture.set_mode("native")
         self.fixture.sync()
         self.assertEqual(self.fixture.selection()["keybindings"], "native")
-        self.assertEqual({entry["action"] for entry in self.fixture.installed()["keybindings"]} - {"unbind"}, NATIVE_KEEP)
+        self.assertNotIn("keybindings", self.fixture.installed())
         # Cancelling setup removes the choice, and the defaults come back.
         self.fixture.clear_mode()
         self.fixture.sync()
@@ -171,7 +140,7 @@ class KeybindingModeTest(unittest.TestCase):
         self.fixture.set_mode("native")
         self.fixture.sync()
         edited = self.fixture.installed()
-        edited["keybindings"].append({"key": "q", "modifiers": ["alt"], "action": "unbind", "when": "normal"})
+        edited["keybindings"] = [{"key": "q", "modifiers": ["alt"], "action": "unbind", "when": "normal"}]
         self.fixture.fresh.write_text(json.dumps(edited, indent=2) + "\n")
         (self.fixture.res / "VERSION").write_text("1.1.0\n")
         self.fixture.sync()
@@ -189,38 +158,19 @@ class KeybindingModeTest(unittest.TestCase):
         self.fixture.sync()
         installed = self.fixture.installed()
         self.assertEqual(installed["label"], "next release")
-        self.assertEqual({entry["action"] for entry in installed["keybindings"]} - {"unbind"}, NATIVE_KEEP)
+        self.assertNotIn("keybindings", installed)
 
-    @unittest.skipIf(LINUX, "the Linux sheet lists no editor chords")
-    def test_native_swaps_the_sheet_editor_block(self) -> None:
+    def test_native_seeds_its_own_sheet(self) -> None:
         self.fixture.sync()
         cursor_style = self.fixture.quickref.read_text()
-        self.assertIn("── Editor ──", cursor_style)
         self.fixture.set_mode("native")
         self.fixture.sync()
         native = self.fixture.quickref.read_text()
-        self.assertIn("── Editor (Fresh's own keys) ──", native)
-        self.assertNotIn("── Editor ──", native)
-        # The rest of the sheet is shared, so the mode changes one block only.
-        self.assertTrue(native.startswith(cursor_style.split("── Editor")[0]))
-        addendum = (DEFAULTS / "pi" / "extensions" / "keybindings-quickref.editor-native.txt").read_text()
-        for line in addendum.splitlines():
-            self.assertIn(line.strip(), native)
-        # The block shares rows with the tail of the right column, which the
-        # replacement must keep.
-        for line in ("⌘⇧I        Help", "⌘U         Detach", "⌘B         Toggle sidebar"):
-            self.assertIn(line, native)
-        for dropped in ("Find / replace in files", "⌘⇧F", "⌘⇧E", "⌥⇧↓        Duplicate line"):
-            self.assertNotIn(dropped, native)
-
-    @unittest.skipIf(not LINUX, "the macOS sheet is the one with an editor block")
-    def test_linux_sheet_is_mode_independent(self) -> None:
-        self.fixture.sync()
-        cursor_style = self.fixture.quickref.read_text()
-        self.fixture.set_mode("native")
-        self.fixture.sync()
-        self.assertEqual(self.fixture.quickref.read_text(), cursor_style)
-
+        self.assertNotEqual(native, cursor_style)
+        self.assertEqual(
+            native,
+            (DEFAULTS / "pi" / "extensions" / f"keybindings-quickref.native{SUFFIX}.txt").read_text(),
+        )
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

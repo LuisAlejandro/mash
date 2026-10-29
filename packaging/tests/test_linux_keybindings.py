@@ -251,6 +251,78 @@ class MovedChordTest(unittest.TestCase):
             self.assertNotIn(owners[0], bound, f"{action} sits on {show(owners[0])}")
 
 
+class CursorLinuxAlignmentTest(unittest.TestCase):
+    """Linux chords follow Linux Cursor's native keymap, not a Cmd->Ctrl copy.
+
+    The first Linux port swapped Cmd for Ctrl, which put Fresh's document and
+    word motions on chords Linux Cursor spends elsewhere (Ctrl+Up scrolls,
+    Ctrl+Delete deletes a word) and left Herdr tabs on Ctrl+Shift+[ ], which
+    Cursor uses to fold.
+    """
+
+    def setUp(self):
+        self.herdr = tomllib.loads((DEFAULTS / "herdr" / "config.linux.toml").read_text())["keys"]
+        self.fresh = fresh_linux()
+
+    def test_herdr_tabs_cycle_on_ctrl_tab(self):
+        self.assertEqual("ctrl+tab", self.herdr["next_tab"])
+        self.assertEqual("ctrl+shift+tab", self.herdr["previous_tab"])
+
+    def test_settings_and_reload_use_the_comma_chords(self):
+        self.assertEqual("ctrl+comma", self.herdr["settings"])
+        self.assertEqual("ctrl+shift+comma", self.herdr["reload_config"])
+
+    def test_ghostty_releases_every_chord_it_would_swallow(self):
+        # Ghostty's own defaults on these are not performable, so without the
+        # unbind the chord never reaches Herdr or Fresh.
+        _, released = ghostty_linux_live()
+        for text in ("ctrl+tab", "ctrl+shift+tab", "ctrl+,", "ctrl+shift+,", "ctrl+shift+e"):
+            with self.subTest(chord=text):
+                self.assertIn(chord(text), released)
+
+    def test_fresh_keeps_its_cursor_matching_defaults(self):
+        # Fresh's own keymap already matches Linux Cursor for these actions, so
+        # an override would only move them off the Cursor chord.
+        for action in ("prev_buffer", "next_buffer", "find_next", "find_previous",
+                       "move_document_start", "move_document_end", "lsp_hover",
+                       "delete_word_backward", "delete_word_forward"):
+            with self.subTest(action=action):
+                self.assertFalse(any(action in names for names in self.fresh.values()))
+
+    def test_add_cursor_uses_cursors_shift_alt_arrows(self):
+        self.assertIn("add_cursor_above", self.fresh[chord("alt+shift+up")])
+        self.assertIn("add_cursor_below", self.fresh[chord("alt+shift+down")])
+
+    def test_no_fresh_chord_is_taken_by_herdr(self):
+        # Herdr reads the key before the pane does, so a shared chord leaves the
+        # Fresh binding unreachable.
+        bound = herdr_linux()
+        clashes = [f"{show(c)} ({', '.join(a)})" for c, a in self.fresh.items() if c in bound]
+        self.assertEqual([], clashes)
+
+    def test_fresh_avoids_ghostty_paste(self):
+        self.assertNotIn(chord("ctrl+shift+v"), self.fresh)
+
+
+class CustomCommandPathTest(unittest.TestCase):
+    """Herdr runs custom commands through `/bin/sh -lc`; Ubuntu's /etc/profile
+    resets PATH there, so a bare Mash helper name is "not found" and the chord
+    does nothing. Each command must put Herdr's own directory back first."""
+
+    def test_shell_and_popup_commands_restore_mash_bin(self):
+        cfg = tomllib.loads((DEFAULTS / "herdr" / "config.linux.toml").read_text())
+        for entry in cfg["keys"]["command"]:
+            if entry["type"] not in ("shell", "popup"):
+                continue
+            command = entry["command"]
+            with self.subTest(command=command):
+                self.assertTrue(
+                    command.startswith('PATH="${HERDR_BIN_PATH%/*}:$PATH"; ')
+                    or command.startswith('"${HERDR_BIN_PATH'),
+                    command,
+                )
+
+
 class QuickrefTest(unittest.TestCase):
     """The reference card shipped into panes must match the configs."""
 

@@ -75,6 +75,13 @@ fi
 once="$home/.mash/setup/open-workspace-once"
 if mv "$once" "$once.taken" 2>/dev/null; then
   rm -f "$once.taken"
+  # This terminal read its config before setup ran, so it is still on the
+  # Cursor-style keymap and menus even when the wizard just chose Native.
+  # SIGUSR2 is the terminal's own config-reload signal, and MASH_TERMINAL_PID
+  # names the exact process that owns this pane, so no other window is touched.
+  if [ -n "${MASH_TERMINAL_PID:-}" ]; then
+    kill -USR2 "$MASH_TERMINAL_PID" 2>/dev/null || true
+  fi
   (
     for _ in $(seq 1 50); do
       sleep 0.2

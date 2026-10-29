@@ -19,19 +19,19 @@ the editing ones.
   Ctrl+Shift+I     Help
   Ctrl+Shift+Down  Next agent
   Ctrl+Alt+]       Next pane
-  Ctrl+Shift+]     Next tab
+  Ctrl+Tab         Next tab
   Ctrl+Alt+Shift+] Next workspace
   Ctrl+Alt+Y       Open notification
   Ctrl+Shift+Up    Previous agent
   Ctrl+Alt+[       Previous pane
-  Ctrl+Shift+[     Previous tab
+  Ctrl+Shift+Tab   Previous tab
   Ctrl+Alt+Shift+[ Previous workspace
-  Ctrl+Alt+Shift+K Reload config
+  Ctrl+Shift+,     Reload config
   Ctrl+Alt+Shift+⌫ Remove worktree
   Ctrl+Shift+M     Rename tab
   Ctrl+Alt+Shift+M Rename workspace
   Ctrl+Alt+R       Resize mode
-  Ctrl+Alt+I       Settings
+  Ctrl+,           Settings
   Ctrl+Alt+-       Split pane horizontally
   Ctrl+Alt+\       Split pane vertically
   Alt+1..9         Switch to tab N

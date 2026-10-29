@@ -25,9 +25,10 @@ const BACK: u8 = 4;
 const NEXT: u8 = 5;
 const FOCUS_COUNT: u8 = 6;
 
-/// The first-launch shortcut preset. Both modes keep Mash's Herdr functions and
-/// Ghostty's pass-through unbinds; they differ in whether Fresh's stock editing
-/// keymap applies or Mash's Cursor-style chords override it.
+/// The first-launch shortcut preset. Cursor-style is Mash's own keymap across
+/// Herdr, Mash Terminal, Fresh and Pi. Native leaves every one of them on its own
+/// stock keys -- Herdr on its Ctrl+B prefix, with Mash's extra commands on free
+/// prefix keys -- and mash-seed-sync renders each config for the chosen mode.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Keybindings {
     Mash,
@@ -149,7 +150,7 @@ impl FontPage {
             fonts,
             selected,
             filter: String::new(),
-            size: 13,
+            size: if cfg!(target_os = "linux") { 10 } else { 13 },
             focus: LIST,
             warning,
             theme: Theme::Dark,
@@ -499,14 +500,18 @@ impl FontPage {
         frame.render_widget(Paragraph::new(Line::from(spans)), body);
         let note = Rect::new(body.x + 2, body.y + 1, body.width.saturating_sub(2), 1);
         frame.render_widget(
-            Paragraph::new("Cursor's chords, or each app's own keys.")
+            Paragraph::new("Cursor's chords, or each app's own keys (Herdr on Ctrl+B).")
                 .style(Style::default().fg(wizard_style::MUTED)),
             note,
         );
     }
 
     fn draw_theme(&self, frame: &mut Frame, area: Rect) {
-        let body = wizard_style::section(frame, area, "Theme (Herdr, Mash Terminal, Fresh, Pi, reviewr)");
+        let body = wizard_style::section(
+            frame,
+            area,
+            "Theme (Herdr, Mash Terminal, Fresh, Pi, reviewr)",
+        );
         let mut x = body.x + 2;
         let mut spans = vec![Span::raw("  ")];
         for (index, theme) in [Theme::Dark, Theme::Light].into_iter().enumerate() {
@@ -558,27 +563,25 @@ mod tests {
     use ratatui::{backend::TestBackend, Terminal};
 
     #[test]
-    fn lists_only_font_families_and_selects_meslo_at_size_thirteen() {
+    fn lists_only_font_families_and_selects_meslo_at_platform_default_size() {
         let fonts = FontPage::parse_fonts(
             "JetBrains Mono\n  JetBrains Mono Bold\n\nMesloLGS NF\n  MesloLGS NF Regular\n\n",
         );
         assert_eq!(fonts, ["JetBrains Mono", "MesloLGS NF"]);
         let mut page = FontPage::with_fonts(fonts, None);
         assert_eq!(page.fonts[page.selected], DEFAULT_FONT);
-        assert_eq!(page.size, 13);
+        assert_eq!(page.size, if cfg!(target_os = "linux") { 10 } else { 13 });
         page.use_current("font-family = \"JetBrains Mono\"\nfont-size = 17\n");
         assert_eq!(page.fonts[page.selected], "JetBrains Mono");
         assert_eq!(page.size, 17);
     }
 
     #[test]
-    fn both_shipped_configs_default_to_thirteen() {
-        for config in [
-            include_str!("../defaults/ghostty/config"),
-            include_str!("../defaults/ghostty/config.linux"),
-        ] {
-            assert!(config.lines().any(|line| line == "font-size = 13"));
-        }
+    fn shipped_configs_use_platform_font_sizes() {
+        let macos = include_str!("../defaults/ghostty/config");
+        let linux = include_str!("../defaults/ghostty/config.linux");
+        assert!(macos.lines().any(|line| line == "font-size = 13"));
+        assert!(linux.lines().any(|line| line == "font-size = 10"));
     }
 
     #[test]
@@ -588,6 +591,7 @@ mod tests {
             page.on_key(KeyCode::Char(c), KeyModifiers::NONE);
         }
         assert_eq!(page.fonts[page.selected], "JetBrains Mono");
+        page.size = 13;
         page.focus = SIZE;
         page.on_key(KeyCode::Right, KeyModifiers::NONE);
         assert_eq!(page.size, 14);
@@ -608,7 +612,8 @@ mod tests {
         terminal.draw(|frame| page.draw(frame)).unwrap();
         let buffer = terminal.backend().buffer();
         wizard_style::tests::find(buffer, "Appearance — page 4/5");
-        wizard_style::tests::find(buffer, "13");
+        let default_size = if cfg!(target_os = "linux") { 10 } else { 13 };
+        wizard_style::tests::find(buffer, &default_size.to_string());
         let (x, y) = wizard_style::tests::find(buffer, "Filter fonts");
         page.focus = SIZE;
         page.on_click(wizard_style::clicked(&wizard_style::tests::click(x, y)).unwrap());
@@ -623,7 +628,7 @@ mod tests {
         page.on_click(0);
         let (x, y) = wizard_style::tests::find(buffer, "[+]");
         page.on_click(wizard_style::clicked(&wizard_style::tests::click(x, y)).unwrap());
-        assert_eq!(page.size, 14);
+        assert_eq!(page.size, default_size + 1);
         let (x, y) = wizard_style::tests::find(buffer, "Light");
         page.on_click(wizard_style::clicked(&wizard_style::tests::click(x, y)).unwrap());
         assert_eq!(page.theme, Theme::Light);
