@@ -55,7 +55,11 @@ amd64 | arm64) ok "architecture is $arch" ;;
 *) fail "unexpected architecture '$arch'" ;;
 esac
 [ -n "$(dpkg-deb -f "$deb" Version 2>/dev/null)" ] && ok "version is set" || fail "version is missing"
-[ -n "$(dpkg-deb -f "$deb" Depends 2>/dev/null)" ] && ok "depends is set" || fail "depends is missing"
+depends="$(dpkg-deb -f "$deb" Depends 2>/dev/null)"
+[ -n "$depends" ] && ok "depends is set" || fail "depends is missing"
+printf '%s\n' "$depends" | grep -Eq '(^|, )wl-clipboard(,|$)' &&
+  ok "Wayland clipboard helper is a runtime dependency" ||
+  fail "Wayland clipboard helper is missing from Depends"
 
 # --- APT repository setup ------------------------------------------------
 for script in postinst postrm; do
@@ -193,7 +197,7 @@ fi
 # --- the terminal actually runs ------------------------------------------
 if [ -x "$product/bin/mash-terminal" ]; then
   if out="$(HOME="$tmp/home" "$product/bin/mash-terminal" +version 2>&1)"; then
-    printf '%s\n' "$out" | grep -qi ghostty && ok "bin/mash-terminal runs and reports a version" ||
+    printf '%s\n' "$out" | grep -qE '^Mash Terminal [0-9]' && ok "bin/mash-terminal runs and reports a version" ||
       fail "bin/mash-terminal ran but did not report a version"
   else
     fail "bin/mash-terminal could not run outside its build directory"

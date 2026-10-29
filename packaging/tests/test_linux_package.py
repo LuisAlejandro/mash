@@ -38,12 +38,14 @@ class ControlTemplateTest(unittest.TestCase):
                 self.assertRegex(self.text, rf"(?m)^{field}: @[A-Z_]+@$")
         self.assertRegex(self.text, r"(?m)^Depends: @[A-Z_]+@(, @[A-Z_]+@)*$")
 
-    def test_runtime_dependencies_cover_what_the_launcher_invokes(self):
+    def test_runtime_dependencies_cover_unlinked_commands(self):
         # The launcher seeds with rsync and the desktop entry opens files with
         # xdg-open; neither is linked, so both must be declared.
         build = BUILD.read_text()
         self.assertIn("rsync", build)
         self.assertIn("xdg-utils", build)
+        # Pi copies selected text on Wayland through wl-copy.
+        self.assertIn("wl-clipboard", build)
         # The package-installed APT source is HTTPS; without CA roots apt
         # cannot verify apt.letsma.sh and silently ignores the repository.
         self.assertIn("ca-certificates", build)
