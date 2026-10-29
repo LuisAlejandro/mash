@@ -59,12 +59,6 @@ export MASH_RES_ROOT="$product"
 ghostty_src="${MASH_GHOSTTY_SRC:-$root/../ghostty}"
 zig="${MASH_ZIG:-$(command -v zig || true)}"
 
-for ghostty_patch in ghostty-gtk-branding.patch ghostty-gtk-window-layout.patch; do
-  [ -f "$root/packaging/patches/$ghostty_patch" ] || {
-    echo "missing $ghostty_patch" >&2
-    exit 1
-  }
-done
 for cmd in dpkg-deb dpkg-shlibdeps patchelf python3 patch; do
   command -v "$cmd" >/dev/null 2>&1 || {
     echo "missing $cmd; install dpkg-dev, patchelf and python3" >&2
@@ -131,11 +125,6 @@ mkdir -p "$product/bin" "$product/lib" "$work/npm-cache" "$work/pip-cache" "$sta
 # -fno-sys=gtk4-layer-shell because Ubuntu 24.04 does not package it, and the
 # flag makes Ghostty build its own copy into the prefix lib/.
 ghostty_commit="$(git -c safe.directory="$ghostty_src" -C "$ghostty_src" rev-parse HEAD 2>/dev/null || echo unknown)"
-ghostty_sig="$ghostty_commit-$(cat \
-  "$root/packaging/patches/ghostty-gtk-branding.patch" \
-  "$root/packaging/patches/ghostty-gtk-window-layout.patch" |
-  sha256sum | awk '{print $1}')"
-ghostty_src_cache="$cache/ghostty-src/$target"
 ghostty_out_cache="$cache/ghostty-out/$target"
 echo "building Ghostty GTK from $ghostty_src @ ${ghostty_commit:0:9}"
 
@@ -144,33 +133,9 @@ if [ "${MASH_SKIP_GHOSTTY:-0}" = "1" ] && [ -d "$ghostty_out_cache" ]; then
   cp -a "$ghostty_out_cache/." "$product/"
   echo "reused the cached Ghostty frontend"
 else
-  # The patched source and its Zig cache are kept outside the staging tree, so
-  # a rebuild recompiles only what actually changed.
-  if [ ! -f "$ghostty_src_cache/.mash-ghostty-sig" ] ||
-    [ "$(cat "$ghostty_src_cache/.mash-ghostty-sig")" != "$ghostty_sig" ]; then
-    rm -rf "$ghostty_src_cache"
-    mkdir -p "$ghostty_src_cache"
-    tar -C "$ghostty_src" --exclude .git --exclude .zig-cache --exclude zig-out \
-      -cf - . | tar -C "$ghostty_src_cache" -xf -
-    if ! patch -p1 -d "$ghostty_src_cache" <"$root/packaging/patches/ghostty-gtk-branding.patch"; then
-      echo "ghostty-gtk-branding.patch did not apply. The fork moved under it." >&2
-      exit 1
-    fi
-    # The fork removed Ghostty's tab bar but left the terminal container
-    # marked as a ToolbarView top bar. A top bar only gets its natural height,
-    # which is two rows; the rest of the window stays empty. Make it content.
-    if ! patch -p1 -d "$ghostty_src_cache" <"$root/packaging/patches/ghostty-gtk-window-layout.patch"; then
-      echo "ghostty-gtk-window-layout.patch did not apply. The fork moved under it." >&2
-      exit 1
-    fi
-    printf '%s\n' "$ghostty_sig" >"$ghostty_src_cache/.mash-ghostty-sig"
-  fi
   (
-    cd "$ghostty_src_cache"
-    # The patched source cache lives under the Mash checkout. Without a Git
-    # boundary, Ghostty's version probe finds Mash's release tag and mistakes
-    # it for a Ghostty tag (vX.Y.Z), panicking. Treat the cache as the ceiling.
-    GIT_CEILING_DIRECTORIES="$cache" PATH="$(dirname "$zig"):$PATH" \
+    cd "$ghostty_src"
+    PATH="$(dirname "$zig"):$PATH" \
       "$zig" build -Doptimize=ReleaseFast -fno-sys=gtk4-layer-shell -p "$product" \
       --cache-dir "$cache/zig/$target/local" \
       --global-cache-dir "$cache/zig/$target/global"
@@ -183,36 +148,36 @@ else
   cp -a "$product/." "$ghostty_out_cache/"
 fi
 
-[ -x "$product/bin/ghostty" ] || {
-  echo "the Ghostty GTK frontend did not produce bin/ghostty" >&2
+[ -x "$product/bin/mash-terminal" ] || {
+  echo "the Ghostty GTK frontend did not produce bin/mash-terminal" >&2
   exit 1
 }
 
-# zig build installs lib/libgtk4-layer-shell.so but leaves bin/ghostty looking
+# zig build installs lib/libgtk4-layer-shell.so but leaves bin/mash-terminal looking
 # for it through a build-directory RPATH (.zig-cache/o/<hash>), so a copied
 # tree cannot start. Point it at the package's own lib/ instead of exporting a
 # global library path, then prove it resolves from inside the package.
-patchelf --set-rpath '$ORIGIN/../lib' "$product/bin/ghostty"
-rpath="$(patchelf --print-rpath "$product/bin/ghostty")"
+patchelf --set-rpath '$ORIGIN/../lib' "$product/bin/mash-terminal"
+rpath="$(patchelf --print-rpath "$product/bin/mash-terminal")"
 [ "$rpath" = '$ORIGIN/../lib' ] || {
-  echo "could not set a portable RPATH on bin/ghostty (got '$rpath')" >&2
+  echo "could not set a portable RPATH on bin/mash-terminal (got '$rpath')" >&2
   exit 1
 }
-if ldd "$product/bin/ghostty" | grep -q "not found"; then
-  echo "bin/ghostty has unresolved libraries after the RPATH fix:" >&2
-  ldd "$product/bin/ghostty" | grep "not found" >&2
+if ldd "$product/bin/mash-terminal" | grep -q "not found"; then
+  echo "bin/mash-terminal has unresolved libraries after the RPATH fix:" >&2
+  ldd "$product/bin/mash-terminal" | grep "not found" >&2
   exit 1
 fi
 # ldd resolves through the RPATH, so it prints the path un-normalised
 # (bin/../lib/...). Compare where the library really lands, not how it
 # happens to be spelled.
-layer_real="$(readlink -f "$(ldd "$product/bin/ghostty" | awk '/gtk4-layer-shell/ {print $3}')" 2>/dev/null || true)"
+layer_real="$(readlink -f "$(ldd "$product/bin/mash-terminal" | awk '/gtk4-layer-shell/ {print $3}')" 2>/dev/null || true)"
 product_real="$(readlink -f "$product")"
 case "$layer_real" in
 "$product_real/lib/"*) echo "ok: gtk4-layer-shell resolves inside the package" ;;
 *)
   {
-    echo "bin/ghostty does not resolve gtk4-layer-shell from the package lib/"
+    echo "bin/mash-terminal does not resolve gtk4-layer-shell from the package lib/"
     echo "  resolved to:    ${layer_real:-<nothing>}"
     echo "  expected under: $product_real/lib/"
   } >&2
@@ -354,11 +319,11 @@ printf 'Source: %s\n\nPackage: %s\nArchitecture: any\n' "$pkgname" "$pkgname" \
   >"$shlibdeps_dir/debian/control"
 shlibs_depends="$(
   cd "$shlibdeps_dir" &&
-    dpkg-shlibdeps -O --ignore-missing-info "$product/bin/ghostty" 2>/dev/null |
+    dpkg-shlibdeps -O --ignore-missing-info "$product/bin/mash-terminal" 2>/dev/null |
     sed -n 's/^shlibs:Depends=//p'
 )"
 [ -n "$shlibs_depends" ] || {
-  echo "could not derive package dependencies from bin/ghostty" >&2
+  echo "could not derive package dependencies from bin/mash-terminal" >&2
   exit 1
 }
 

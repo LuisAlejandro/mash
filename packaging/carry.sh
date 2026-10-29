@@ -274,6 +274,18 @@ mash_ghostty_trim_check() {
   # itself has to be gone rather than merely hidden.
   local gtk_window="$src/src/apprt/gtk/ui/1.5/window.blp"
   local gtk_surface="$src/src/apprt/gtk/ui/1.2/surface.blp"
+  local gtk_info="$src/src/apprt/gtk/build/info.zig"
+  for needle in 'pub const base_application_id = "app.mash.Mash"' \
+    'pub const resource_path = "/app/mash/Mash"'; do
+    grep -qF "$needle" "$gtk_info" 2>/dev/null || {
+      echo "Ghostty fork lost GTK branding: $needle" >&2
+      status=1
+    }
+  done
+  if grep -A1 -F '      [top]' "$gtk_window" | grep -qF '      Box {'; then
+    echo "Ghostty fork marked the terminal content as a GTK top bar" >&2
+    status=1
+  fi
   for needle in 'menu split_menu' 'Adw.TabBar tab_bar' 'action: "win.new-tab"' \
     'action: "win.toggle-command-palette"' 'action: "win.toggle-inspector"' \
     'action: "win.split-' 'clicked => $new_tab()' \

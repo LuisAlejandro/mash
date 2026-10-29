@@ -143,7 +143,6 @@ files=(
     packaging/tests/apt-upgrade-smoke.sh
     packaging/tests/test_apt_import.sh
     packaging/tests/test_seed_ownership.sh
-    packaging/patches/ghostty-gtk-branding.patch
     scripts/test.sh
     packaging/linux/control.in
     packaging/linux/app.desktop.in

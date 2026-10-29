@@ -67,4 +67,4 @@ mash_link_plugins "$res" "$home" || true
 
 # -e is what makes Ghostty honour this per-process environment, refuse to attach
 # to an existing GTK instance, and quit when the last window closes.
-exec "$res/bin/ghostty" -e "$res/bin/herdr-pane"
+exec "$res/bin/mash-terminal" -e "$res/bin/herdr-pane"

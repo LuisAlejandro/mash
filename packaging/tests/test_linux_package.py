@@ -93,14 +93,14 @@ class BuildScriptContractTest(unittest.TestCase):
         # its own copy; dropping this flag breaks the build on the baseline.
         self.assertIn("-fno-sys=gtk4-layer-shell", self.text)
 
-    def test_ghostty_terminal_container_is_not_a_top_bar(self):
-        # The fork removed the tab bar but left the terminal box marked [top].
-        # A ToolbarView top bar gets its natural height, which is two rows, and
-        # the rest of the window stays empty. The layout patch makes it content.
-        self.assertIn("ghostty-gtk-window-layout.patch", self.text)
-        patch = (PACKAGING / "patches" / "ghostty-gtk-window-layout.patch").read_text()
-        self.assertIn("-      [top]", patch)
-        self.assertIn("       Box {", patch)
+    def test_gtk_branding_and_layout_come_from_the_pinned_fork(self):
+        self.assertIn('cd "$ghostty_src"', self.text)
+        self.assertNotIn("ghostty-gtk-branding.patch", self.text)
+        self.assertNotIn("ghostty-gtk-window-layout.patch", self.text)
+        guard = (PACKAGING / "carry.sh").read_text()
+        self.assertIn('pub const base_application_id = "app.mash.Mash"', guard)
+        self.assertIn('pub const resource_path = "/app/mash/Mash"', guard)
+        self.assertIn("grep -A1 -F '      [top]'", guard)
 
     def test_rpath_is_rewritten_before_packaging(self):
         # zig installs lib/libgtk4-layer-shell.so but leaves the binary looking
