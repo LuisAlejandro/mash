@@ -63,19 +63,41 @@ pane_env() {
 		"$@"
 }
 
+# Print why zsh completion did not initialise. compinit reports its reasons on
+# stderr and, when it aborts, unloads itself -- so the check below only ever
+# sees "compinit: none". Keep the evidence instead of discarding it.
+zsh_diag() {
+	printf 'diag  zsh stderr:\n' >&2
+	sed 's/^/diag    /' "$tmp/zsh.err" >&2 || true
+	printf 'diag  compaudit (fpath directories zsh considers insecure):\n' >&2
+	pane_env zsh -f -c 'autoload -Uz compaudit; for d in $(compaudit 2>/dev/null); do ls -ld -- $d; done' \
+		</dev/null 2>&1 | sed 's/^/diag    /' >&2 || true
+}
+
 # --- zsh ---------------------------------------------------------------------
 if command -v zsh >/dev/null 2>&1; then
-	got="$(pane_env zsh -i -c 'printf "%s|%s|%s|%s|%s\n" "${PATH%%:*}" "${MASH_TEST_ATUIN:-0}" "${MASH_TEST_STARSHIP:-0}" "${MASH_TEST_AUTOSUGGEST:-0}" "$(whence -w compinit)"' 2>/dev/null)"
+	# </dev/null: compinit may ask a question on insecure directories. With no
+	# input it answers no instead of waiting, on any machine.
+	got="$(pane_env zsh -i -c 'printf "%s|%s|%s|%s|%s\n" "${PATH%%:*}" "${MASH_TEST_ATUIN:-0}" "${MASH_TEST_STARSHIP:-0}" "${MASH_TEST_AUTOSUGGEST:-0}" "$(whence -w compinit)"' 2>"$tmp/zsh.err" </dev/null)"
+	zsh_completion_ok=1
 	[ "$(field "$got" 1)" = "$tmp/bundle/bin" ] && ok "zsh puts MASH_BIN first" || fail "zsh PATH starts with $(field "$got" 1)"
 	[ "$(field "$got" 2)" = 1 ] && ok "zsh runs atuin init" || fail "zsh did not evaluate atuin init"
 	[ "$(field "$got" 3)" = 1 ] && ok "zsh runs Starship init" || fail "zsh did not evaluate Starship init"
 	[ "$(field "$got" 4)" = 1 ] && ok "zsh sources autosuggestions" || fail "zsh did not source autosuggestions"
 	case "$(field "$got" 5)" in
 	*function*) ok "zsh initialises native completion" ;;
-	*) fail "zsh compinit is $(field "$got" 5)" ;;
+	*)
+		fail "zsh compinit is $(field "$got" 5)"
+		zsh_completion_ok=0
+		;;
 	esac
-	[ -n "$(find "$tmp/cache/zsh" -name 'zcompdump-*' -type f -print -quit 2>/dev/null)" ] &&
-		ok "zsh writes its completion dump to Mash's cache" || fail "zsh completion dump was not written to Mash's cache"
+	if [ -n "$(find "$tmp/cache/zsh" -name 'zcompdump-*' -type f -print -quit 2>/dev/null)" ]; then
+		ok "zsh writes its completion dump to Mash's cache"
+	else
+		fail "zsh completion dump was not written to Mash's cache"
+		zsh_completion_ok=0
+	fi
+	[ "$zsh_completion_ok" = 1 ] || zsh_diag
 	[ ! -e "$tmp/home/.zcompdump" ] && ok "zsh writes no completion dump in HOME" || fail "zsh wrote ~/.zcompdump"
 else
 	fail "zsh is missing, so the zsh startup files are unverified"
