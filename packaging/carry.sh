@@ -669,10 +669,11 @@ mash_build_plugins() {
     mash_copy_tree "$work/src/notifier" "$plugins/dot.terminal-notifier"
     local notifier="$plugins/dot.terminal-notifier/assets/HerdrNotify.app"
     local plist="$notifier/Contents/Info.plist"
-    /usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier app.mash.notify' "$plist"
+    /usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier app.mash.notifications' "$plist"
     # Notification Center draws the alert's name and icon from the bundle that
     # posted it, which upstream ships as "herdr" with Ghostty's Terminal.icns.
     # Mash posts these, so they carry Mash's name and artwork instead.
+    # Do not reuse app.mash.notify: Notification Center caches its old herdr identity.
     /usr/libexec/PlistBuddy -c 'Set :CFBundleName Mash' "$plist"
     /usr/libexec/PlistBuddy -c 'Set :CFBundleDisplayName Mash' "$plist"
     /usr/libexec/PlistBuddy -c 'Set :CFBundleIconFile Mash' "$plist"
