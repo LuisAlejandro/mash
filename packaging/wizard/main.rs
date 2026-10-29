@@ -837,8 +837,14 @@ fn host_path() -> OsString {
 }
 
 fn is_available(tool: &str) -> bool {
+    // Linux tools live in Mash's own bin; macOS installers check the host only.
+    let path = if is_linux() {
+        env::var_os("PATH").unwrap_or_default()
+    } else {
+        host_path()
+    };
     Command::new("sh")
-        .env("PATH", host_path())
+        .env("PATH", path)
         .args(["-c", &format!("command -v {tool} >/dev/null 2>&1")])
         .stdout(Stdio::null())
         .stderr(Stdio::null())
@@ -1668,9 +1674,8 @@ fn install_plan(selections: [bool; 2]) -> Plan {
     if is_linux() {
         // The same capability groups, installed without elevation. Every
         // component named here is pinned in packaging/assets.json; the helper
-        // reports a system-package component instead of installing a host
-        // version. latexindent has no pinned component (TeX Live owns it) and
-        // stays in `tools` only so the final report can name it as missing.
+        // installs Linux binaries where pinned and reports host-package tools
+        // that Mash does not install.
         if selections[0] {
             for &(name, _) in UTILITIES {
                 plan.tools.push(name);
@@ -1681,10 +1686,6 @@ fn install_plan(selections: [bool; 2]) -> Plan {
             for &(name, _) in FORMATTERS {
                 plan.tools.push(name);
                 match name {
-                    // TeX Live owns latexindent; the manifest has no component
-                    // for it, and asking the installer for one fails the whole
-                    // step before it can report the tool as missing.
-                    "latexindent" => {}
                     // The manifest names the package, the binary is pylsp.
                     "pylsp" => plan.linux.push("python-lsp-server"),
                     other => plan.linux.push(other),
@@ -2214,12 +2215,19 @@ mod tests {
 
     #[cfg(target_os = "linux")]
     #[test]
+    fn linux_utilities_install_sentrux_without_swift() {
+        let plan = install_plan([true, false]);
+        assert!(plan.linux.contains(&"sentrux"));
+        assert!(!plan.linux.contains(&"sourcekit-lsp"));
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
     fn linux_formatters_use_pinned_components_and_keep_binary_names() {
         let plan = install_plan([false, true]);
 
         // Every name handed to mash-tool-install must resolve in assets.py.
-        // latexindent has no component, and pylsp's component is named after
-        // the Python package.
+        // pylsp's component is named after the Python package.
         for component in [
             "python-lsp-server",
             "typescript-language-server",
@@ -2234,7 +2242,13 @@ mod tests {
             );
         }
         assert!(!plan.linux.contains(&"pylsp"));
-        assert!(!plan.linux.contains(&"latexindent"));
+        for component in ["latexindent", "marksman", "texlab"] {
+            assert!(
+                plan.linux.contains(&component),
+                "{component} missing from plan.linux"
+            );
+        }
+        assert!(!plan.linux.contains(&"sourcekit-lsp"));
 
         // The availability check still speaks in binary names: `pylsp` and
         // `svelteserver` are what Fresh and the panes run.

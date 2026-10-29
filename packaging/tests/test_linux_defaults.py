@@ -127,7 +127,7 @@ class GhosttyLinuxConfigTest(unittest.TestCase):
 
     def test_font_matches_the_packaged_font(self):
         self.assertRegex(self.text, r'(?m)^font-family\s*=\s*"MesloLGS NF"$')
-        self.assertRegex(self.text, r'(?m)^font-size\s*=\s*13$')
+        self.assertRegex(self.text, r'(?m)^font-size\s*=\s*10$')
 
 
 class FreshLinuxKeymapTest(unittest.TestCase):
