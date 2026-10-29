@@ -65,3 +65,22 @@ jobs:
       # gate, so a test cannot run here and be skipped there (or the reverse).
       - name: Run every suite
         run: ./scripts/test.sh
+
+  # The develop ruleset requires a check named exactly "Tests". The matrix
+  # above reports "Tests (macos-latest)" and "Tests (ubuntu-24.04)" instead,
+  # so without this job the required check never appears and every PR stays
+  # blocked. It passes only when every platform passed: a failed, cancelled or
+  # skipped leg fails it, which `always()` makes it report rather than skip.
+  tests-result:
+    name: Tests
+    if: always() && github.event.pull_request.draft == false
+    needs: tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require every platform to pass
+        env:
+          RESULT: ${{ needs.tests.result }}
+        run: |
+          echo "platform tests: $RESULT"
+          test "$RESULT" = success
