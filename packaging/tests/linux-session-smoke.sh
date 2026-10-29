@@ -152,7 +152,7 @@ fi
 config_out="$tmp/ghostty-config"
 keybind_out="$tmp/ghostty-keybinds"
 if env HOME="$home" XDG_CONFIG_HOME="$data/config" MASH_BIN="$res/bin" \
-  "$res/bin/ghostty" +show-config --changes-only=false --no-pager \
+  "$res/bin/mash-terminal" +show-config --changes-only=false --no-pager \
   >"$config_out" 2>"$tmp/ghostty-config.err"; then
   for expected in 'mouse-reporting = true' 'clipboard-read = ask' \
     'clipboard-write = allow'; do
@@ -162,7 +162,7 @@ else
   fail "could not read the effective Ghostty config"
 fi
 if env HOME="$home" XDG_CONFIG_HOME="$data/config" MASH_BIN="$res/bin" \
-  "$res/bin/ghostty" +list-keybinds >"$keybind_out" 2>"$tmp/ghostty-keybinds.err"; then
+  "$res/bin/mash-terminal" +list-keybinds >"$keybind_out" 2>"$tmp/ghostty-keybinds.err"; then
   for expected in 'keybind = ctrl+shift+c=copy_to_clipboard:mixed' \
     'keybind = ctrl+shift+v=paste_from_clipboard'; do
     grep -Fqx "$expected" "$keybind_out" && ok "Ghostty $expected" || fail "Ghostty lost $expected"

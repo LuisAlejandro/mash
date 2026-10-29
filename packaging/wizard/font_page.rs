@@ -86,9 +86,9 @@ pub struct FontPage {
 impl FontPage {
     pub fn new(resources: &Path, config: &Path) -> Self {
         let binary = if cfg!(target_os = "macos") {
-            resources.join("Mash Terminal.app/Contents/MacOS/ghostty")
+            resources.join("Mash Terminal.app/Contents/MacOS/mash-terminal")
         } else {
-            resources.join("bin/ghostty")
+            resources.join("bin/mash-terminal")
         };
         let (fonts, warning) = match Command::new(&binary).arg("+list-fonts").output() {
             Ok(output) if output.status.success() => (
@@ -506,7 +506,7 @@ impl FontPage {
     }
 
     fn draw_theme(&self, frame: &mut Frame, area: Rect) {
-        let body = wizard_style::section(frame, area, "Theme (Herdr, Ghostty, Fresh, Pi, reviewr)");
+        let body = wizard_style::section(frame, area, "Theme (Herdr, Mash Terminal, Fresh, Pi, reviewr)");
         let mut x = body.x + 2;
         let mut spans = vec![Span::raw("  ")];
         for (index, theme) in [Theme::Dark, Theme::Light].into_iter().enumerate() {

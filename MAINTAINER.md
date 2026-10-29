@@ -130,9 +130,9 @@ and Go. The script fetches and checksum-verifies the pinned toolchains itself.
 cargo's caches. A cold build takes about fifteen minutes; a payload-only rebuild
 about four. `MASH_SKIP_GHOSTTY=1` reuses the previously built terminal frontend.
 
-Ghostty's GTK frontend is built from the pinned fork with
-`packaging/patches/ghostty-gtk-branding.patch` applied, so the fork itself needs
-no branding commit.
+Ghostty's GTK frontend is built directly from the pinned fork. The fork owns
+GTK branding and the full-window terminal layout; the package applies no
+Ghostty source patches.
 
 ## The APT repository
 

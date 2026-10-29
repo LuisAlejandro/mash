@@ -82,7 +82,7 @@ fi
 # --- product tree ---------------------------------------------------------
 # bin/herdr is the name herdr-pane execs; an asset installed under its release
 # name instead (herdr-linux-x86_64) would look present and fail at launch.
-for entry in bin/ghostty bin/herdr bin/lib.sh bin/mash-shell bin/herdr-pane lib/libgtk4-layer-shell.so; do
+for entry in bin/mash-terminal bin/herdr bin/lib.sh bin/mash-shell bin/herdr-pane lib/libgtk4-layer-shell.so; do
   [ -e "$product/$entry" ] && ok "product has $entry" || fail "product is missing $entry"
 done
 
@@ -130,16 +130,16 @@ icons="$(find "$tmp/root/usr/share/icons" -name 'app.mash.Mash.png' 2>/dev/null 
 [ "$icons" -ge 4 ] && ok "Mash icon set installed ($icons files)" || fail "Mash icon set is missing or sparse ($icons files)"
 
 # --- ELF linkage ----------------------------------------------------------
-if [ -x "$product/bin/ghostty" ]; then
-  rpath="$(patchelf --print-rpath "$product/bin/ghostty" 2>/dev/null)"
-  [ "$rpath" = '$ORIGIN/../lib' ] && ok "bin/ghostty has a portable RPATH" ||
-    fail "bin/ghostty RPATH is '$rpath', not \$ORIGIN/../lib"
+if [ -x "$product/bin/mash-terminal" ]; then
+  rpath="$(patchelf --print-rpath "$product/bin/mash-terminal" 2>/dev/null)"
+  [ "$rpath" = '$ORIGIN/../lib' ] && ok "bin/mash-terminal has a portable RPATH" ||
+    fail "bin/mash-terminal RPATH is '$rpath', not \$ORIGIN/../lib"
 
-  unresolved="$(ldd "$product/bin/ghostty" 2>/dev/null | grep -c 'not found' || true)"
-  [ "${unresolved:-0}" -eq 0 ] && ok "bin/ghostty resolves every library" ||
-    fail "bin/ghostty has $unresolved unresolved libraries"
+  unresolved="$(ldd "$product/bin/mash-terminal" 2>/dev/null | grep -c 'not found' || true)"
+  [ "${unresolved:-0}" -eq 0 ] && ok "bin/mash-terminal resolves every library" ||
+    fail "bin/mash-terminal has $unresolved unresolved libraries"
 
-  layer="$(readlink -f "$(ldd "$product/bin/ghostty" 2>/dev/null | awk '/gtk4-layer-shell/ {print $3}')" 2>/dev/null || true)"
+  layer="$(readlink -f "$(ldd "$product/bin/mash-terminal" 2>/dev/null | awk '/gtk4-layer-shell/ {print $3}')" 2>/dev/null || true)"
   product_real="$(readlink -f "$product")"
   case "$layer" in
   "$product_real/lib/"*) ok "gtk4-layer-shell resolves from inside the package" ;;
@@ -191,12 +191,12 @@ else
 fi
 
 # --- the terminal actually runs ------------------------------------------
-if [ -x "$product/bin/ghostty" ]; then
-  if out="$(HOME="$tmp/home" "$product/bin/ghostty" +version 2>&1)"; then
-    printf '%s\n' "$out" | grep -qi ghostty && ok "bin/ghostty runs and reports a version" ||
-      fail "bin/ghostty ran but did not report a version"
+if [ -x "$product/bin/mash-terminal" ]; then
+  if out="$(HOME="$tmp/home" "$product/bin/mash-terminal" +version 2>&1)"; then
+    printf '%s\n' "$out" | grep -qi ghostty && ok "bin/mash-terminal runs and reports a version" ||
+      fail "bin/mash-terminal ran but did not report a version"
   else
-    fail "bin/ghostty could not run outside its build directory"
+    fail "bin/mash-terminal could not run outside its build directory"
   fi
 fi
 
