@@ -79,9 +79,14 @@ jobs:
       # completion dump lands. macOS runners carry zsh already; the Ubuntu
       # image does not, and test_pane_shell_rc fails rather than skipping so
       # the gap is visible instead of silently halving that suite's coverage.
+      # The image also leaves /usr/share/zsh world-writable, so compinit's
+      # security check refuses to load completion with no terminal to ask;
+      # tighten it to what a normal install has.
       - name: Install zsh for the pane-shell suite
         if: runner.os == 'Linux'
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq zsh
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq zsh
+          sudo chmod -R go-w /usr/share/zsh
 
       # The wizard picks the dictation model from a vendored catalog, so a
       # refreshed pi-voice that drifts from packaging/wizard/data must fail here

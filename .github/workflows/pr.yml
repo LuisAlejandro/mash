@@ -52,10 +52,14 @@ jobs:
           persist-credentials: false
 
       # Same reason as the push gate: the pane-shell suite asserts that Mash's
-      # zsh startup files really run, and the Ubuntu image ships no zsh.
+      # zsh startup files really run, and the Ubuntu image ships no zsh. The
+      # image also leaves /usr/share/zsh world-writable, which makes compinit
+      # refuse to load completion; tighten it as a normal install would be.
       - name: Install zsh for the pane-shell suite
         if: runner.os == 'Linux'
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq zsh
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq zsh
+          sudo chmod -R go-w /usr/share/zsh
 
       # One entry point for every suite, shared with `make test` and the push
       # gate, so a test cannot run here and be skipped there (or the reverse).
