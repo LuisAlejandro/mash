@@ -1,6 +1,7 @@
 """The macOS updater must ship as one signed unit, without entering Linux."""
 
 import pathlib
+import re
 import tomllib
 import unittest
 
@@ -8,6 +9,18 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 
 
 class MacOSUpdatePackageTest(unittest.TestCase):
+    def test_macos_launcher_stages_everything_it_sources(self):
+        build = (ROOT / "packaging/build.sh").read_text()
+        launcher = (ROOT / "packaging/mash").read_text()
+        required = re.findall(r'^source "\$ROOT/Resources/bin/([^"/]+)"$', launcher, re.MULTILINE)
+        self.assertTrue(required)
+        for name in required:
+            with self.subTest(name=name):
+                self.assertIn(
+                    f'cp "$root/packaging/{name}" "$app/Contents/Resources/bin/{name}"',
+                    build,
+                )
+
     def test_macos_payload_stages_notice_verify_apply_and_native_swap(self):
         build = (ROOT / "packaging/build.sh").read_text()
         helpers = build.split("ship_helpers=(", 1)[1].split("\n)", 1)[0].split()

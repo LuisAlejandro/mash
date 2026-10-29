@@ -51,6 +51,7 @@ compare() {
 echo "=== bundle: $app"
 echo "--- entry points and shared library"
 compare "$root/packaging/lib.sh" "$res/bin/lib.sh" "Resources/bin/lib.sh"
+compare "$root/packaging/launch-common.sh" "$res/bin/launch-common.sh" "Resources/bin/launch-common.sh"
 compare "$root/packaging/mash-shell" "$res/bin/mash-shell" "Resources/bin/mash-shell"
 compare "$root/packaging/herdr-pane" "$res/bin/herdr-pane" "Resources/bin/herdr-pane"
 compare "$root/packaging/mash" "$app/Contents/MacOS/mash" "Contents/MacOS/mash"
