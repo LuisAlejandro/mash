@@ -41,20 +41,19 @@ done
 
 # --- first install: mash_seed_configs substitutes it ------------------------
 res="$tmp/res"
-mkdir -p "$res/defaults/herdr" "$res/defaults/ghostty" "$res/defaults/pet" \
-  "$res/defaults/zsh" "$res/defaults/git" "$res/bin"
+mkdir -p "$res/bin"
 d="$tmp/data"
 mkdir -p "$d/bin"
 printf '9.9.9\n' >"$res/VERSION"          # a sentinel, not the real version
+# The whole defaults tree, not a hand-picked subset. This fixture used to copy
+# the handful of files mash_seed_configs was known to read, which made it a
+# second, silent inventory of that function: adding a seeded file (starship.toml
+# and the three shell rc files did exactly this) left the fixture behind, and
+# the cp failures only surfaced as unrelated-looking assertion failures further
+# down. Staging the real tree is what a bundle carries anyway.
+cp -R "$root/packaging/defaults" "$res/defaults"
 # carry.sh stages this inventory into every bundle beside the defaults.
 : >"$res/defaults/optional-programming.txt"
-cp "$root/packaging/defaults/herdr/config.toml" "$res/defaults/herdr/config.toml"
-cp "$root/packaging/defaults/ghostty/config" "$res/defaults/ghostty/config"
-# mash_seed_configs also stages pet, the zone file and the pane shell; supply them
-# so the test exercises the version path without unrelated cp noise.
-cp "$root/packaging/defaults/pet/config.toml" "$root/packaging/defaults/pet/snippet.toml" "$res/defaults/pet/"
-cp "$root/packaging/defaults/zsh/.zshenv" "$res/defaults/zsh/"
-cp "$root/packaging/defaults/git/config" "$root/packaging/defaults/git/ignore" "$res/defaults/git/"
 for f in lib.sh launch-common.sh mash-shell; do cp "$root/packaging/$f" "$res/bin/$f"; done
 
 # Seeding picks the platform suffix through uname; this test asserts the

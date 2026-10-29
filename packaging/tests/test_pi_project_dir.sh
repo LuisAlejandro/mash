@@ -31,6 +31,21 @@ check() {
 
 pi_rel="node/lib/node_modules/@earendil-works/pi-coding-agent"
 
+# mash_set_pi_project_dir deliberately verifies its own work by importing Pi's
+# config module, so every check below needs a Node to run it. Skip rather than
+# fail when the host has none: a missing interpreter is an absent tool, not a
+# broken contract, and the build calls this function with the Node it just
+# staged. The suites that must fail loudly on a missing tool are the ones whose
+# subject IS that tool.
+# `command -v` is not enough: it answers for a node that cannot execute at all
+# (a binary for the wrong architecture, a broken symlink), and the failure then
+# surfaces as the staging function reporting an empty project dir rather than
+# as the missing tool it is. Run it.
+if ! node --version >/dev/null 2>&1; then
+	printf 'skip - no working node; the project-dir contract is unverified here\n'
+	exit 0
+fi
+
 # --- the staging function writes the key and keeps the rest of the manifest --
 res="$tmp/res"
 mkdir -p "$res/$pi_rel/dist" "$res/node/bin"

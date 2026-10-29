@@ -245,6 +245,32 @@ mash_protect_data_dir() {
   chmod 700 "$d" 2>/dev/null || true
 }
 
+# Permission bits of one path, as octal digits, on both platforms.
+#
+#   mash_file_mode <path>
+#
+# The two stat flavors disagree on more than spelling, which is what makes a
+# naive `stat -f ... || stat -c ...` fallback wrong rather than merely ugly:
+# GNU stat reads -f as --file-system, so on Linux it prints a filesystem report
+# to STDOUT and exits non-zero. The fallback then appends the real mode to that
+# report, and the caller compares a multi-line blob against "700". Every such
+# comparison fails on Linux while passing on macOS.
+#
+# Pick the implementation by asking which one works, rather than by inspecting
+# `uname`: a GNU coreutils stat on macOS (Homebrew, nix) answers the GNU form.
+mash_file_mode() {
+  local path="$1" mode
+  if mode="$(stat -c '%a' "$path" 2>/dev/null)" && [ -n "$mode" ]; then
+    printf '%s\n' "$mode"
+    return 0
+  fi
+  if mode="$(stat -f '%Lp' "$path" 2>/dev/null)" && [ -n "$mode" ]; then
+    printf '%s\n' "$mode"
+    return 0
+  fi
+  return 1
+}
+
 # Seed the whole data directory, in the order the launcher needs it: plain
 # config first, then the skill payloads that reference it, then the pieces that
 # depend on a runtime being in place.

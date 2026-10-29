@@ -20,13 +20,17 @@ check() { # check MSG CMD... -- record a pass when CMD succeeds
   if "$@"; then ok "$msg"; else nok "$msg"; fi
 }
 
-mode() { stat -f '%Lp' "$1" 2>/dev/null || stat -c '%a' "$1" 2>/dev/null; }
-
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
 # shellcheck source=../../packaging/launch-common.sh
 . "$root/packaging/launch-common.sh"
+
+# Shared with the launcher so the two cannot disagree about how to read a mode.
+# Do not inline a `stat -f ... || stat -c ...` fallback here: GNU stat treats
+# -f as --file-system and prints a filesystem report on stdout before failing,
+# so the fallback's output lands after it and no comparison can match.
+mode() { mash_file_mode "$1"; }
 
 # --- a fresh directory is created 0700 --------------------------------------
 fresh="$tmp/fresh"
