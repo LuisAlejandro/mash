@@ -1022,6 +1022,13 @@ Customizing Pi inside Mash means writing to its agent directory
 `extensions/` for TypeScript extensions, `mcp.json` for MCP servers, `skills/`
 for skills. Edits persist; the launcher seeds a file only when it is missing.
 
+Per-project Pi configuration lives in **`.mash/`** beside the working
+directory, not `.pi/`: `.mash/settings.json`, `.mash/mcp.json`,
+`.mash/extensions/`, `.mash/skills/`, `.mash/prompts/`, `.mash/themes/`,
+`.mash/SYSTEM.md` and `.mash/APPEND_SYSTEM.md`. Inside Mash a project's `.pi`
+is not read at all. Project configuration is still gated by project trust and
+still executes code, so renaming it did not make an untrusted repository safe.
+
 Packages install at runtime. `pi install npm:<name>` run in a Mash pane puts the
 package in `~/.mash/pi/agent/npm/node_modules` and adds it to Mash's own
 `settings.json`: pi installs user packages under its agent directory, which Mash

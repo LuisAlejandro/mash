@@ -124,6 +124,30 @@ packages under `npm/`. Mash seeds a file only when it is missing, so edits
 persist across rebuilds. Never write to `$HOME/.pi/agent`: that is the user's
 own Pi, outside Mash.
 
+### Per-project configuration lives in `.mash`, not `.pi`
+
+Pi reads project configuration from a directory beside the working directory.
+Upstream that directory is `.pi`; inside Mash it is **`.mash`**, so a project
+carries `.mash/settings.json`, `.mash/mcp.json`, `.mash/extensions/`,
+`.mash/skills/`, `.mash/prompts/`, `.mash/themes/`, `.mash/SYSTEM.md` and
+`.mash/APPEND_SYSTEM.md`. A project's `.pi` is not read at all inside Mash.
+
+This is one key in the bundled Pi's own `package.json`
+(`piConfig.configDir`), written at build time by `mash_set_pi_project_dir` in
+`packaging/build-common.sh`. It is a build-time rename with no runtime
+override: changing it back means changing that function and rebuilding.
+
+Two things it does **not** change. The agent directory stays
+`~/.mash/pi/agent`, because that comes from `PI_CODING_AGENT_DIR`. And
+`.agents/skills/` keeps its own name, since it is the Agent Skills location
+rather than Pi's.
+
+Project configuration is still gated by project trust, and it is still
+executable: `.mash/settings.json` can declare packages and `shellCommandPrefix`,
+and `.mash/extensions/` runs inside the Pi process. Renaming the directory did
+not make an untrusted repository safer. `defaultProjectTrust` in
+`~/.mash/pi/agent/settings.json` decides what happens without a prompt.
+
 ### Packages
 
 Two kinds, and they are added in different places.

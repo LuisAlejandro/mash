@@ -71,6 +71,28 @@ echo "--- live copies the launcher re-copies from the bundle"
 compare "$root/packaging/lib.sh" "$home/.mash/bin/lib.sh" "~/.mash/bin/lib.sh"
 compare "$root/packaging/mash-shell" "$home/.mash/bin/mash-shell" "~/.mash/bin/mash-shell"
 
+echo "--- Pi project configuration directory"
+# Mash reads per-project Pi config from .mash, written into the bundled Pi's
+# package.json at build time (mash_set_pi_project_dir). A bundle built before
+# that change, or a Pi bump that dropped the key, silently falls back to .pi
+# and every project's .mash/settings.json, skills and prompts stop loading.
+pi_config="$res/node/lib/node_modules/@earendil-works/pi-coding-agent/dist/config.js"
+if [ -f "$pi_config" ]; then
+	project_dir="$("$res/node/bin/node" --input-type=module -e \
+		'const m = await import(process.argv[1]); process.stdout.write(m.CONFIG_DIR_NAME ?? "")' \
+		"$pi_config" 2>/dev/null || true)"
+	if [ "$project_dir" = ".mash" ]; then
+		printf 'resolves  project config from .mash\n'
+	else
+		printf 'FUNCTIONAL DIFF  bundled Pi resolves project config from %s, not .mash\n' \
+			"${project_dir:-<unknown>}"
+		functional=$((functional + 1))
+	fi
+else
+	printf 'MISSING   %s\n' "${pi_config#"$app"/}"
+	functional=$((functional + 1))
+fi
+
 echo "--- code signature"
 if codesign --verify --deep --strict "$app" >/dev/null 2>&1; then
 	printf 'sealed    %s\n' "$app"

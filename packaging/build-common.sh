@@ -112,6 +112,7 @@ mash_stage_runtimes() {
     return 1
   }
   rm -rf "$npm_env_home"
+  mash_set_pi_project_dir "$res" || return 1
   "$root/packaging/tests/test_pi_runtime.sh" "$res" || return 1
 
   mash_stage_pi_voice_catalog "$res" || return 1
@@ -166,6 +167,56 @@ mash_stage_pi_voice_catalog() {
     }
     cp "$src/$catalog_file" "$res/defaults/pi/catalog/$catalog_file"
   done
+}
+
+# Point Pi's per-project configuration at .mash instead of .pi.
+#
+# Pi reads the directory name once, from its OWN package.json:
+#   CONFIG_DIR_NAME = pkg.piConfig?.configDir || ".pi"
+# and every project-scoped surface derives from it -- settings.json, mcp.json,
+# extensions/, skills/, prompts/, themes/, SYSTEM.md, APPEND_SYSTEM.md, and the
+# project package install directory. There is no setting or environment
+# variable for it, so this one key is the whole mechanism.
+#
+# This is a RENAME, not an addition: inside Mash a project's .pi is no longer
+# read at all. Mash's own agent directory does not move -- that comes from
+# PI_CODING_AGENT_DIR, which derives from APP_NAME rather than configDir.
+#
+# Written here rather than vendored as a patch because npm rewrites
+# package.json on install, and because a patch would silently stop applying
+# when Pi's package.json moves under it. packaging/tests/test_pi_project_dir.sh
+# fails if a Pi bump drops the key or changes how Pi reads it.
+#
+#   mash_set_pi_project_dir <resource-root>
+mash_set_pi_project_dir() {
+  local res="$1" manifest
+  manifest="$res/node/lib/node_modules/@earendil-works/pi-coding-agent/package.json"
+  [ -f "$manifest" ] || {
+    echo "the bundled pi has no package.json" >&2
+    return 1
+  }
+  MASH_PI_MANIFEST="$manifest" python3 - <<'PY' || return 1
+import json, os
+
+manifest = os.environ["MASH_PI_MANIFEST"]
+with open(manifest, encoding="utf-8") as handle:
+    package = json.load(handle)
+# Pi reads piConfig.name for the app name too; only configDir is Mash's.
+package.setdefault("piConfig", {})["configDir"] = ".mash"
+with open(manifest, "w", encoding="utf-8") as handle:
+    json.dump(package, handle, indent=2)
+    handle.write("\n")
+PY
+  # Prove the running Pi agrees, rather than trusting that the key still has
+  # the meaning it had when this was written.
+  local reported
+  reported="$("$res/node/bin/node" --input-type=module -e \
+    'const m = await import(process.argv[1]); process.stdout.write(m.CONFIG_DIR_NAME ?? "")' \
+    "$res/node/lib/node_modules/@earendil-works/pi-coding-agent/dist/config.js" 2>/dev/null)" || reported=""
+  [ "$reported" = ".mash" ] || {
+    echo "the bundled pi reports project dir '$reported', not .mash" >&2
+    return 1
+  }
 }
 
 # Interpreter and package-manager entry points every pane expects on PATH.
