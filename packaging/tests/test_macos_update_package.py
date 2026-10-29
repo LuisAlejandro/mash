@@ -1,6 +1,7 @@
 """The macOS updater must ship as one signed unit, without entering Linux."""
 
 import pathlib
+import plistlib
 import re
 import tomllib
 import unittest
@@ -9,6 +10,24 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 
 
 class MacOSUpdatePackageTest(unittest.TestCase):
+    def test_tcc_resource_entitlements_reach_the_bundle_macos_attributes(self):
+        """Dictation depends on two things only the bundle can provide.
+
+        macOS attributes a microphone prompt raised by a program inside Mash to
+        the outermost bundle, so Mash.app -- not the nested Ghostty -- has to
+        carry the hardened-runtime entitlement and the purpose string. Missing
+        either does not fail loudly: tccd logs "Policy disallows prompt" and
+        denies, CoreAudio reports the denial as a silent stream, and pi-voice
+        transcribes 100% digital silence as "no speech detected".
+        """
+        entitlements = plistlib.loads((ROOT / "packaging/entitlements.plist").read_bytes())
+        self.assertIs(entitlements.get("com.apple.security.device.audio-input"), True)
+
+        build = (ROOT / "packaging/build.sh").read_text()
+        info_plist = build.split('cat >"$app/Contents/Info.plist" <<EOF', 1)[1]
+        info_plist = info_plist.split("\nEOF", 1)[0]
+        self.assertIn("NSMicrophoneUsageDescription", info_plist)
+
     def test_macos_launcher_stages_everything_it_sources(self):
         build = (ROOT / "packaging/build.sh").read_text()
         launcher = (ROOT / "packaging/mash").read_text()

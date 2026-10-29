@@ -534,6 +534,15 @@ cat >"$app/Contents/Info.plist" <<EOF
 	<string>14.0</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
+	<!-- TCC refuses to raise a microphone or camera prompt on behalf of a
+	     bundle that carries no purpose string, and the refusal is silent: the
+	     capture stream opens and delivers nothing but zeros. Ghostty's nested
+	     plist has had these since upstream; Mash.app, the bundle macOS actually
+	     attributes the request to, had none. -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>A program running within Mash would like to use your microphone.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>A program running within Mash would like to use the camera.</string>
 </dict>
 </plist>
 EOF
