@@ -100,21 +100,32 @@ answer is stored in `~/.mash/setup/keybindings-mode` when setup completes; there
 is no post-setup switch, and an installation that completed before the choice
 existed keeps Cursor-style.
 
-Both modes keep Mash's architecture: Herdr owns workspaces, tabs and panes with
-the same chords, and Ghostty keeps the unbinds that hand those chords down to
-Herdr and Fresh. Only Fresh's own keys differ:
+The mode decides every keybinding Mash would otherwise reassign:
 
-- **Mash / Cursor-style** seeds Fresh's Cursor-style map — `Cmd` chords for
-  editing, buffers and the file explorer.
-- **Native** drops those overrides, so Fresh's built-in keymap applies (`Ctrl`
-  chords on macOS, Fresh's own defaults on Linux). Mash's additions that Fresh
-  never binds — cloak toggle, compose/preview, save as/all, duplicate line, copy
-  file path, in-buffer replace — stay bound, and so do the clipboard chords, so
-  `Cmd+C`/`Cmd+V`/`Cmd+X`/`Cmd+A` still work in the editor.
+- **Mash / Cursor-style** seeds Mash's own keymap everywhere: Herdr's
+  workspace/tab/pane chords, the Mash Terminal unbinds that pass them through,
+  Fresh's Cursor-style editor map, Pi's prompt-navigation override, and menus
+  and the pane quick-reference sheet that show those chords.
+- **Native** leaves each tool on its stock keys. Herdr uses its own `Ctrl+B`
+  prefix keymap, and Mash's extra commands (dev/agent/review tabs, file finder,
+  lazygit, annotations, command palette, …) sit on free prefix keys
+  (`packaging/defaults/herdr/keys.native.toml`). Mash Terminal carries no Mash
+  keybinds, Fresh uses its built-in default keymap with no Mash entries, and Pi
+  gets no `keybindings.json`. The menus send and show the Native keys, and the
+  sheet lists them. Because Herdr reads `Ctrl+B` first, Fresh's, Pi's and
+  OpenCode's own `Ctrl+B` never reach the pane.
 
-To change it after setup, edit `~/.mash/config/fresh/config.json` directly: the
-seeded file is yours once you touch it, and the ownership record leaves it
-alone. Deleting it re-seeds it for the recorded mode.
+Native ships each tool's stock keys, which means Mash does not unbind one tool
+to free a key for another. On Linux that costs one pair: Mash Terminal's own
+stock `Ctrl+Shift+↑`/`Ctrl+Shift+↓` (jump to the previous/next shell prompt)
+shadow Pi's identical stock pair, and Mash removes the terminal's scrollback
+UI, so those keys do nothing in a Pi pane. Pi's `Ctrl+↑`/`Ctrl+↓` do the same
+job and are free; the Linux Native quick-reference sheet says so. macOS is
+unaffected — the terminal binds `⌘⇧↑`/`⌘⇧↓` there.
+
+To change a key after setup, edit the seeded file under `~/.mash/config/` (or
+`~/.mash/pi/agent/`): it is yours once you touch it, and the ownership record
+leaves it alone. Deleting it re-seeds it for the recorded mode.
 
 ## Customizing Pi
 

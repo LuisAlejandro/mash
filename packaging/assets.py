@@ -244,6 +244,11 @@ def spec_problem(name: str, target: str, spec: dict) -> str | None:
         return f"{name} [{target}]: archive must be one of {known}, got {archive!r}"
     if not spec.get("member"):
         return f"{name} [{target}]: archive {archive} needs a member path"
+    if name == "sentrux":
+        if not str(spec.get("grammars_url", "")).startswith("https://"):
+            return f"{name} [{target}]: grammars_url must be HTTPS"
+        if not _HEX64.match(str(spec.get("grammars_sha256", ""))):
+            return f"{name} [{target}]: grammars_sha256 must be 64 lowercase hex characters"
     return None
 
 
@@ -301,7 +306,8 @@ def _main(argv: list[str]) -> int:
             print(f"assets: {error}", file=sys.stderr)
             return 1
         for key in ("component", "target", "strategy", "version", "url", "sha256",
-                    "archive", "member", "package", "ref", "repo"):
+                    "archive", "member", "grammars_url", "grammars_sha256",
+                    "package", "ref", "repo"):
             value = spec.get(key)
             if value is None:
                 continue

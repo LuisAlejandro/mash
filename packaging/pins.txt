@@ -13,6 +13,7 @@ go 1.26.4
 lazygit 0.65.1
 lazydocker 0.25.2
 pet 1.0.1
+viu 1.6.1
 zoxide 0.10.0
 eza 0.23.5
 fzf 0.67.0
@@ -29,6 +30,7 @@ gopls 0.23.0
 rust-analyzer 2026-09-27
 marksman 2026-02-08
 texlab 5.26.0
+latexindent 4.0.3
 bash-language-server 5.8.1
 typescript-language-server 6.0.1
 yaml-language-server 1.24.0

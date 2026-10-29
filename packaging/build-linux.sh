@@ -329,10 +329,9 @@ shlibs_depends="$(
 
 maintainer="${MASH_MAINTAINER:-Luis Alejandro Martínez Faneyth <luis@letsma.sh>}"
 installed_kb="$(du -sk --exclude=DEBIAN "$stage" | awk '{print $1}')"
-# Runtime dependencies the payload invokes rather than links. rsync is how the
-# launcher seeds ~/.mash without replacing the user's files; xdg-utils is the
-# desktop-opener the panel and preview fallbacks use.
-extra_depends="ca-certificates, rsync, xdg-utils"
+# Runtime dependencies the payload invokes rather than links. rsync seeds
+# ~/.mash, xdg-utils opens files, and Pi copies Wayland selections with wl-copy.
+extra_depends="ca-certificates, rsync, xdg-utils, wl-clipboard"
 sed -e "s#@EXTRA_DEPENDS@#$extra_depends#" \
   -e "s#@VERSION@#$version#" \
   -e "s#@ARCH@#$debarch#" \

@@ -7,7 +7,7 @@
 
 A high-efficiency plugin for [Herdr](https://github.com/herdrdev/herdr) that provides real-time prompt-cache HUD metrics, dynamic expiration countdowns, and declarative cache-deadline agent sorting.
 
-Supports **Codex CLI**, **Pi**, **Claude Code**, and **OpenCode**.
+Supports **Codex CLI**, **Pi**, and **Claude Code**.
 
 [![Herdr terminal sidebar showing alarm, active, and cold prompt-cache states sorted by expiry](https://www.ekotov.pro/herdr-cache-hit/assets/herdr-expiry-agents.webp)](https://www.ekotov.pro/herdr-cache-hit/)
 
@@ -29,7 +29,7 @@ Supports **Codex CLI**, **Pi**, **Claude Code**, and **OpenCode**.
 - **Dependencies**:
   - `jq` (**Required**): Core JSON parser for state and token metadata (`brew install jq` or `sudo apt install jq`).
   - `bash` (**Required**): Standard on Linux (4.0+) and macOS (native bash 3.2 works; Homebrew bash 4.0+ is also supported).
-  - `python3` 3.6+ (**Optional**): Needed for **OpenCode**, view sorting, and Codex session recovery when Herdr has no native session ID. Codex panes with a native session ID, Pi, and Claude Code need only Bash and jq.
+  - `python3` 3.6+ (**Optional**): Needed for view sorting and Codex session recovery when Herdr has no native session ID. Codex panes with a native session ID, Pi, and Claude Code need only Bash and jq.
 
 ---
 

@@ -51,6 +51,20 @@ jobs:
         with:
           persist-credentials: false
 
+      # Mash's menus live in the fork and replay keys this repository binds,
+      # for both keybinding modes. Without the fork the menu suite skips, and a
+      # menu item pointing at an unbound key would only surface at release.
+      - name: Clone the Ghostty fork
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: LuisAlejandro/ghostty
+          ref: fork-main
+          path: ghostty-fork
+          persist-credentials: false
+
+      - name: Point the suite at the fork
+        run: echo "MASH_GHOSTTY_SRC=$GITHUB_WORKSPACE/ghostty-fork" >>"$GITHUB_ENV"
+
       # Same reason as the push gate: the pane-shell suite asserts that Mash's
       # zsh startup files really run, and the Ubuntu image ships no zsh. The
       # image also leaves /usr/share/zsh world-writable, which makes compinit

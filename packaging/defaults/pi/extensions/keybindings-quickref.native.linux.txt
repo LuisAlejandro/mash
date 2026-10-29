@@ -1,0 +1,78 @@
+Mash on Linux — keyboard (Native)
+
+Every tool keeps its own keys. Herdr runs on its stock Ctrl+B prefix: press
+Ctrl+B, release, then the key. Ctrl+B therefore never reaches the pane, so
+Fresh's Ctrl+B (file explorer), Pi's Ctrl+B (cursor left) and OpenCode's
+Ctrl+B (background session) are not available; use Fresh's Ctrl+E or its
+menu, and Pi's Left arrow.
+
+  ── Herdr (Ctrl+B, then) ──
+  n / p            Next / previous tab
+  c                New tab
+  1..9             Switch to tab N
+  Shift+T          Rename tab
+  Shift+X          Close tab
+  h j k l          Focus pane left / down / up / right
+  Shift+H J K L    Swap pane left / down / up / right
+  Tab / Shift+Tab  Cycle pane next / previous
+  v / -            Split vertically / horizontally
+  x                Close pane
+  z                Zoom pane
+  r                Resize mode
+  [                Copy mode
+  e                Edit scrollback
+  Shift+P          Rename pane
+  w                Workspace picker (native)
+  Shift+W          Rename workspace
+  Shift+D          Close workspace
+  g                Go to session
+  b                Toggle sidebar
+  o                Open notification
+  s                Settings
+  Shift+R          Reload config
+  q                Detach
+  ?                Help
+
+  ── Mash extras (Ctrl+B, then) ──
+  t                New dev tab (editor + agent)
+  a                New agent tab
+  Shift+C          New plain shell tab
+  Shift+V          New review tab (diff + agent)
+  `                Shell pane under Fresh
+  f                File finder
+  y                Source control
+  Shift+O          Container status
+  Shift+S          Snippets
+  i                Annotate text
+  Shift+I          Paste annotations into this tab's agent
+  m                Manage annotations
+  u                Pick link or ID
+  Shift+U          Plugin manager
+  Shift+N          New workspace (layout profile)
+  Shift+G          New worktree (layout profile)
+  Shift+F          Workspace picker (sessions)
+  ;                Command palette
+  Shift+Y          Fork agent from message
+  Shift+E          Session search
+
+  ── Fresh (its own default keys) ──
+  Ctrl+S           Save
+  Ctrl+O           Open file
+  Ctrl+P           Quick open
+  Ctrl+F           Find
+  Alt+A            Find and replace
+  F3 / Shift+F3    Find next / previous
+  Ctrl+G           Go to line
+  Ctrl+D           Add cursor to next match
+  Ctrl+E           Focus file explorer
+  Ctrl+Z / Ctrl+Y  Undo / redo
+
+  ── Pi (its own default keys) ──
+  Ctrl+↑ / Ctrl+↓    Jump to previous / next message
+
+Pi also accepts Ctrl+Shift+↑/↓ for that, but the terminal claims those two
+keys for its own prompt jumping, so in Native they never reach Pi. Use
+Ctrl+↑/↓. Every other Pi key is unaffected.
+
+Copy/paste in the terminal: Ctrl+Shift+C / Ctrl+Shift+V, or the mouse.
+Pi and the shells otherwise use their own stock keys.

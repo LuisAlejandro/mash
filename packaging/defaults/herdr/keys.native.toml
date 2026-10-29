@@ -1,0 +1,44 @@
+# Herdr keys for the Native keybinding mode, both platforms.
+#
+# Native means Herdr's own stock keymap: the ctrl+b prefix and every default
+# Herdr ships (herdr 0.9.3, KeysConfig::default in src/config/model.rs). The
+# seeder (packaging/helpers/mash-seed-sync) renders the Native Herdr config from
+# the Cursor-style config.toml / config.linux.toml: it drops every key the
+# Cursor-style [keys] table sets and keeps that file's [[keys.command]] bodies,
+# swapping each one's `key` for the one below. Herdr then fills in its stock
+# defaults for everything not set here.
+#
+# [keys] holds the only stock actions Native sets: the two whose stock prefix
+# key the herdr-workspace plugin takes over below. An empty string unbinds the
+# native action without falling back to its default.
+#
+# [commands] maps each Cursor-style [[keys.command]] description to its Native
+# key: a free prefix key, mnemonic where one is free. "Free" means no Herdr
+# stock prefix key and no other entry here; packaging/menu-chords.py holds
+# the stock table and packaging/tests/test_native_keybindings.py checks both.
+
+[keys]
+new_workspace = ""
+new_worktree = ""
+
+[commands]
+"new dev tab (editor + agent)" = "prefix+t"
+"new agent tab" = "prefix+a"
+"new plain shell tab" = "prefix+shift+c"
+"new review tab (diff + agent)" = "prefix+shift+v"
+"new shell pane under Fresh" = "prefix+backtick"
+"File finder" = "prefix+f"
+"Source control" = "prefix+y"
+"Container status" = "prefix+shift+o"
+"Snippets" = "prefix+shift+s"
+"annotate text" = "prefix+i"
+"paste annotations into this tab's agent and archive them" = "prefix+shift+i"
+"manage annotations" = "prefix+m"
+"Pick link or ID" = "prefix+u"
+"Plugin manager" = "prefix+shift+u"
+"New workspace (layout profile)" = "prefix+shift+n"
+"New worktree (layout profile)" = "prefix+shift+g"
+"Workspace picker" = "prefix+shift+f"
+"Command palette" = "prefix+semicolon"
+"Fork agent from message" = "prefix+shift+y"
+"Session search" = "prefix+shift+e"

@@ -441,30 +441,6 @@
       "when": "normal"
     },
     {
-      "key": "backspace",
-      "modifiers": [
-        "alt"
-      ],
-      "action": "delete_word_backward",
-      "when": "normal"
-    },
-    {
-      "key": "delete",
-      "modifiers": [
-        "alt"
-      ],
-      "action": "delete_word_forward",
-      "when": "normal"
-    },
-    {
-      "key": "delete",
-      "modifiers": [
-        "ctrl"
-      ],
-      "action": "delete_to_line_end",
-      "when": "normal"
-    },
-    {
       "key": "c",
       "modifiers": [
         "ctrl",
@@ -472,40 +448,6 @@
       ],
       "action": "freshCloakToggleSetting",
       "when": "normal"
-    },
-    {
-      "key": "g",
-      "modifiers": [
-        "ctrl"
-      ],
-      "action": "find_next",
-      "when": "normal"
-    },
-    {
-      "key": "g",
-      "modifiers": [
-        "ctrl"
-      ],
-      "action": "find_next",
-      "when": "searchPrompt"
-    },
-    {
-      "key": "g",
-      "modifiers": [
-        "ctrl",
-        "shift"
-      ],
-      "action": "find_previous",
-      "when": "normal"
-    },
-    {
-      "key": "g",
-      "modifiers": [
-        "ctrl",
-        "shift"
-      ],
-      "action": "find_previous",
-      "when": "searchPrompt"
     },
     {
       "key": "z",
@@ -522,22 +464,6 @@
         "shift"
       ],
       "action": "redo",
-      "when": "normal"
-    },
-    {
-      "key": "Down",
-      "modifiers": [
-        "ctrl"
-      ],
-      "action": "move_document_end",
-      "when": "normal"
-    },
-    {
-      "key": "Up",
-      "modifiers": [
-        "ctrl"
-      ],
-      "action": "move_document_start",
       "when": "normal"
     },
     {
@@ -565,82 +491,12 @@
       "when": "normal"
     },
     {
-      "key": "[",
-      "modifiers": [
-        "ctrl"
-      ],
-      "action": "prev_buffer",
-      "when": "normal"
-    },
-    {
-      "key": "]",
-      "modifiers": [
-        "ctrl"
-      ],
-      "action": "next_buffer",
-      "when": "normal"
-    },
-    {
-      "key": "Up",
-      "modifiers": [
-        "ctrl",
-        "shift"
-      ],
-      "action": "select_document_start",
-      "when": "normal"
-    },
-    {
-      "key": "Down",
-      "modifiers": [
-        "ctrl",
-        "shift"
-      ],
-      "action": "select_document_end",
-      "when": "normal"
-    },
-    {
-      "key": "i",
-      "modifiers": [
-        "ctrl",
-        "ctrl"
-      ],
-      "action": "lsp_hover",
-      "when": "normal"
-    },
-    {
       "key": "v",
-      "modifiers": [
-        "ctrl",
-        "shift"
-      ],
-      "action": "toggle_compose_mode",
-      "when": "normal"
-    },
-    {
-      "key": "k",
-      "modifiers": [
-        "alt",
-        "shift"
-      ],
-      "action": "add_cursor_above",
-      "when": "normal"
-    },
-    {
-      "key": "j",
-      "modifiers": [
-        "alt",
-        "shift"
-      ],
-      "action": "add_cursor_below",
-      "when": "normal"
-    },
-    {
-      "key": "i",
       "modifiers": [
         "ctrl",
         "alt"
       ],
-      "action": "add_cursors_to_line_ends",
+      "action": "toggle_compose_mode",
       "when": "normal"
     },
     {
@@ -658,26 +514,6 @@
       ],
       "action": "select_all",
       "when": "file_explorer"
-    },
-    {
-      "key": "Left",
-      "modifiers": [
-        "ctrl",
-        "shift",
-        "ctrl"
-      ],
-      "action": "select_word_left",
-      "when": "normal"
-    },
-    {
-      "key": "Right",
-      "modifiers": [
-        "ctrl",
-        "shift",
-        "ctrl"
-      ],
-      "action": "select_word_end",
-      "when": "normal"
     },
     {
       "key": "p",
@@ -759,17 +595,18 @@
       "when": "normal"
     },
     {
-      "key": "down",
+      "key": "d",
       "modifiers": [
-        "alt",
+        "ctrl",
         "shift"
       ],
       "action": "duplicate_line",
       "when": "normal"
     },
     {
-      "key": "up",
+      "key": "d",
       "modifiers": [
+        "ctrl",
         "alt",
         "shift"
       ],
@@ -808,6 +645,24 @@
         "ctrl"
       ],
       "action": "copy_file_path",
+      "when": "normal"
+    },
+    {
+      "key": "Up",
+      "modifiers": [
+        "alt",
+        "shift"
+      ],
+      "action": "add_cursor_above",
+      "when": "normal"
+    },
+    {
+      "key": "Down",
+      "modifiers": [
+        "alt",
+        "shift"
+      ],
+      "action": "add_cursor_below",
       "when": "normal"
     }
   ]

@@ -119,10 +119,11 @@ mash_stage_runtimes() {
 
   mash_write_runtime_shims "$res"
 
-  # The interactive companions the macOS build bundles. All are pinned per
-  # architecture in the manifest, so the same call serves both platforms.
+  # The interactive companions the macOS build bundles, plus viu, which the
+  # image-popup plugin execs. All are pinned per architecture in the manifest,
+  # so the same call serves both platforms.
   local tool
-  for tool in lazygit lazydocker pet atuin starship; do
+  for tool in lazygit lazydocker pet atuin starship viu; do
     mash_fetch_pinned "$tool" "$target" "$res/bin" || {
       echo "could not stage $tool for $target" >&2
       return 1

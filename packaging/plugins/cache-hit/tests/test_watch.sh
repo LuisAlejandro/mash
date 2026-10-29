@@ -7,7 +7,7 @@ export CODEX_SESSIONS_DIR="$TMP/sessions" HERDR_PLUGIN_STATE_DIR="$TMP/state" HO
 export HERDR_PLUGIN_CONFIG_DIR="$TMP/config"
 export HERDR_NO_TIMER=1
 mkdir -p "$CODEX_SESSIONS_DIR/2026/09/06"
-source "$ROOT/lib/core.sh"; source "$ROOT/lib/codex.sh"; source "$ROOT/lib/pi.sh"; source "$ROOT/lib/claude.sh"; source "$ROOT/lib/opencode.sh"; source "$ROOT/lib/cache.sh"
+source "$ROOT/lib/core.sh"; source "$ROOT/lib/codex.sh"; source "$ROOT/lib/pi.sh"; source "$ROOT/lib/claude.sh"; source "$ROOT/lib/cache.sh"
 fail=0
 ok() { printf 'ok - %s\n' "$1"; }
 not_ok() { printf 'not ok - %s\n' "$1"; fail=1; }
@@ -183,59 +183,10 @@ print(last)
 PY
 ); assert_eq "$py" "$(latest_usage "$roll" "$sid")" 'Bash and Python fixture outputs agree'; fi
 
-if command -v python3 >/dev/null 2>&1; then
-  opencode_db="$TMP/opencode.db"
-  export OPENCODE_DB_PATH="$opencode_db"
-  python3 -c "
-import sqlite3
-con = sqlite3.connect('$opencode_db')
-cur = con.cursor()
-cur.execute('CREATE TABLE session (id text PRIMARY KEY, directory text, time_created integer, time_updated integer, model text, tokens_input integer, tokens_cache_read integer, tokens_cache_write integer)')
-cur.execute('CREATE TABLE message (id text PRIMARY KEY, session_id text, time_created integer, time_updated integer, data text)')
-cur.execute('INSERT INTO session VALUES (?, ?, ?, ?, ?, ?, ?, ?)', ('oc-1', '/same', 1000, 2000, '{\"id\":\"m1\",\"providerID\":\"p1\"}', 10, 20, 5))
-cur.execute('INSERT INTO message VALUES (?, ?, ?, ?, ?)', ('m1', 'oc-1', 1000, 2000, '{\"role\":\"assistant\",\"tokens\":{\"input\":15,\"cache\":{\"read\":45,\"write\":10}},\"modelID\":\"gpt-5\",\"providerID\":\"kiconnect\",\"time\":{\"completed\":1788784328200}}'))
-con.commit()
-con.close()
-"
-  assert_eq "$(opencode_usage oc-1 | cut -f1,2,4-10)" $'opencode\toc-1\t15\t45\t10\t0\t0\tgpt-5\tkiconnect' 'OpenCode message maps tokens, model, and provider'
-  special_db="$TMP/opencode#query?percent%.db"
-  cp "$opencode_db" "$special_db"
-  assert_eq "$(opencode_usage oc-1 '' "$special_db" | cut -f1,2,4-10)" $'opencode\toc-1\t15\t45\t10\t0\t0\tgpt-5\tkiconnect' 'OpenCode reads database paths containing #, ?, and %'
-  update_pane paneOC opencode oc-1 /same
-  assert_cmd "jq -e '.active.agent == \"opencode\" and .active.session_id == \"oc-1\" and .active.model == \"gpt-5\"' \"$(state_path paneOC)\"" 'OpenCode pane state is recorded'
-
-  # Test OpenCode with live WAL mode and genuinely uncheckpointed committed row
-  wal_fifo="$TMP/wal_sync"
-  mkfifo "$wal_fifo"
-  python3 -c "
-import sqlite3
-con = sqlite3.connect('$opencode_db')
-con.execute('PRAGMA journal_mode=WAL;')
-cur = con.cursor()
-cur.execute('INSERT INTO session VALUES (?, ?, ?, ?, ?, ?, ?, ?)', ('oc-wal', '/wal', 2000, 3000, '{\"id\":\"m-wal\",\"providerID\":\"p-wal\"}', 50, 100, 20))
-cur.execute('INSERT INTO message VALUES (?, ?, ?, ?, ?)', ('m-wal-1', 'oc-wal', 2000, 3000, '{\"role\":\"assistant\",\"tokens\":{\"input\":30,\"cache\":{\"read\":90,\"write\":25}},\"modelID\":\"claude-3-7\",\"providerID\":\"anthropic\",\"time\":{\"completed\":1788784330000}}'))
-con.commit()
-# Signal commit is done, then block until reader signals us to close
-open('$wal_fifo', 'w').write('ready\n')
-open('$wal_fifo', 'r').read()
-con.close()
-" &
-  wal_pid=$!
-  # Wait for writer to signal commit is done (blocks until FIFO is written)
-  read -r _ < "$wal_fifo"
-  # Assert WAL file exists (writer still holds connection)
-  assert_cmd "[[ -f '${opencode_db}-wal' ]]" 'WAL file exists while writer holds connection'
-  assert_eq "$(opencode_usage oc-wal | cut -f1,2,4-10)" $'opencode\toc-wal\t30\t90\t25\t0\t0\tclaude-3-7\tanthropic' 'OpenCode reads committed rows from live WAL database'
-  # Release writer
-  echo "done" > "$wal_fifo"
-  wait "$wal_pid" 2>/dev/null || true
-  rm -f "$wal_fifo"
-fi
-
 fake="$TMP/fake-herdr"; reports="$TMP/watcher-reports"; panes="$TMP/panes.json"
 # shellcheck disable=SC2016
 printf '%s\n' '#!/usr/bin/env bash' 'if [[ "$1 $2" == "pane list" ]]; then cat "$FAKE_PANES"; elif [[ "$1 $2" == "pane process-info" ]]; then cat "${FAKE_PROCESS_INFO:-/dev/null}"; else printf "%s\n" "$*" >>"$FAKE_REPORTS"; fi' >"$fake"; chmod +x "$fake"
-printf '%s\n' '{"result":{"panes":[{"pane_id":"p1","agent":"codex","cwd":"/same","agent_session":{"kind":"id","value":"aaa111"}},{"pane_id":"p2","agent":"codex","cwd":"/same","agent_session":{"kind":"id","value":"bbb222"}},{"pane_id":"p4","agent":"opencode","cwd":"/same","agent_session":{"kind":"id","value":"oc-1"}},{"pane_id":"p5","agent":"pi","cwd":"/same","agent_session":{"kind":"path","value":"/missing/pi.jsonl"}}]}}' >"$panes"
+printf '%s\n' '{"result":{"panes":[{"pane_id":"p1","agent":"codex","cwd":"/same","agent_session":{"kind":"id","value":"aaa111"}},{"pane_id":"p2","agent":"codex","cwd":"/same","agent_session":{"kind":"id","value":"bbb222"}},{"pane_id":"p5","agent":"pi","cwd":"/same","agent_session":{"kind":"path","value":"/missing/pi.jsonl"}}]}}' >"$panes"
 FAKE_PANES="$panes" FAKE_REPORTS="$reports" HERDR_BIN_PATH="$fake" WATCH_ONCE=1 bash "$ROOT/watch.sh"
 assert_cmd "grep -q 'p1.*cache=' \"$reports\"" 'watcher reports native session pane'
 assert_cmd "grep -q 'p1.*cache_status=' \"$reports\"" 'watcher reports granular cache_status'
@@ -249,7 +200,6 @@ assert_cmd "grep -q 'p2.*clear-token cache_deadline' \"$reports\"" 'missing roll
 assert_cmd "grep -q 'p2.*clear-token cache_pct_num' \"$reports\"" 'missing rollout clears numeric percentage'
 assert_cmd "grep -q 'p5.*clear-token cache' \"$reports\"" 'missing Pi usage clears cache'
 assert_cmd "grep -q 'p5.*clear-token cache_deadline' \"$reports\"" 'missing Pi usage clears cache_deadline'
-assert_cmd "grep -q 'p4.*agent opencode.*cache=' \"$reports\"" 'watcher reports OpenCode session pane'
 FAKE_REPORTS="$reports" HERDR_BIN_PATH="$fake" HERDR_PLUGIN_ROOT="$ROOT" bash -c \
   'source "$1/lib/core.sh"; report_pane paneNumeric codex "~12:00 80% ⇣800" 15000 "~12:00" "80%" "⇣800" hot "80% ⇣800" 2000000000 240 80' _ "$ROOT"
 assert_cmd "grep -q 'paneNumeric.*cache_pct=80%' \"$reports\" && grep -q 'paneNumeric.*cache_remaining_secs=240' \"$reports\" && grep -q 'paneNumeric.*cache_pct_num=80' \"$reports\"" 'hot watcher reports formatted and numeric cache metadata'
@@ -407,7 +357,7 @@ assert_eq "$(get_sort_mode)" "expiry" 'toggle from native yields expiry'
 assert_eq "$last_rpc_method" "agent.view.set" 'expiry mode issues agent.view.set'
 if [[ "$last_rpc_params" == *'"label": "expiry"'* ]]; then ok 'expiry mode passes expiry label'; else not_ok 'expiry mode passes expiry label'; fi
 
-# 7. Provider-specific helper tests are covered by the Pi, Claude, and OpenCode
+# 7. Provider-specific helper tests are covered by the Pi and Claude
 # fixtures above; no external provider helper is required.
 # Reset fixture overrides before end-to-end watcher checks.
 unset -f codex_usage

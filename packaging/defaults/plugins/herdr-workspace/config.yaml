@@ -1,9 +1,9 @@
 # Layout profiles for zackshen/herdr-workspace (patched fork at
 # the bundled herdr-workspace plugin).
 #
-# Bound in Mash's Herdr config:
-#   cmd+ctrl+n        -> herdr-workspace.open      (new workspace)
-#   cmd+ctrl+shift+n  -> herdr-workspace.worktree  (new worktree)
+# Bound in Mash's Herdr config to herdr-workspace.open (new workspace) and
+# herdr-workspace.worktree (new worktree); the chords depend on the platform
+# and the keybinding mode, and the pane quick-reference sheet lists them.
 #
 # These mirror the tab launchers in the bundled helpers, so a new workspace opens
 # with the same layout the equivalent new-tab chord gives:
@@ -61,7 +61,7 @@ profiles:
     name: Dev (editor + agent)
     description: |
       Editor left 60%, agent right 40%.
-      Same as cmd+t.
+      Same layout as a new dev tab.
     tabs:
       - panes:
           - id: fresh
@@ -112,7 +112,7 @@ profiles:
     name: Agent
     description: |
       One tab, one agent.
-      Same as cmd+alt+t.
+      Same layout as a new agent tab.
     tabs:
       - panes:
           - id: pi
@@ -124,7 +124,7 @@ profiles:
     name: Shell
     description: |
       One tab, one plain shell.
-      Same as cmd+shift+t.
+      Same layout as a new plain shell tab.
     tabs:
       - panes:
           - id: shell

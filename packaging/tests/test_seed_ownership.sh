@@ -117,9 +117,11 @@ run_sync >/dev/null 2>&1
 chk "seed copies shipped files" '[ -f "$d/pi/agent/skills/demo/SKILL.md" ]'
 chk "record written" '[ -f "$record" ]'
 chk "record names the version" '[ "$(rec_version)" = "1.0.0" ]'
-# 21 on both platforms: the .linux variants inside copied trees are themselves
-# seeded (as mash_seed_missing's rsync already does) and so are recorded too.
-chk "record digests copied trees, configs and venv" '[ "$(rec_count)" = 21 ]'
+# 20 on both platforms: the .linux variants inside copied trees are themselves
+# seeded (as mash_seed_missing's rsync already does) and so are recorded too --
+# except every keybindings-quickref sheet, which only the mode's single seed
+# writes.
+chk "record digests copied trees, configs and venv" '[ "$(rec_count)" = 20 ]'
 chk "record tracks bundled MCP servers separately" 'python3 - "$record" <<PY
 import json,sys
 servers=json.load(open(sys.argv[1]))["json"]["pi/agent/mcp.json"]

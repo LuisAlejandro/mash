@@ -133,7 +133,7 @@ keybind = performable:super+c=copy_to_clipboard:mixed
 # cmd+backspace is deliberately NOT released. Ghostty's default
 # `super+backspace=text:\x15` sends Ctrl-U, and that translation is what makes
 # cmd+backspace delete to line start in every pane -- Fresh (ctrl+u in its stock
-# macOS keymap), Pi, shells, and OpenCode alike. Unbinding it breaks all of them
+# macOS keymap), Pi, and shells alike. Unbinding it breaks all of them
 # for no gain, because Fresh already handles the Ctrl-U it forwards.
 keybind = super+g=unbind
 

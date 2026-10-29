@@ -20,7 +20,7 @@ command = ["python3", "scripts/picker.py"]
 [[actions]]
 id = "fork"
 title = "Fork agent from message"
-description = "Fork the focused Pi or OpenCode session from a chosen earlier user message"
+description = "Fork the focused Pi session from a chosen earlier user message"
 contexts = ["pane"]
 command = ["python3", "scripts/fork_from_message.py"]
 

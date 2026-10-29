@@ -8,6 +8,8 @@
 #   * tailwindcss-language-server is accepted even though it rejects --version
 #   * python-lsp-server installs pylsp, and its console script points at the
 #     final venv rather than the temporary .new directory pip built it in
+#   * raw binaries get their command name; Sentrux grammars stay in Mash's HOME
+#   * a bad binary checksum never creates a shim
 set -euo pipefail
 
 helper="$(cd "$(dirname "$0")/.." && pwd)/mash-tool-install"
@@ -45,6 +47,23 @@ elif args[:1] == ["resolve-shell"]:
     elif component == "tailwindcss-language-server":
         print("STRATEGY=npm")
         print("VERSION=1.0")
+    elif component in ("sentrux", "latexindent", "bad-hash"):
+        import hashlib
+        from pathlib import Path
+        root = Path(__import__("os").environ["FAKE_ASSETS_DIR"])
+        member = {"sentrux": "sentrux-linux-x64", "latexindent": "latexindent-linux", "bad-hash": "latexindent-linux"}[component]
+        source = root / member
+        print("STRATEGY=binary")
+        print("VERSION=1.0")
+        print(f"URL=file://{source}")
+        print(f"SHA256={hashlib.sha256(source.read_bytes()).hexdigest() if component != 'bad-hash' else '0' * 64}")
+        print("ARCHIVE=raw")
+        print(f"MEMBER={member}")
+        if component == "sentrux":
+            grammars = root / "grammars.tar.gz"
+            print(f"GRAMMARS_URL=file://{grammars}")
+            digest = '0' * 64 if (root / 'bad-grammars').exists() else hashlib.sha256(grammars.read_bytes()).hexdigest()
+            print(f"GRAMMARS_SHA256={digest}")
     else:
         sys.exit(1)
 else:
@@ -118,8 +137,21 @@ exit 0
 SH
 chmod +x "$res/python/bin/python3"
 
+cat >"$res/assets/sentrux-linux-x64" <<'SH'
+#!/bin/sh
+printf '%s\n' "$HOME" >"$MASH_DATA_DIR/sentrux-home-seen"
+echo "sentrux 1.0"
+SH
+cat >"$res/assets/latexindent-linux" <<'SH'
+#!/bin/sh
+echo "latexindent 1.0"
+SH
+mkdir -p "$res/assets/grammar/lang/grammars"
+printf 'fake grammar\n' >"$res/assets/grammar/lang/grammars/linux-x86_64.so"
+tar -czf "$res/assets/grammars.tar.gz" -C "$res/assets/grammar" lang
+
 run() {
-  env -i HOME="$tmp/home" PATH=/usr/bin:/bin \
+  env -i HOME="$tmp/home" PATH=/usr/bin:/bin FAKE_ASSETS_DIR="$res/assets" \
     MASH_DATA_DIR="$data" "$res/bin/mash-tool-install" "$@"
 }
 
@@ -168,3 +200,37 @@ esac
   echo "pylsp does not run after installation" >&2
   exit 1
 }
+
+# These pinned release binaries are Linux-only; macOS setup uses Homebrew.
+if [ "$(uname -s)" = Linux ]; then
+  touch "$res/assets/bad-grammars"
+  if run sentrux; then
+    echo "bad Sentrux grammar checksum did not fail" >&2
+    exit 1
+  fi
+  [ ! -e "$data/bin/sentrux" ] || {
+    echo "bad grammar checksum created a Sentrux shim" >&2
+    exit 1
+  }
+  rm "$res/assets/bad-grammars"
+  run sentrux
+  [ "$(cat "$data/sentrux-home-seen")" = "$data" ] &&
+    [ -f "$data/.sentrux/plugins/lang/grammars/linux-x86_64.so" ] &&
+    [ ! -e "$tmp/home/.sentrux" ] || {
+    echo "sentrux state or grammars escaped Mash's data directory" >&2
+    exit 1
+  }
+  run latexindent
+  [ "$(readlink "$data/bin/latexindent")" = "$data/local/tools/latexindent/1.0/latexindent" ] || {
+    echo "raw binary was not installed under its command name" >&2
+    exit 1
+  }
+  if run bad-hash; then
+    echo "bad binary checksum did not fail" >&2
+    exit 1
+  fi
+  [ ! -e "$data/bin/bad-hash" ] || {
+    echo "bad binary checksum created a shim" >&2
+    exit 1
+  }
+fi

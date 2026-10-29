@@ -6,8 +6,8 @@ focused pane, asks the user to pick one in a Herdr plugin pane, forks exactly at
 that message, and opens the new session in a tab, split pane, or workspace.
 
 The source pane is never resumed, written to, or closed, and no transcript file
-is ever read or rewritten. Supported agents are Pi and OpenCode; unsupported
-panes fail with an explicit message.
+is ever read or rewritten. Pi is the supported agent; any other pane fails
+with an explicit message.
 """
 
 from __future__ import annotations

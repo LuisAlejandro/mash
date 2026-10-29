@@ -35,6 +35,12 @@ mash_seed_pi() {
       done <"$res/defaults/optional-$suite.txt"
     fi
   done
+  # The ownership seeder omits this override in Native mode. The legacy
+  # seed-if-missing copy runs after it on every launch, so it must omit the
+  # same file or the next launch silently puts Mash's Pi keys back.
+  if grep -qx 'mode=native' "$d/setup/keybindings-mode" 2>/dev/null; then
+    set -- "$@" --exclude=/keybindings.json
+  fi
   mkdir -p "$d/pi/agent"
   rsync -a --ignore-existing "$@" "$res/defaults/pi/" "$d/pi/agent/"
 }
