@@ -4,6 +4,8 @@
 set -u
 
 root="$(cd "$(dirname "$0")/../.." && pwd)"
+# shellcheck source=../../packaging/launch-common.sh
+. "$root/packaging/launch-common.sh"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
@@ -55,7 +57,10 @@ check "the server is GitHub's remote MCP" grep -q 'api.githubcopilot.com/mcp' "$
 check "no token is written to mcp.json" bash -c "! grep -q gho_faketoken '$mcp'"
 check "the header asks Mash's own gh config" grep -q "GH_CONFIG_DIR=$d/config/gh" "$mcp"
 check "inherited GitHub tokens are ignored" grep -q 'env -u GH_TOKEN -u GITHUB_TOKEN' "$mcp"
-check "file permissions are kept private" test "$(stat -f %Lp "$mcp" 2>/dev/null || stat -c %a "$mcp")" = 600
+# mash_file_mode, not an inline stat fallback: GNU stat reads -f as
+# --file-system and prints a report on stdout before failing, so the fallback
+# value lands after it and the comparison can never match on Linux.
+check "file permissions are kept private" test "$(mash_file_mode "$mcp")" = 600
 
 # --- the generated header resolves to a bearer token ---------------------------
 header="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["mcpServers"]["github"]["headers"]["Authorization"])' "$mcp")"

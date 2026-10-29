@@ -32,16 +32,32 @@ jobs:
         run: ./scripts/preflight.sh
 
   tests:
-    name: Tests
+    name: Tests (${{ matrix.os }})
     if: github.event.pull_request.draft == false
-    runs-on: macos-latest
+    # The same platform matrix as the push gate. This lane was macOS-only, so
+    # four Linux-only failures passed review and only turned red after merge,
+    # on develop -- where the break is public and no longer attached to the
+    # change that caused it. A gate that runs fewer platforms than the branch
+    # it protects is not a gate.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      # One runner for every suite, shared with `make test` and the push gate,
-      # so a test cannot run here and be skipped there (or the reverse).
+
+      # Same reason as the push gate: the pane-shell suite asserts that Mash's
+      # zsh startup files really run, and the Ubuntu image ships no zsh.
+      - name: Install zsh for the pane-shell suite
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq zsh
+
+      # One entry point for every suite, shared with `make test` and the push
+      # gate, so a test cannot run here and be skipped there (or the reverse).
       - name: Run every suite
         run: ./scripts/test.sh

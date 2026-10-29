@@ -74,6 +74,15 @@ jobs:
       - name: Point the suite at the fork
         run: echo "MASH_GHOSTTY_SRC=$GITHUB_WORKSPACE/ghostty-fork" >>"$GITHUB_ENV"
 
+      # Mash ships zsh, bash and fish startup files and asserts that each one
+      # really runs: PATH order, atuin, Starship, completion, and where the
+      # completion dump lands. macOS runners carry zsh already; the Ubuntu
+      # image does not, and test_pane_shell_rc fails rather than skipping so
+      # the gap is visible instead of silently halving that suite's coverage.
+      - name: Install zsh for the pane-shell suite
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq zsh
+
       # The wizard picks the dictation model from a vendored catalog, so a
       # refreshed pi-voice that drifts from packaging/wizard/data must fail here
       # rather than at a user's first launch. scripts/test.sh runs this itself;
