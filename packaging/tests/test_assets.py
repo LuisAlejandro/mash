@@ -128,6 +128,17 @@ class TargetResolutionTest(unittest.TestCase):
                 self.assertEqual("cua-driver", spec["component"])
                 self.assertIn("linux", spec["url"])
 
+    def test_linux_development_tools_pin_both_architectures(self):
+        for name in ("sentrux", "marksman", "texlab", "latexindent"):
+            self.assertEqual("binary", self.manifest.strategy(name))
+            self.assertFalse(self.manifest.applies_to(name, "macos-arm64"))
+            for target in LINUX:
+                with self.subTest(component=name, target=target):
+                    spec = self.manifest.resolve(name, target)
+                    self.assertRegex(spec["sha256"], r"^[0-9a-f]{64}$")
+                    if name == "sentrux":
+                        self.assertRegex(spec["grammars_sha256"], r"^[0-9a-f]{64}$")
+
 
 class FailurePathsTest(unittest.TestCase):
     def setUp(self):
@@ -182,6 +193,13 @@ class FailurePathsTest(unittest.TestCase):
 
         problems = self._manifest(mutate).problems()
         self.assertTrue(any("pet" in p and "linux-amd64" in p for p in problems), problems)
+
+    def test_missing_sentrux_grammar_checksum_is_reported(self):
+        def mutate(data):
+            del data["components"]["sentrux"]["artifacts"]["linux-arm64"]["grammars_sha256"]
+
+        problems = self._manifest(mutate).problems()
+        self.assertTrue(any("sentrux" in p and "linux-arm64" in p for p in problems), problems)
 
 
 if __name__ == "__main__":

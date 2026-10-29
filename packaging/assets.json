@@ -45,6 +45,7 @@
     "lazygit",
     "lazydocker",
     "pet",
+    "viu",
     "zoxide",
     "eza",
     "fzf",
@@ -61,6 +62,7 @@
     "rust-analyzer",
     "marksman",
     "texlab",
+    "latexindent",
     "bash-language-server",
     "typescript-language-server",
     "yaml-language-server",
@@ -99,7 +101,7 @@
       "install": "bundled",
       "repo": "LuisAlejandro/ghostty",
       "ref": "fork-main",
-      "commit": "afd86dcb178a7cef4891680e123f2df14640f942",
+      "commit": "dcaa813ec7debd6f7ea7b963c6b6500c0f13db05",
       "frontends": {
         "macos-arm64": "swift",
         "linux-amd64": "gtk",
@@ -297,6 +299,31 @@
         }
       }
     },
+    "viu": {
+      "version": "1.6.1",
+      "strategy": "binary",
+      "install": "bundled",
+      "artifacts": {
+        "macos-arm64": {
+          "url": "https://github.com/atanunq/viu/releases/download/v1.6.1/viu-aarch64-apple-darwin",
+          "sha256": "029cddac9553304c1d8bdb82915b3b4af5e35561ca62d141bb2af8db1e52b55d",
+          "archive": "raw",
+          "member": "viu-aarch64-apple-darwin"
+        },
+        "linux-amd64": {
+          "url": "https://github.com/atanunq/viu/releases/download/v1.6.1/viu-x86_64-unknown-linux-musl",
+          "sha256": "f108265ff0441406290d5f53f64a2b88d4db530a7389a5dcd771bf782aa3ec6e",
+          "archive": "raw",
+          "member": "viu-x86_64-unknown-linux-musl"
+        },
+        "linux-arm64": {
+          "url": "https://github.com/atanunq/viu/releases/download/v1.6.1/viu-aarch64-unknown-linux-musl",
+          "sha256": "64fd815cc4c9a215aab4e81e2165db78127a84789a8b04df060b3de82ac4613b",
+          "archive": "raw",
+          "member": "viu-aarch64-unknown-linux-musl"
+        }
+      }
+    },
     "atuin": {
       "version": "18.23.0",
       "strategy": "binary",
@@ -379,13 +406,63 @@
     },
     "marksman": {
       "version": "2026-02-08",
-      "strategy": "package",
-      "install": "user"
+      "strategy": "binary",
+      "install": "user",
+      "targets": ["linux-amd64", "linux-arm64"],
+      "artifacts": {
+        "linux-amd64": {
+          "url": "https://github.com/artempyanykh/marksman/releases/download/2026-02-08/marksman-linux-x64",
+          "sha256": "be5098e8213219269c47fc0d916a66fa31ce0602ec967475c722260aabf26087",
+          "archive": "raw",
+          "member": "marksman-linux-x64"
+        },
+        "linux-arm64": {
+          "url": "https://github.com/artempyanykh/marksman/releases/download/2026-02-08/marksman-linux-arm64",
+          "sha256": "db8e124527f7f8048e3e6c91821b9c52ef173d92c01e47d221bf1337afd962fb",
+          "archive": "raw",
+          "member": "marksman-linux-arm64"
+        }
+      }
     },
     "texlab": {
       "version": "5.26.0",
-      "strategy": "package",
-      "install": "user"
+      "strategy": "binary",
+      "install": "user",
+      "targets": ["linux-amd64", "linux-arm64"],
+      "artifacts": {
+        "linux-amd64": {
+          "url": "https://github.com/latex-lsp/texlab/releases/download/v5.26.0/texlab-x86_64-linux.tar.gz",
+          "sha256": "8697bd5e479d4584b14b7eed5c320c80ec4e1d91ebefbb6801e6bf38e9971300",
+          "archive": "tar.gz",
+          "member": "texlab"
+        },
+        "linux-arm64": {
+          "url": "https://github.com/latex-lsp/texlab/releases/download/v5.26.0/texlab-aarch64-linux.tar.gz",
+          "sha256": "a85cdfcd22454b8d8550f4b0f0620c45ab51760f302fac7a12bc18a890f70f8c",
+          "archive": "tar.gz",
+          "member": "texlab"
+        }
+      }
+    },
+    "latexindent": {
+      "version": "4.0.3",
+      "strategy": "binary",
+      "install": "user",
+      "targets": ["linux-amd64", "linux-arm64"],
+      "artifacts": {
+        "linux-amd64": {
+          "url": "https://github.com/cmhughes/latexindent.pl/releases/download/V4.0.3/latexindent-linux",
+          "sha256": "6a9a16edcf1242430015316b78498852eba4b700b728f646fc58d654cdd1edbe",
+          "archive": "raw",
+          "member": "latexindent-linux"
+        },
+        "linux-arm64": {
+          "url": "https://github.com/cmhughes/latexindent.pl/releases/download/V4.0.3/latexindent-linux-arm64",
+          "sha256": "d95dab15896d7088ec59c76b8f9595c4e8f8d53190a7587402b114748a2ca110",
+          "archive": "raw",
+          "member": "latexindent-linux-arm64"
+        }
+      }
     },
     "bash-language-server": {
       "version": "5.8.1",
@@ -542,8 +619,27 @@
     },
     "sentrux": {
       "version": "0.5.7",
-      "strategy": "package",
-      "install": "user"
+      "strategy": "binary",
+      "install": "user",
+      "targets": ["linux-amd64", "linux-arm64"],
+      "artifacts": {
+        "linux-amd64": {
+          "url": "https://github.com/sentrux/sentrux/releases/download/v0.5.7/sentrux-linux-x86_64",
+          "sha256": "3237f80fe20d54aad4deefa8a143f0d60543bb5d2d6ad891eb42432f155725a6",
+          "archive": "raw",
+          "member": "sentrux-linux-x86_64",
+          "grammars_url": "https://github.com/sentrux/sentrux/releases/download/v0.5.7/grammars-linux-x86_64.tar.gz",
+          "grammars_sha256": "8849f1eb07df3f6d4ea1ed422d8dee4b9b79a250682fa5646675dae466554454"
+        },
+        "linux-arm64": {
+          "url": "https://github.com/sentrux/sentrux/releases/download/v0.5.7/sentrux-linux-aarch64",
+          "sha256": "27e1b4a3e4716b341dd76e9736a5553c6737c24e165cc27e0dbc399cc5b4d786",
+          "archive": "raw",
+          "member": "sentrux-linux-aarch64",
+          "grammars_url": "https://github.com/sentrux/sentrux/releases/download/v0.5.7/grammars-linux-aarch64.tar.gz",
+          "grammars_sha256": "f1fb8b4d10f962f3cdca71eaf68662dfa971e50e22d3b8947d1bc229c417f253"
+        }
+      }
     },
     "hindsight-embed": {
       "version": "0.8.3",

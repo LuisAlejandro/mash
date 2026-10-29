@@ -182,12 +182,11 @@ binary)
     esac
     rm -rf "$dest.new"
     mkdir -p "$dest.new"
-    # Runtimes ship a tree; single binaries ship one file. Copy what the member
-    # points at either way.
+    # Runtimes ship a tree; release binaries may have an architecture suffix.
     if [ -d "$tmp/x/$MEMBER" ]; then
       cp -R "$tmp/x/$MEMBER/." "$dest.new/"
     else
-      cp "$tmp/x/$MEMBER" "$dest.new/$(basename "$MEMBER")"
+      cp "$tmp/x/$MEMBER" "$dest.new/$name"
     fi
     chmod -R u+w "$dest.new"
     printf '%s\n' "$VERSION" >"$dest.new/.mash-installed"
@@ -196,14 +195,51 @@ binary)
     rm -rf "$tmp"
     say "$component $VERSION unpacked"
   fi
-  # Point the shim at this version only after it verified.
+  # Sentrux hardcodes ~/.sentrux/plugins and loads grammar .so files. Keep both
+  # its writable state and the checksum-pinned grammars inside Mash's data dir.
+  if [ "$component" = sentrux ]; then
+    [ -n "${GRAMMARS_URL:-}" ] && [ -n "${GRAMMARS_SHA256:-}" ] || {
+      say "sentrux has no pinned grammars for $target"
+      exit 1
+    }
+    grammars="$data/.sentrux/.grammars-$VERSION-$target"
+    if [ "$(cat "$grammars" 2>/dev/null)" != "$GRAMMARS_SHA256" ]; then
+      tmp="$(mktemp -d)"
+      if ! curl -fL --retry 3 --max-time 900 -o "$tmp/grammars.tar.gz" "$GRAMMARS_URL" >>"$log" 2>&1 ||
+        ! printf '%s  %s\n' "$GRAMMARS_SHA256" "$tmp/grammars.tar.gz" | sha256sum -c - >>"$log" 2>&1; then
+        say "sentrux $VERSION grammars download or checksum failed"
+        rm -rf "$tmp"
+        exit 1
+      fi
+      mkdir -p "$data/.sentrux/plugins"
+      if ! tar -xzf "$tmp/grammars.tar.gz" -C "$data/.sentrux/plugins" >>"$log" 2>&1; then
+        say "sentrux $VERSION grammars could not be unpacked"
+        rm -rf "$tmp"
+        exit 1
+      fi
+      printf '%s\n' "$GRAMMARS_SHA256" >"$grammars"
+      rm -rf "$tmp"
+    fi
+  fi
+  # Point the shim at this version only after both downloads verified.
   target_bin="$(find "$dest" -maxdepth 2 -type f -name "$name" -print -quit)"
   [ -n "$target_bin" ] || {
     say "$component $VERSION has no $name executable"
     exit 1
   }
   chmod 755 "$target_bin"
-  ln -sfn "$target_bin" "$data/bin/$name"
+  if [ "$component" = sentrux ]; then
+    # Only Sentrux's process gets a different HOME; Mash's panes keep the real one.
+    {
+      printf '#!/bin/sh\n'
+      printf 'd="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"\n'
+      printf 'HOME="$d" exec "$d/local/tools/sentrux/%s/sentrux" "$@"\n' "$VERSION"
+    } >"$data/bin/sentrux.new"
+    chmod 755 "$data/bin/sentrux.new"
+    mv -f "$data/bin/sentrux.new" "$data/bin/sentrux"
+  else
+    ln -sfn "$target_bin" "$data/bin/$name"
+  fi
   say "$component $VERSION installed as bin/$name"
   ;;
 
@@ -323,6 +359,7 @@ if [ "${#names[@]}" -eq 0 ]; then
   say "$component is ready (library only)"
   exit 0
 fi
+[ "$component" = sentrux ] && export SENTRUX_SKIP_GRAMMAR_DOWNLOAD=1
 for name in "${names[@]}"; do
   shim="$data/bin/$name"
   [ -x "$shim" ] || {
