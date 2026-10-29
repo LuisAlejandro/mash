@@ -51,7 +51,7 @@ If `config.json` does not exist, safe built-in defaults are used. Changes to `co
 
 ### Per-Agent Settings
 
-Supported agent keys: `claude` (Claude Code), `codex` (Codex CLI), `opencode` (OpenCode), `pi` (Pi coding agent).
+Supported agent keys: `claude` (Claude Code), `codex` (Codex CLI), `pi` (Pi coding agent).
 
 ```json
 {
@@ -73,7 +73,7 @@ Supported agent keys: `claude` (Claude Code), `codex` (Codex CLI), `opencode` (O
 | `show_deadline` | boolean | `true` | Include the estimated expiration countdown time (`~15:44`). |
 | `show_read_tokens` | boolean | `true` | Include read/cached tokens counter (e.g. `⇣95.4k`). |
 | `show_write_tokens`| boolean | `false` | Include cache-creation tokens counter (e.g. `⇡12.3k`). |
-| `show_percentage` | boolean | Agent-dependent | Show cache hit percentage (`99%`). Defaults `true` for Codex/OpenCode/Pi, `false` for Claude. |
+| `show_percentage` | boolean | Agent-dependent | Show cache hit percentage (`99%`). Defaults `true` for Codex/Pi, `false` for Claude. |
 | `show_model` | boolean | `false` | Include model name in the token string. |
 | `ttl_ceiling` | integer | `3600` | Hard upper bound in seconds on learned prompt-cache survival time. |
 
@@ -167,7 +167,6 @@ The active mode is saved in `sort_mode.json` and automatically restored whenever
 | :--- | :--- | :--- |
 | **Codex CLI** | Rollout inspection from `${CODEX_HOME:-~/.codex}/sessions` | `bash` + `jq`; `python3` 3.6+ for missing-session recovery |
 | **Claude Code** | Project transcript analysis (`~/.claude/projects/`) | None (pure `bash` + `jq`) |
-| **OpenCode** | SQLite database (`~/.local/share/opencode/opencode.db`) | `python3` |
 | **Pi** | Session JSONL usage records | `bash` + `jq` |
 
 ### Codex Session Recovery

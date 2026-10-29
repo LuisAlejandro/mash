@@ -10,7 +10,6 @@ stays agent-agnostic:
 * How is that new session opened in a pane?
 
 Pi stores sessions as JSONL transcript paths and forks over its RPC interface.
-OpenCode keeps sessions in a background server and forks over HTTP by id.
 """
 
 from __future__ import annotations
@@ -33,7 +32,7 @@ class Agent:
 
     kind: str  # Herdr's agent kind, e.g. "pi"
     name: str  # Display name, e.g. "Pi"
-    session_kind: str  # Herdr's agent_session.kind, "path" or "id"
+    session_kind: str  # Herdr's agent_session.kind, "path" for a transcript file
     executable: str  # CLI name used to start the agent in a pane
 
     def session_from_pane(self, pane: Mapping[str, Any]) -> str:
@@ -50,9 +49,7 @@ class Agent:
                 f"{self.name}, and retry."
             )
         value = session.get("value")
-        if self.session_kind == "path":
-            return self._as_session_path(value)
-        return self._as_session_id(value)
+        return self._as_session_path(value)
 
     def _as_session_path(self, value: Any) -> str:
         text = value if isinstance(value, str) and value.strip() else None
@@ -63,12 +60,6 @@ class Agent:
             raise self._missing_session()
         return str(path)
 
-    def _as_session_id(self, value: Any) -> str:
-        text = value if isinstance(value, str) and value.strip() else None
-        if text is None or not text.startswith("ses_") or len(text) < 5:
-            raise self._missing_session()
-        return text if text.isascii() and text.isprintable() else self._missing_session()
-
     def _missing_session(self) -> AgentError:
         return AgentError(
             f"Herdr's {self.name} integration reported a missing or malformed session. "
@@ -77,9 +68,7 @@ class Agent:
 
     def same_session(self, left: str, right: str) -> bool:
         """True when two reported identities refer to the same session."""
-        if self.session_kind == "path":
-            return Path(left).resolve() == Path(right).resolve()
-        return left == right
+        return Path(left).resolve() == Path(right).resolve()
 
     def launch_args(self, fork_session: str) -> list[str]:
         """Native arguments that open an existing session in a new pane."""
@@ -122,41 +111,7 @@ class PiAgent(Agent):
             raise AgentError(str(exc)) from exc
 
 
-class OpenCodeAgent(Agent):
-    """OpenCode: background-server sessions, forked over HTTP by id."""
-
-    def __init__(self) -> None:
-        super().__init__(
-            kind="opencode", name="OpenCode", session_kind="id", executable="opencode"
-        )
-
-    def launch_args(self, fork_session: str) -> list[str]:
-        return ["--session", fork_session]
-
-    def _api(self):
-        from .opencode_api import OpenCodeApi
-
-        return OpenCodeApi(executable=self.executable)
-
-    def list_messages(self, session: str) -> list[dict[str, str]]:
-        from .opencode_api import OpenCodeError
-
-        try:
-            return self._api().fork_messages(session)
-        except OpenCodeError as exc:
-            raise AgentError(str(exc)) from exc
-
-    def fork(self, session: str, message_id: str) -> str:
-        from .opencode_api import OpenCodeError
-
-        try:
-            return self._api().fork(session, message_id)
-        except OpenCodeError as exc:
-            raise AgentError(str(exc)) from exc
-
-
-AGENTS: dict[str, Agent] = {agent.kind: agent for agent in (PiAgent(), OpenCodeAgent())}
-
+AGENTS: dict[str, Agent] = {agent.kind: agent for agent in (PiAgent(),)}
 # Named so error messages list what is actually supported instead of one agent.
 SUPPORTED_KINDS = tuple(AGENTS)
 
@@ -166,20 +121,17 @@ def agent_for(kind: Any) -> Agent:
     name = kind if isinstance(kind, str) and kind.strip() else None
     if name is None:
         raise AgentError(
-            f"The focused pane has no recognized agent; only "
-            f"{_name_list()} are supported."
+            f"The focused pane has no recognized agent; "
+            f"supported: {_name_list()}."
         )
     agent = AGENTS.get(name)
     if agent is None:
         raise AgentError(
-            f"The focused pane is {name}; only {_name_list()} are supported. "
+            f"The focused pane is {name}; supported: {_name_list()}. "
             f"Focus a supported agent pane and retry."
         )
     return agent
 
 
 def _name_list() -> str:
-    names = [agent.name for agent in AGENTS.values()]
-    if len(names) == 1:
-        return names[0]
-    return " or ".join([", ".join(names[:-1]), names[-1]])
+    return ", ".join(agent.name for agent in AGENTS.values())

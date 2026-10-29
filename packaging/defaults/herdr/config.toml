@@ -23,9 +23,7 @@ default_shell = "__MASH_SHELL__"
 # which neuters it in practice. Done because every prefix-mode action already
 # has a direct chord (workspace_picker is the one exception, already unbound
 # at "" -- see further down), so this costs nothing currently in use, and it
-# frees ctrl+b for Pi (cursorLeft, secondary binding) and OpenCode
-# (session_background, its ONLY binding -- otherwise permanently unreachable
-# inside this nesting) in any pane running either one.
+# frees ctrl+b for Pi (cursorLeft, secondary binding) in any pane running it.
 prefix = "f24"
 previous_tab = "cmd+shift+["
 next_tab = "cmd+shift+]"
@@ -641,7 +639,7 @@ command = "telescope.open-actions"
 description = "Command palette"
 
 # Fork the focused agent's session from an earlier user message. The plugin
-# resolves Pi or OpenCode from the focused pane, so one chord covers both.
+# resolves the agent from the focused pane; Pi is the one it supports today.
 # Was cmd+alt+f (Fresh's start_search_replace), then cmd+alt+m -- which
 # minimized the window, because macOS owns plain cmd+m as Minimize and the
 # chord's Option never reached Herdr. cmd+alt+y is free in Fresh, Herdr and

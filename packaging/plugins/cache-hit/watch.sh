@@ -10,8 +10,6 @@ PLUGIN_DIR="$(cd -- "$(dirname -- "$0")" && pwd)"
 . "$PLUGIN_DIR/lib/pi.sh"
 # shellcheck source=lib/claude.sh
 . "$PLUGIN_DIR/lib/claude.sh"
-# shellcheck source=lib/opencode.sh
-. "$PLUGIN_DIR/lib/opencode.sh"
 # shellcheck source=lib/cache.sh
 . "$PLUGIN_DIR/lib/cache.sh"
 
@@ -26,10 +24,10 @@ watch_main() {
     local pane_json pane_id agent session_kind session_id cwd session_path pane current rows delay min_width codex_panes codex_rescans pi_rescans
     if pane_json=$("$HERDR_BIN" api snapshot 2>/dev/null) && [[ -n "$pane_json" ]] && jq -e '.result.snapshot.panes | type == "array"' >/dev/null 2>&1 <<<"$pane_json"; then
       min_width=$(jq -r '[.result.snapshot.layouts[]?.area?.width // empty] | min // ""' <<<"$pane_json" 2>/dev/null) || min_width=""
-      rows=$(jq -r '.result.snapshot.panes[]? | select(.agent == "codex" or .agent == "pi" or .agent == "claude" or .agent == "opencode") | [.pane_id, .agent, .agent_session.kind, .agent_session.value, (.cwd // .foreground_cwd), (.agent_session.path // .agent_session.agent_session_path)] | map(if . == null or . == "" then "-" else . end) | @tsv' <<<"$pane_json" 2>/dev/null) || rows=""
+      rows=$(jq -r '.result.snapshot.panes[]? | select(.agent == "codex" or .agent == "pi" or .agent == "claude") | [.pane_id, .agent, .agent_session.kind, .agent_session.value, (.cwd // .foreground_cwd), (.agent_session.path // .agent_session.agent_session_path)] | map(if . == null or . == "" then "-" else . end) | @tsv' <<<"$pane_json" 2>/dev/null) || rows=""
     elif pane_json=$("$HERDR_BIN" pane list 2>/dev/null) && [[ -n "$pane_json" ]] && jq -e '.result.panes | type == "array"' >/dev/null 2>&1 <<<"$pane_json"; then
       min_width=""
-      rows=$(jq -r '.result.panes[]? | select(.agent == "codex" or .agent == "pi" or .agent == "claude" or .agent == "opencode") | [.pane_id, .agent, .agent_session.kind, .agent_session.value, (.cwd // .foreground_cwd), (.agent_session.path // .agent_session.agent_session_path)] | map(if . == null or . == "" then "-" else . end) | @tsv' <<<"$pane_json" 2>/dev/null) || rows=""
+      rows=$(jq -r '.result.panes[]? | select(.agent == "codex" or .agent == "pi" or .agent == "claude") | [.pane_id, .agent, .agent_session.kind, .agent_session.value, (.cwd // .foreground_cwd), (.agent_session.path // .agent_session.agent_session_path)] | map(if . == null or . == "" then "-" else . end) | @tsv' <<<"$pane_json" 2>/dev/null) || rows=""
     else
       return 1
     fi

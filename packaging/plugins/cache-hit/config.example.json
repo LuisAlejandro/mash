@@ -26,15 +26,6 @@
     "show_model": false,
     "ttl_ceiling": 3600
   },
-  "opencode": {
-    "enabled": true,
-    "show_deadline": true,
-    "show_read_tokens": true,
-    "show_write_tokens": false,
-    "show_percentage": true,
-    "show_model": false,
-    "ttl_ceiling": 3600
-  },
   "pi": {
     "enabled": true,
     "show_deadline": true,

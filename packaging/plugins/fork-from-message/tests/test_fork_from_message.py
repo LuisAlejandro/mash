@@ -23,8 +23,6 @@ FORK_PANE = "w1:p3"
 PICKER_PANE = "w1:p9"
 PI_SOURCE = "/tmp/sessions/source.jsonl"
 PI_FORK = "/tmp/sessions/fork.jsonl"
-OC_SOURCE = "ses_source000000000000000000"
-OC_FORK = "ses_fork00000000000000000000"
 
 
 class FakeAgent:
@@ -183,43 +181,21 @@ def test_pi_backend(tmp: Path) -> None:
     assert_fork_tab_layout(client, PI_FORK)
 
 
-def test_opencode_backend(tmp: Path) -> None:
-    agent = FakeAgent("opencode", "id", "OpenCode", OC_FORK)
-    client = FakeClient(tmp, choice="msg_c", agent_kind="opencode", source_session=OC_SOURCE,
-                        reported=OC_FORK)
-    agent.messages = [{"id": "msg_b", "text": "b"}, {"id": "msg_c", "text": "c"}]
+def test_source_pane_never_touched(tmp: Path) -> None:
+    agent = FakeAgent("pi", "path", "Pi", PI_FORK)
+    client = FakeClient(tmp, choice="e2", agent_kind="pi", source_session=PI_SOURCE,
+                        reported=PI_FORK)
     original = _wire(agent)
     try:
-        result = ffm.ForkWorkflow(client, _context(tmp), destination="tab").execute()
+        ffm.ForkWorkflow(client, _context(tmp), destination="tab").execute()
     finally:
         ffm.agent_for = original
-
-    assert result.agent == "opencode", result
-    assert agent.calls == [("list", OC_SOURCE), ("fork", OC_SOURCE, "msg_c")], agent.calls
+    assert not any(
+        c[:2] in (["agent", "prompt"], ["agent", "send-keys"]) for c in client.calls
+    ), client.calls
     start = next(c for c in client.calls if c[:2] == ["agent", "start"])
-    assert start[2].startswith("opencode_fork_"), start
-    assert start[start.index("--kind") + 1] == "opencode", start
-    assert start[start.index("--pane") + 1] == FORK_PANE, start
-    assert start[-2:] == ["--session", OC_FORK], start
-    assert_fork_tab_layout(client, OC_FORK)
-
-
-def test_source_pane_never_touched(tmp: Path) -> None:
-    for kind, source, fork in (("pi", PI_SOURCE, PI_FORK), ("opencode", OC_SOURCE, OC_FORK)):
-        agent = FakeAgent(kind, "path" if kind == "pi" else "id", kind, fork)
-        client = FakeClient(tmp, choice="e2", agent_kind=kind, source_session=source,
-                            reported=fork)
-        original = _wire(agent)
-        try:
-            ffm.ForkWorkflow(client, _context(tmp), destination="tab").execute()
-        finally:
-            ffm.agent_for = original
-        assert not any(
-            c[:2] in (["agent", "prompt"], ["agent", "send-keys"]) for c in client.calls
-        ), (kind, client.calls)
-        start = next(c for c in client.calls if c[:2] == ["agent", "start"])
-        assert source not in start, (kind, start)
-        assert ["tab", "close", "w1:t2"] not in client.calls, (kind, client.calls)
+    assert PI_SOURCE not in start, start
+    assert ["tab", "close", "w1:t2"] not in client.calls, client.calls
 
 
 def test_picker_splits_from_source_pane(tmp: Path) -> None:
@@ -329,7 +305,7 @@ def test_unsupported_agent_is_named_in_the_error(tmp: Path) -> None:
     except AgentError as exc:
         message = str(exc)
         assert "codex" in message, message
-        assert "Pi" in message and "OpenCode" in message, message
+        assert "Pi" in message, message
     else:
         raise AssertionError("expected AgentError")
 
@@ -341,7 +317,6 @@ def test_unsupported_agent_is_named_in_the_error(tmp: Path) -> None:
         raise AssertionError("expected AgentError")
 
     assert agent_for("pi").name == "Pi"
-    assert agent_for("opencode").name == "OpenCode"
 
 
 def test_session_identity_shapes(tmp: Path) -> None:
@@ -349,7 +324,7 @@ def test_session_identity_shapes(tmp: Path) -> None:
     assert pi.session_kind == "path"
 
     def pane(kind, value):
-        return {"agent_session": {"agent": kind, "kind": "path" if kind == "pi" else "id",
+        return {"agent_session": {"agent": kind, "kind": "path",
                                   "source": f"herdr:{kind}", "value": value}}
 
     assert pi.session_from_pane(pane("pi", "/a/b.jsonl")) == "/a/b.jsonl"
@@ -361,22 +336,12 @@ def test_session_identity_shapes(tmp: Path) -> None:
         else:
             raise AssertionError(f"expected AgentError for pi session {bad!r}")
 
-    oc = agent_for("opencode")
-    assert oc.session_from_pane(pane("opencode", "ses_abc")) == "ses_abc"
-    for bad in ("msg_abc", "ses_", "", None):
-        try:
-            oc.session_from_pane(pane("opencode", bad))
-        except AgentError:
-            pass
-        else:
-            raise AssertionError(f"expected AgentError for opencode session {bad!r}")
-
 
 def test_cross_agent_session_metadata_is_rejected(tmp: Path) -> None:
-    """A pi pane must not accept opencode-shaped metadata, and vice versa."""
+    """A pi pane must not accept another agent's session metadata."""
     mismatched = {
-        "agent_session": {"agent": "opencode", "kind": "id",
-                          "source": "herdr:opencode", "value": "ses_x"}
+        "agent_session": {"agent": "claude", "kind": "path",
+                          "source": "herdr:claude", "value": "/a/b.jsonl"}
     }
     try:
         agent_for("pi").session_from_pane(mismatched)
@@ -429,7 +394,6 @@ def test_pane_run_accepts_a_silent_herdr(tmp: Path) -> None:
 def main() -> int:
     tests = [
         test_pi_backend,
-        test_opencode_backend,
         test_source_pane_never_touched,
         test_picker_splits_from_source_pane,
         test_fork_label_skips_the_actual_dev_tab_event_hook,

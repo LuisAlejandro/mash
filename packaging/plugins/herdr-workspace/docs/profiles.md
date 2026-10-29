@@ -184,7 +184,7 @@ name; the live Herdr name is `{workspace-slug}-{agent}`. `kind` must be a
 Herdr-supported kind, for example:
 
 `pi`, `claude`, `codex`, `gemini`, `cursor`, `devin`, `agy`, `cline`,
-`omp`, `mastracode`, `opencode`, `copilot`, `kimi`, `kiro`, `droid`,
+`omp`, `mastracode`, `copilot`, `kimi`, `kiro`, `droid`,
 `amp`, `grok`, `hermes`, `kilo`, `qodercli`, `qwen`, `maki`.
 
 Run `herdr agent start --help` for the current list.
