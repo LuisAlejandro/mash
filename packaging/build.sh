@@ -417,11 +417,13 @@ xcrun --sdk macosx clang -Wall -Wextra -Werror -O2 -mmacosx-version-min=14.0 \
   -o "$app/Contents/Resources/bin/mash-update-swap" \
   "$root/packaging/helpers/mash-update-swap.c"
 cp "$root/packaging/lib.sh" "$app/Contents/Resources/bin/lib.sh"
+cp "$root/packaging/launch-common.sh" "$app/Contents/Resources/bin/launch-common.sh"
 cp "$root/packaging/herdr-pane" "$app/Contents/Resources/bin/herdr-pane"
 cp "$root/packaging/mash-shell" "$app/Contents/Resources/bin/mash-shell"
 cp "$wizard_bin" "$app/Contents/Resources/bin/mash-wizard"
 cp "$root/packaging/mash" "$app/Contents/MacOS/mash"
 chmod 755 "$app/Contents/MacOS/mash" \
+  "$app/Contents/Resources/bin/launch-common.sh" \
   "$app/Contents/Resources/bin/herdr-pane" \
   "$app/Contents/Resources/bin/mash-shell" \
   "$app/Contents/Resources/bin/mash-wizard"

@@ -1,21 +1,113 @@
-# Mash's shared prompt for bash, zsh and fish. STARSHIP_CONFIG points here.
-# Keep it portable: no remote commands, and no modules that read personal shell
-# startup files. Users can edit this seeded copy in ~/.mash/config.
-add_newline = false
-format = "$directory$git_branch$git_status$character"
+# Mash's shared prompt for bash, zsh and fish.
+# Powerlevel10k-inspired Powerline style. Keep it portable: no remote commands,
+# and no modules that read personal shell startup files. Users can customize
+# this seeded copy in ~/.mash/config.
+add_newline = true
+palette = "mash"
 
-[character]
-success_symbol = "[❯](green)"
-error_symbol = "[❯](red)"
+format = """\
+[](fg:gray)\
+$os\
+[](fg:gray bg:blue)\
+$directory\
+$git_branch\
+$git_status\
+"""
+right_format = """\
+$status\
+$cmd_duration\
+$jobs\
+$direnv\
+$asdf\
+$python\
+$conda\
+$pyenv\
+$nodejs\
+$golang\
+$rust\
+$java\
+$kubernetes\
+$terraform\
+$aws\
+$azure\
+$gcloud\
+$nix_shell\
+$docker_context\
+$username\
+$hostname\
+"""
+
+[os]
+format = "[$symbol]($style)"
+style = "fg:near_black bg:gray"
+disabled = false
+
+[os.symbols]
+Macos = " "
 
 [directory]
-style = "green"
+format = "[ $path ]($style)"
+style = "fg:light bg:blue"
 truncation_length = 0
 truncate_to_repo = false
 
 [git_branch]
-format = "[$symbol$branch]($style) "
-style = "purple"
+symbol = " "
+format = "[](fg:blue bg:green)[ $symbol$branch ]($style)"
+style = "fg:dark bg:green"
+truncation_length = 32
+truncation_symbol = "…"
 
 [git_status]
-style = "red"
+format = "[$all_status$ahead_behind]($style)[](fg:green) "
+style = "fg:dark bg:green"
+conflicted = " ~$count"
+ahead = " ⇡$count"
+behind = " ⇣$count"
+diverged = " ⇕$count"
+untracked = " ?$count"
+stashed = " *$count"
+modified = " !$count"
+staged = " +$count"
+deleted = " ✘$count"
+
+[status]
+disabled = false
+format = "$symbol"
+symbol = "[✘](bold fg:yellow bg:red) "
+success_symbol = "[✔](bold fg:green bg:dark) "
+
+[cmd_duration]
+min_time = 3000
+format = "[$duration]($style) "
+style = "fg:dark bg:yellow"
+
+[jobs]
+symbol = "✦ "
+format = "[$symbol]($style) "
+style = "fg:cyan bg:dark"
+
+[direnv]
+style = "fg:yellow bg:dark"
+
+[username]
+show_always = false
+format = "[$user]($style)"
+style_user = "fg:yellow bg:dark"
+style_root = "fg:red bg:dark"
+
+[hostname]
+ssh_only = true
+format = "[@$hostname]($style) "
+style = "fg:yellow bg:dark"
+
+[palettes.mash]
+near_black = "#080808"
+dark = "#2E2F35"
+red = "#FF2052"
+green = "#00FF80"
+yellow = "#F9BD27"
+blue = "#00BFFF"
+cyan = "#00D7FF"
+gray = "#C2C9D4"
+light = "#E4E4E4"

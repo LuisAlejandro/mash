@@ -130,5 +130,11 @@ check "a Linux launch writes no NOTIFIER config" test ! -e "$data_dir/$cfg_rel"
 check "a macOS launch points NOTIFIER at the wrapper" \
   grep -qx "NOTIFIER=$tmp/linux-res/bin/mash-notify" "$data_dir/$cfg_rel"
 
+# A fresh sender identity avoids macOS reusing the former herdr name and icon.
+check "notifier uses Mash's new bundle identity" \
+  grep -Fq 'Set :CFBundleIdentifier app.mash.notifications' "$root/packaging/carry.sh"
+check "uninstall clears the notifier identity" \
+  grep -Fq 'app.mash.notifications;' "$root/packaging/uninstall"
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

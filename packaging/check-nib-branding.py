@@ -21,10 +21,12 @@ Usage: check-nib-branding.py <Ghostty.app or its Contents/Resources>
 import pathlib
 import sys
 
-# Strings that legitimately keep the word Ghostty: two Swift class names the
-# nib resolves at load time, and one action selector. Renaming any of them
-# breaks the app rather than rebranding it.
+# Strings that legitimately keep the word Ghostty: the Swift module name,
+# two class names and one action selector. MainMenu.nib also uses the bare
+# module name as its app-menu placeholder; AppKit shows CFBundleName (Mash)
+# there at runtime. Renaming the module strings breaks the app.
 KEEP = {
+    "Ghostty",
     "_TtC7Ghostty11AppDelegate",
     "_TtC7Ghostty15AboutController",
     "toggleGhosttyFullScreen:",
