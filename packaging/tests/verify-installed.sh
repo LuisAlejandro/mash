@@ -54,13 +54,24 @@ compare "$root/packaging/lib.sh" "$res/bin/lib.sh" "Resources/bin/lib.sh"
 compare "$root/packaging/launch-common.sh" "$res/bin/launch-common.sh" "Resources/bin/launch-common.sh"
 compare "$root/packaging/mash-shell" "$res/bin/mash-shell" "Resources/bin/mash-shell"
 compare "$root/packaging/herdr-pane" "$res/bin/herdr-pane" "Resources/bin/herdr-pane"
-compare "$root/packaging/mash" "$app/Contents/MacOS/mash" "Contents/MacOS/mash"
+compare "$root/packaging/mash" "$res/bin/mash-launch" "Resources/bin/mash-launch"
+# The executable itself is compiled from packaging/mash-launcher.c, so it cannot
+# be byte-compared with the source. What matters is that it is a Mach-O: a script
+# there cannot carry the entitlements macOS checks on Mash.app.
+if file -b "$app/Contents/MacOS/mash" 2>/dev/null | grep -q '^Mach-O'; then
+	printf 'compiled  Contents/MacOS/mash\n'
+else
+	printf 'FUNCTIONAL DIFF  Contents/MacOS/mash is not a Mach-O -- Mash.app cannot carry entitlements\n'
+	functional=$((functional + 1))
+fi
 
 echo "--- helpers (every file build.sh ships)"
-for src in "$root"/packaging/helpers/*; do
-	[ -f "$src" ] || continue
-	compare "$src" "$res/bin/$(basename "$src")" "Resources/bin/$(basename "$src")"
-done
+# The list build.sh itself copies, not every file in packaging/helpers/: that
+# folder also holds Linux-only helpers (mash-tool-install) and C sources the
+# build compiles (mash-update-swap.c), which a macOS bundle rightly lacks.
+while IFS= read -r name; do
+	compare "$root/packaging/helpers/$name" "$res/bin/$name" "Resources/bin/$name"
+done < <(sed -n '/^ship_helpers=(/,/^)/{/^ship_helpers=(/d;/^)/d;s/^[[:space:]]*//;/^$/d;p;}' "$root/packaging/build.sh")
 
 echo "--- carried defaults"
 while IFS= read -r src; do

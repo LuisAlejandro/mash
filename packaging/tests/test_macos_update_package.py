@@ -43,6 +43,29 @@ class MacOSUpdatePackageTest(unittest.TestCase):
         self.assertLess(install, set_dir)
         self.assertLess(set_dir, runtime)
 
+    def test_app_executable_is_compiled_so_it_can_carry_entitlements(self):
+        """Mash.app's executable must be a Mach-O, not the launcher script.
+
+        macOS checks a microphone request against Mash.app's own executable.
+        A signature embeds entitlements only in a Mach-O, so while the executable
+        was packaging/mash itself, Mash.app carried none and dictation was
+        refused silently. build.sh compiles packaging/mash-launcher.c into
+        Contents/MacOS/mash and installs the script beside the other helpers.
+        """
+        build = (ROOT / "packaging/build.sh").read_text()
+        self.assertIn('-o "$app/Contents/MacOS/mash"', build)
+        self.assertIn('"$root/packaging/mash-launcher.c"', build)
+        self.assertIn(
+            'cp "$root/packaging/mash" "$app/Contents/Resources/bin/mash-launch"', build
+        )
+        self.assertNotIn('cp "$root/packaging/mash" "$app/Contents/MacOS/mash"', build)
+        launcher = (ROOT / "packaging/mash-launcher.c").read_text()
+        self.assertIn('"%s/../Resources/bin/mash-launch"', launcher)
+        # The script now lives two levels below Contents, and derives every
+        # bundle path from ROOT.
+        script = (ROOT / "packaging/mash").read_text()
+        self.assertIn('ROOT="$(cd "$(dirname "$0")/../.." && pwd)"', script)
+
     def test_macos_launcher_stages_everything_it_sources(self):
         build = (ROOT / "packaging/build.sh").read_text()
         launcher = (ROOT / "packaging/mash").read_text()

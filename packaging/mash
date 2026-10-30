@@ -1,8 +1,13 @@
 #!/bin/bash
-# Mash.app entry point. Opens the bundled Ghostty and Herdr.
+# Mash.app launch logic. Opens the bundled Ghostty and Herdr.
 # Does not export HOME and does not talk to the personal Herdr socket.
+#
+# Installed as Contents/Resources/bin/mash-launch, and started by the compiled
+# Contents/MacOS/mash (packaging/mash-launcher.c): only a Mach-O can carry the
+# microphone entitlement macOS requires of the app's own executable.
 set -euo pipefail
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# Resources/bin/mash-launch -> Contents.
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 # shellcheck source=lib.sh
 source "$ROOT/Resources/bin/lib.sh"
 # Shared optional-suite selection and Pi copy filter (also used on Linux).

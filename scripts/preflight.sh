@@ -109,6 +109,7 @@ files=(
     packaging/lib.sh
     packaging/release.sh
     packaging/mash
+    packaging/mash-launcher.c
     packaging/mash-shell
     packaging/herdr-pane
     packaging/uninstall
