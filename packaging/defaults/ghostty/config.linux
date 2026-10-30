@@ -1,26 +1,20 @@
 auto-update = off
 title = "Mash Terminal"
 
-# What a window runs. The launcher starts the first window with `-e herdr-pane`;
-# this is what every OTHER window gets -- the GTK New Window item and the
-# desktop file's "New Instance" action -- and it has to be the same program, or
-# such a window would open a bare shell instead of Mash.
-#
-# herdr-pane claims the first instance with no live window, so a new window is a
-# second, independent Mash (its own workspaces and tabs, the same settings)
-# while the first is open, and reattaches to a closed one otherwise.
+# What the window runs. Mash has one window, and its program comes from here
+# alone: the launcher execs the terminal without -e, so this is the only thing
+# that makes the window Mash rather than a bare shell.
 # __MASH_HERDR_PANE__ is substituted at first launch: the path depends on the
 # install prefix.
 command = __MASH_HERDR_PANE__
 
-# Where a window starts. This is the directory Herdr gives the first workspace
-# of an instance that has none saved yet -- a second, empty Mash -- so an unset
-# value would open it wherever the launcher ran.
+# Where the window starts. This is the directory Herdr gives the first
+# workspace when none is saved yet, so an unset value would open it wherever
+# the launcher ran.
 #
 # It matters more here than on macOS: Ghostty defaults to `home` only when it
 # can DETECT a desktop-launcher start, and Mash's launcher execs the terminal
-# from a shell script, where that detection can fall back to `inherit` and the
-# new instance would open on the launcher's directory.
+# from a shell script, where that detection can fall back to `inherit`.
 working-directory = home
 
 theme = Monokai Cursor
@@ -32,10 +26,17 @@ theme = Monokai Cursor
 class = "app.mash.Mash"
 x11-instance-name = "mash-terminal"
 
-# Mash launches one process per window and passes -e, which already disables
-# GTK single instance. Stated explicitly so a changed launcher cannot silently
-# hand Mash's isolated environment to an existing instance.
-gtk-single-instance = false
+# One window, one process. Opening Mash again reaches the running instance over
+# D-Bus under `class` above, which brings its window forward instead of opening
+# another. The id is Mash's own, so this never attaches to a personal Ghostty,
+# and only the first launch's process runs a window, so a second launch's
+# environment never reaches a pane.
+gtk-single-instance = true
+
+# Quit when the window closes, as on macOS. `-e` used to force this; Ghostty's
+# Linux default is true as well, and stating it keeps the two platforms' config
+# saying the same thing.
+quit-after-last-window-closed = true
 
 # Linux keymap. Ghostty on Linux does not receive the macOS Command chords, so
 # this file releases the Ctrl chords that Ghostty would otherwise consume before

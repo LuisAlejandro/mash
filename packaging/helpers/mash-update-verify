@@ -110,20 +110,8 @@ mnt=""
 # after that verdict to avoid a duplicate first-launch dialog.
 xattr -dr com.apple.quarantine "$staged" >/dev/null 2>&1 || true
 
-# Every window is its own Mash instance with its own Herdr server, and all of
-# them have to exit. A user with a second window on another desktop should not
-# find out by watching it vanish.
-windows=0
-for marker in "$d/run"/*/window.pid "$d/run"/window.pid; do
-  [ -f "$marker" ] || continue
-  read -r pid <"$marker" || continue
-  case "$pid" in '' | *[!0-9]*) continue ;; esac
-  kill -0 "$pid" 2>/dev/null && windows=$((windows + 1))
-done
-[ "$windows" -lt 1 ] && windows=1
-
 printf '\n  Ready to install Mash %s (you have %s).\n' "$candidate" "$installed"
-printf '  This closes %s Mash window(s) now and reopens Mash when done.\n\n' "$windows"
+printf '  This closes Mash now and reopens it when done.\n\n'
 printf '  Type y to install, anything else to cancel: '
 IFS= read -r answer || answer=n
 case "$answer" in

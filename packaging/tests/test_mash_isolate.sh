@@ -16,7 +16,7 @@ home="$tmp/home"
 mkdir -p "$home/.mash/run" "$home/.bun/bin"
 
 run_isolate() {
-	local mode="${1:-}" shape="${2:-default}" instance="${3:-}" mashbin path
+	local mode="${1:-}" shape="${2:-default}" mashbin path
 	case "$shape" in
 	default)
 		mashbin="$tmp/app/bin:$tmp/app/node/bin:$home/.mash/bin"
@@ -51,7 +51,6 @@ run_isolate() {
 		HERDR_CLIENT_SOCKET_PATH="$home/.config/herdr/herdr-client.sock" \
 		HERDR_CONFIG_PATH="$home/.config/herdr/config.toml" \
 		XDG_CONFIG_HOME="$home/.config" \
-		${instance:+MASH_INSTANCE="$instance"} \
 		bash -c 'source "$1"; mash_isolate "$2" "$3"; env' _ "$lib" "$home" "$mode"
 }
 
@@ -403,131 +402,14 @@ for tool in fd rg eza fzf bat; do
 	}
 done
 
-# --- instances -------------------------------------------------------------
-# A second Mash window gets its own workspaces and tabs by getting its own
-# Herdr session, while every setting stays shared. Herdr keeps a session's
-# layout in its session directory, so a distinct session is what makes the
-# workspaces distinct; the socket alone would leave both servers writing one
-# session.json.
-
-# The default instance must be byte-for-byte what it was before instances
-# existed: same socket, no session name. Anything else silently re-homes every
-# existing user's workspaces.
-assert_value "$pane" MASH_INSTANCE default
+# --- one Herdr server --------------------------------------------------------
+# Mash has one window and one Herdr server: the socket is always the same, and
+# HERDR_SESSION stays unset so Herdr uses its unnamed session, whose layout is
+# ~/.mash/config/herdr/session.json. A session name would re-home every
+# workspace the user has.
 assert_unset "$pane" HERDR_SESSION
 assert_unset "$launch" HERDR_SESSION
+assert_unset "$pane" MASH_INSTANCE
 assert_value "$launch" HERDR_CLIENT_SOCKET_PATH "$home/.mash/run/herdr-client.sock"
-
-second="$(run_isolate pane default 2)"
-assert_value "$second" MASH_INSTANCE 2
-assert_value "$second" HERDR_SESSION 2
-assert_value "$second" HERDR_SOCKET_PATH "$home/.mash/run/2/herdr.sock"
-assert_value "$second" HERDR_CLIENT_SOCKET_PATH "$home/.mash/run/2/herdr-client.sock"
-
-# Shared settings are the point of this mode: the config, the agent directory
-# and the editor state must be identical across instances. Only the socket and
-# the session may differ.
-for key in HERDR_CONFIG_PATH XDG_CONFIG_HOME XDG_DATA_HOME XDG_STATE_HOME \
-	PI_CODING_AGENT_DIR PI_HOME MASH_FRESH_CONFIG_DIR MASH_FRESH_DATA_DIR; do
-	want="$(printf '%s\n' "$pane" | sed -n "s/^${key}=//p")"
-	assert_value "$second" "$key" "$want"
-done
-
-# A name that could escape ~/.mash/run or that Herdr would reject falls back to
-# the default instead of failing a launch the user cannot otherwise recover.
-for bad in "../escape" "a/b" ""; do
-	out="$(run_isolate pane default "$bad")"
-	assert_value "$out" MASH_INSTANCE default
-	assert_value "$out" HERDR_SOCKET_PATH "$home/.mash/run/herdr.sock"
-done
-
-# The allocator behind an icon click: the first window takes the restored
-# instance, a window opened while it is live gets a fresh one, and an instance
-# whose window died is reused rather than stranded.
-claim() {
-	env -i HOME="$home" PATH="/usr/bin:/bin" \
-		bash -c 'source "$1"; mash_claim_instance "$2" "$3"' _ "$lib" "$home" "$1"
-}
-mark() {
-	env -i HOME="$home" PATH="/usr/bin:/bin" \
-		bash -c 'source "$1"; mash_mark_instance_window "$2" "$3" "$4"' \
-		_ "$lib" "$home" "$1" "$2"
-}
-release() {
-	env -i HOME="$home" PATH="/usr/bin:/bin" \
-		bash -c 'source "$1"; mash_release_instance_window "$2" "$3" "$4"' \
-		_ "$lib" "$home" "$1" "$2"
-}
-
-got="$(claim 4242)"
-[ "$got" = default ] || {
-	printf 'first claim must take the default instance, got %s\n' "$got" >&2
-	exit 1
-}
-# $$ is alive, so this marker means "this instance has a live window".
-mark default "$$"
-got="$(claim 4243)"
-[ "$got" = 2 ] || {
-	printf 'a claim beside a live default must get instance 2, got %s\n' "$got" >&2
-	exit 1
-}
-mark 2 "$$"
-got="$(claim 4244)"
-[ "$got" = 3 ] || {
-	printf 'a third claim must get instance 3, got %s\n' "$got" >&2
-	exit 1
-}
-
-# A window that exits frees its instance for the next click.
-release 2 "$$"
-got="$(claim 4245)"
-[ "$got" = 2 ] || {
-	printf 'a released instance must be reused, got %s\n' "$got" >&2
-	exit 1
-}
-
-# A marker naming a pid that no longer exists is stale -- a crash or a reboot --
-# and must not strand the instance forever.
-mark 2 999999
-got="$(claim 4246)"
-[ "$got" = 2 ] || {
-	printf 'a stale marker must free its instance, got %s\n' "$got" >&2
-	exit 1
-}
-
-# Releasing is owner-only: a relaunch may already hold the instance, and
-# dropping its marker would hand the same instance to the next click while that
-# window is still open -- the clone bug, reintroduced.
-mark 2 "$$"
-release 2 999999
-[ -f "$home/.mash/run/2/window.pid" ] || {
-	printf 'a non-owner release removed the marker\n' >&2
-	exit 1
-}
-
-# Two clicks at once must never land on one instance. The claim is a mkdir,
-# which is atomic everywhere; a check-then-write would hand both the same name.
-race="$tmp/race"
-rm -rf "$home/.mash/run" "$race"
-mkdir -p "$home/.mash/run"
-for _ in 1 2 3 4 5 6; do
-	(
-		env -i HOME="$home" PATH="/usr/bin:/bin" bash -c '
-			source "$1"
-			inst="$(mash_claim_instance "$2" "$$")"
-			mash_mark_instance_window "$2" "$inst" "$$"
-			printf "%s\n" "$inst"
-			sleep 3
-		' _ "$lib" "$home" >>"$race"
-	) &
-done
-wait 2>/dev/null || true
-total="$(wc -l <"$race" | tr -d ' ')"
-distinct="$(sort -u "$race" | wc -l | tr -d ' ')"
-[ "$total" = "$distinct" ] || {
-	printf 'concurrent claims collided: %s claims, %s distinct\n' "$total" "$distinct" >&2
-	sort "$race" | sed 's/^/  /' >&2
-	exit 1
-}
 
 echo "mash_isolate: ok"

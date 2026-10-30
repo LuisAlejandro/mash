@@ -28,33 +28,14 @@ if [ -x "$bin_dir/mash-wizard" ]; then
     exit 0
   fi
 fi
-# Which instance this window is. Set already (a relaunch inside a pane, or a
-# launcher that chose one) means take it as given; otherwise claim the first
-# instance that has no live window.
-#
-# "Has a live window" cannot be "its server is running": a Herdr server
-# deliberately outlives its window, so after closing the last window the server
-# is still up with the workspaces loaded -- which is exactly the instance a
-# click should reattach to. The marker is therefore this script's own pid,
-# written below, and a pid that is gone means the instance is free.
-if [ -z "${MASH_INSTANCE:-}" ]; then
-  MASH_INSTANCE="$(mash_claim_instance "$home" "$$")"
-fi
-export MASH_INSTANCE
 mash_isolate "$home"
 case "$HERDR_SOCKET_PATH" in
-"$home/.mash/run/herdr.sock" | "$home/.mash/run/$MASH_INSTANCE/herdr.sock") ;;
+"$home/.mash/run/herdr.sock") ;;
 *)
   echo "Mash refused to start." >&2
   exit 1
   ;;
 esac
-# The claim is only a reservation until here: mash_isolate has now created the
-# instance's run directory, so the marker can be written where the next claim
-# will look for it. Removed when this window exits, so the instance frees up
-# without waiting for the pid check.
-mash_mark_instance_window "$home" "$MASH_INSTANCE" "$$"
-trap 'mash_release_instance_window "$home" "$MASH_INSTANCE" "$$"' EXIT HUP INT TERM
 # GitHub's MCP follows Mash's gh sign-in: added while signed in, removed after a
 # logout. Covers installs whose wizard finished before this existed. Fast and
 # local (one `gh auth token`), but still kept off the window's critical path.
@@ -71,7 +52,7 @@ fi
 
 # First handoff after setup only: the wizard leaves a one-shot marker, and the
 # new-workspace popup opens as soon as the server answers. The marker is taken
-# (renamed) before waiting, so a second window cannot open the popup twice.
+# (renamed) before waiting, so the popup opens once.
 once="$home/.mash/setup/open-workspace-once"
 if mv "$once" "$once.taken" 2>/dev/null; then
   rm -f "$once.taken"

@@ -53,7 +53,7 @@ export HERDR_CONFIG_PATH="$d/config/herdr/config.toml"
 export HERDR_SOCKET_PATH="$d/run/herdr.sock" HERDR_CLIENT_SOCKET_PATH="$d/run/herdr-client.sock"
 export MASH_FRESH_CONFIG_DIR="$d/config/fresh" MASH_FRESH_DATA_DIR="$d/local/share/fresh"
 export PI_CODING_AGENT_DIR="$d/pi/agent"
-unset HERDR_ENV HERDR_PANE_ID HERDR_TAB_ID HERDR_WORKSPACE_ID HERDR_SESSION MASH_INSTANCE TMUX
+unset HERDR_ENV HERDR_PANE_ID HERDR_TAB_ID HERDR_WORKSPACE_ID HERDR_SESSION TMUX
 EOF
 cat >"$root/start-herdr" <<EOF
 #!/bin/bash
@@ -69,7 +69,10 @@ cat >"$root/launch" <<EOF
 #!/bin/bash
 . "$root/env.sh"
 export GDK_BACKEND="\${GDK_BACKEND:-x11}"
-exec "$terminal" --title="MashKB $mode" >"$root/terminal.log" 2>&1
+# The seeded config makes Mash a single GTK instance, so without this the window
+# would hand itself to a Mash already running on this desktop instead of
+# opening on the throwaway data folder.
+exec "$terminal" --gtk-single-instance=false --title="MashKB $mode" >"$root/terminal.log" 2>&1
 EOF
 chmod +x "$root/start-herdr" "$root/launch"
 echo "$root"

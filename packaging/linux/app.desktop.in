@@ -17,14 +17,3 @@ StartupWMClass=@APPID@
 # would not inherit, and it must never attach to a personal Ghostty instance.
 DBusActivatable=false
 X-GNOME-UsesNotifications=true
-# Right-clicking the launcher offers a second Mash. It runs the same launcher:
-# the window it opens claims the first instance with no live window, so it is
-# an independent Mash (its own workspaces and tabs, the same settings) while
-# the first window is open. Launching the entry normally does exactly the same
-# thing -- the action exists to make it discoverable, not to behave differently.
-Actions=NewInstance;
-
-[Desktop Action NewInstance]
-Name=New Mash Instance
-Exec=/opt/letsmash/bin/letsmash-launch
-Icon=@APPID@

@@ -41,10 +41,10 @@ used.
 | --- | --- |
 | Cross-window focus behaviour | a headless compositor has one window; assertions about focus stealing between workspaces need two |
 | Keybinding mode end to end | completing setup in each mode needs the wizard, and judging the resulting chords needs real keypresses in Herdr, Fresh and a shell: on a disposable HOME, run setup twice (default, then Native) and run the checks in `keybinding-modes-gui-pass.md` for each: Cursor-style keeps `Ctrl+Shift+T` and `Ctrl+Tab`, Native answers Herdr's `Ctrl+B` prefix and Mash's extras on it, and Pi's header sheet lists the mode's keys |
-| Mash Terminal menus and second instance | On both GNOME Xorg and Wayland, inspect the titlebar, main menu, and terminal right-click menu: no Ghostty tab/overview, split, command palette, find, Quick Terminal, inspector, or Change Title affordance; the main menu reads "About Mash Terminal"; New Window remains and opens another Mash instance with its own Herdr workspaces |
+| Mash Terminal menus and one window | On both GNOME Xorg and Wayland, inspect the titlebar, main menu, and terminal right-click menu: no Ghostty tab/overview, split, command palette, find, Quick Terminal, inspector, Change Title or New Window affordance; the main menu reads "About Mash Terminal". With Mash open, launch it again from the app grid and the dock: the existing window comes forward and no second window or process appears (`pgrep -c mash-terminal` stays 1). Close the window: Mash exits, and the next launch reattaches to the same workspaces |
 | Herdr input and clipboard | In a Herdr shell and a Fresh pane, verify mouse clicks, right-click routing, scrolling, selection copy and clipboard paste still work; the headless config check cannot prove event delivery |
 | Mash menu items | Open the titlebar main menu: File, Edit, View, Go and Tools submenus and Settings, Reload Configuration, Detach and Mash Help each show their chord. Pick one item per submenu and confirm Herdr does what the shortcut does. With two Mash windows open, an item acts only in the window whose menu was used. Edit Herdr's config and pick Reload Configuration: the change applies without a restart, and Fresh panes are untouched. A chord rebound by the user leaves its menu item inert; that is expected |
-| Update notice | On GNOME Xorg and Wayland, install an older `letsmash`, make a newer one the APT candidate (published, or a scratch repository as in `packaging/tests/apt-upgrade-smoke.sh`), and open Mash: one centered popup and one desktop notification name both versions and `sudo apt install --only-upgrade letsmash`, and any key closes the popup. Open a second window and relaunch: nothing appears. Delete `/etc/apt/sources.list.d/letsmash.sources`, run `apt-get update`, and relaunch: nothing appears. The popup is drawn by the attached client and the notification surface is not observable headlessly |
+| Update notice | On GNOME Xorg and Wayland, install an older `letsmash`, make a newer one the APT candidate (published, or a scratch repository as in `packaging/tests/apt-upgrade-smoke.sh`), and open Mash: one centered popup and one desktop notification name both versions and `sudo apt install --only-upgrade letsmash`, and any key closes the popup. Close Mash and relaunch: nothing appears. Delete `/etc/apt/sources.list.d/letsmash.sources`, run `apt-get update`, and relaunch: nothing appears. The popup is drawn by the attached client and the notification surface is not observable headlessly |
 | CUA background input into an occluded window | depends on compositor policy a headless backend does not implement |
 | Notification delivery appearance | the session bus is observable, the notification surface is not |
 | Font rendering | needs a real GPU/screen to judge, not only fontconfig discovery |
@@ -57,24 +57,25 @@ published — a release with an untested platform is worse than a late one.
 ## Companion macOS check for the same Ghostty trim
 
 This is not a Linux publication gate. On an updated Mash.app, inspect File, View,
-Window, Dock, and terminal context menus: New Window still creates a second Mash
-instance, but Ghostty tabs, splits, palette, find, Quick Terminal, and inspector
-are absent. Ask AppleScript to create a `new tab` or `split`; each must fail or do
+Window, Dock, and terminal context menus: there is no New Window anywhere, and
+Ghostty tabs, splits, palette, find, Quick Terminal, and inspector are absent.
+With Mash open, click its Dock icon and open it from Spotlight: the one window
+comes forward and no second window appears. Ask AppleScript to create a `new tab` or `split`; each must fail or do
 nothing, without creating another Ghostty surface. Confirm copy/paste and Herdr
 mouse input still work in a shell pane and in Fresh.
 
 The app menu reads About Mash, Hide Mash, and Quit Mash, with no Check for Updates,
 Make Ghostty the Default Terminal, or Help menu. Edit has no Undo or Redo, and View
 and Window have no Change Terminal Title, Float on Top, or Use as Default; Show/Hide
-All Terminals remains. Close a Mash window, then press Cmd+Z: nothing reopens and a
-new icon click reuses the freed instance slot. The bundle carries no
+All Terminals remains. Close the Mash window, then press Cmd+Z: nothing reopens, and
+the next icon click reattaches to the same workspaces. The bundle carries no
 `Sparkle.framework` and its Info.plist no `SU*` keys.
 
 The menu bar adds Go, Tools and Help menus, and File, Edit and View carry Mash's
 tab, workspace, pane and annotation commands, each showing its Herdr chord.
 Choosing an item, or pressing its shortcut, does the Herdr command exactly once
 in that window only. Settings opens Herdr's settings, Reload Configuration
-reloads Ghostty and Herdr, and Detach closes the window and frees its instance.
+reloads Ghostty and Herdr, and Detach closes the window.
 
 **macOS self-update sign-off (blocking for a macOS release):** Install an older
 Developer ID-signed Mash.app that already contains this updater in a writable

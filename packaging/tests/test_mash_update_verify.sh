@@ -206,12 +206,8 @@ check "declining does not set a retry" test ! -e "$data/local/state/update-retry
 check "declining detaches the image" grep -q 'hdiutil detach' "$calls"
 
 reset
-mkdir -p "$data/run/default" "$data/run/2"
-echo $$ >"$data/run/default/window.pid"
-echo $$ >"$data/run/2/window.pid"
 run
-check "the confirmation names how many windows will close" grep -q '2 Mash window' "$tmp/out"
-rm -rf "$data/run"
+check "the confirmation says Mash closes and reopens" grep -q 'This closes Mash now and reopens it' "$tmp/out"
 
 # --- the staged copy is what gets handed over, not the mount ----------------------
 reset

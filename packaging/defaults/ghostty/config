@@ -1,27 +1,21 @@
 auto-update = off
 title = "Mash"
 
-# What a window runs. The launcher starts the first window with `-e herdr-pane`;
-# this is what every OTHER window gets -- File > New Window, and the Dock menu's
-# New Window -- and it has to be the same program, or a menu window would open a
-# bare shell instead of Mash.
-#
-# herdr-pane claims the first instance with no live window, so a menu window is
-# a second, independent Mash (its own workspaces and tabs, the same settings)
-# while the first window is open, and reattaches to a closed one otherwise.
+# What the window runs. Mash has one window, and its program comes from here
+# alone: the app's setup execs the terminal without -e, so this is the only
+# thing that makes the window Mash rather than a bare shell.
 # __MASH_HERDR_PANE__ is substituted at first launch: the path is inside the
 # bundle, which moves between installs.
 command = __MASH_HERDR_PANE__
 
-# Where a window starts. This is the directory Herdr gives the first workspace
-# of an instance that has none saved yet -- a second, empty Mash -- so an
-# unset value would open it on whatever directory the launcher happened to run
-# in, which for a Dock launch is "/".
+# Where the window starts. This is the directory Herdr gives the first
+# workspace when none is saved yet, so an unset value would open it on whatever
+# directory the app happened to start in, which for a Dock launch is "/".
 #
 # Ghostty already defaults to `home` when it can DETECT a launchd/`open`
 # launch, which is how Mash starts on macOS. Stating it is the point: the
-# detection is a heuristic, and the one case that must not depend on it is the
-# empty instance, whose whole first impression is this directory.
+# detection is a heuristic, and a first launch's first impression is this
+# directory.
 working-directory = home
 
 theme = Monokai Cursor
@@ -29,15 +23,19 @@ theme = Monokai Cursor
 # Quit when the last window closes.
 #
 # Ghostty defaults this to false on macOS ("standard behavior for a macOS
-# application") and true on Linux, so without it closing the last window leaves
-# a windowless Mash in the Dock while its Herdr server keeps the panes running --
+# application") and true on Linux, so without it closing the window leaves a
+# windowless Mash in the Dock while its Herdr server keeps the panes running --
 # two different meanings for the same gesture depending on the platform. Mash
-# runs one window per instance, so closing the window is that instance's exit.
+# has one window, so closing it is Mash's exit.
 #
 # This does not touch the panes: the server outlives the window on purpose, so a
 # relaunch reattaches to it. Only `herdr server stop` ends those, and this is why
 # the updater stops them before swapping the bundle.
 quit-after-last-window-closed = true
+
+# Herdr restores the workspaces, tabs and panes; macOS window restoration would
+# only add a second, empty window beside the one a relaunch opens.
+window-save-state = never
 
 # Why these unbinds stay after Mash removed the features outright: a Ghostty
 # binding that performs nothing still consumes its chord unless it carries the
