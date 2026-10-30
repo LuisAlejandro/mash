@@ -41,7 +41,12 @@ if pane="$("$herdr" pane current 2>/dev/null |
 	# Fresh restores its own buffers and cursor from its state for that directory.
 	# The report is repeated by every launch, including a resumed one, so the
 	# pane keeps its resume command as long as it keeps being Fresh.
-	"$herdr" pane report-agent "$pane" --source fresh-pane --agent fresh \
+	#
+	# The source names this pane. Herdr 0.9.3 resumes at most one pane per
+	# reporter source, so with one shared name a restart reopened only the first
+	# dev tab's Fresh and left every other one a bare shell, then dropped their
+	# resume command from the next save. test_fresh_pane_resume.sh covers it.
+	"$herdr" pane report-agent "$pane" --source "fresh-pane:$pane" --agent fresh \
 		--state idle --seq "$(date +%s)" -- herdr-fresh-pane . >/dev/null 2>&1 || true
 fi
 
