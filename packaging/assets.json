@@ -513,7 +513,7 @@
       "package": "pi-subagents"
     },
     "pi-ask-user": {
-      "version": "0.16.0",
+      "version": "0.17.0",
       "strategy": "npm",
       "install": "bundled",
       "package": "pi-ask-user"

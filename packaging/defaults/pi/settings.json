@@ -1,7 +1,7 @@
 {
   "packages": [
     "npm:pi-subagents@0.76.0",
-    "npm:pi-ask-user@0.16.0",
+    "npm:pi-ask-user@0.17.0",
     "npm:@krfantasy/pi-monokai-pro@0.2.0",
     "npm:pi-web-search@1.6.0",
     "npm:@earendil-works/pi-voice@0.2.0"
