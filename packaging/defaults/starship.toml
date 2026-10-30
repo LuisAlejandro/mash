@@ -3,6 +3,11 @@
 # and no modules that read personal shell startup files. Users can customize
 # this seeded copy in ~/.mash/config.
 add_newline = true
+# Starship gives each command 500ms by default. Right after a restart every pane
+# renders at once, with git still on a cold disk, and a command over budget
+# prints a timeout warning above the first prompt. A slow first prompt beats a
+# warning; a warm prompt is unaffected.
+command_timeout = 2000
 palette = "mash"
 
 format = """\
@@ -105,6 +110,9 @@ style = "fg:yellow bg:dark"
 # The no_git module closes the directory block with the same angled end when
 # no Git segment follows, so the left prompt never ends flat outside a repo.
 [custom.no_git]
+# /bin/sh, not the pane's shell: Starship runs `when` through STARSHIP_SHELL,
+# and zsh loads Mash's .zshenv first, costing ~40ms against 11ms on every prompt.
+shell = ["/bin/sh"]
 when = "! git rev-parse --is-inside-work-tree >/dev/null 2>&1"
 command = "true"
 format = "[\uE0B0](fg:blue)"
