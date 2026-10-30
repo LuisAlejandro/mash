@@ -23,7 +23,7 @@ display, claims the packaged app-id, and exits without leaving a server behind.
 | GTK window startup | `linux-session-smoke.sh`: no GTK template-child error or panic while opening Mash under Xorg and Wayland; source-only Blueprint compilation cannot prove a window instantiates |
 | Terminal input wiring | `linux-session-smoke.sh` reads Ghostty's effective config: mouse reporting and clipboard access remain enabled, with Ctrl+Shift+C/V bound to copy/paste; real delivery is checked below |
 | Notifications | delivery mode asserted on the seeded Herdr config |
-| Preview and reveal | `show_file` picks `xdg-open` off macOS; the Fresh patch carries a FileManager1 branch |
+| Preview and reveal | `test_show_file_internal_only.mjs`: `show_file` uses Fresh for text and Herdr for images, never opens a desktop app when unavailable; the Fresh reveal patch carries a FileManager1 branch |
 | Voice model selection | `test-mash-voice-model.sh` plans a model path without a network |
 | Tool installation | `mash-tool-install` installs npm, binary and system strategies into `~/.mash` and the shims answer `--version` |
 | Package contents | `verify-linux-installed.sh`: 26 checks over metadata, tree, icons, RPATH, linkage and identity |
