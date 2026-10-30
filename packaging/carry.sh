@@ -261,10 +261,22 @@ mash_ghostty_trim_check() {
     fi
   done
 
-  # New Window is the opposite check: it opens a second Mash instance, so its
-  # disappearance breaks that flow silently.
-  grep -qF 'title="New Window"' "$src/macos/Sources/App/MainMenu.xib" 2>/dev/null || {
-    echo "Ghostty fork lost the macOS 'New Window' menu item" >&2
+  # Mash has one window. A rebase that brings New Window back would offer a
+  # menu item that only brings the existing window forward, and a rebase that
+  # drops the guard in newWindow would let a second window clone the first.
+  if grep -qF 'title="New Window"' "$src/macos/Sources/App/MainMenu.xib" 2>/dev/null; then
+    echo "Ghostty fork reintroduced the macOS 'New Window' menu item" >&2
+    status=1
+  fi
+  [ "$(grep -c 'if let existing = all.first' \
+    "$src/macos/Sources/Features/Terminal/TerminalController.swift" 2>/dev/null)" = 2 ] || {
+    echo "Ghostty fork lost the one-window guard in TerminalController.newWindow" >&2
+    status=1
+  }
+  # Every launch must hand off to Mash's setup before Ghostty initializes, or a
+  # Dock click or a restart reopens a terminal without Mash's environment.
+  grep -qF 'Resources/bin/mash-launch' "$src/macos/Sources/App/main.swift" 2>/dev/null || {
+    echo "Ghostty fork no longer hands its launch to Mash's setup (main.swift)" >&2
     status=1
   }
 
@@ -336,10 +348,14 @@ mash_ghostty_trim_check() {
     status=1
   fi
 
-  # New Window must survive on Linux too: it is the second-instance entry point
-  # the desktop file and the macOS Dock menu both rely on.
-  grep -qF 'action: "win.new-window"' "$gtk_window" 2>/dev/null || {
-    echo "Ghostty fork lost the GTK 'New Window' menu item" >&2
+  # One window on Linux too: no New Window item, and a second launch or a
+  # new_window action presents the existing window.
+  if grep -qF 'action: "win.new-window"' "$gtk_window" "$gtk_surface" 2>/dev/null; then
+    echo "Ghostty fork reintroduced a GTK 'New Window' menu item" >&2
+    status=1
+  fi
+  [ "$(grep -c 'getActiveWindow()) |win|' "$src/src/apprt/gtk/class/application.zig" 2>/dev/null)" -ge 2 ] || {
+    echo "Ghostty fork lost the GTK one-window guard in activate/newWindow" >&2
     status=1
   }
 
@@ -709,7 +725,7 @@ mash_build_plugins() {
 }
 
 mash_install_fonts() {
-  local fonts="$(mash_res)/$terminal_app/Contents/Resources/Fonts"
+  local fonts="$(mash_res)/Fonts"
   local font
   mkdir -p "$fonts"
   for font in \
@@ -720,7 +736,7 @@ mash_install_fonts() {
     cp "$root/packaging/fonts/$font" "$fonts/$font"
   done
   cp "$root/packaging/fonts/NOTICE.txt" "$fonts/NOTICE.txt"
-  local plist="$(mash_res)/$terminal_app/Contents/Info.plist"
+  local plist="$(mash_res)/../Info.plist"
   if /usr/libexec/PlistBuddy -c 'Set :ATSApplicationFontsPath Fonts' "$plist" 2>/dev/null; then
     :
   else

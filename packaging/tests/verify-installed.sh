@@ -55,13 +55,19 @@ compare "$root/packaging/launch-common.sh" "$res/bin/launch-common.sh" "Resource
 compare "$root/packaging/mash-shell" "$res/bin/mash-shell" "Resources/bin/mash-shell"
 compare "$root/packaging/herdr-pane" "$res/bin/herdr-pane" "Resources/bin/herdr-pane"
 compare "$root/packaging/mash" "$res/bin/mash-launch" "Resources/bin/mash-launch"
-# The executable itself is compiled from packaging/mash-launcher.c, so it cannot
-# be byte-compared with the source. What matters is that it is a Mach-O: a script
-# there cannot carry the entitlements macOS checks on Mash.app.
-if file -b "$app/Contents/MacOS/mash" 2>/dev/null | grep -q '^Mach-O'; then
-	printf 'compiled  Contents/MacOS/mash\n'
+# One app: the executable is the terminal, built from the Ghostty fork, so it
+# cannot be byte-compared with a source here. What matters is that it is the
+# one CFBundleExecutable names, and that it hands its launch to mash-launch.
+exe="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Contents/Info.plist" 2>/dev/null)"
+if [ "$exe" = mash-terminal ] && file -b "$app/Contents/MacOS/mash-terminal" 2>/dev/null | grep -q '^Mach-O' &&
+	strings "$app/Contents/MacOS/mash-terminal" 2>/dev/null | grep -qF 'Resources/bin/mash-launch'; then
+	printf 'terminal  Contents/MacOS/mash-terminal hands its launch to mash-launch\n'
 else
-	printf 'FUNCTIONAL DIFF  Contents/MacOS/mash is not a Mach-O -- Mash.app cannot carry entitlements\n'
+	printf 'FUNCTIONAL DIFF  Contents/MacOS/mash-terminal is not the one-app terminal (executable: %s)\n' "${exe:-none}"
+	functional=$((functional + 1))
+fi
+if [ -e "$res/Mash Terminal.app" ]; then
+	printf 'FUNCTIONAL DIFF  Resources/Mash Terminal.app is still nested in the bundle\n'
 	functional=$((functional + 1))
 fi
 
@@ -116,10 +122,10 @@ fi
 
 echo "--- TCC resource access"
 # macOS resolves a prompt raised by a program running inside Mash against the
-# outer bundle, so these two live on Mash.app while Ghostty's own copy of them
-# has been fine all along. Without them tccd refuses to prompt and denies, and
-# CoreAudio answers the denial with a silent stream: recording looks healthy and
-# produces nothing, which is how pi-voice dictation broke in 0.1.1.
+# app, so Mash.app's own plist and signature have to carry these. Without them
+# tccd refuses to prompt and denies, and CoreAudio answers the denial with a
+# silent stream: recording looks healthy and produces nothing, which is how
+# pi-voice dictation broke in 0.1.1.
 if [ -n "$(/usr/libexec/PlistBuddy -c 'Print :NSMicrophoneUsageDescription' "$app/Contents/Info.plist" 2>/dev/null)" ]; then
 	printf 'declared  Contents/Info.plist NSMicrophoneUsageDescription\n'
 else

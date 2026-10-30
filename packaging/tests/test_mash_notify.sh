@@ -75,7 +75,7 @@ check "the click gets the client socket too" \
 check "the click still runs the configured focus command" \
   grep -q 'herdr agent focus w5:p1' <<<"$execute"
 check "the window is raised after focusing" \
-  grep -q 'open -b app.mash.ghostty' <<<"$execute"
+  grep -q 'open -b app.mash' <<<"$execute"
 
 # --- run the payload the way Notification Center would -----------------------
 : >"$CLICK_RECORD"
@@ -86,14 +86,14 @@ check "the baked socket reaches herdr" \
 check "the pane stays exactly one argument" \
   grep -q 'herdr argc=3 .*agent focus w5:p1' "$CLICK_RECORD"
 check "the terminal is activated" \
-  grep -q 'open -b app.mash.ghostty' "$CLICK_RECORD"
+  grep -q 'open -b app.mash' "$CLICK_RECORD"
 
 # --- no sockets in the environment: still focus, still raise ------------------
 : >"$NOTIFY_RECORD"
 run_wrapper
 execute="$(grep -v '^-title$\|^-message$\|^t$\|^m$' "$NOTIFY_RECORD" | tail -1)"
 check "no socket env does not break the payload" \
-  grep -q '^herdr agent focus w5:p1; open -b app.mash.ghostty' <<<"$execute"
+  grep -q '^herdr agent focus w5:p1; open -b app.mash' <<<"$execute"
 
 # --- a pane id with a space can not become two arguments ---------------------
 : >"$NOTIFY_RECORD"

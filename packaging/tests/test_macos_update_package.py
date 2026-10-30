@@ -11,22 +11,24 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 
 class MacOSUpdatePackageTest(unittest.TestCase):
     def test_tcc_resource_entitlements_reach_the_bundle_macos_attributes(self):
-        """Dictation depends on two things only the bundle can provide.
+        """Dictation depends on two things only the app's signature can provide.
 
         macOS attributes a microphone prompt raised by a program inside Mash to
-        the outermost bundle, so Mash.app -- not the nested Ghostty -- has to
-        carry the hardened-runtime entitlement and the purpose string. Missing
-        either does not fail loudly: tccd logs "Policy disallows prompt" and
-        denies, CoreAudio reports the denial as a silent stream, and pi-voice
-        transcribes 100% digital silence as "no speech detected".
+        the app, so Mash.app has to carry the hardened-runtime entitlement and
+        the purpose string. Missing either does not fail loudly: tccd logs
+        "Policy disallows prompt" and denies, CoreAudio reports the denial as a
+        silent stream, and pi-voice transcribes 100% digital silence as "no
+        speech detected".
         """
         entitlements = plistlib.loads((ROOT / "packaging/entitlements.plist").read_bytes())
         self.assertIs(entitlements.get("com.apple.security.device.audio-input"), True)
 
         build = (ROOT / "packaging/build.sh").read_text()
-        info_plist = build.split('cat >"$app/Contents/Info.plist" <<EOF', 1)[1]
-        info_plist = info_plist.split("\nEOF", 1)[0]
-        self.assertIn("NSMicrophoneUsageDescription", info_plist)
+        self.assertIn("Set :NSMicrophoneUsageDescription A program running within Mash", build)
+        release = (ROOT / "packaging/release.sh").read_text()
+        self.assertIn(
+            'sign_item "$download/Mash.app" "$root/packaging/entitlements.plist"', release
+        )
 
     def test_macos_build_points_pi_at_the_mash_project_dir(self):
         """The macOS build installs Pi itself, not through mash_stage_runtimes.
@@ -43,33 +45,36 @@ class MacOSUpdatePackageTest(unittest.TestCase):
         self.assertLess(install, set_dir)
         self.assertLess(set_dir, runtime)
 
-    def test_app_executable_is_compiled_so_it_can_carry_entitlements(self):
-        """Mash.app's executable must be a Mach-O, not the launcher script.
+    def test_app_is_the_terminal_and_hands_its_launch_to_the_setup(self):
+        """Mash.app is one app: its executable is the terminal.
 
-        macOS checks a microphone request against Mash.app's own executable.
-        A signature embeds entitlements only in a Mach-O, so while the executable
-        was packaging/mash itself, Mash.app carried none and dictation was
-        refused silently. build.sh compiles packaging/mash-launcher.c into
-        Contents/MacOS/mash and installs the script beside the other helpers.
+        macOS saves and reopens the app that owns the windows, so after a
+        restart it reopened the nested terminal directly and the terminal, with
+        no Mash environment, refused to start. The terminal is now the bundle,
+        and it execs Resources/bin/mash-launch before it initializes; the script
+        execs it back with the environment ready. A compiled launcher, a nested
+        "Mash Terminal.app" and an `open -na` handoff must not come back.
         """
         build = (ROOT / "packaging/build.sh").read_text()
-        self.assertIn('-o "$app/Contents/MacOS/mash"', build)
-        self.assertIn('"$root/packaging/mash-launcher.c"', build)
+        self.assertIn('ditto "$ghostty_src" "$app"', build)
+        self.assertIn("Set :CFBundleIdentifier app.mash'", build)
         self.assertIn(
             'cp "$root/packaging/mash" "$app/Contents/Resources/bin/mash-launch"', build
         )
-        self.assertNotIn('cp "$root/packaging/mash" "$app/Contents/MacOS/mash"', build)
-        launcher = (ROOT / "packaging/mash-launcher.c").read_text()
-        self.assertIn('"%s/../Resources/bin/mash-launch"', launcher)
-        # The script now lives two levels below Contents, and derives every
-        # bundle path from ROOT.
+        self.assertNotIn("mash-launcher.c", build)
+        self.assertNotIn("Mash Terminal.app", build)
+        self.assertFalse((ROOT / "packaging/mash-launcher.c").exists())
+
         script = (ROOT / "packaging/mash").read_text()
         self.assertIn('ROOT="$(cd "$(dirname "$0")/../.." && pwd)"', script)
+        self.assertIn('terminal="$ROOT/MacOS/mash-terminal"', script)
+        self.assertIn('exec "$terminal" "${args[@]}"', script)
+        self.assertNotIn("open -na", script)
 
     def test_macos_launcher_stages_everything_it_sources(self):
         build = (ROOT / "packaging/build.sh").read_text()
         launcher = (ROOT / "packaging/mash").read_text()
-        required = re.findall(r'^source "\$ROOT/Resources/bin/([^"/]+)"$', launcher, re.MULTILINE)
+        required = re.findall(r'^source "\$ROOT/Resources/bin/([^"/]+)"', launcher, re.MULTILINE)
         self.assertTrue(required)
         for name in required:
             with self.subTest(name=name):

@@ -69,7 +69,10 @@ launch. Delete the account afterwards.
 
 | Area | Check |
 | --- | --- |
-| Terminal | the terminal is `Mash Terminal.app`; About, Hide and Quit say Mash; Dock icon and name are Mash; no Ghostty tabs, splits, palette or Quick Terminal; New Window opens a second Mash instance |
+| Terminal | Mash.app is the terminal: no `Mash Terminal.app` inside the bundle; About, Hide and Quit say Mash; Dock icon and name are Mash; no Ghostty tabs, splits, palette, Quick Terminal or New Window |
+| One window | with Mash open, its Dock icon, Spotlight and `open -a Mash` each bring the one window forward; no second window or Dock tile appears. Closing the window quits Mash |
+| Restart restores Mash | with Mash open, restart the Mac with "Reopen windows" ticked: Mash comes back with its workspaces, not a blank or missing window |
+| Setup failure is visible | quit Mash, `mv ~/.mash ~/.mash.keep && touch ~/.mash`, open Mash: an alert says Mash could not start instead of the app vanishing; then `rm ~/.mash && mv ~/.mash.keep ~/.mash` |
 | Menus | File, Edit, View, Go, Tools and Help show Mash's commands with their chords; picking one acts once, in that window only |
 | Notifications | an agent finishing work raises a notification titled with the agent, from **Mash** with the Mash icon; macOS asks for notification permission once; clicking it focuses that pane |
 | Dictation | macOS asks for microphone access on first use; dictated speech is transcribed, not reported as "no speech detected" |

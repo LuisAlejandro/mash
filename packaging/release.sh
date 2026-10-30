@@ -73,7 +73,7 @@ ln -s /Applications "$download/Applications"
 # 3. Developer ID sign every piece of code in the bundle, innermost first.
 # codesign --deep only reaches nested code in the standard locations
 # (Contents/MacOS, Frameworks, PlugIns, XPCServices); everything parked under
-# Contents/Resources - Ghostty.app, the bundled tools, node_modules - keeps
+# Contents/Resources - the bundled tools, node_modules, the notifier - keeps
 # whatever ad-hoc signature build.sh left on it and the notary rejects the
 # whole archive. Walk the tree explicitly instead.
 sign_item() {
@@ -130,16 +130,10 @@ find "$download/Mash.app" -depth -type d \
     \( -name '*.app' -o -name '*.framework' -o -name '*.xpc' \
     -o -name '*.plugin' -o -name '*.bundle' \) >"$bundles"
 while IFS= read -r path; do
-    case "$path" in
-        "$download/Mash.app") ;;
-        # Restated from upstream: Mash re-signs Ghostty with its own team, so
-        # the TCC entitlements it brokers for programs running inside it have
-        # to be re-applied or they are silently lost.
-        "$download/Mash.app/Contents/Resources/Mash Terminal.app")
-            sign_item "$path" "$root/packaging/entitlements-ghostty.plist" ;;
-        *) sign_item "$path" ;;
-    esac
+    [ "$path" = "$download/Mash.app" ] || sign_item "$path"
 done <"$bundles"
+# The app last, over everything above. Its executable is the terminal, so this
+# signature carries every TCC entitlement Mash and its panes need.
 sign_item "$download/Mash.app" "$root/packaging/entitlements.plist"
 
 # Verify. codesign --verify --deep stops at the same locations --deep signs,

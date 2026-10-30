@@ -4,14 +4,6 @@
 # Writes only under this repo's dist/. Does not start Herdr.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
-# Folder name of the terminal bundle nested in Mash.app. macOS draws a Dock
-# tile's label from the bundle's FOLDER NAME, not from CFBundleName or
-# CFBundleDisplayName -- proved with a throwaway bundle named PlainBeta.app
-# carrying CFBundleName "Alpha" and CFBundleDisplayName "Alpha Display",
-# registered in /Applications, which still showed "PlainBeta" under the tile.
-# So this literal, not the plist keys, is what the running tile says. One
-# variable because build.sh and carry.sh build the same layout.
-terminal_app="Mash Terminal.app"
 # shellcheck source=carry.sh
 source "$root/packaging/carry.sh"
 # shellcheck source=build-common.sh
@@ -293,6 +285,15 @@ if ps -ax -o command= | grep -F "$dest/" | grep -v grep >/dev/null; then
   exit 1
 fi
 
+# Mash.app IS the terminal: the fork's built app is the bundle, and everything
+# Mash ships is added to its Resources. One app is what macOS saves and reopens
+# after a restart, what the Dock tile belongs to, and what the microphone
+# prompt names -- a terminal nested behind a launcher got none of those right.
+# The terminal's executable hands every launch to Resources/bin/mash-launch
+# before it initializes (the fork's main.swift), which seeds ~/.mash and execs
+# it back with Mash's environment.
+rm -rf "$app"
+ditto "$ghostty_src" "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources/bin" "$app/Contents/Resources/lib" \
   "$app/Contents/Resources/node"
 cp -R "$work/node-v24.16.0-darwin-arm64/bin" "$work/node-v24.16.0-darwin-arm64/lib" \
@@ -428,16 +429,9 @@ cp "$root/packaging/launch-common.sh" "$app/Contents/Resources/bin/launch-common
 cp "$root/packaging/herdr-pane" "$app/Contents/Resources/bin/herdr-pane"
 cp "$root/packaging/mash-shell" "$app/Contents/Resources/bin/mash-shell"
 cp "$wizard_bin" "$app/Contents/Resources/bin/mash-wizard"
-# Mash.app's executable is compiled, not the launcher script: macOS checks a
-# microphone request against this executable, and only a Mach-O can carry the
-# audio-input entitlement. It execs the script, which holds all launch logic.
-# See packaging/mash-launcher.c.
+# The terminal execs this before it initializes; see packaging/mash.
 cp "$root/packaging/mash" "$app/Contents/Resources/bin/mash-launch"
-xcrun --sdk macosx clang -Wall -Wextra -Werror -O2 -mmacosx-version-min=14.0 \
-  -o "$app/Contents/MacOS/mash" \
-  "$root/packaging/mash-launcher.c"
-chmod 755 "$app/Contents/MacOS/mash" \
-  "$app/Contents/Resources/bin/mash-launch" \
+chmod 755 "$app/Contents/Resources/bin/mash-launch" \
   "$app/Contents/Resources/bin/launch-common.sh" \
   "$app/Contents/Resources/bin/herdr-pane" \
   "$app/Contents/Resources/bin/mash-shell" \
@@ -479,92 +473,49 @@ export GOTOOLCHAIN=local
 mash_build_fresh
 mash_build_plugins
 
-ditto "$ghostty_src" "$app/Contents/Resources/$terminal_app"
-plist="$app/Contents/Resources/$terminal_app/Contents/Info.plist"
-/usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier app.mash.ghostty' "$plist"
+# The bundle's identity. Ghostty's plist is the base -- it carries the document
+# types, Services, AppleScript dictionary, Dock tile plugin, fonts path and the
+# usage strings its process needs -- and Mash replaces what names the app.
+plist="$app/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier app.mash' "$plist"
 /usr/libexec/PlistBuddy -c 'Set :CFBundleName Mash' "$plist"
-# The dock tile takes its artwork from the asset catalog whenever the app was
-# built with a macOS 11+ SDK, and Ghostty's catalog holds only Ghostty icons.
-# CFBundleIconName therefore has to be deleted or it keeps winning no matter
-# what CFBundleIconFile says. With it gone the system falls back to
-# CFBundleIconFile, which we point at Mash's own icon shipped beside
-# Ghostty's. The name needs no such treatment: LaunchServices already sees
-# CFBundleName/CFBundleDisplayName as Mash.
-/usr/libexec/PlistBuddy -c 'Delete :CFBundleIconName' "$plist" 2>/dev/null || true
-/usr/libexec/PlistBuddy -c 'Set :CFBundleIconFile Mash' "$plist"
 if /usr/libexec/PlistBuddy -c 'Set :CFBundleDisplayName Mash' "$plist" 2>/dev/null; then
   :
 else
   /usr/libexec/PlistBuddy -c 'Add :CFBundleDisplayName string Mash' "$plist"
 fi
-# The nested bundle kept Ghostty's placeholder 1 / 0.1 across every Mash
-# build, so the app path, the bundle identifier and the version were all
-# unchanged when Mash.icns was rewritten -- and the Dock went on drawing the
-# previous icon from its cache until the cache expired. Observed after the
-# ANSI-art icon landed: the running tile still showed the icon Mash used two
-# releases earlier. Mash's own version makes each release a new identity to
-# LaunchServices and Icon Services.
-nested_version="$(tr -d '[:space:]' <"$root/VERSION")"
-[ -n "$nested_version" ] || { echo "VERSION is empty." >&2; exit 1; }
-/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $nested_version" "$plist"
-/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $nested_version" "$plist"
-# Bundled artwork and menus. Both edit files inside the copy, so they belong
-# before any signing.
-cp "$root/packaging/Mash.icns" "$app/Contents/Resources/$terminal_app/Contents/Resources/Mash.icns"
-# The fork's MainMenu.xib carries the Mash names, so nothing is rewritten here.
-# This only asserts the result: no compiled nib may still show Ghostty to a user.
-"$app/Contents/Resources/python/bin/python3" "$root/packaging/check-nib-branding.py" \
-  "$app/Contents/Resources/$terminal_app"
-mash_install_fonts
+# The dock tile takes its artwork from the asset catalog whenever the app was
+# built with a macOS 11+ SDK, and Ghostty's catalog holds only Ghostty icons.
+# CFBundleIconName therefore has to be deleted or it keeps winning no matter
+# what CFBundleIconFile says. With it gone the system falls back to
+# CFBundleIconFile, which points at Mash's own icon.
+/usr/libexec/PlistBuddy -c 'Delete :CFBundleIconName' "$plist" 2>/dev/null || true
+/usr/libexec/PlistBuddy -c 'Set :CFBundleIconFile Mash' "$plist"
+cp "$root/packaging/Mash.icns" "$app/Contents/Resources/Mash.icns"
+# TCC refuses to raise a microphone or camera prompt for a bundle that carries
+# no purpose string, and the refusal is silent: the capture stream opens and
+# delivers nothing but zeros. Ghostty's say "Mash Terminal"; the prompt names
+# the app, so they name Mash.
+/usr/libexec/PlistBuddy -c 'Set :NSMicrophoneUsageDescription A program running within Mash would like to use your microphone.' "$plist"
+/usr/libexec/PlistBuddy -c 'Set :NSCameraUsageDescription A program running within Mash would like to use the camera.' "$plist"
+/usr/libexec/PlistBuddy -c 'Set :LSMinimumSystemVersion 14.0' "$plist"
 
 # The app version is whatever VERSION holds; bumpversion is its only writer.
-# Interpolated into the plist rather than patched in afterwards so there is no
-# second literal here to drift out of sync.
+# Each release is also a new identity to LaunchServices and Icon Services:
+# with a fixed version the Dock went on drawing a previous icon from its cache
+# after Mash.icns changed.
 version="$(tr -d '[:space:]' <"$root/VERSION")"
 [ -n "$version" ] || { echo "VERSION is empty." >&2; exit 1; }
+/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $version" "$plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $version" "$plist"
 # The shared seed ownership helper needs the same release id on macOS as on
 # Linux, where build-common.sh already stages Resources/VERSION.
 printf '%s\n' "$version" >"$app/Contents/Resources/VERSION"
 
-cat >"$app/Contents/Info.plist" <<EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-	<key>CFBundleExecutable</key>
-	<string>mash</string>
-	<key>CFBundleIdentifier</key>
-	<string>app.mash</string>
-	<key>CFBundleName</key>
-	<string>Mash</string>
-	<key>CFBundleDisplayName</key>
-	<string>Mash</string>
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
-	<key>CFBundleShortVersionString</key>
-	<string>$version</string>
-	<key>CFBundleVersion</key>
-	<string>$version</string>
-	<key>LSMinimumSystemVersion</key>
-	<string>14.0</string>
-	<key>NSHighResolutionCapable</key>
-	<true/>
-	<!-- TCC refuses to raise a microphone or camera prompt on behalf of a
-	     bundle that carries no purpose string, and the refusal is silent: the
-	     capture stream opens and delivers nothing but zeros. Ghostty's nested
-	     plist has had these since upstream; Mash.app, the bundle macOS actually
-	     attributes the request to, had none. -->
-	<key>NSMicrophoneUsageDescription</key>
-	<string>A program running within Mash would like to use your microphone.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>A program running within Mash would like to use the camera.</string>
-</dict>
-</plist>
-EOF
-
-# The outer Mash.app is what Finder shows; its launcher exits as soon as
-# Ghostty is up, so it never owns the dock tile, but it still needs an icon.
-/usr/libexec/PlistBuddy -c 'Add :CFBundleIconFile string Mash' "$app/Contents/Info.plist"
+# The fork's MainMenu.xib carries the Mash names, so nothing is rewritten here.
+# This only asserts the result: no compiled nib may still show Ghostty to a user.
+"$app/Contents/Resources/python/bin/python3" "$root/packaging/check-nib-branding.py" "$app"
+mash_install_fonts
 
 # Nothing anywhere in the bundle may still reference Homebrew. Scan every
 # Mach-O we ship — tools, dylibs, nested bundles — not just the named few.
@@ -654,7 +605,7 @@ orig="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$ghostty_src/Con
   echo "forked Ghostty bundle id changed: $orig" >&2
   exit 1
 }
-[ "$copy" = "app.mash.ghostty" ] || {
+[ "$copy" = "app.mash" ] || {
   echo "copy bundle id is $copy" >&2
   exit 1
 }
@@ -670,7 +621,9 @@ mash_link_plugins "$dest" "$home"
 # venv works, which re-creates __pycache__ inside it. This has to be the last
 # thing before signing, or the bytecode it writes ships.
 find "$dest/Contents" -type d -name __pycache__ -prune -exec rm -rf {} + 2>/dev/null || true
-codesign --force --deep --sign - "$dest/Contents/Resources/$terminal_app"
+# The app's own executable and its Dock tile plugin, then the bundle seal over
+# everything above. release.sh re-signs all of it with the Developer ID.
+codesign --force --deep --sign - "$dest/Contents/PlugIns/DockTilePlugin.plugin"
 codesign --force --sign - "$dest"
 mash_write_pins
 chmod -R u+w "$work" "$root/dist/.cargo" "$root/dist/.cargo-target" 2>/dev/null || true

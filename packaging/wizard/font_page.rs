@@ -87,7 +87,7 @@ pub struct FontPage {
 impl FontPage {
     pub fn new(resources: &Path, config: &Path) -> Self {
         let binary = if cfg!(target_os = "macos") {
-            resources.join("Mash Terminal.app/Contents/MacOS/mash-terminal")
+            resources.join("../MacOS/mash-terminal")
         } else {
             resources.join("bin/mash-terminal")
         };
