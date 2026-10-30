@@ -5,7 +5,7 @@
  * a paragraph of prose. This tool hands the file to whatever can actually
  * display it, and says where it went.
  *
- * Three channels, chosen by what the file is made of:
+ * Two internal viewers, chosen by what the file is made of:
  *
  *   text  (.md, logs, source, csv, json, svg ...) -> the Fresh editor beside
  *         this pane, with an optional note attached. Fresh renders it properly:
@@ -18,18 +18,16 @@
  *         Herdr plugin pane running `viu`, which emits the Kitty graphics
  *         protocol and gets a real picture back.
  *
- *   anything else                             -> the desktop's own handler
- *         (`qlmanage` on macOS, `xdg-open` on Linux),
- *         which previews PDFs and everything else the terminal cannot.
+ *   anything else                             -> not shown. No desktop app is
+ *         launched for files the internal viewers cannot display.
  *
  * The lookup that makes this work: the Fresh pane to send to is the one beside
  * this pane. Herdr sets HERDR_PANE_ID on this process, `herdr pane layout`
  * lists the tab's panes, and the first whose foreground process is `fresh` is
  * the editor. That is the same resolution telescope-files uses for cmd+p.
  *
- * Everything here is best-effort by design. A tool that fails loudly about a
- * missing editor is worse than the prose it replaced, so each channel falls
- * back to the next and the result always says what actually happened.
+ * If an internal viewer is unavailable, report that nothing was shown;
+ * do not open an external application or describe the file instead.
  */
 
 import { spawn } from "node:child_process";
@@ -186,30 +184,13 @@ function freshLocation(path: string, note: string | undefined, line?: number): s
 }
 
 
-/**
- * Open a file with the desktop's own handler.
- *
- * macOS has Quick Look, which previews PDFs and everything else the terminal
- * cannot; Linux has xdg-open, which hands the file to whatever the desktop
- * registered. Both are best-effort: the file path is always reported so the
- * person can open it themselves if the handler is missing.
- */
-async function openWithDesktop(path: string): Promise<{ ok: boolean; how: string }> {
-	if (process.platform === "darwin") {
-		const ql = await run("qlmanage", ["-p", path], { timeoutMs: 5000 });
-		return { ok: ql.code === 0, how: "Quick Look" };
-	}
-	const opener = await run("xdg-open", [path], { timeoutMs: 5000 });
-	return { ok: opener.code === 0, how: "the desktop's default application" };
-}
-
 export default function (pi: ExtensionAPI) {
 	pi.registerTool({
 		name: "show_file",
 		label: "Show file to the person",
 		description:
 			"Show a file to the person you are working for, instead of describing it. " +
-			"Text opens in the Fresh editor beside this pane with an optional note; an image opens as a vertical split with real pixels; anything else opens in the desktop's default application. " +
+			"Text opens in the Fresh editor beside this pane with an optional note; an image opens as a vertical split with real pixels; other files are not shown. No external app is opened. " +
 			"Use this whenever a task produces a report, a chart, a screenshot, a log or any other file the person should look at. " +
 			"The result says where it went. Prefer this over pasting file contents into your reply.",
 		promptSnippet: "Show a result file to the person instead of describing it",
@@ -217,7 +198,7 @@ export default function (pi: ExtensionAPI) {
 			"Call show_file with the path of a file the person should look at: a report, a chart, a screenshot, a rendered document, a log.",
 			"Give `note` a short phrase naming what it is. It appears beside the file.",
 			"Do not paste the file's contents into your reply after showing it. Say what it is and stop.",
-			"If show_file says nothing could be shown, fall back to describing the result.",
+			"If show_file says nothing was shown, do not describe the file or launch an external app. State briefly that it was not shown, if needed.",
 		],
 		executionMode: "sequential",
 		parameters: Type.Object({
@@ -246,11 +227,7 @@ export default function (pi: ExtensionAPI) {
 			// editor. The popup plugin draws the picture in its own pane.
 			if (kind === "image") {
 				const target = (await freshPaneBeside()) || selfPaneId();
-				if (!target) {
-					return textResult(
-						`Could not find a pane to show ${name} in. The person can open it with: ${path}`,
-					);
-				}
+				if (!target) return textResult(`Not shown: no Herdr pane available for ${name}.`, true);
 				const opened = await run(herdrBin(), [
 					"plugin", "pane", "open",
 					"--plugin", "image-popup",
@@ -263,24 +240,7 @@ export default function (pi: ExtensionAPI) {
 				], { timeoutMs: 10_000 });
 				if (opened.code !== 0) {
 					const detail = opened.stderr.trim() || opened.stdout.trim();
-					// Preview is a macOS application. Elsewhere the desktop's own
-					// handler is the equivalent, and openWithDesktop already knows
-					// which one that is.
-					const preview =
-						process.platform === "darwin"
-							? await run("open", ["-a", "Preview", path], { timeoutMs: 5000 })
-							: await run("xdg-open", [path], { timeoutMs: 5000 });
-					if (preview.code === 0) {
-						const where = process.platform === "darwin" ? "Preview" : "the desktop's default application";
-						return textResult(
-							`Image popup unavailable (${detail || "no reason given"}). ${name} opened in ${where} instead.` +
-								(params.note ? ` (${params.note})` : ""),
-						);
-					}
-					return textResult(
-						`Could not open the image popup (${detail || "no reason given"}). ` +
-							`The person can open it with: ${path}`,
-					);
+					return textResult(`Not shown: could not open ${name} in Herdr (${detail || "no reason given"}).`, true);
 				}
 				return textResult(
 					`Shown: ${name} is open in a vertical split beside the editor, at real resolution.` +
@@ -291,22 +251,9 @@ export default function (pi: ExtensionAPI) {
 			// --- text: the Fresh editor beside this pane --------------------
 			if (kind === "text") {
 				const pane = await freshPaneBeside();
-				if (!pane) {
-					// No editor in this tab. The desktop handler still shows the
-					// file, which beats a description in prose.
-					const desktop = await openWithDesktop(path);
-					return textResult(
-						desktop.ok
-							? `No Fresh editor in this tab, so ${name} opened in ${desktop.how} instead.`
-							: `No Fresh editor in this tab and ${desktop.how} failed. The person can open it with: ${path}`,
-					);
-				}
+				if (!pane) return textResult(`Not shown: no Fresh editor in this tab for ${name}.`, true);
 				const session = await freshSessionFor(pane);
-				if (!session) {
-					return textResult(
-						`Found the Fresh pane but not its daemon. The person can open ${name} from the editor's file explorer.`,
-					);
-				}
+				if (!session) return textResult(`Not shown: Fresh daemon unavailable for ${name}.`, true);
 				const opened = await run(freshBin(), [
 					"--cmd", "daemon", "open-file", session, freshLocation(path, params.note, params.line),
 				], {
@@ -314,9 +261,7 @@ export default function (pi: ExtensionAPI) {
 					timeoutMs: 10_000,
 				});
 				if (opened.code !== 0) {
-					return textResult(
-						`Could not open ${name} in Fresh (${opened.stderr.trim() || "no reason given"}).`,
-					);
+					return textResult(`Not shown: could not open ${name} in Fresh (${opened.stderr.trim() || "no reason given"}).`, true);
 				}
 				return textResult(
 					`Shown: ${name} is open in the Fresh editor beside this pane.` +
@@ -324,14 +269,8 @@ export default function (pi: ExtensionAPI) {
 				);
 			}
 
-			// --- anything else: the desktop's own handler --------------------
-			const desktop = await openWithDesktop(path);
-			if (desktop.ok) {
-				return textResult(`Shown: ${name} opened in ${desktop.how}. (${params.note ?? kind})`);
-			}
-			return textResult(
-				`Could not preview ${name}. The person can open it with: ${path}`,
-			);
+			// --- anything else: no internal viewer ----------------------------
+			return textResult(`Not shown: no internal viewer for ${name}.`, true);
 		},
 	});
 }
