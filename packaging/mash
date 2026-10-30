@@ -46,6 +46,16 @@ else
 fi
 printf 'Mash setup %s, pid %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$$"
 
+# Nothing may grow inside the bundle after it is signed. The bundled
+# interpreter is on every pane's PATH, and Python writes __pycache__ next to
+# the module it imports -- the Hindsight daemon alone laid down 34 files in
+# Resources/python/lib that way, which breaks the seal and fails
+# `codesign --verify`. build.sh strips the bytecode the build itself creates;
+# this stops it coming back. It has to come before the seeding below, which
+# runs the bundled Python itself: set after it, the first launch of a fresh
+# install wrote three encodings/ .pyc files and broke the seal.
+export PYTHONDONTWRITEBYTECODE=1
+
 # Each step has to stop the launch when it fails, so it runs as its own `if`
 # guard rather than under `set -e`: bash ignores `set -e` inside anything that
 # is itself the condition of an `||` or an `if`, which is the only way a
@@ -62,13 +72,6 @@ mash_protect_data_dir "$d" || fail "Mash could not prepare $d. Details: $log"
 mash_seed_all "$ROOT/Resources" "$d" "$home" || fail "Setting up $d failed. Details: $log"
 mash_force_updates "$home" || fail "Mash could not pin its update settings. Details: $log"
 
-# Nothing may grow inside the bundle after it is signed. The bundled
-# interpreter is on every pane's PATH, and Python writes __pycache__ next to
-# the module it imports -- the Hindsight daemon alone laid down 34 files in
-# Resources/python/lib that way, which breaks the seal and fails
-# `codesign --verify`. build.sh strips the bytecode the build itself creates;
-# this stops it coming back in the panes, where the long-lived interpreters run.
-export PYTHONDONTWRITEBYTECODE=1
 export MASH_BIN="$ROOT/Resources/bin:$ROOT/Resources/node/bin:$ROOT/Resources/python/bin:$d/bin"
 # mash_isolate exits the process on its refusals (a socket or Herdr config
 # outside ~/.mash). A subshell runs it first so a refusal becomes an alert; the

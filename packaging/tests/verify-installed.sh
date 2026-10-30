@@ -59,8 +59,10 @@ compare "$root/packaging/mash" "$res/bin/mash-launch" "Resources/bin/mash-launch
 # cannot be byte-compared with a source here. What matters is that it is the
 # one CFBundleExecutable names, and that it hands its launch to mash-launch.
 exe="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Contents/Info.plist" 2>/dev/null)"
-if [ "$exe" = mash-terminal ] && file -b "$app/Contents/MacOS/mash-terminal" 2>/dev/null | grep -q '^Mach-O' &&
-	strings "$app/Contents/MacOS/mash-terminal" 2>/dev/null | grep -qF 'Resources/bin/mash-launch'; then
+# grep -c, not -q: -q exits at the first match, `strings` then dies of SIGPIPE,
+# and pipefail turns that into a failure on a binary that does match.
+if [ "$exe" = mash-terminal ] && file -b "$app/Contents/MacOS/mash-terminal" 2>/dev/null | grep -c '^Mach-O' >/dev/null &&
+	[ "$(strings "$app/Contents/MacOS/mash-terminal" 2>/dev/null | grep -cF 'Resources/bin/mash-launch')" -gt 0 ]; then
 	printf 'terminal  Contents/MacOS/mash-terminal hands its launch to mash-launch\n'
 else
 	printf 'FUNCTIONAL DIFF  Contents/MacOS/mash-terminal is not the one-app terminal (executable: %s)\n' "${exe:-none}"

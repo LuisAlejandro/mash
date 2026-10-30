@@ -109,6 +109,19 @@ class MacOSUpdatePackageTest(unittest.TestCase):
             self.assertTrue(out.exists(), "the setup never handed off to the terminal")
             self.assertEqual(out.read_text(), "argc=0 err=\n")
 
+    def test_bytecode_is_refused_before_the_setup_runs_python(self):
+        """The setup's own seeding runs the bundled Python.
+
+        With PYTHONDONTWRITEBYTECODE exported only after mash_seed_all, the
+        first launch of a fresh install wrote encodings/__pycache__ into the
+        signed bundle and broke its seal.
+        """
+        script = (ROOT / "packaging/mash").read_text()
+        self.assertLess(
+            script.index("export PYTHONDONTWRITEBYTECODE=1"),
+            script.index('mash_seed_all "$ROOT/Resources"'),
+        )
+
     def test_macos_launcher_stages_everything_it_sources(self):
         build = (ROOT / "packaging/build.sh").read_text()
         launcher = (ROOT / "packaging/mash").read_text()
