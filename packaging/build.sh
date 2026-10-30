@@ -315,6 +315,10 @@ env HOME="$work/home" \
   "$app/Contents/Resources/node/bin/npm" install --global \
   --prefix "$app/Contents/Resources/node" \
   $pi_packages
+# Pi reads a project's .mash/ instead of .pi/. This install does not go through
+# mash_stage_runtimes, so the step has to be called here too; it fails the build
+# if the installed Pi no longer honors the setting.
+mash_set_pi_project_dir "$app/Contents/Resources" || exit 1
 "$root/packaging/tests/test_pi_runtime.sh" "$app/Contents/Resources"
 
 node_real="$app/Contents/Resources/node/bin/node"
@@ -421,8 +425,16 @@ cp "$root/packaging/launch-common.sh" "$app/Contents/Resources/bin/launch-common
 cp "$root/packaging/herdr-pane" "$app/Contents/Resources/bin/herdr-pane"
 cp "$root/packaging/mash-shell" "$app/Contents/Resources/bin/mash-shell"
 cp "$wizard_bin" "$app/Contents/Resources/bin/mash-wizard"
-cp "$root/packaging/mash" "$app/Contents/MacOS/mash"
+# Mash.app's executable is compiled, not the launcher script: macOS checks a
+# microphone request against this executable, and only a Mach-O can carry the
+# audio-input entitlement. It execs the script, which holds all launch logic.
+# See packaging/mash-launcher.c.
+cp "$root/packaging/mash" "$app/Contents/Resources/bin/mash-launch"
+xcrun --sdk macosx clang -Wall -Wextra -Werror -O2 -mmacosx-version-min=14.0 \
+  -o "$app/Contents/MacOS/mash" \
+  "$root/packaging/mash-launcher.c"
 chmod 755 "$app/Contents/MacOS/mash" \
+  "$app/Contents/Resources/bin/mash-launch" \
   "$app/Contents/Resources/bin/launch-common.sh" \
   "$app/Contents/Resources/bin/herdr-pane" \
   "$app/Contents/Resources/bin/mash-shell" \
