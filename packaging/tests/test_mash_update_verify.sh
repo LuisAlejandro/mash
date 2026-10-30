@@ -107,9 +107,31 @@ run() { # run [VAR=value...] -- one verify+handoff, answering the confirmation
   printf '%s\n' "$answer" | env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" \
     FAKE_MNT="$tmp/mnt" FAKE_RUNNING_APP="$running" TMPDIR="$tmp" "$@" \
     bash "$helper" "$running" 0.2.0 0.1.1 "$data" >"$tmp/out" 2>"$tmp/err"
-  # The helper starts asynchronously by design; the test waits for the stub
-  # to log before clearing the call log for the next scenario.
-  sleep 0.2
+  # The helper hands off with `nohup ... &` and exits, so the stub logs after
+  # the helper returns. A fixed sleep had to guess how long that takes: too
+  # short and the happy path saw no handoff, and the late write then landed in
+  # the *next* scenario's log and failed that one too.
+  #
+  # The helper announces the handoff on its last line, so that is the signal for
+  # whether a write is still coming. A refusal never prints it and must not hand
+  # off at all, so a short grace period is enough to let a stray write surface
+  # here rather than inside the next scenario.
+  if grep -q 'Installing' "$tmp/out"; then
+    wait_for_apply
+  else
+    sleep 0.3
+  fi
+  return 0
+}
+
+# Up to ~10s for the backgrounded stub to log the handoff it promised.
+wait_for_apply() {
+  local attempt
+  for attempt in $(seq 1 100); do
+    [ "$(applied)" -ge 1 ] && return 0
+    sleep 0.1
+  done
+  return 1
 }
 count() { grep -c "^$1 " "$calls" 2>/dev/null || true; }
 applied() { grep -c "apply " "$calls" 2>/dev/null || true; }
