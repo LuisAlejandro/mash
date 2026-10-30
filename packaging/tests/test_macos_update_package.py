@@ -3,6 +3,9 @@
 import pathlib
 import plistlib
 import re
+import shutil
+import subprocess
+import tempfile
 import tomllib
 import unittest
 
@@ -68,8 +71,43 @@ class MacOSUpdatePackageTest(unittest.TestCase):
         script = (ROOT / "packaging/mash").read_text()
         self.assertIn('ROOT="$(cd "$(dirname "$0")/../.." && pwd)"', script)
         self.assertIn('terminal="$ROOT/MacOS/mash-terminal"', script)
-        self.assertIn('exec "$terminal" "${args[@]}"', script)
+        self.assertIn('exec "$terminal" "${args[@]+"${args[@]}"}"', script)
+        self.assertNotIn('exec "$terminal" "${args[@]}"', script)
         self.assertNotIn("open -na", script)
+
+    def test_dock_launch_with_no_arguments_reaches_the_terminal(self):
+        """A Dock click passes no arguments, and the setup must still hand off.
+
+        macOS runs the setup under /bin/bash 3.2, where expanding an empty array
+        under `set -u` is an "unbound variable" error. The setup finished and
+        then died at the handoff, so clicking the icon did nothing. This runs
+        the real script, with no arguments, against a stub terminal.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = pathlib.Path(tmp)
+            bin_dir = tmp / "App/Contents/Resources/bin"
+            macos = tmp / "App/Contents/MacOS"
+            fake = tmp / "fake"
+            for d in (bin_dir, macos, fake, tmp / "home"):
+                d.mkdir(parents=True)
+            for name in ("lib.sh", "launch-common.sh"):
+                shutil.copy(ROOT / "packaging" / name, bin_dir / name)
+            shutil.copy(ROOT / "packaging/mash", bin_dir / "mash-launch")
+            out = tmp / "out"
+            # The stub terminal records that the handoff happened, and how.
+            terminal = macos / "mash-terminal"
+            terminal.write_text(
+                f'#!/bin/bash\nprintf "argc=%s err=%s\\n" "$#" "${{MASH_SETUP_ERROR:-}}" >"{out}"\n'
+            )
+            terminal.chmod(0o755)
+            # mash_real_home asks the directory service; point it at the scratch home.
+            dscl = fake / "dscl"
+            dscl.write_text(f'#!/bin/sh\necho "NFSHomeDirectory: {tmp / "home"}"\n')
+            dscl.chmod(0o755)
+            env = {"HOME": str(tmp / "home"), "PATH": f"{fake}:/usr/bin:/bin:/usr/sbin"}
+            subprocess.run(["/bin/bash", str(bin_dir / "mash-launch")], env=env, check=False)
+            self.assertTrue(out.exists(), "the setup never handed off to the terminal")
+            self.assertEqual(out.read_text(), "argc=0 err=\n")
 
     def test_macos_launcher_stages_everything_it_sources(self):
         build = (ROOT / "packaging/build.sh").read_text()

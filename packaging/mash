@@ -22,7 +22,7 @@ args=("$@")
 fail() {
   printf 'setup failed: %s\n' "$1" >&2
   export MASH_SETUP_ERROR="$1"
-  exec "$terminal" "${args[@]}"
+  exec "$terminal" "${args[@]+"${args[@]}"}"
 }
 
 # shellcheck source=lib.sh
@@ -84,4 +84,4 @@ mash_link_plugins || printf 'plugin linking failed; continuing\n'
 printf 'setup done; starting the terminal\n'
 # The terminal runs `command` from Mash's Ghostty config, which is herdr-pane,
 # and it is this process: the environment above is already its own.
-exec "$terminal" "${args[@]}"
+exec "$terminal" "${args[@]+"${args[@]}"}"
