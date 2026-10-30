@@ -10,6 +10,7 @@
 // recognised.
 // @ts-nocheck
 
+import { existsSync, mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import net from "node:net";
 import path from "node:path";
 
@@ -123,12 +124,21 @@ function currentSessionRef(): Record<string, unknown> | undefined {
 // that breaks one is skipped and the pane keeps its previous resume command.
 const UNSAFE_RESUME_ARG = /['\x00-\x1f\x7f]/;
 
+//
+// The file has to exist, too. pi writes a session file only once the session
+// holds a message, so a pane opened and left unchatted has a path that is not
+// on disk. `pi --session <missing file>` exits 1, the pane fell back to its
+// shell, and Herdr dropped the resume command from the next save: five of eight
+// pi panes came back as shells after one restart that way. Until the file exists
+// the pane resumes as a plain `pi` -- the same new, empty conversation it had --
+// and every later report switches it to the file once pi has written it.
 function resumeArgv(): string[] | undefined {
   if (!currentAgentSessionPath) return undefined;
   if (!path.posix.isAbsolute(currentAgentSessionPath) && !path.win32.isAbsolute(currentAgentSessionPath)) {
     return undefined;
   }
   if (UNSAFE_RESUME_ARG.test(currentAgentSessionPath)) return undefined;
+  if (!existsSync(currentAgentSessionPath)) return ["pi"];
   return ["pi", "--session", currentAgentSessionPath];
 }
 
@@ -156,11 +166,56 @@ function reportSession(sessionStartSource?: string): Promise<void> {
 // resume command only from a reporter that already holds the pane, and it
 // rejects the whole request otherwise -- so this must never ride on the state
 // report itself, or a first-call rejection would drop the state update too.
+// Mash: a ledger of each pane's resume command, one file per pane, beside
+// Herdr's state. Herdr keeps a resume command only while the agent that
+// reported it is running: when pi exits, the pane is treated as a shell again
+// and the next save drops the command. At logout macOS kills every pi process
+// directly (each registers as an app of its own) about twenty seconds before
+// Herdr is stopped, so every agent pane was saved as a bare shell -- a pane
+// with a long, established conversation came back as a prompt. The shell that a
+// restore leaves in the pane reads this file and starts pi again
+// (mash-pane-resume). A deliberate quit removes it.
+const ledgerDir = (() => {
+  const state = process.env.XDG_STATE_HOME;
+  return state && path.isAbsolute(state) ? path.join(state, "mash", "pane-resume") : undefined;
+})();
+
+function ledgerFile(): string | undefined {
+  // A pane id is "w5:p53"; anything else is not one Herdr gave us.
+  if (!ledgerDir || !paneId || !/^[A-Za-z0-9]+:[A-Za-z0-9]+$/.test(paneId)) return undefined;
+  return path.join(ledgerDir, paneId.replace(":", "_"));
+}
+
+function recordResume(argv: string[]): void {
+  const file = ledgerFile();
+  if (!file) return;
+  try {
+    mkdirSync(ledgerDir!, { recursive: true });
+    // One argument per line: Herdr already refuses arguments holding control
+    // characters, so a newline cannot be part of one. Written aside and renamed,
+    // so a pane shell never reads half a file.
+    const tmp = `${file}.${process.pid}.tmp`;
+    writeFileSync(tmp, `${argv.join("\n")}\n`);
+    renameSync(tmp, file);
+  } catch {
+    // The ledger is a fallback; Herdr's own record still covers a plain restart.
+  }
+}
+
+function forgetResume(): void {
+  const file = ledgerFile();
+  if (!file) return;
+  try {
+    rmSync(file, { force: true });
+  } catch {}
+}
+
 function reportResume(state: AgentState, message?: string): Promise<void> {
   const argv = resumeArgv();
   if (!argv) {
     return Promise.resolve();
   }
+  recordResume(argv);
   return sendRequest({
     id: `${source}:resume:${Date.now()}:${Math.random().toString(36).slice(2)}`,
     method: "pane.report_agent",
@@ -254,6 +309,27 @@ export default function (pi) {
     queueState(next.state, next.message);
   }
 
+  // Mash: only a deliberate quit (Ctrl+D, /quit) means the pane should come
+  // back as a shell. pi reports a signal-triggered shutdown -- the logout's
+  // SIGTERM, a terminal hangup -- with the same "quit" reason, so the signal is
+  // recorded and decides which one this is.
+  //
+  // pi's own handler emits session_shutdown synchronously, and it is added with
+  // prependListener when the interactive mode starts -- after this extension
+  // loads. A flag added here at load time would run after that handler and be
+  // too late. session_start fires once the mode is up, so the handler below prepends it from there, which
+  // puts the flag ahead of pi's handler.
+  let signalled = false;
+  let signalFlagInstalled = false;
+  function installSignalFlag(): void {
+    if (signalFlagInstalled) return;
+    signalFlagInstalled = true;
+    for (const signal of ["SIGTERM", "SIGHUP"]) {
+      process.prependListener(signal, () => {
+        signalled = true;
+      });
+    }
+  }
   pi.events.on("herdr:blocked", (data) => {
     if (!rootSession) {
       return;
@@ -279,6 +355,7 @@ export default function (pi) {
       return;
     }
     rootSession = true;
+    installSignalFlag();
     updateSessionRef(ctx);
     await reportSession(event?.reason);
     // A reload can replace this extension mid-run without emitting another agent_start.
@@ -303,5 +380,12 @@ export default function (pi) {
 
     agentActive = false;
     publishState();
+  });
+
+  pi.on("session_shutdown", (event) => {
+    if (!rootSession || event?.reason !== "quit" || signalled) {
+      return;
+    }
+    forgetResume();
   });
 }

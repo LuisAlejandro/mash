@@ -56,6 +56,7 @@ ship_helpers=(
   mash-notify
   mash-seed-sync
   mash-update-notice
+  mash-pane-resume
   mash-update-verify
   mash-update-apply
   mash-github-mcp

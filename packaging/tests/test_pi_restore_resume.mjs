@@ -8,24 +8,27 @@
 // conversation while the old one sat unused on disk.
 //
 // herdr-agent-state.ts (Mash's patched copy) now sends the resume command after
-// the state report, as `pi --session <file>`. This test pins that contract:
-// the report order Herdr requires, the command shape, and the paths Herdr
+// the state report, as `pi --session <file>` once pi has written the file and a
+// plain `pi` before that. This test pins that contract: the report order Herdr
+// requires, the command shape, the missing-file case, and the paths Herdr
 // refuses.
 //
 //   node packaging/tests/test_pi_restore_resume.mjs
 //
 // Node >= 23.6 loads the TypeScript extension directly (type stripping).
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import net from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const SESSION = "/Users/someone/.mash/pi/agent/sessions/--repo--/2026-01-01T00-00-00-000Z_abc.jsonl";
-
 // The stock module reads its socket at import time, so the fake server has to
 // exist before the import.
 const dir = mkdtempSync(join(tmpdir(), "herdr-pi-restore-"));
+// A real file: the resume command names a session only once pi has written it.
+mkdirSync(join(dir, "sessions"));
+const SESSION = join(dir, "sessions", "2026-01-01T00-00-00-000Z_abc.jsonl");
+writeFileSync(SESSION, "{}\n");
 const sock = join(dir, "api.sock");
 const seen = [];
 const server = net.createServer((conn) => {
@@ -45,11 +48,15 @@ await new Promise((resolve) => server.listen(sock, resolve));
 process.env.HERDR_ENV = "1";
 process.env.HERDR_SOCKET_PATH = sock;
 process.env.HERDR_PANE_ID = "w5:p2";
+// The extension keeps a ledger of resume commands under XDG_STATE_HOME.
+process.env.XDG_STATE_HOME = join(dir, "state");
+const LEDGER = join(dir, "state", "mash", "pane-resume", "w5_p2");
 
 const { default: factory } = await import(
   new URL("../defaults/pi/extensions/herdr-agent-state.ts", import.meta.url).href
 );
 
+let lastHandlers = {};
 function startSession(sessionFile) {
   seen.length = 0;
   const handlers = {};
@@ -62,6 +69,7 @@ function startSession(sessionFile) {
     { reason: "startup" },
     { mode: "tui", isIdle: () => true, sessionManager: { getSessionFile: () => sessionFile } },
   );
+  lastHandlers = handlers;
   return events;
 }
 
@@ -105,6 +113,51 @@ const blockedResume = seen.filter((r) => r.params.resume_argv).at(-1);
 assert.equal(blockedResume.params.state, "blocked");
 assert.equal(blockedResume.params.message, "Approve the command?");
 console.log("ok - the resume report keeps the blocked message");
+
+// pi writes the session file only once the session holds a message. A pane
+// opened and left unchatted must resume as a plain `pi`: `pi --session` on a
+// missing file exits 1, and the restored pane fell back to its shell. Once the
+// file exists, the next report names it.
+const UNWRITTEN = join(dir, "sessions", "2026-01-02T00-00-00-000Z_new.jsonl");
+const fresh = startSession(UNWRITTEN);
+await settle();
+let resume = seen.filter((r) => r.params.resume_argv).at(-1);
+assert.deepEqual(resume.params.resume_argv, ["pi"], "no file yet: resume as a new pi");
+writeFileSync(UNWRITTEN, "{}\n");
+fresh["herdr:blocked"]({ active: true, label: "first turn" });
+await settle();
+resume = seen.filter((r) => r.params.resume_argv).at(-1);
+assert.deepEqual(
+  resume.params.resume_argv,
+  ["pi", "--session", UNWRITTEN],
+  "the next report after pi writes the file names it",
+);
+console.log("ok - an unwritten session resumes as plain pi, then switches to its file");
+
+// Herdr keeps a resume command only while its agent runs. At logout macOS
+// kills pi about twenty seconds before Herdr saves, so Herdr's record is lost;
+// the ledger is what mash-pane-resume reads to reopen the pane. It holds the
+// command one argument per line, and a signal must not erase it.
+startSession(SESSION);
+await settle();
+assert.equal(readFileSync(LEDGER, "utf8"), `pi\n--session\n${SESSION}\n`, "ledger holds the resume argv");
+process.emit("SIGTERM");
+lastHandlers.session_shutdown({ type: "session_shutdown", reason: "quit" });
+assert.ok(existsSync(LEDGER), "a SIGTERM shutdown (logout) keeps the ledger entry");
+console.log("ok - the ledger records the resume command and survives a signalled shutdown");
+
+// A deliberate quit means the pane should come back as a shell.
+startSession(SESSION);
+await settle();
+assert.ok(existsSync(LEDGER));
+lastHandlers.session_shutdown({ type: "session_shutdown", reason: "quit" });
+assert.ok(!existsSync(LEDGER), "a deliberate quit removes the ledger entry");
+// Switching sessions inside pi is not a quit.
+startSession(SESSION);
+await settle();
+lastHandlers.session_shutdown({ type: "session_shutdown", reason: "resume" });
+assert.ok(existsSync(LEDGER), "switching sessions keeps the entry");
+console.log("ok - only a deliberate quit removes the ledger entry");
 
 // Herdr rejects a resume argv holding an apostrophe or control character, or
 // one that is not an absolute path. None may be reported then.

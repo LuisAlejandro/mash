@@ -1,0 +1,43 @@
+#!/bin/bash
+# Reopen the agent a pane was running when Herdr lost track of it.
+#
+# The pi extension (herdr-agent-state.ts) records each pane's resume command in
+# $XDG_STATE_HOME/mash/pane-resume/<pane>, because Herdr's own record does not
+# survive a logout: macOS kills every pi process directly, about twenty seconds
+# before Herdr is stopped, Herdr then treats the pane as a plain shell, and its
+# next save drops the command. The pane comes back as a shell, and that shell
+# runs this from its startup file before the prompt.
+#
+# Runs once per pane: the entry is renamed before pi starts, so a pi that exits
+# at once (a bad session, a missing binary) leaves a shell rather than a loop,
+# and pi records the entry again as soon as it reports. A deliberate quit in pi
+# removes the entry, so a pane the user left as a shell stays one.
+#
+# Prints nothing and returns 1 when there is nothing to resume, so the caller
+# can simply continue to its prompt.
+set -u
+
+pane="${HERDR_PANE_ID:-}"
+state="${XDG_STATE_HOME:-}"
+case "$pane" in *[!A-Za-z0-9:]* | "" | :* | *:) exit 1 ;; esac
+[ -n "$state" ] || exit 1
+entry="$state/mash/pane-resume/${pane/:/_}"
+[ -f "$entry" ] || exit 1
+
+taken="$entry.taken.$$"
+mv "$entry" "$taken" 2>/dev/null || exit 1
+argv=()
+while IFS= read -r arg || [ -n "$arg" ]; do
+	argv+=("$arg")
+done <"$taken"
+rm -f "$taken"
+
+# The command names a session file once pi has written one; a file that is gone
+# by now would make pi exit 1, so start a new conversation in its place.
+if [ "${#argv[@]}" -ge 3 ] && [ "${argv[1]}" = --session ] && [ ! -f "${argv[2]}" ]; then
+	argv=("${argv[0]}")
+fi
+# Only pi records here, and only as a plain command name -- the same rule Herdr
+# applies to a resume command.
+[ "${#argv[@]}" -ge 1 ] && [ "${argv[0]}" = pi ] || exit 1
+exec "${argv[@]}"
