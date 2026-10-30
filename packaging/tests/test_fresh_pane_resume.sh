@@ -32,7 +32,12 @@ unset HERDR_SESSION HERDR_PANE_ID HERDR_ENV HERDR_BIN_PATH
 export HERDR_SOCKET_PATH="$root/h.sock" HERDR_CLIENT_SOCKET_PATH="$root/c.sock"
 export HERDR_CONFIG_PATH="$root/config.toml" XDG_CONFIG_HOME="$root/cfg"
 mkdir -p "$root/bin" "$root/cfg" "$root/work"
-printf 'onboarding = false\n' >"$HERDR_CONFIG_PATH"
+# A plain shell, not the account's. Panes inherit terminal.default_shell, and
+# Mash seeds that as mash-shell, which rebuilds PATH from Mash's own directories
+# -- so the stand-in `fresh` below was shadowed by the real one and every pane
+# ran the editor instead. The suite then failed against a working fix.
+printf 'onboarding = false\n\n[terminal]\nshell_mode = "non_login"\ndefault_shell = "/bin/sh"\n' \
+	>"$HERDR_CONFIG_PATH"
 
 # The wrapper resolves by name on resume and ends in `exec fresh`. Put the real
 # wrapper on PATH, and a stand-in Fresh that stays running and is easy to spot.
@@ -57,7 +62,25 @@ restart() {
 	herdr server stop >/dev/null 2>&1 || true
 	sleep 1
 	start
-	sleep 3
+	# Resuming a pane spawns its command and waits for output, which takes longer
+	# on a loaded machine than any fixed sleep can promise. Wait for the panes
+	# themselves, so the suite reports a pane that never came back rather than one
+	# that was merely slow.
+	wait_for_fresh
+}
+
+# Give every pane up to ~20s to report Fresh. Returns as soon as all of them do.
+wait_for_fresh() {
+	local attempt pane ready
+	for attempt in $(seq 1 40); do
+		ready=1
+		for pane in $(panes); do
+			[ "$(running "$pane")" -ge 1 ] || ready=0
+		done
+		[ "$ready" = 1 ] && return 0
+		sleep 0.5
+	done
+	return 1
 }
 
 panes() { herdr pane list | grep -oE '"pane_id":"[^"]+"' | cut -d'"' -f4; }
@@ -71,7 +94,16 @@ herdr tab create --cwd "$root/work" >/dev/null
 for pane in $(panes); do
 	herdr pane run "$pane" 'herdr-fresh-pane .' >/dev/null
 done
-sleep 1
+# Prove the stand-in Fresh is what the panes actually run. Without this the
+# suite could pass against the real editor, or fail for a shadowed PATH rather
+# than a broken resume.
+if ! wait_for_fresh; then
+	echo 'FAIL: a pane did not start the stand-in Fresh before any restart' >&2
+	for pane in $(panes); do
+		printf '  %s: %s\n' "$pane" "$(herdr pane read "$pane" --source visible 2>/dev/null | tail -1)" >&2
+	done
+	exit 1
+fi
 
 failed=0
 for round in 1 2; do
