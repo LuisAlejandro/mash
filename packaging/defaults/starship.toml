@@ -10,6 +10,7 @@ format = """\
 $os\
 [](fg:gray bg:blue)\
 $directory\
+$custom\
 $git_branch\
 $git_status\
 """
@@ -100,6 +101,13 @@ style_root = "fg:red bg:dark"
 ssh_only = true
 format = "[@$hostname]($style) "
 style = "fg:yellow bg:dark"
+
+# The no_git module closes the directory block with the same angled end when
+# no Git segment follows, so the left prompt never ends flat outside a repo.
+[custom.no_git]
+when = "! git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+command = "true"
+format = "[\uE0B0](fg:blue)"
 
 [palettes.mash]
 near_black = "#080808"
