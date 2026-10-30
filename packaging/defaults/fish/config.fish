@@ -35,3 +35,11 @@ end
 if type -q starship
     starship init fish | source
 end
+
+# A pane Herdr restored as a shell while its agent was running reopens that
+# agent: macOS kills pi at logout before Herdr saves, so Herdr's own record of
+# the agent is lost. mash-pane-resume runs once per pane and returns when there
+# is nothing to reopen. See packaging/helpers/mash-pane-resume.
+if set -q HERDR_PANE_ID; and status is-interactive; and type -q mash-pane-resume
+    mash-pane-resume
+end

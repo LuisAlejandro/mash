@@ -42,3 +42,11 @@ PROMPT='%F{green}%~%f ❯ '
 if (( $+commands[starship] )); then
   eval "$(starship init zsh)"
 fi
+
+# A pane Herdr restored as a shell while its agent was running reopens that
+# agent: macOS kills pi at logout before Herdr saves, so Herdr's own record of
+# the agent is lost. mash-pane-resume runs once per pane and returns when there
+# is nothing to reopen. See packaging/helpers/mash-pane-resume.
+if [[ -n ${HERDR_PANE_ID:-} && -o interactive ]] && (( $+commands[mash-pane-resume] )); then
+  mash-pane-resume
+fi
