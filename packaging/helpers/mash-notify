@@ -35,7 +35,7 @@ while [ "$#" -gt 0 ]; do
     done
     # Focus first, then raise the window, so it comes forward already showing
     # the pane that changed instead of the one it was left on.
-    args+=(-execute "$env_prefix$click; open -b app.mash.ghostty >/dev/null 2>&1 || true")
+    args+=(-execute "$env_prefix$click; open -b app.mash >/dev/null 2>&1 || true")
     continue
   fi
   args+=("$1")

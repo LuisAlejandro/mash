@@ -52,18 +52,15 @@ failure() {
   exit 1
 }
 
-# Save Herdr's per-instance state before stopping panes. `server stop` is
-# cooperative; TERM for any remaining executable under this bundle is also a
-# graceful signal, never SIGKILL. No process from the bundle can remain when
-# the swap begins, including a plugin or another window's separate server.
+# Save Herdr's state before stopping panes. `server stop` is cooperative; TERM
+# for any remaining executable under this bundle is also a graceful signal,
+# never SIGKILL. No process from the bundle can remain when the swap begins,
+# including a plugin.
 herdr="$dest/Contents/Resources/bin/herdr"
-if [ -x "$herdr" ]; then
-  for socket in "$data/run/herdr.sock" "$data/run/"*/herdr.sock; do
-    [ -S "$socket" ] || continue
-    HERDR_SOCKET_PATH="$socket" "$herdr" server stop >/dev/null 2>&1 || true
-  done
+if [ -x "$herdr" ] && [ -S "$data/run/herdr.sock" ]; then
+  HERDR_SOCKET_PATH="$data/run/herdr.sock" "$herdr" server stop >/dev/null 2>&1 || true
 fi
-osascript -e 'tell application id "app.mash.ghostty" to quit' >/dev/null 2>&1 || true
+osascript -e 'tell application id "app.mash" to quit' >/dev/null 2>&1 || true
 
 # `comm` is the executable path, not argv: matching argv would catch an
 # unrelated editor or terminal whose command mentions Mash.app as a filename.

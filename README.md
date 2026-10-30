@@ -32,7 +32,7 @@ On first launch, the setup wizard configures your workspace. Mash keeps its data
 ## Source layout
 
 - `packaging/build.sh` assembles the macOS app; `packaging/build-linux.sh` assembles Linux packages. `packaging/build-common.sh` and `packaging/carry.sh` stage shared and platform-specific components.
-- `packaging/mash` and `packaging/linux/launcher` are the platform launchers. `packaging/launch-common.sh` seeds the data directory; `packaging/helpers/mash-seed-sync` refreshes only unchanged Mash-owned defaults.
+- `packaging/mash` and `packaging/linux/launcher` set up `~/.mash` and the environment before the terminal starts; on macOS the terminal is Mash.app's own executable and calls `packaging/mash` itself. `packaging/launch-common.sh` seeds the data directory; `packaging/helpers/mash-seed-sync` refreshes only unchanged Mash-owned defaults.
 - `packaging/wizard/` contains the first-launch wizard. `packaging/defaults/` contains the settings and themes shipped with the app.
 - `packaging/assets.json` pins the external components. `.github/workflows/` builds, verifies, and publishes releases.
 

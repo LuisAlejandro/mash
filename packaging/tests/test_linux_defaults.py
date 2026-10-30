@@ -115,10 +115,17 @@ class GhosttyLinuxConfigTest(unittest.TestCase):
     def test_window_title_is_mash(self):
         self.assertRegex(self.text, r'(?m)^title\s*=\s*"Mash Terminal"$')
 
-    def test_single_instance_is_disabled(self):
-        # Mash launches one process per window with -e so the isolated
-        # environment is never handed to an existing GTK instance.
-        self.assertRegex(self.text, r"(?m)^gtk-single-instance\s*=\s*false$")
+    def test_one_window_runs_as_a_single_instance(self):
+        # Mash has one window. A second launch reaches the running instance
+        # under Mash's own class and brings its window forward; the window's
+        # program comes from `command`, since the launcher no longer passes -e.
+        self.assertRegex(self.text, r"(?m)^gtk-single-instance\s*=\s*true$")
+        self.assertRegex(self.text, r"(?m)^quit-after-last-window-closed\s*=\s*true$")
+        self.assertRegex(self.text, r'(?m)^class\s*=\s*"app\.mash\.Mash"$')
+        self.assertRegex(self.text, r"(?m)^command\s*=\s*__MASH_HERDR_PANE__$")
+        launcher = (PACKAGING / "linux/launcher").read_text()
+        # The exec line is exactly this: -e would force a new process per launch.
+        self.assertRegex(launcher, r'(?m)^exec "\$res/bin/mash-terminal"$')
 
     def test_no_super_chords_are_released(self):
         # The macOS file unbinds Super chords because Command is Ghostty's

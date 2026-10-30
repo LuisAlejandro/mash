@@ -8,16 +8,15 @@ home="$(mash_real_home)"
 
 case "$(uname -s)" in
 Darwin)
-  # app.mash.ghostty.menutest is written by the menu-bar patcher while it works
-  # out the Ghostty menu strings. It is a separate domain from app.mash.ghostty,
-  # so it survives unless it is listed here.
-  for domain in app.mash app.mash.ghostty app.mash.ghostty.menutest app.mash.notifications; do
+  # app.mash is the app, terminal preferences included; app.mash.notifications
+  # is the notifier.
+  for domain in app.mash app.mash.notifications; do
     defaults delete "$domain" >/dev/null 2>&1 || true
     rm -f "$home/Library/Preferences/${domain}.plist"
     rm -rf "$home/Library/Saved Application State/${domain}.savedState"
     rm -rf "$home/Library/Caches/${domain}"
   done
-  echo "Removed Mash preferences for app.mash, app.mash.ghostty, app.mash.ghostty.menutest, and app.mash.notifications."
+  echo "Removed Mash preferences for app.mash and app.mash.notifications."
   ;;
 *)
   # On Linux the package owns the product files, so removal is the package

@@ -109,7 +109,6 @@ files=(
     packaging/lib.sh
     packaging/release.sh
     packaging/mash
-    packaging/mash-launcher.c
     packaging/mash-shell
     packaging/herdr-pane
     packaging/uninstall
@@ -120,7 +119,6 @@ files=(
     branding/dmg-background.png
     branding/build_dmg_background.py
     packaging/entitlements.plist
-    packaging/entitlements-ghostty.plist
     packaging/entitlements-python.plist
     packaging/check-nib-branding.py
     packaging/fresh-gpl-notice.txt

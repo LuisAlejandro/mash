@@ -1,90 +1,90 @@
 #!/bin/bash
-# Mash.app launch logic. Opens the bundled Ghostty and Herdr.
-# Does not export HOME and does not talk to the personal Herdr socket.
+# Mash.app's setup. Seeds ~/.mash, exports the isolated environment, then
+# becomes the terminal. Does not export HOME and does not talk to the personal
+# Herdr socket.
 #
-# Installed as Contents/Resources/bin/mash-launch, and started by the compiled
-# Contents/MacOS/mash (packaging/mash-launcher.c): only a Mach-O can carry the
-# microphone entitlement macOS requires of the app's own executable.
-set -euo pipefail
+# Installed as Contents/Resources/bin/mash-launch. Mash.app's executable is the
+# terminal itself (Contents/MacOS/mash-terminal), and every launch -- the Dock,
+# Finder, Spotlight, `open -a`, macOS reopening apps after a restart -- starts it
+# without this environment. Its first act is to exec this script, which execs
+# it straight back once the environment is ready. The pid never changes, so
+# macOS sees one app, and an app it relaunches is a complete Mash.
+set -uo pipefail
 # Resources/bin/mash-launch -> Contents.
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+terminal="$ROOT/MacOS/mash-terminal"
+args=("$@")
+
+# The terminal is the only thing that can tell the user a setup failed: this
+# script has no window, and launchd sends its output nowhere. So a failure hands
+# the terminal a reason instead of exiting, and it shows an alert. Exiting here
+# would make Mash vanish without a word.
+fail() {
+  printf 'setup failed: %s\n' "$1" >&2
+  export MASH_SETUP_ERROR="$1"
+  exec "$terminal" "${args[@]+"${args[@]}"}"
+}
+
 # shellcheck source=lib.sh
-source "$ROOT/Resources/bin/lib.sh"
+source "$ROOT/Resources/bin/lib.sh" || fail "Mash's setup library is missing from the app."
 # Shared optional-suite selection and Pi copy filter (also used on Linux).
 # shellcheck source=launch-common.sh
-source "$ROOT/Resources/bin/launch-common.sh"
+source "$ROOT/Resources/bin/launch-common.sh" || fail "Mash's setup library is missing from the app."
+# launch-common's helpers read the resource root from this global.
 res="$ROOT/Resources"
 
 home="$(mash_real_home)"
 d="$home/.mash"
-# 0700, not the umask's 0755: the data folder holds agent transcripts and logs
-# written by tools Mash does not own, and +x on this directory is what gates
-# every one of them. Runs on every launch so an existing 0755 install is fixed.
-mash_protect_data_dir "$d"
+# The record of the last setup, which is where the alert sends the user. Only
+# redirected when it can be opened: an unwritable ~/.mash is exactly the case
+# the record exists for, and a failed redirection would end this script.
+log="$d/local/state/mash-launch.log"
+if mkdir -p "$d/local/state" 2>/dev/null && : 2>/dev/null >"$log"; then
+  exec >"$log" 2>&1
+else
+  log="(not written: $d is not usable)"
+fi
+printf 'Mash setup %s, pid %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$$"
+
 # Nothing may grow inside the bundle after it is signed. The bundled
 # interpreter is on every pane's PATH, and Python writes __pycache__ next to
 # the module it imports -- the Hindsight daemon alone laid down 34 files in
 # Resources/python/lib that way, which breaks the seal and fails
 # `codesign --verify`. build.sh strips the bytecode the build itself creates;
-# this stops it coming back. Forwarded to the panes below, which is where the
-# long-lived interpreters actually run.
+# this stops it coming back. It has to come before the seeding below, which
+# runs the bundled Python itself: set after it, the first launch of a fresh
+# install wrote three encodings/ .pyc files and broke the seal.
 export PYTHONDONTWRITEBYTECODE=1
+
+# Each step has to stop the launch when it fails, so it runs as its own `if`
+# guard rather than under `set -e`: bash ignores `set -e` inside anything that
+# is itself the condition of an `||` or an `if`, which is the only way a
+# failure here can be turned into an alert instead of an exit.
+#
+# 0700, not the umask's 0755: the data folder holds agent transcripts and logs
+# written by tools Mash does not own, and +x on this directory is what gates
+# every one of them. Runs on every launch so an existing 0755 install is fixed.
+mash_protect_data_dir "$d" || fail "Mash could not prepare $d. Details: $log"
+[ -d "$d" ] && [ -w "$d" ] || fail "$d is not a writable folder. Details: $log"
 # Everything that fills ~/.mash lives in launch-common.sh, which the Linux
 # launcher calls the same way: directory layout, the ownership reconcile, the
 # generated configs, the seeded trees, the programming suite and Hindsight.
-# This launcher used to carry its own copy of that sequence, which drifted --
-# the shared one had gained the shell rc files, the Starship config, the tab
-# bar's version substitution and the notifier config, and none of them reached
-# macOS.
-mash_seed_all "$ROOT/Resources" "$d" "$home"
+mash_seed_all "$ROOT/Resources" "$d" "$home" || fail "Setting up $d failed. Details: $log"
+mash_force_updates "$home" || fail "Mash could not pin its update settings. Details: $log"
 
-mash_force_updates "$home"
 export MASH_BIN="$ROOT/Resources/bin:$ROOT/Resources/node/bin:$ROOT/Resources/python/bin:$d/bin"
+# mash_isolate exits the process on its refusals (a socket or Herdr config
+# outside ~/.mash). A subshell runs it first so a refusal becomes an alert; the
+# second call then sets the environment in this process.
+(mash_isolate "$home") || fail "Mash refused an environment outside $d. Details: $log"
 mash_isolate "$home"
 
 # After mash_isolate: the shared mash_link_plugins reads XDG_CONFIG_HOME and
 # XDG_DATA_HOME that it exports, and drops only the socket variables, so a
 # running Herdr is never disturbed.
-mash_link_plugins
+mash_link_plugins || printf 'plugin linking failed; continuing\n'
 
-# Belt and braces: `open --env` forwards only what is listed below, so these
-# cannot leak today. Unsetting them states the requirement locally, so adding
-# a socket line to that list cannot quietly pin every window to one instance.
-unset HERDR_SOCKET_PATH HERDR_CLIENT_SOCKET_PATH HERDR_SESSION MASH_INSTANCE
-
-# No instance is chosen here. The click opens a window, and the window's own
-# herdr-pane claims the first instance with no live window: the restored one on
-# the first click, a fresh empty one while that window is open. Choosing here
-# instead would race two quick clicks through one launcher each, and would also
-# miss windows opened from File > New Window, which run herdr-pane directly.
-#
-# MASH_INSTANCE is deliberately NOT forwarded below for the same reason: an
-# inherited value would pin every window of this launch to one instance.
-#
-# The two socket variables are not forwarded either. mash_isolate set them to
-# the default instance's paths for the setup above (plugin linking, the stale
-# socket sweep), and forwarding them would hand every window that instance
-# before its herdr-pane could claim a free one -- reinstating the clone. The
-# window recomputes both from the instance it claims; every other variable
-# below is instance-independent and is still forwarded.
-exec /usr/bin/open -na "$ROOT/Resources/Mash Terminal.app" \
-  --env "XDG_CONFIG_HOME=$XDG_CONFIG_HOME" \
-  --env "XDG_STATE_HOME=$XDG_STATE_HOME" \
-  --env "XDG_DATA_HOME=$XDG_DATA_HOME" \
-  --env "XDG_CACHE_HOME=$XDG_CACHE_HOME" \
-  --env "HERDR_CONFIG_PATH=$HERDR_CONFIG_PATH" \
-  --env "PI_CODING_AGENT_DIR=$PI_CODING_AGENT_DIR" \
-  --env "PI_HOME=$PI_HOME" \
-  --env "npm_config_cache=$npm_config_cache" \
-  --env "GIT_CONFIG_GLOBAL=$GIT_CONFIG_GLOBAL" \
-  --env "GH_CONFIG_DIR=$GH_CONFIG_DIR" \
-  --env "_ZO_DATA_DIR=$_ZO_DATA_DIR" \
-  --env "ZDOTDIR=$ZDOTDIR" \
-  --env "MASH_FRESH_CONFIG_DIR=$MASH_FRESH_CONFIG_DIR" \
-  --env "MASH_FRESH_DATA_DIR=$MASH_FRESH_DATA_DIR" \
-  --env "MASH_CONFIG_DIR=$MASH_CONFIG_DIR" \
-  --env "PLAYWRIGHT_BROWSERS_PATH=$PLAYWRIGHT_BROWSERS_PATH" \
-  --env "MASH_BIN=$MASH_BIN" \
-  --env "PYTHONDONTWRITEBYTECODE=$PYTHONDONTWRITEBYTECODE" \
-  --env "PATH=$PATH" \
-  --args -e "$ROOT/Resources/bin/herdr-pane"
+printf 'setup done; starting the terminal\n'
+# The terminal runs `command` from Mash's Ghostty config, which is herdr-pane,
+# and it is this process: the environment above is already its own.
+exec "$terminal" "${args[@]+"${args[@]}"}"

@@ -2,25 +2,35 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <!-- Mash is a developer tool that spawns shells, reads/writes the
-         filesystem, and talks to localhost services. No sandbox. -->
-    <key>com.apple.security.cs.allow-jit</key>
-    <true/>
-    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
-    <true/>
-    <key>com.apple.security.cs.disable-library-validation</key>
-    <true/>
-    <!-- Mash.app is the outermost bundle, so macOS evaluates every TCC prompt
-         raised by a program running inside it against this signature, not the
-         one Ghostty already carries in entitlements-ghostty.plist. Under the
-         hardened runtime a prompt with no matching entitlement is not merely
-         refused: tccd logs "Policy disallows prompt" and denies, which
-         CoreAudio answers with a silent stream rather than an error, so
-         recording appears to work and transcribes nothing. Observed with
-         pi-voice dictation: 100% digital silence on every device. -->
+    <!-- Mash.app's executable is the terminal, so this one signature is what
+         macOS evaluates every TCC prompt against: the terminal's own, and
+         those raised by every program running in a pane. Under the hardened
+         runtime a prompt with no matching entitlement is not merely refused:
+         tccd logs "Policy disallows prompt" and denies, which CoreAudio
+         answers with a silent stream rather than an error, so recording
+         appears to work and transcribes nothing. Observed with pi-voice
+         dictation: 100% digital silence on every device.
+
+         The rest are Ghostty's own, from the Developer ID signature of the
+         upstream Ghostty.app (release 1.3.1): the prompts it brokers for
+         programs running inside it.
+
+         No JIT or library-validation exceptions: the app executable runs no
+         interpreter. node keeps Node.js's own signature and the bundled Python
+         is signed with entitlements-python.plist. -->
     <key>com.apple.security.device.audio-input</key>
     <true/>
     <key>com.apple.security.device.camera</key>
+    <true/>
+    <key>com.apple.security.automation.apple-events</key>
+    <true/>
+    <key>com.apple.security.personal-information.addressbook</key>
+    <true/>
+    <key>com.apple.security.personal-information.calendars</key>
+    <true/>
+    <key>com.apple.security.personal-information.location</key>
+    <true/>
+    <key>com.apple.security.personal-information.photos-library</key>
     <true/>
 </dict>
 </plist>
