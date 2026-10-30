@@ -506,6 +506,15 @@ mash_build_ghostty() {
     echo "xcodebuild needs a full Xcode (xcode-select -s /Applications/Xcode.app)." >&2
     exit 1
   }
+  # An empty identifier would pass the check below -- `xcrun metal` honours a
+  # known toolchain and silently ignores an unrecognized one -- and then build
+  # the shaders with whatever the default is. Say so instead.
+  [ -n "$ghostty_metal_toolchain" ] || {
+    echo "Could not read the Metal Toolchain identifier from Xcode." >&2
+    echo "Install it: sudo xcodebuild -downloadComponent MetalToolchain" >&2
+    echo "Or set MASH_METAL_TOOLCHAIN to the id from: xcodebuild -showComponent MetalToolchain" >&2
+    exit 1
+  }
   TOOLCHAINS="$ghostty_metal_toolchain" xcrun metal --version >/dev/null 2>&1 || {
     echo "Metal Toolchain is unavailable." >&2
     echo "Install it: sudo xcodebuild -downloadComponent MetalToolchain" >&2
