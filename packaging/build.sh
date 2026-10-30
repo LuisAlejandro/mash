@@ -247,10 +247,13 @@ ghostty_fork="${MASH_GHOSTTY_SRC:-$home/Development/ghostty}"
 ghostty_zig_version="0.16.0"
 ghostty_zig_url="https://ziglang.org/download/0.16.0/zig-aarch64-macos-0.16.0.tar.xz"
 zig_bin="/Volumes/Documents/Software/tools/zig-$ghostty_zig_version/zig"
-# Overridable because the identifier is Xcode-version-specific: CI reads it
-# back from `xcodebuild -showComponent MetalToolchain` on its own runner rather
-# than trusting this one.
-ghostty_metal_toolchain="${MASH_METAL_TOOLCHAIN:-com.apple.dt.toolchain.Metal.32023.921.5}"
+# The identifier is Xcode-version-specific, so it is read back from the Xcode
+# in use rather than hardcoded: an Xcode update changes it, and `xcrun metal`
+# fails for a known-but-uninstalled toolchain while silently ignoring an
+# unknown one -- so a stale pin fails the build with "Metal Toolchain is
+# unavailable" even when the component is installed. CI reads it back the same
+# way on its own runner.
+ghostty_metal_toolchain="${MASH_METAL_TOOLCHAIN:-$(xcodebuild -showComponent MetalToolchain 2>/dev/null | sed -n 's/^Toolchain Identifier: //p')}"
 # Before building: fail if a rebase brought back a Ghostty feature Mash
 # removes. See mash_ghostty_trim_check for why each check exists.
 mash_ghostty_trim_check "$ghostty_fork" || {
