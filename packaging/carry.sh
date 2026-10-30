@@ -747,7 +747,12 @@ mash_install_fonts() {
 mash_link_plugins() {
   local dest="$1"
   local home="$2"
-  local sock="$dest/Contents/Resources/.plugin-link"
+  # A short scratch directory, not one inside the bundle: `herdr plugin link`
+  # opens a socket under XDG_STATE_HOME, and macOS caps a socket path at 104
+  # bytes. Inside dist/Mash.app/Contents/Resources that cap was 3 bytes away in
+  # the main checkout, and a checkout with a longer path failed the build.
+  local sock
+  sock="$(mktemp -d /tmp/mash-link.XXXXXX)"
   local throwaway="$sock/config"
   local listed="$throwaway/herdr/plugins.json"
   local dir
