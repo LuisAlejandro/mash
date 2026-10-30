@@ -28,6 +28,21 @@ class MacOSUpdatePackageTest(unittest.TestCase):
         info_plist = info_plist.split("\nEOF", 1)[0]
         self.assertIn("NSMicrophoneUsageDescription", info_plist)
 
+    def test_macos_build_points_pi_at_the_mash_project_dir(self):
+        """The macOS build installs Pi itself, not through mash_stage_runtimes.
+
+        mash_set_pi_project_dir is what makes Pi read a project's .mash/ instead
+        of .pi/, and only the shared runtime stager called it, so the Mac app
+        silently kept reading .pi/. It must run right after the Pi install, and
+        before the runtime check, so a Pi that ignores the key fails the build.
+        """
+        build = (ROOT / "packaging/build.sh").read_text()
+        install = build.index('--prefix "$app/Contents/Resources/node" \\\n  $pi_packages')
+        set_dir = build.index('mash_set_pi_project_dir "$app/Contents/Resources"')
+        runtime = build.index('"$root/packaging/tests/test_pi_runtime.sh" "$app/Contents/Resources"')
+        self.assertLess(install, set_dir)
+        self.assertLess(set_dir, runtime)
+
     def test_macos_launcher_stages_everything_it_sources(self):
         build = (ROOT / "packaging/build.sh").read_text()
         launcher = (ROOT / "packaging/mash").read_text()

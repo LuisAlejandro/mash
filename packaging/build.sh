@@ -315,6 +315,10 @@ env HOME="$work/home" \
   "$app/Contents/Resources/node/bin/npm" install --global \
   --prefix "$app/Contents/Resources/node" \
   $pi_packages
+# Pi reads a project's .mash/ instead of .pi/. This install does not go through
+# mash_stage_runtimes, so the step has to be called here too; it fails the build
+# if the installed Pi no longer honors the setting.
+mash_set_pi_project_dir "$app/Contents/Resources" || exit 1
 "$root/packaging/tests/test_pi_runtime.sh" "$app/Contents/Resources"
 
 node_real="$app/Contents/Resources/node/bin/node"
