@@ -33,10 +33,6 @@ theme = Monokai Cursor
 # the updater stops them before swapping the bundle.
 quit-after-last-window-closed = true
 
-# Herdr restores the workspaces, tabs and panes; macOS window restoration would
-# only add a second, empty window beside the one a relaunch opens.
-window-save-state = never
-
 # Why these unbinds stay after Mash removed the features outright: a Ghostty
 # binding that performs nothing still consumes its chord unless it carries the
 # `performable:` prefix. The unbind is therefore what frees the key for Herdr
