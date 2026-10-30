@@ -70,7 +70,9 @@ dispatched by `scripts/release.sh`, not by the publish event.
 `push.yml` gates every push to a long-lived branch, including the `release/<version>`
 branch `release.sh` publishes. It is the wait target (`RELEASE_CI_WORKFLOW`
 defaults to its filename), so renaming or removing it makes `release.sh` poll for
-45 minutes and then fail. There is no `pr.yml`: pull requests are not checked yet.
+45 minutes and then fail. `pr.yml` checks pull requests into `develop` with the same
+preflight gate and the same macOS and Linux test matrix. The ruleset requires a check
+named `Tests`, which an aggregate job reports only when every platform passed.
 
 ### Required secrets
 
@@ -169,6 +171,9 @@ The DMG pipeline runs in CI as above. `packaging/release.sh` can also be run by
 hand on a maintainer machine with Xcode, the Metal toolchain, the Ghostty fork,
 Zig and Apple credentials in `.env`. `packaging/build.sh` assembles `dist/Mash.app`
 alone, without signing or notarizing.
+
+Before tagging, test that DMG on a real Mac with
+`packaging/tests/macos-release-checklist.md`.
 
 ## One-time GitHub setup
 
