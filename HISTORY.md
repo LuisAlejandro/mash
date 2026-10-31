@@ -1,6 +1,141 @@
 # Changelog
 
 
+## 0.2.0 (2026-10-31)
+
+### Added
+
+* Bundle viu and latexindent, and pin the new terminal build. [Luis Alejandro Martinez Faneyth]
+
+* Offer true-native shortcuts at first launch. [Luis Alejandro Martinez Faneyth]
+
+* Read per-project Pi configuration from .mash. [Luis Alejandro Martínez Faneyth]
+
+* Show Mash's version at the edge of Herdr's tab bar. [Luis Alejandro Martínez Faneyth]
+
+* Document what Mash is and how the repo is laid out. [Luis Alejandro Martínez Faneyth]
+
+* Starship, completion and autosuggestions in panes. [Luis Alejandro Martínez Faneyth]
+
+* First-launch choice between Mash and Native shortcuts. [Luis Alejandro Martínez Faneyth]
+
+* Gate Linux keybindings against GNOME's grabs. [Luis Alejandro Martínez Faneyth]
+
+* Choose optional skill suites in the first-launch wizard. [Luis Alejandro Martínez Faneyth]
+
+* Shell pane under Fresh with ctrl+shift+backtick. [Luis Alejandro Martínez Faneyth]
+
+* Verify and atomically apply macOS updates. [Luis Alejandro Martínez Faneyth]
+
+* Announce newer Linux releases once per version. [Luis Alejandro Martínez Faneyth]
+
+* Herdr commands in the Mash Terminal menus. [Luis Alejandro Martínez Faneyth]
+
+
+### Changed
+
+* Give Mash one window. [Luis Alejandro Martínez Faneyth]
+
+* Show files only in Mash's own viewers. [Luis Alejandro Martínez Faneyth]
+
+* Rework the seeded shell prompt. [Luis Alejandro Martínez Faneyth]
+
+* Build the GTK terminal from the fork, unpatched. [Luis Alejandro Martínez Faneyth]
+
+* Refresh Mash branding and contributor checks. [Luis Alejandro Martínez Faneyth]
+
+* Drop implicit legacy state recovery. [Luis Alejandro Martínez Faneyth]
+
+* Give Mash's skills Mash's own tooling paths. [Luis Alejandro Martínez Faneyth]
+
+* Pin Ghostty to the fork revision with Mash's own commands. [Luis Alejandro Martínez Faneyth]
+
+* Guard the second Ghostty trim in Mash builds. [Luis Alejandro Martínez Faneyth]
+
+
+### Fixed
+
+* Reopen agent panes after a restart. [Luis Alejandro Martínez Faneyth]
+
+* Keep Mash's signature intact on its first launch. [Luis Alejandro Martínez Faneyth]
+
+* Open Mash from the Dock again. [Luis Alejandro Martínez Faneyth]
+
+* Link plugins through a short socket path when building. [Luis Alejandro Martínez Faneyth]
+
+* Reopen Mash after a restart. [Luis Alejandro Martínez Faneyth]
+
+* Stop prompt timeout warnings after a restart. [Luis Alejandro Martínez Faneyth]
+
+* Read the Metal toolchain from Xcode instead of pinning it. [Luis Alejandro Martínez Faneyth]
+
+* Wait for the update handoff instead of guessing at it. [Luis Alejandro Martínez Faneyth]
+
+* Update pi-ask-user to 0.17.0. [Luis Alejandro Martínez Faneyth]
+
+* Close the prompt's directory block outside a repository. [Luis Alejandro Martínez Faneyth]
+
+* Make the Fresh-pane resume suite test what it claims. [Luis Alejandro Martínez Faneyth]
+
+* Let dictation reach the microphone on macOS. [Luis Alejandro Martínez Faneyth]
+
+* Read per-project Pi configuration from .mash on macOS. [Luis Alejandro Martínez Faneyth]
+
+* Restore every dev tab's Fresh pane after a restart. [Luis Alejandro Martinez Faneyth]
+
+* Fit the Linux default font and find the wizard's own tools. [Luis Alejandro Martinez Faneyth]
+
+* Install the Wayland clipboard helper on Linux. [Luis Alejandro Martinez Faneyth]
+
+* Make the suite pass on Linux, and gate PRs on it. [Luis Alejandro Martínez Faneyth]
+
+* Show Mash's name and icon on notifications. [Luis Alejandro Martínez Faneyth]
+
+* Ship the launcher helper the launcher sources. [Luis Alejandro Martínez Faneyth]
+
+* Let dictation reach the microphone. [Luis Alejandro Martínez Faneyth]
+
+* Install tools with macOS Bash. [Luis Alejandro Martínez Faneyth]
+
+* Finish Linux setup and give the terminal the full window. [Luis Alejandro Martínez Faneyth]
+
+* Align pane helpers with Mash menus. [Luis Alejandro Martínez Faneyth]
+
+* Keep the data folder out of other accounts' reach. [Luis Alejandro Martínez Faneyth]
+
+* Keep the Linux smoke test portable and drop dead manifest keys. [Luis Alejandro Martínez Faneyth]
+
+* Pin every workflow action by commit, not by tag. [Luis Alejandro Martínez Faneyth]
+
+* Brand Mash notifications and suggest review tabs. [Luis Alejandro Martínez Faneyth]
+
+* Refuse a host pi when the bundled one is missing. [Luis Alejandro Martínez Faneyth]
+
+* Drop the branding hunk for the inspector Mash removed. [Luis Alejandro Martínez Faneyth]
+
+* Move Linux pane focus off the chords GNOME already owns. [Luis Alejandro Martínez Faneyth]
+
+* Connect GitHub MCP after Mash gh sign-in. [Luis Alejandro Martínez Faneyth]
+
+* Give the macOS update popup room to show progress. [Luis Alejandro Martínez Faneyth]
+
+* Wire macOS updates into shipped builds. [Luis Alejandro Martínez Faneyth]
+
+* Give every Linux Mash shortcut a single command. [Luis Alejandro Martínez Faneyth]
+
+
+### Removed
+
+* Drop OpenCode support from the bundled plugins. [Luis Alejandro Martinez Faneyth]
+
+* Stop shipping the Design Skills with Mash. [Luis Alejandro Martínez Faneyth]
+
+
+### Other
+
+* Fix zsh completion on the Ubuntu CI runners. [Luis Alejandro Martínez Faneyth]
+
+
 ## 0.1.1 (2026-10-26)
 
 ### Added
@@ -54,6 +189,8 @@
 
 ### Changed
 
+* Pin the Ghostty fork at e5c21f3. [Luis Alejandro Martínez Faneyth]
+
 * Pin the Ghostty fork at 7b8e1f8. [Luis Alejandro Martínez Faneyth]
 
 * Remove Ghostty tabs, splits and palette from Mash Terminal. [Luis Alejandro Martínez Faneyth]
@@ -78,6 +215,12 @@
 
 
 ### Fixed
+
+* Install Weston for Linux Wayland smoke tests. [Luis Alejandro Martínez Faneyth]
+
+* Build pinned Ghostty releases with CI metadata. [Luis Alejandro Martínez Faneyth]
+
+* Check the same Ghostty fork the build compiles. [Luis Alejandro Martínez Faneyth]
 
 * Make the Linux test lane pass on ordinary Ubuntu runners. [Luis Alejandro Martínez Faneyth]
 
