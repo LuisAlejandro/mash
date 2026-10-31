@@ -1,6 +1,15 @@
 # Changelog
 
 
+## 0.2.1 (2026-10-31)
+
+### Fixed
+
+* Finish macOS updates instead of closing Mash. [Luis Alejandro Martínez Faneyth]
+
+* Hide Fresh shell startup in dev tabs. [Luis Alejandro Martínez Faneyth]
+
+
 ## 0.2.0 (2026-10-31)
 
 ### Added
