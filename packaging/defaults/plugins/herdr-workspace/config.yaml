@@ -119,6 +119,10 @@ profiles:
             name: pi
             agent: pi
             kind: pi
+            # Focus pi once it is ready, as the dev profile does. Without it
+            # the new workspace leaves the caret outside the only pane there
+            # is, so the first keystrokes go nowhere until the user clicks it.
+            focus: true
 
   - id: shell
     name: Shell
