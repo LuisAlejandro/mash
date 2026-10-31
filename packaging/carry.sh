@@ -1246,7 +1246,7 @@ EOF
 #
 # Hindsight resolves all of its state through Path.home(), so every hindsight
 # command below runs with HOME set to Mash's data folder. That is what keeps
-# ~/.hindsight and ~/.pg0 inside ~/.mash instead of the real home, and it is
+# its state in ~/.mash/.hindsight and ~/.mash/.pg0 instead of the real home, and it is
 # also what makes the daemon inherit the same tree: it is spawned with
 # os.environ.copy(). Nothing outside this script sees a changed HOME.
 exec 0</dev/null
@@ -1346,7 +1346,9 @@ if HINDSIGHT_EMBED_DAEMON_STARTUP_TIMEOUT="${HINDSIGHT_EMBED_DAEMON_STARTUP_TIME
   "$EMBED" daemon start >>"$HOOK_LOG" 2>&1; then
   hook_log "daemon started (pin ${pin}, port $(daemon_port))"
 else
-  hook_log "daemon start failed (pin ${pin}); see ~/.hindsight/daemon.log"
+  # HOME is the data folder here, so ~/.hindsight would name the user's own
+  # home in the message they read -- where there is no log.
+  hook_log "daemon start failed (pin ${pin}); see ~/.mash/.hindsight/daemon.log"
 fi
 
 exit 0
