@@ -23,10 +23,19 @@ run() {
   fi
 }
 
-# Rust: the wizard and its page logic.
-command -v cargo >/dev/null 2>&1 &&
-  run "wizard (cargo test)" cargo test --locked --manifest-path packaging/wizard/Cargo.toml --quiet ||
-  skipped+=("wizard: cargo not installed")
+# Rust: the wizard and its page logic, and the two plugins Mash builds from
+# its own source. The plugins' suites existed but nothing ran them, so a seeded
+# config the plugin could not load -- or one that left pi unfocused -- passed
+# every gate.
+if command -v cargo >/dev/null 2>&1; then
+  run "wizard (cargo test)" cargo test --locked --manifest-path packaging/wizard/Cargo.toml --quiet
+  for crate in herdr-workspace telescope; do
+    run "$crate plugin (cargo test)" \
+      cargo test --locked --manifest-path "packaging/plugins/$crate/Cargo.toml" --quiet
+  done
+else
+  skipped+=("rust suites: cargo not installed")
+fi
 
 # Python: packaging contracts, templates and helper behaviour.
 while IFS= read -r test_file; do

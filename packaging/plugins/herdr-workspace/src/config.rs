@@ -418,6 +418,26 @@ profiles:
         assert!(pair_agent.command.is_none());
     }
 
+    /// The profiles Mash seeds must load with this plugin's own parser, and
+    /// every pi pane must take focus. A pane that does not leaves the new
+    /// workspace's caret outside pi, and the first keystrokes go nowhere.
+    #[test]
+    fn mash_seeded_profiles_parse_and_focus_every_pi_pane() {
+        let cfg = parse_yaml(include_str!(
+            "../../../defaults/plugins/herdr-workspace/config.yaml"
+        ))
+        .expect("Mash's seeded herdr-workspace config");
+        let ids: Vec<_> = cfg.profiles.iter().map(|p| p.id.as_str()).collect();
+        assert_eq!(ids, ["dev", "pi", "shell"]);
+        for profile in &cfg.profiles {
+            for pane in profile.tabs.iter().flat_map(|t| t.panes.iter()) {
+                if pane.agent.as_deref() == Some("pi") {
+                    assert!(pane.focus, "profile {} leaves pi unfocused", profile.id);
+                }
+            }
+        }
+    }
+
     #[test]
     fn team_fixture_parses_seven_agents() {
         let cfg = parse_yaml(include_str!("../tests/fixtures/team.yaml")).expect("team yaml");
