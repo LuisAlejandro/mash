@@ -136,6 +136,49 @@ printf '%s\n' "$candidate" >"$d/local/state/update-pending"
 # Nothing here may be cleaned up on exit any more: the helper owns the work
 # directory now, and this process is about to be killed with the rest of Mash.
 trap - EXIT
-nohup "$apply" --app "$staged" --dest "$app" --data "$d" --work "$work" --version "$candidate" \
-  </dev/null >/dev/null 2>&1 &
+
+# The helper runs as a launchd job, not as a child of this process. This
+# process runs in a Herdr pane, and the helper's first step is to stop Herdr --
+# which ends every process a pane started, whatever it does about it: nohup,
+# a new session and an ignored SIGHUP all died with the server (Herdr follows
+# the hangup with SIGTERM). So 0.2.0's update closed Mash and then died before
+# swapping anything, and nothing reopened it. A job launchd owns is outside
+# that tree. The helper removes the job when it finishes.
+job="$work/app.mash.update.plist"
+if ! python3 - "$job" "$apply" "$staged" "$app" "$d" "$work" "$candidate" <<'PY' 2>/dev/null; then
+import plistlib
+import sys
+
+job, apply, staged, app, data, work, version = sys.argv[1:]
+plistlib.dump(
+    {
+        "Label": "app.mash.update",
+        "ProgramArguments": [
+            apply, "--app", staged, "--dest", app, "--data", data,
+            "--work", work, "--version", version,
+        ],
+        "RunAtLoad": True,
+        "KeepAlive": False,
+        # The helper stops Herdr and quits Mash; its own children must not be
+        # reaped with the job's process group when it exits.
+        "AbandonProcessGroup": True,
+        "StandardOutPath": f"{data}/local/state/mash-update.log",
+        "StandardErrorPath": f"{data}/local/state/mash-update.log",
+    },
+    open(job, "wb"),
+)
+PY
+  rm -f "$d/local/state/update-pending"
+  trap cleanup EXIT
+  fail "Could not prepare the update helper. Mash was not changed."
+fi
+uid="$(id -u)"
+# A job left by an attempt that died is removed first: bootstrap refuses a label
+# that is already loaded.
+launchctl bootout "gui/$uid/app.mash.update" >/dev/null 2>&1 || true
+if ! launchctl bootstrap "gui/$uid" "$job" >/dev/null 2>&1; then
+  rm -f "$d/local/state/update-pending"
+  trap cleanup EXIT
+  fail "Could not start the update helper. Mash was not changed."
+fi
 exit 0

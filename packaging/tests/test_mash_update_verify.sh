@@ -39,9 +39,13 @@ calls="$tmp/calls"
 
 tools="$tmp/tools"
 mkdir -p "$tools"
-for t in bash cat mkdir rm mv rmdir sed head tail grep awk ls dirname basename chmod sleep mktemp cp; do
+for t in bash cat mkdir rm mv rmdir sed head tail grep awk ls dirname basename chmod sleep mktemp cp id; do
   ln -s "$(command -v "$t")" "$tools/$t"
 done
+# The job plist is written with Python. Link the system interpreter, not
+# whatever python3 is first on PATH: Mash's own bin/python3 is a wrapper that
+# finds its interpreter relative to itself, which a symlink breaks.
+ln -s /usr/bin/python3 "$tools/python3"
 
 fake="$tmp/fake"
 mkdir -p "$fake"
@@ -84,9 +88,21 @@ stub spctl 'echo "spctl $*" >>"$CALLS"; exit "${FAKE_SPCTL_RC:-0}"'
 stub xattr 'echo "xattr $*" >>"$CALLS"'
 stub ditto 'echo "ditto $*" >>"$CALLS"
 mkdir -p "$2" && cp -R "$1/." "$2/" 2>/dev/null; exit 0'
-stub nohup 'echo "apply $*" >>"$CALLS"
-prev=""
-for a in "$@"; do [ "$prev" = --work ] && rm -rf "$a"; prev="$a"; done'
+# The swap helper is started as a launchd job. The stub decodes the job's
+# plist and logs the command it would run, then plays the helper's part of
+# owning the work directory.
+stub launchctl 'case "$1" in
+bootout) echo "launchctl bootout $2" >>"$CALLS"; exit 0 ;;
+bootstrap)
+  [ "${FAKE_BOOTSTRAP_RC:-0}" = 0 ] || exit "$FAKE_BOOTSTRAP_RC"
+  echo "launchctl bootstrap $2" >>"$CALLS"
+  args="$(/usr/bin/python3 -c "import plistlib,sys;d=plistlib.load(open(sys.argv[1],\"rb\"));print(d[\"Label\"], d.get(\"AbandonProcessGroup\"), \" \".join(d[\"ProgramArguments\"][1:]))" "$3")"
+  echo "job $args" >>"$CALLS"
+  echo "apply ${args#* * }" >>"$CALLS"
+  prev=""
+  for a in ${args#* * }; do [ "$prev" = --work ] && rm -rf "$a"; prev="$a"; done
+  ;;
+esac'
 stub pgrep 'exit 1'
 
 running="$tmp/Applications/Mash.app"
@@ -107,8 +123,8 @@ run() { # run [VAR=value...] -- one verify+handoff, answering the confirmation
   printf '%s\n' "$answer" | env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" \
     FAKE_MNT="$tmp/mnt" FAKE_RUNNING_APP="$running" TMPDIR="$tmp" "$@" \
     bash "$helper" "$running" 0.2.0 0.1.1 "$data" >"$tmp/out" 2>"$tmp/err"
-  # The helper hands off with `nohup ... &` and exits, so the stub logs after
-  # the helper returns. A fixed sleep had to guess how long that takes: too
+  # The helper hands off to a launchd job and exits. The real job runs after
+  # the helper returns, so the suite must not assume the handoff is synchronous. A fixed sleep had to guess how long that takes: too
   # short and the happy path saw no handoff, and the late write then landed in
   # the *next* scenario's log and failed that one too.
   #
@@ -116,7 +132,9 @@ run() { # run [VAR=value...] -- one verify+handoff, answering the confirmation
   # whether a write is still coming. A refusal never prints it and must not hand
   # off at all, so a short grace period is enough to let a stray write surface
   # here rather than inside the next scenario.
-  if grep -q 'Installing' "$tmp/out"; then
+  # A helper that announced the handoff and then failed to start the job says
+  # so on its last line, and will never hand off.
+  if grep -q 'Installing' "$tmp/out" && ! grep -q 'Could not' "$tmp/out"; then
     wait_for_apply
   else
     sleep 0.3
@@ -149,6 +167,27 @@ check "the swap helper is started" test "$(applied)" = 1
 check "pending version is recorded for crash recovery" grep -qx 0.2.0 "$data/local/state/update-pending"
 check "the image is detached" grep -q 'hdiutil detach' "$calls"
 check "the record still holds the version" grep -qx 0.2.0 "$data/local/state/update-notice"
+
+# The swap helper must outlive Herdr. It runs from a Herdr pane, and its first
+# step stops Herdr, which ends every process a pane started -- nohup included.
+# 0.2.0 started it with nohup: Mash closed, the helper died with Herdr, and
+# nothing was swapped or reopened. It is a launchd job now.
+check "the swap helper is a launchd job, not a child of the pane" \
+  grep -q '^launchctl bootstrap gui/' "$calls"
+check "the job is labelled for the updater" grep -q '^job app.mash.update ' "$calls"
+check "the job abandons its process group" grep -q '^job app.mash.update True ' "$calls"
+check "a stale job from a dead attempt is removed first" \
+  grep -q '^launchctl bootout gui/[0-9]*/app.mash.update' "$calls"
+
+# A helper that cannot be started must leave Mash exactly as it was, and
+# eligible again: it is the same failure as any refusal before the swap.
+reset
+run FAKE_BOOTSTRAP_RC=5
+check "a refused job never reaches the swap" test "$(applied)" = 0
+check "a refused job clears the pending marker" test ! -e "$data/local/state/update-pending"
+check "a refused job is eligible again" grep -qx 0.2.0 "$data/local/state/update-retry"
+check "a refused job explains itself" grep -q 'Could not start the update helper' "$tmp/out"
+check "a refused job leaves the app alone" grep -qx old "$running/Contents/marker"
 
 # --- a wrong Team ID is the refusal that matters --------------------------------
 reset

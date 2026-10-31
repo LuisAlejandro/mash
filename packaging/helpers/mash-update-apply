@@ -38,6 +38,12 @@ cleanup() {
   # partially copied new one. The destination is never removed by cleanup.
   [ -n "$sibling" ] && rm -rf "$sibling"
   [ -n "$work" ] && rm -rf "$work"
+  # mash-update-verify starts this as a launchd job, so it lives outside the
+  # Herdr pane it was confirmed in. Remove the job, or its label would stay
+  # loaded and refuse the next update. Detached: booting out a job ends its
+  # processes, and this is one of them, so it must be the very last step.
+  [ -n "${XPC_SERVICE_NAME:-}" ] && [ "$XPC_SERVICE_NAME" = app.mash.update ] &&
+    { (sleep 1; launchctl bootout "gui/$(id -u)/app.mash.update") </dev/null >/dev/null 2>&1 & }
 }
 trap cleanup EXIT
 
