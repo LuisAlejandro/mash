@@ -4,7 +4,9 @@
 # its resume command) and a tracked pi agent on the right. Focus ends on pi,
 # once pi is ready -- see the focus notes below.
 #
-#   herdr-dev-tab-fill <left-pane-id>
+#   herdr-dev-tab-fill <left-pane-id> [--fresh-started]
+# --fresh-started is for scripted tabs whose root pane was created with
+# MASH_DEV_TAB_FRESH=1; the "+" event hook still needs pane run.
 #
 # Prints nothing; exits non-zero only if the split itself failed.
 #
@@ -55,7 +57,9 @@ right="$("$herdr" pane split "$left" --direction right --ratio "$ratio" \
 # visibility field), so this argument is the only lever. A directory that does
 # have a persisted workspace still honours its recorded visibility, so a
 # deliberately-closed explorer stays closed.
-"$herdr" pane run "$left" 'herdr-fresh-pane .'
+if [ "${2:-}" != --fresh-started ]; then
+	"$herdr" pane run "$left" 'herdr-fresh-pane .'
+fi
 # Start pi as a tracked agent (@see herdr-agent-start: that helper owns the
 # tracked-vs-untracked rationale, including why the command is an absolute
 # path). It prints the agent name only when tracking worked.

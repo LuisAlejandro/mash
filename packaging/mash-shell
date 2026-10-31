@@ -16,6 +16,14 @@ home="$(mash_real_home)"
 export MASH_BIN="${MASH_BIN:+$MASH_BIN:}$here:$home/.mash/bin"
 mash_isolate "$home" pane
 export MASH_PANE=1
+# A scripted dev tab can start Fresh before the interactive shell initializes
+# Starship and prints a prompt. Keep the wrapper: it sets right-click routing
+# and reports the resume command. On exit (or launch failure), open the usual
+# shell; unset the one-shot flag so it cannot leak into that shell.
+if [ "${MASH_DEV_TAB_FRESH:-}" = 1 ]; then
+  unset MASH_DEV_TAB_FRESH
+  herdr-fresh-pane . || true
+fi
 # MASH_USER_SHELL stands in for the account's shell in tests, so the branch
 # below can be exercised without a pty or a second account.
 user_shell="${MASH_USER_SHELL:-$(mash_real_shell)}"
