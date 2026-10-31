@@ -20,11 +20,12 @@ here="$(dirname "$0")"
 # "4 · pi › π - app".
 created="$("$herdr" tab create --label "herdr-tab-launcher-dev" \
 	${HERDR_ACTIVE_WORKSPACE_ID:+--workspace "$HERDR_ACTIVE_WORKSPACE_ID"} \
-	--cwd "$cwd" --focus)"
+	--cwd "$cwd" --env MASH_DEV_TAB_FRESH=1 --focus)"
 tab="$(printf '%s' "$created" | "$here/herdr-json" tab_id)"
 left="$(printf '%s' "$created" | "$here/herdr-json" pane_id)"
 
-# Build the two-pane layout (see the note above).
-"$here/herdr-dev-tab-fill" "$left"
+# Fresh is already starting in the root pane; only the native "+" hook
+# needs to type its command into an existing shell.
+"$here/herdr-dev-tab-fill" "$left" --fresh-started
 
 [ -n "$tab" ] && "$herdr" tab rename "$tab" "" || true

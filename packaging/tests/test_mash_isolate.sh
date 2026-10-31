@@ -338,7 +338,7 @@ done
 run_pane_shell() {
 	env -i HOME="$home" PATH="/usr/bin:/bin" \
 		MASH_BIN="$tmp/app/bin:$tmp/app/node/bin:$home/.mash/bin" \
-		MASH_USER_SHELL="$1" \
+		MASH_USER_SHELL="$1" MASH_DEV_TAB_FRESH="${3:-}" \
 		bash "${2:-$shell_root/mash-shell}"
 }
 
@@ -373,6 +373,28 @@ cp "$shell_root/mash-shell" "$shell_root/lib.sh" "$tmp/app/bin/"
 cp "$shell_root/defaults/bash/bashrc" "$tmp/app/config/bash/bashrc"
 bash_shell="$(run_pane_shell "$stub_dir/bash" "$tmp/app/bin/mash-shell")"
 assert_value "$bash_shell" ARGS "--rcfile $tmp/app/config/bash/bashrc"
+
+# Tagged dev tabs launch Fresh before any shell startup/prompt. Fresh runs under
+# Mash's isolated PATH, receives the directory argument, and the shell still
+# starts when it exits. A normal pane must not run Fresh at all.
+cat >"$tmp/app/bin/herdr-fresh-pane" <<'EOF'
+#!/bin/sh
+printf 'FRESH_ARGS=%s\n' "$*"
+printf 'FRESH_FLAG=%s\n' "${MASH_DEV_TAB_FRESH:-unset}"
+EOF
+chmod +x "$tmp/app/bin/herdr-fresh-pane"
+early_shell="$(run_pane_shell "$stub_dir/bash" "$tmp/app/bin/mash-shell" 1)"
+[ "$(printf '%s\n' "$early_shell" | head -1)" = 'FRESH_ARGS=.' ] || {
+	printf 'Fresh did not start before the shell: %s\n' "$early_shell" >&2
+	exit 1
+}
+assert_value "$early_shell" FRESH_FLAG unset
+assert_value "$early_shell" ARGS "--rcfile $tmp/app/config/bash/bashrc"
+[ "$(printf '%s\n' "$early_shell" | grep -c '^FRESH_ARGS=')" = 1 ] || exit 1
+if printf '%s\n' "$bash_shell" | grep -q '^FRESH_ARGS='; then
+	printf 'ordinary shell launched Fresh\n' >&2
+	exit 1
+fi
 
 # A data folder seeded before that file existed must still start a shell: the
 # fallback keeps the old --norc behaviour instead of failing to launch.
