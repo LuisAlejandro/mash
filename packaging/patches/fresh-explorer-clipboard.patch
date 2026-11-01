@@ -1,0 +1,422 @@
+--- a/crates/fresh-editor/src/app/file_explorer.rs
++++ b/crates/fresh-editor/src/app/file_explorer.rs
+@@ -12,6 +12,81 @@
+ pub struct FileExplorerClipboard {
+     pub paths: Vec<PathBuf>,
+     pub is_cut: bool,
++}
++
++// Modified by Mash on 2026-10-31: mirror the file-explorer clipboard into the
++// data directory, so a copy/cut made in one `fresh` process (Mash runs one per
++// terminal tab) can be pasted in another. Mash source:
++// packaging/patches/fresh-explorer-clipboard.patch
++
++/// On-disk shape of [`FileExplorerClipboard`]. Separate from the in-memory type
++/// so the published fields do not become a serialization contract.
++#[derive(serde::Deserialize, serde::Serialize)]
++struct PersistedFileExplorerClipboard {
++    paths: Vec<PathBuf>,
++    is_cut: bool,
++}
++
++/// Where the file-explorer clipboard is mirrored so it outlives this process.
++///
++/// The clipboard lives on the `Window` that made it, and with one `fresh`
++/// process per terminal tab a copy in one tab is invisible to a paste in
++/// another — "Nothing to paste". Mirroring the same `{paths, is_cut}` into the
++/// data directory makes it a property of the user, which is what a file
++/// clipboard is: Finder, and every editor that has one, behave that way. The
++/// window slot stays authoritative; this file only answers when it is empty.
++fn explorer_clipboard_file() -> Option<PathBuf> {
++    crate::input::input_history::get_data_dir()
++        .ok()
++        .map(|dir| dir.join("file-explorer-clipboard.json"))
++}
++
++/// Mirror a copy/cut for other `fresh` processes. Best effort: a read-only data
++/// directory must never turn a copy into an error.
++fn persist_explorer_clipboard(clipboard: &FileExplorerClipboard) {
++    let Some(path) = explorer_clipboard_file() else {
++        return;
++    };
++    let payload = PersistedFileExplorerClipboard {
++        paths: clipboard.paths.clone(),
++        is_cut: clipboard.is_cut,
++    };
++    let Ok(encoded) = serde_json::to_vec(&payload) else {
++        return;
++    };
++    if let Some(parent) = path.parent() {
++        let _ = std::fs::create_dir_all(parent);
++    }
++    // Write then rename: another process may read this at the same moment, and
++    // a half-written file would decode as "no clipboard".
++    let staging = path.with_extension("json.tmp");
++    if std::fs::write(&staging, encoded).is_ok() {
++        let _ = std::fs::rename(&staging, &path);
++    }
++}
++
++/// Read the mirrored clipboard, dropping paths that have since disappeared. A
++/// stale cut whose source is gone must not resurface as a paste that
++/// half-works.
++fn load_persisted_explorer_clipboard() -> Option<FileExplorerClipboard> {
++    let encoded = std::fs::read(explorer_clipboard_file()?).ok()?;
++    let payload: PersistedFileExplorerClipboard = serde_json::from_slice(&encoded).ok()?;
++    let paths: Vec<PathBuf> = payload.paths.into_iter().filter(|p| p.exists()).collect();
++    if paths.is_empty() {
++        return None;
++    }
++    Some(FileExplorerClipboard {
++        paths,
++        is_cut: payload.is_cut,
++    })
++}
++
++/// Drop the mirror. Called wherever the window's own slot is cleared, so a cut
++/// that already moved its file cannot be replayed from another tab.
++fn clear_persisted_explorer_clipboard() {
++    if let Some(path) = explorer_clipboard_file() {
++        let _ = std::fs::remove_file(path);
++    }
+ }
+ 
+ /// Config-derived defaults handed to `Window::install_initialized_file_explorer`
+@@ -1036,10 +1111,20 @@
+     pub fn file_explorer_paste(&mut self) {
+         let clipboard = match self.active_window().file_explorer_clipboard.clone() {
+             Some(c) => c,
+-            None => {
+-                self.set_status_message(t!("explorer.paste_no_source").to_string());
+-                return;
+-            }
++            None => match load_persisted_explorer_clipboard() {
++                Some(clipboard) => {
++                    // A copy made in another `fresh` process. Adopt it into this
++                    // window so everything below — cut dimming, the same-directory
++                    // cut cancel, the clear after a clean move — behaves exactly as
++                    // if the copy had happened here.
++                    self.active_window_mut().file_explorer_clipboard = Some(clipboard.clone());
++                    clipboard
++                }
++                None => {
++                    self.set_status_message(t!("explorer.paste_no_source").to_string());
++                    return;
++                }
++            },
+         };
+ 
+         let dst_dir = if let Some(explorer) = self.file_explorer() {
+@@ -1073,6 +1158,7 @@
+                     // scary error. Must clear the clipboard, otherwise a
+                     // later paste elsewhere would silently move the file.
+                     self.active_window_mut().file_explorer_clipboard = None;
++                    clear_persisted_explorer_clipboard();
+                     self.set_status_message(t!("explorer.cut_cancelled").to_string());
+                     return;
+                 } else {
+@@ -1136,6 +1222,7 @@
+                 // later paste can't silently move the files after all.
+                 if is_cut {
+                     self.active_window_mut().file_explorer_clipboard = None;
++                    clear_persisted_explorer_clipboard();
+                     self.set_status_message(t!("explorer.cut_cancelled").to_string());
+                 } else {
+                     self.set_status_message(t!("explorer.paste_same_location").to_string());
+@@ -1291,6 +1378,7 @@
+         // want to retry, and the clipboard still contains the right path.
+         if is_cut && first_error.is_none() && partial_moves.is_empty() {
+             self.active_window_mut().file_explorer_clipboard = None;
++            clear_persisted_explorer_clipboard();
+         }
+         self.active_window_mut().key_context = KeyContext::FileExplorer;
+     }
+@@ -1484,6 +1572,7 @@
+                 self.refresh_tree_after_paste(&src, &dst, is_cut);
+                 if is_cut {
+                     self.active_window_mut().file_explorer_clipboard = None;
++                    clear_persisted_explorer_clipboard();
+                     self.set_status_message(t!("explorer.pasted_moved", name = &name).to_string());
+                 } else {
+                     self.set_status_message(t!("explorer.pasted", name = &name).to_string());
+@@ -1978,6 +2067,7 @@
+             Some(FileExplorerClipboard { is_cut: true, .. })
+         ) {
+             self.file_explorer_clipboard = None;
++            clear_persisted_explorer_clipboard();
+             self.set_status_message(t!("explorer.cut_cancelled").to_string());
+             return;
+         }
+@@ -2192,7 +2282,15 @@
+                 t!("explorer.copied_n", count = count).to_string()
+             }
+         };
+-        self.file_explorer_clipboard = Some(FileExplorerClipboard { paths, is_cut });
++        let clipboard = FileExplorerClipboard { paths, is_cut };
++        // Local backend only: these are host paths, and a session on another
++        // backend would resolve them against a different filesystem.
++        // `remote_connection_info` is `None` for a host filesystem;
++        // `is_remote_connected` is not a locality test (it is `true` locally).
++        if self.authority().filesystem.remote_connection_info().is_none() {
++            persist_explorer_clipboard(&clipboard);
++        }
++        self.file_explorer_clipboard = Some(clipboard);
+         self.set_status_message(msg);
+     }
+ 
+--- a/crates/fresh-editor/tests/common/harness.rs
++++ b/crates/fresh-editor/tests/common/harness.rs
+@@ -172,6 +172,13 @@
+     pub create_empty_plugins_dir: bool,
+     /// Shared DirectoryContext. If None, creates a new one for test isolation.
+     pub dir_context: Option<DirectoryContext>,
++    /// Pin the user-level `fresh` data directory (`get_data_dir()`) to a private
++    /// temp dir for the test's lifetime. That directory is process-wide and, left
++    /// unpinned, is the developer's real Fresh directory — so a test asserting an
++    /// empty clipboard, history or workspace store is otherwise at the mercy of
++    /// the host and of sibling tests writing theirs. Thread-local pin, not an env
++    /// var: see `common::global_state::pin_data_dir`.
++    pub private_data_dir: bool,
+     /// Slow filesystem configuration for performance testing.
+     pub slow_fs_config: Option<SlowFsConfig>,
+     /// Custom filesystem backend. If provided, overrides slow_fs_config.
+@@ -198,6 +205,12 @@
+ }
+ 
+ impl HarnessOptions {
++    /// Pin the user-level data directory to a private temp dir.
++    pub fn with_private_data_dir(mut self) -> Self {
++        self.private_data_dir = true;
++        self
++    }
++
+     /// Create new options with default settings.
+     /// - `create_empty_plugins_dir`: true (disables plugin loading for isolation)
+     /// - `create_project_root`: false
+@@ -208,6 +221,7 @@
+             create_project_root: false,
+             create_empty_plugins_dir: true,
+             dir_context: None,
++            private_data_dir: false,
+             slow_fs_config: None,
+             filesystem: None,
+             preserve_keybinding_map: false,
+@@ -478,6 +492,10 @@
+ 
+     /// Optional temp directory (kept alive for the duration of the test)
+     _temp_dir: Option<TempDir>,
++
++    /// Holds the private data-dir pin (which restores the previous directory on
++    /// drop) and the temp dir it points into, for the test's whole lifetime.
++    _private_data_dir: Option<(crate::common::global_state::DataDirPin, TempDir)>,
+ 
+     /// Optional fake-devcontainer state (kept alive for the duration
+     /// of the test). The `Drop` of this field releases the global lock
+@@ -619,6 +637,16 @@
+         });
+         t.phase("dir_context");
+ 
++        // Before the editor exists, so anything it reads through `get_data_dir()`
++        // during construction already lands in the private tree.
++        let private_data_dir = if options.private_data_dir {
++            let dir = tempfile::TempDir::new()?;
++            let pin = crate::common::global_state::pin_data_dir(dir.path().join("fresh"));
++            Some((pin, dir))
++        } else {
++            None
++        };
++
+         // Create TestTimeSource for controllable time in tests
+         let test_time_source = Arc::new(TestTimeSource::new());
+         let time_source: SharedTimeSource = test_time_source.clone();
+@@ -773,6 +801,7 @@
+             editor,
+             terminal,
+             _temp_dir: temp_dir,
++            _private_data_dir: private_data_dir,
+             #[cfg(unix)]
+             fake_devcontainer: options.fake_devcontainer,
+             fs_metrics,
+@@ -813,6 +842,20 @@
+         Self::create(width, height, HarnessOptions::new().with_project_root())
+     }
+ 
++    /// Like [`with_temp_project`], but the user-level `fresh` data directory
++    /// (`get_data_dir()`) is this test's own. Use it when an assertion depends on
++    /// there being no clipboard / history / workspace state from the host or from
++    /// a sibling test.
++    pub fn with_temp_project_private_data_dir(width: u16, height: u16) -> anyhow::Result<Self> {
++        Self::create(
++            width,
++            height,
++            HarnessOptions::new()
++                .with_project_root()
++                .with_private_data_dir(),
++        )
++    }
++
+     /// Create a test harness with a temporary project directory and custom config.
+     pub fn with_temp_project_and_config(
+         width: u16,
+--- a/crates/fresh-editor/tests/e2e/file_explorer.rs
++++ b/crates/fresh-editor/tests/e2e/file_explorer.rs
+@@ -1,4 +1,5 @@
+ use crate::common::git_test_helper::GitTestRepo;
++use crate::common::global_state::isolated_dir_context;
+ use crate::common::harness::EditorTestHarness;
+ use crossterm::event::{KeyCode, KeyModifiers};
+ use fresh::config::Config;
+@@ -4789,5 +4790,84 @@
+         "a gitignored file must stay hidden under the default \
+          respect_gitignore = true.\nScreen:\n{}",
+         screen
++    );
++}
++
++/// The explorer's copy/cut state sits on the window that made it, and Mash runs
++/// one `fresh` process per terminal tab — so a copy in one tab made a paste in
++/// another report "Nothing to paste". The clipboard is now mirrored into the
++/// data directory. Two harnesses sharing nothing but that directory stand in
++/// for two processes: no in-memory state crosses between them.
++#[test]
++fn test_explorer_clipboard_pastes_into_a_second_editor() {
++    let sandbox = tempfile::tempdir().unwrap();
++    let (dir_context, _data_dir_pin) = isolated_dir_context(sandbox.path());
++    let project = sandbox.path().join("project");
++    fs::create_dir_all(project.join("dst")).unwrap();
++    fs::write(project.join("moved.txt"), "payload").unwrap();
++    let project = project.canonicalize().unwrap();
++    let config = Config {
++        check_for_updates: false,
++        ..Config::default()
++    };
++
++    // First editor: copy `moved.txt` and leave without pasting, so the mirror
++    // is the only thing that can carry the copy across.
++    {
++        let mut first = EditorTestHarness::with_shared_dir_context(
++            100,
++            30,
++            config.clone(),
++            project.clone(),
++            dir_context.clone(),
++        )
++        .unwrap();
++        first.editor_mut().focus_file_explorer();
++        first.wait_for_file_explorer().unwrap();
++        first.wait_for_file_explorer_item("moved.txt").unwrap();
++        // Directories sort first: root → dst/ → moved.txt.
++        first.send_key(KeyCode::Down, KeyModifiers::NONE).unwrap();
++        first.send_key(KeyCode::Down, KeyModifiers::NONE).unwrap();
++        first
++            .send_key(KeyCode::Char('c'), KeyModifiers::CONTROL)
++            .unwrap();
++        first.render().unwrap();
++        // Name the selection: if the arrows landed anywhere else, the copy
++        // silently stashes a different path and the paste below fails for a
++        // reason that has nothing to do with the mirror.
++        first.assert_screen_contains("Copied: moved.txt");
++    }
++
++    // Second editor: paste into dst/.
++    let mut second = EditorTestHarness::with_shared_dir_context(
++        100,
++        30,
++        config,
++        project.clone(),
++        dir_context.clone(),
++    )
++    .unwrap();
++    second.editor_mut().focus_file_explorer();
++    second.wait_for_file_explorer().unwrap();
++    second.wait_for_file_explorer_item("dst").unwrap();
++    second.send_key(KeyCode::Down, KeyModifiers::NONE).unwrap();
++    second
++        .send_key(KeyCode::Char('v'), KeyModifiers::CONTROL)
++        .unwrap();
++    second.render().unwrap();
++
++    assert!(
++        project.join("dst/moved.txt").exists(),
++        "a copy made in the first editor must be pasteable in the second. \
++         Project now: {:?}",
++        fs::read_dir(project.join("dst"))
++            .map(|entries| entries
++                .filter_map(|e| e.ok().map(|e| e.file_name()))
++                .collect::<Vec<_>>())
++            .unwrap_or_default()
+     );
++    assert!(
++        project.join("moved.txt").exists(),
++        "a copy must leave its source in place"
++    );
+ }
+--- a/crates/fresh-editor/tests/e2e/explorer_bugs.rs
++++ b/crates/fresh-editor/tests/e2e/explorer_bugs.rs
+@@ -236,7 +236,7 @@
+ /// stale IDs were the only ones in `effective_selection`.
+ #[test]
+ fn test_multi_selection_cleared_after_cut_paste() {
+-    let mut harness = EditorTestHarness::with_temp_project(100, 30).unwrap();
++    let mut harness = EditorTestHarness::with_temp_project_private_data_dir(100, 30).unwrap();
+     let project_root = harness.project_dir().unwrap();
+ 
+     // dirs sort first: root → dst/ → a.txt → b.txt → c.txt
+@@ -1015,7 +1015,7 @@
+ /// could move the supposedly-forgotten file.
+ #[test]
+ fn test_escape_cancels_pending_cut() {
+-    let mut harness = EditorTestHarness::with_temp_project(100, 30).unwrap();
++    let mut harness = EditorTestHarness::with_temp_project_private_data_dir(100, 30).unwrap();
+     let project_root = harness.project_dir().unwrap();
+     // dirs first: root → dst/ → a.txt
+     fs::create_dir(project_root.join("dst")).unwrap();
+@@ -1073,7 +1073,7 @@
+ /// move the file after all.
+ #[test]
+ fn test_paste_into_same_dir_cancels_cut() {
+-    let mut harness = EditorTestHarness::with_temp_project(100, 30).unwrap();
++    let mut harness = EditorTestHarness::with_temp_project_private_data_dir(100, 30).unwrap();
+     let project_root = harness.project_dir().unwrap();
+     fs::write(project_root.join("a.txt"), "a").unwrap();
+ 
+--- a/crates/fresh-editor/tests/e2e/explorer_menu.rs
++++ b/crates/fresh-editor/tests/e2e/explorer_menu.rs
+@@ -1089,10 +1089,17 @@
+     harness.assert_screen_contains("cut_me.txt");
+ }
+ 
+-/// Test that pasting with an empty clipboard shows an error
++/// Test that pasting with an empty clipboard shows an error.
++///
++/// "Empty" is now a property of the user, not of this process: the explorer
++/// clipboard is mirrored into the data directory so a copy made in one `fresh`
++/// process can be pasted in another. A test asserting the empty case therefore
++/// has to own that directory — otherwise a clipboard written by a sibling test
++/// (its temp project still alive) or by the developer's own editor satisfies
++/// the paste.
+ #[test]
+ fn test_paste_empty_clipboard_shows_error() {
+-    let mut harness = EditorTestHarness::with_temp_project(100, 30).unwrap();
++    let mut harness = EditorTestHarness::with_temp_project_private_data_dir(100, 30).unwrap();
+ 
+     harness.editor_mut().focus_file_explorer();
+     harness.wait_for_file_explorer().unwrap();
+@@ -1157,7 +1164,7 @@
+ /// Test that cutting a file and pasting it to a subdirectory moves it
+ #[test]
+ fn test_cut_paste_moves_file() {
+-    let mut harness = EditorTestHarness::with_temp_project(100, 30).unwrap();
++    let mut harness = EditorTestHarness::with_temp_project_private_data_dir(100, 30).unwrap();
+     let project_root = harness.project_dir().unwrap();
+ 
+     fs::write(project_root.join("move_me.txt"), "hello").unwrap();
+@@ -1374,7 +1381,7 @@
+ /// in the explorer must show "Nothing to paste".
+ #[test]
+ fn test_clipboard_cleared_after_cut_paste() {
+-    let mut harness = EditorTestHarness::with_temp_project(100, 30).unwrap();
++    let mut harness = EditorTestHarness::with_temp_project_private_data_dir(100, 30).unwrap();
+     let project_root = harness.project_dir().unwrap();
+     fs::write(project_root.join("moveme.txt"), "data").unwrap();
+     fs::create_dir(project_root.join("dst")).unwrap();
