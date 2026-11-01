@@ -331,7 +331,26 @@ maintainer="${MASH_MAINTAINER:-Luis Alejandro Martínez Faneyth <luis@letsma.sh>
 installed_kb="$(du -sk --exclude=DEBIAN "$stage" | awk '{print $1}')"
 # Runtime dependencies the payload invokes rather than links. rsync seeds
 # ~/.mash, xdg-utils opens files, and Pi copies Wayland selections with wl-copy.
-extra_depends="ca-certificates, rsync, xdg-utils, wl-clipboard"
+#
+# The host utilities follow. Mash does not vendor these and setup cannot
+# install them without elevation (R8), so on Linux they arrive the only way
+# that needs no privilege of Mash's own: apt installs them alongside the
+# package. Unversioned, exactly like the macOS Homebrew calls -- the
+# distribution's version is what the machine gets.
+#
+# Three names here are not the command they provide, which is why each is
+# written out rather than generated from the manifest's component ids:
+#   fd-find    installs fd and fdfind
+#   bat        installs batcat, not bat
+#   git-delta  installs delta. The archive's `delta` package is an unrelated
+#              2006 file-comparison tool; depending on it ships the wrong
+#              program under the right name.
+# packaging/tests/test_linux_package.py pins these three to their binaries.
+#
+# rust-analyzer is deliberately absent: noble ships no such package. It stays a
+# tool the user provides, and setup reports it missing rather than failing.
+host_utilities="git, gh, zoxide, eza, fzf, fd-find, bat, ripgrep, jq, git-delta, gopls, shfmt"
+extra_depends="ca-certificates, rsync, xdg-utils, wl-clipboard, $host_utilities"
 sed -e "s#@EXTRA_DEPENDS@#$extra_depends#" \
   -e "s#@VERSION@#$version#" \
   -e "s#@ARCH@#$debarch#" \

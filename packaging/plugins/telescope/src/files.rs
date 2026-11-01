@@ -122,18 +122,34 @@ pub(crate) fn fd_args() -> &'static [&'static str] {
     ]
 }
 
+/// The command that provides fd on this machine.
+///
+/// Homebrew installs it as `fd`; Debian and Ubuntu rename it to `fdfind`,
+/// because the archive already had an `fd`. TELESCOPE_FD is what the shipped
+/// helper resolved, so the two agree rather than each guessing.
+fn fd_command() -> Vec<String> {
+    if let Ok(name) = std::env::var("TELESCOPE_FD") {
+        if !name.trim().is_empty() {
+            return vec![name];
+        }
+    }
+    vec!["fd".to_string(), "fdfind".to_string()]
+}
+
 /// Collect file paths under `cwd`, preferring `fd`, then `git ls-files`, then a
 /// bounded `find`. Returns short paths (relative to cwd where possible).
 fn collect_files(cwd: &str, out: &mut Vec<String>) {
-    let fd = std::process::Command::new("fd")
-        .args(fd_args())
-        .current_dir(cwd)
-        .output();
-    if let Ok(output) = fd {
-        if output.status.success() {
-            take_lines(&output.stdout, b'\n', out);
-            ensure_absolute(cwd, out);
-            return;
+    for candidate in fd_command() {
+        let fd = std::process::Command::new(&candidate)
+            .args(fd_args())
+            .current_dir(cwd)
+            .output();
+        if let Ok(output) = fd {
+            if output.status.success() {
+                take_lines(&output.stdout, b'\n', out);
+                ensure_absolute(cwd, out);
+                return;
+            }
         }
     }
     // fd missing or errored: try git ls-files (tracked + untracked, ignore-rule-aware).

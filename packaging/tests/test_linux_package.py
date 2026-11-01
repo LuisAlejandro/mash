@@ -9,6 +9,7 @@ Run with: python3 packaging/tests/test_linux_package.py
 """
 
 import re
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -130,6 +131,79 @@ class BuildScriptContractTest(unittest.TestCase):
         self.assertNotIn('mkdir -p "$stage/usr/bin"', self.text)
 
 
+class FreshPatchParityTest(unittest.TestCase):
+    def test_both_builds_and_the_cache_use_one_ordered_patch_list(self):
+        carry = (PACKAGING / "carry.sh").read_text()
+        common = (PACKAGING / "build-common.sh").read_text()
+        patches = subprocess.run(
+            ["bash", "-c", 'source "$1"; mash_fresh_patches', "bash", str(PACKAGING / "carry.sh")],
+            capture_output=True, text=True, check=True,
+        ).stdout.splitlines()
+        self.assertEqual("fresh-explorer-clipboard", patches[-1])
+        self.assertLess(patches.index("fresh-reveal-in-finder"), patches.index("fresh-explorer-clipboard"))
+        for patch in patches:
+            self.assertTrue((PACKAGING / "patches" / f"{patch}.patch").is_file())
+        # Source presence check and the macOS apply loop both use the helper.
+        self.assertEqual(2, carry.count("for name in $(mash_fresh_patches); do"))
+        self.assertIn('patches="$(mash_fresh_patches)"', common)
+        self.assertIn("for p in $patches", common)  # cache invalidation
+        self.assertIn("for name in $patches", common)  # apply loop
+
+
+class HostUtilityDependsTest(unittest.TestCase):
+    """The host utilities arrive through apt, and under the right names.
+
+    Mash does not vendor these and first-run setup cannot install them without
+    elevation (R8), so on Linux the package's Depends is the only thing that
+    puts them on the machine. Before this they were in neither place: the
+    wizard reported them missing and nothing ever installed them.
+    """
+
+    def setUp(self):
+        self.build = (PACKAGING / "build-linux.sh").read_text()
+        # extra_depends composes $host_utilities, so resolve it the way the
+        # shell will: the string the control file receives is what matters.
+        utilities = re.search(r'host_utilities="([^"]+)"', self.build).group(1)
+        extra = re.search(r'extra_depends="([^"]+)"', self.build).group(1)
+        self.depends = extra.replace("$host_utilities", utilities)
+
+    def test_every_host_utility_is_a_dependency(self):
+        for package in ("git", "gh", "zoxide", "eza", "fzf", "fd-find", "bat",
+                        "ripgrep", "jq", "git-delta", "gopls", "shfmt"):
+            with self.subTest(package=package):
+                self.assertRegex(self.depends, rf"(^|[, ]){re.escape(package)}($|[, ])")
+
+    def test_debian_names_are_used_not_command_names(self):
+        """Three of these are not named after the command they provide.
+
+        `fd` and `bat` are taken in the archive, so Debian ships fd-find and
+        bat. `delta` is an unrelated 2006 file-comparison tool: depending on it
+        installs the wrong program under a name Mash's git config then calls.
+        """
+        self.assertNotRegex(self.depends, r"(^|[, ])fd($|[, ])")
+        self.assertNotRegex(self.depends, r"(^|[, ])rg($|[, ])")
+        self.assertNotRegex(self.depends, r"(^|[, ])delta($|[, ])")
+        self.assertIn("git-delta", self.depends)
+        self.assertIn("fd-find", self.depends)
+        self.assertIn("ripgrep", self.depends)
+
+    def test_rust_analyzer_is_not_a_dependency(self):
+        """noble ships no rust-analyzer package; depending on it would make
+        letsmash uninstallable."""
+        self.assertNotIn("rust-analyzer", self.depends)
+
+    def test_renamed_commands_are_resolved_before_use(self):
+        """Depending on fd-find and bat is not enough: Ubuntu installs them as
+        fdfind and batcat, and the file picker calls them by name."""
+        helper = (PACKAGING / "helpers" / "telescope-files").read_text()
+        self.assertIn("mash_tool fd fdfind", helper)
+        self.assertIn("mash_tool bat batcat", helper)
+        self.assertIn("TELESCOPE_FD", helper)
+        files_rs = (PACKAGING / "plugins" / "telescope" / "src" / "files.rs").read_text()
+        self.assertIn("TELESCOPE_FD", files_rs)
+        self.assertIn("fdfind", files_rs)
+
+
 class SharedPayloadCatalogTest(unittest.TestCase):
     """The runtime catalog must travel with every payload, not just macOS.
 
@@ -142,10 +216,11 @@ class SharedPayloadCatalogTest(unittest.TestCase):
         common = (PACKAGING / "build-common.sh").read_text()
         self.assertIn("mash_stage_pi_voice_catalog()", common)
         self.assertIn('mash_stage_pi_voice_catalog "$res"', common)
-        self.assertIn(
-            'mash_stage_pi_voice_catalog "$app/Contents/Resources"',
-            (PACKAGING / "build.sh").read_text(),
-        )
+        # The macOS adapter no longer copies the catalog itself: it calls the
+        # shared runtime stager, which does it for both platforms.
+        build = (PACKAGING / "build.sh").read_text()
+        self.assertIn('mash_stage_runtimes "$app/Contents/Resources" "$target"', build)
+        self.assertNotIn('mash_stage_pi_voice_catalog "$app/Contents/Resources"', build)
 
     def test_payload_verifier_requires_the_catalog(self):
         common = (PACKAGING / "build-common.sh").read_text()

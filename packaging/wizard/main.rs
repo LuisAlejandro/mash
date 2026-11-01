@@ -50,10 +50,10 @@ const UTILITIES: &[(&str, &str)] = &[
     ("cua-driver", "Native desktop control for app surfaces"),
 ];
 
-// Sentrux comes from a tap, agent-browser is an npm package, and CUA Driver
-// ships through its own installer. Every other utility is a plain formula.
-const SENTRUX_FORMULA: &str = "sentrux/tap/sentrux";
-const AGENT_BROWSER_PACKAGE: &str = "agent-browser@0.38.2";
+// CUA Driver ships through its own installer; the remaining Homebrew utilities
+// are plain formulae. Every other group carries manifest component names, not
+// package specs: the pinned version is resolved from packaging/assets.json at
+// install time, so no version is written here.
 const CUA_DRIVER_PIN: &str = "0.33.3";
 
 const FORMATTERS: &[(&str, &str)] = &[
@@ -72,10 +72,14 @@ const FORMATTERS: &[(&str, &str)] = &[
 ];
 
 // The formatter group covers more servers than the rows above name
-// individually. macOS installs these through its npm plan; Linux resolves the
-// same pinned components into Mash's data folder. Each entry is the manifest
-// component and the binaries a pane or Fresh looks for.
-const LINUX_EXTRA_FORMATTERS: &[(&str, &[&str])] = &[
+// individually. Both platforms resolve these pinned components into Mash's
+// data folder. Each entry is the manifest component and the binaries a pane or
+// Fresh looks for.
+const EXTRA_FORMATTERS: &[(&str, &[&str])] = &[
+    // No binary of its own: the plugin has to sit in the same npm prefix as
+    // prettier or `prettier --stdin-filepath x.svelte` cannot load it, and
+    // defaults/fresh/config.json formats svelte on save with exactly that.
+    ("prettier-plugin-svelte", &[]),
     (
         "typescript-language-server",
         &["typescript-language-server"],
@@ -800,9 +804,8 @@ fn save_state(dir: &Path, state: &State) {
     );
 }
 
-// The launcher puts the app bundle on PATH first, so `npm` and `python3` would
-// otherwise resolve to Mash's own copies and install packages inside the signed
-// bundle. Every installer runs with a host-only PATH instead.
+// Host installers (Homebrew, pip, CUA) must not resolve Mash's bundled runtimes
+// or install into the signed bundle. npm tools use mash-tool-install instead.
 fn host_path() -> OsString {
     let inherited = env::var_os("PATH").unwrap_or_default();
     let mut dirs: Vec<OsString> = env::split_paths(&inherited)
@@ -812,8 +815,8 @@ fn host_path() -> OsString {
         })
         .map(PathBuf::into_os_string)
         .collect();
-    // CUA Driver and agent-browser install into ~/.local/bin, which a GUI
-    // launch never has on PATH. Mash adds the same directory for its panes.
+    // CUA Driver installs into ~/.local/bin, which a GUI launch never has on
+    // PATH. Mash adds the directory for its panes; npm tools use ~/.mash/bin.
     if let Some(home) = env::var_os("HOME") {
         let local = PathBuf::from(home).join(".local/bin").into_os_string();
         if !dirs.contains(&local) {
@@ -837,7 +840,11 @@ fn host_path() -> OsString {
 }
 
 fn is_available(tool: &str) -> bool {
-    // Linux tools live in Mash's own bin; macOS installers check the host only.
+    // Installed npm shims live in Mash's bin on both platforms. On macOS the
+    // host path remains available for Homebrew tools and the host pip step.
+    if data_dir().join("bin").join(tool).is_file() {
+        return true;
+    }
     let path = if is_linux() {
         env::var_os("PATH").unwrap_or_default()
     } else {
@@ -877,22 +884,16 @@ fn seed_selected_skills() -> Result<(), String> {
     Ok(())
 }
 
-// A selected tool that is already on PATH needs no installer. Running one
-// anyway is how the wizard kept reappearing: `npm install --global
-// yaml-language-server` fails with EEXIST when Homebrew already owns that
-// binary, the failure never writes completed=true, and the setup reopens on
-// every launch. Only add installers when something is actually missing.
-// Environment steps that always run, after whichever installers the selections
-// needed. They are not optional: no one has to opt into having memory
-// available.
+// Host installers run only when a selected tool is missing. Mash-owned npm
+// tools install even when the host has a copy: a host binary cannot satisfy
+// Mash's pinned, isolated install. Environment steps always run.
 const STEP_HINDSIGHT: &str = "Install the Hindsight environment";
 const STEP_HINDSIGHT_DAEMON: &str = "Start Hindsight and fetch its models";
 const STEP_VOICE: &str = "Install the dictation model";
 
 fn install_steps(plan: &Plan, missing: &[&str]) -> Vec<String> {
     let mut steps = vec!["Check selected tools".to_string()];
-    // A selected tool that is already on PATH needs no installer. Only add one
-    // when something is actually missing.
+    // Host and Linux tool installers are skipped when everything is present.
     if !missing.is_empty() {
         if !plan.linux.is_empty() {
             steps.push(STEP_LINUX_TOOLS.to_string());
@@ -900,9 +901,16 @@ fn install_steps(plan: &Plan, missing: &[&str]) -> Vec<String> {
         if !plan.brew.is_empty() {
             steps.push("Install Homebrew packages".to_string());
         }
-        if !plan.npm.is_empty() {
-            steps.push("Install npm packages".to_string());
-        }
+    }
+    // A host binary must not satisfy Mash's own install: first launch creates
+    // pinned shims even when the machine already has these tools.
+    if !plan.npm.is_empty() {
+        steps.push("Install npm packages".to_string());
+    }
+    if !plan.pinned.is_empty() {
+        steps.push(STEP_PINNED_TOOLS.to_string());
+    }
+    if !missing.is_empty() {
         if !plan.python.is_empty() {
             steps.push("Install Python packages".to_string());
         }
@@ -1104,13 +1112,12 @@ fn install_voice_model<B: Backend>(
     }
 }
 
-/// Install the selected tools into Mash's data folder.
+/// Install selected components into Mash's data folder (Linux tools or macOS npm).
 ///
 /// One helper call per component, so a failure is attributable and a tool that
 /// is already present costs nothing. Exit 3 means the platform supplies that
-/// tool; setup records it and continues rather than failing the whole step,
-/// which is what keeps setup free of privilege prompts.
-fn install_linux_tools<B: Backend>(
+/// tool; setup records it and continues rather than asking for a password.
+fn install_mash_tools<B: Backend>(
     terminal: &mut Terminal<B>,
     completed: usize,
     total: usize,
@@ -1129,6 +1136,19 @@ fn install_linux_tools<B: Backend>(
         draw_apply(terminal, completed, total, step, &shown);
         let status = Command::new(&helper)
             .env("PATH", env::var_os("PATH").unwrap_or_default())
+            .env("MASH_DATA_DIR", data_dir())
+            .env(
+                "MASH_INSTALL_NPM_ONLY",
+                if step == "Install npm packages" {
+                    "1"
+                } else {
+                    "0"
+                },
+            )
+            .env(
+                "MASH_INSTALL_BINARY_ONLY",
+                if step == STEP_PINNED_TOOLS { "1" } else { "0" },
+            )
             .arg(component)
             .stdout(Stdio::null())
             .stderr(Stdio::null())
@@ -1217,11 +1237,14 @@ fn apply_steps<B: Backend>(
     for (index, step) in steps.iter().enumerate() {
         draw_apply(terminal, index, steps.len(), step, &messages);
         let result = if index == 0 {
-            let mut report = if missing.is_empty() {
-                "Everything selected is already installed.".to_string()
-            } else {
-                format!("Missing: {}", missing.join(", "))
-            };
+            let mut report =
+                if missing.is_empty() && !(plan.npm.is_empty() && plan.pinned.is_empty()) {
+                    "Host tools are present; installing Mash's pinned tools.".to_string()
+                } else if missing.is_empty() {
+                    "Everything selected is already installed.".to_string()
+                } else {
+                    format!("Missing: {}", missing.join(", "))
+                };
             for tool in &plan.apple {
                 if !apple_tool_available(tool) {
                     report.push_str(&format!(
@@ -1231,11 +1254,13 @@ fn apply_steps<B: Backend>(
             }
             Ok(report)
         } else if step == STEP_LINUX_TOOLS {
-            install_linux_tools(terminal, index, steps.len(), step, &messages, &plan.linux)
+            install_mash_tools(terminal, index, steps.len(), step, &messages, &plan.linux)
         } else if step == "Install Homebrew packages" {
             install_brew(&plan.brew)
         } else if step == "Install npm packages" {
-            install_npm(&plan.npm)
+            install_mash_tools(terminal, index, steps.len(), step, &messages, &plan.npm)
+        } else if step == STEP_PINNED_TOOLS {
+            install_mash_tools(terminal, index, steps.len(), step, &messages, &plan.pinned)
         } else if step == "Install CUA Driver" {
             install_cua_driver()
         } else if step == STEP_HINDSIGHT {
@@ -1270,7 +1295,12 @@ fn apply_steps<B: Backend>(
             step == STEP_HINDSIGHT || step == STEP_HINDSIGHT_DAEMON || step == STEP_VOICE;
         let message = match result {
             Ok(message) => message,
-            Err(_) if !environment_step && tools_available(&plan.tools) => {
+            Err(_)
+                if !environment_step
+                    && step != "Install npm packages"
+                    && step != STEP_PINNED_TOOLS
+                    && tools_available(&plan.tools) =>
+            {
                 "already installed".to_string()
             }
             Err(error) => return Err(error),
@@ -1329,27 +1359,55 @@ fn find_brew() -> String {
     "brew".into()
 }
 
-fn install_npm(packages: &[&'static str]) -> Result<String, String> {
-    if packages.is_empty() {
-        return Ok("nothing requested".into());
+// The host pip installer still needs its pinned specs. npm components use
+// mash-tool-install and the bundled runtime instead.
+fn pinned_specs(components: &[&'static str]) -> Result<Vec<String>, String> {
+    if components.is_empty() {
+        return Ok(Vec::new());
     }
-    let mut command = Command::new("npm");
-    command
-        .env("PATH", host_path())
-        .args(["install", "--global"])
-        .args(packages);
-    run_logged(command)
+    let resources = mash_resources();
+    let resolver = resources.join("assets/assets.py");
+    if !resolver.is_file() {
+        return Err(format!("{} is missing from the bundle", resolver.display()));
+    }
+    let output = Command::new(resources.join("bin/python3"))
+        .env("PYTHONDONTWRITEBYTECODE", "1")
+        .arg(&resolver)
+        .arg("specs")
+        .args(components)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .map_err(|e| format!("could not read the pinned versions: {e}"))?;
+    if !output.status.success() {
+        return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
+    }
+    let specs: Vec<String> = String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(str::to_string)
+        .collect();
+    if specs.len() != components.len() {
+        return Err(format!(
+            "the manifest resolved {} of {} pinned packages",
+            specs.len(),
+            components.len()
+        ));
+    }
+    Ok(specs)
 }
 
-fn install_python(packages: &[&'static str]) -> Result<String, String> {
-    if packages.is_empty() {
+fn install_python(components: &[&'static str]) -> Result<String, String> {
+    if components.is_empty() {
         return Ok("nothing requested".into());
     }
+    let specs = pinned_specs(components)?;
     let mut command = Command::new("python3");
     command
         .env("PATH", host_path())
         .args(["-m", "pip", "install", "--user"])
-        .args(packages);
+        .args(&specs);
     run_logged(command)
 }
 
@@ -1643,20 +1701,24 @@ fn draw_apply<B: Backend>(
     });
 }
 
-/// Linux installs its tools into Mash's own data folder instead of a package
-/// manager, so the plan carries names rather than Formula/npm/pip targets.
+/// Linux installs all selected tools into Mash's data folder; macOS does so
+/// for npm components while keeping Homebrew and pip for other tools.
 fn is_linux() -> bool {
     cfg!(target_os = "linux")
 }
 
 const STEP_LINUX_TOOLS: &str = "Install tools into Mash";
+const STEP_PINNED_TOOLS: &str = "Install pinned tools into Mash";
 
 #[derive(Default)]
 struct Plan {
     /// Component names for `mash-tool-install`, Linux only.
     linux: Vec<&'static str>,
     brew: Vec<&'static str>,
+    /// npm component names for `mash-tool-install` on macOS.
     npm: Vec<&'static str>,
+    /// Pinned release binaries for `mash-tool-install` on macOS.
+    pinned: Vec<&'static str>,
     python: Vec<&'static str>,
     apple: Vec<&'static str>,
     installer: Vec<&'static str>,
@@ -1691,7 +1753,7 @@ fn install_plan(selections: [bool; 2]) -> Plan {
                     other => plan.linux.push(other),
                 }
             }
-            for &(component, tools) in LINUX_EXTRA_FORMATTERS {
+            for &(component, tools) in EXTRA_FORMATTERS {
                 plan.linux.push(component);
                 plan.tools.extend(tools.iter().copied());
             }
@@ -1704,23 +1766,23 @@ fn install_plan(selections: [bool; 2]) -> Plan {
         for &(name, _) in UTILITIES {
             plan.tools.push(name);
             match name {
-                "sentrux" => plan.brew.push(SENTRUX_FORMULA),
-                "agent-browser" => plan.npm.push(AGENT_BROWSER_PACKAGE),
+                // Pinned release binaries, like Linux: an unversioned formula
+                // cannot honour the manifest, and Sentrux's grammars are
+                // checksummed beside the binary.
+                "sentrux" => plan.pinned.push("sentrux"),
+                "agent-browser" => plan.npm.push("agent-browser"),
                 "cua-driver" => plan.installer.push(name),
                 other => plan.brew.push(other),
             }
         }
     }
     if selections[1] {
-        plan.brew.extend([
-            "latexindent",
-            "gopls",
-            "rust-analyzer",
-            "marksman",
-            "texlab",
-            "shfmt",
-            "prettier",
-        ]);
+        // Only the tools with no pinned macOS artifact stay on Homebrew.
+        // prettier is absent for the same reason: the npm step installs it at
+        // its pinned version, and a formula alongside it would shadow that.
+        plan.brew.extend(["gopls", "shfmt"]);
+        plan.pinned
+            .extend(["marksman", "texlab", "latexindent", "rust-analyzer"]);
         plan.npm.extend([
             "prettier",
             "prettier-plugin-svelte",
@@ -1729,7 +1791,7 @@ fn install_plan(selections: [bool; 2]) -> Plan {
             "yaml-language-server",
             "svelte-language-server",
             "vscode-langservers-extracted",
-            "@tailwindcss/language-server",
+            "tailwindcss-language-server",
         ]);
         plan.python.push("python-lsp-server");
         plan.apple.extend(["clangd", "sourcekit-lsp"]);
@@ -2278,10 +2340,65 @@ mod tests {
                 "{tool} missing from the check list"
             );
         }
-        assert!(plan.brew.contains(&SENTRUX_FORMULA));
+        assert!(plan.pinned.contains(&"sentrux"));
         assert!(!plan.brew.contains(&"sentrux"));
-        assert!(plan.npm.contains(&AGENT_BROWSER_PACKAGE));
+        assert!(plan.npm.contains(&"agent-browser"));
         assert_eq!(plan.installer, vec!["cua-driver"]);
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn package_groups_name_manifest_components_not_specs() {
+        // The Mash helper and host pip installer take component names; a
+        // version here would fail to resolve against the bundled manifest.
+        let plan = install_plan([true, true]);
+        for component in &plan.npm {
+            assert!(
+                !component.contains('@'),
+                "{component} is a package spec, not a manifest component"
+            );
+        }
+        for component in &plan.python {
+            assert!(
+                !component.contains('=') && !component.contains('@'),
+                "{component} is a package spec, not a manifest component"
+            );
+        }
+        // prettier is installed by the npm step at its pinned version; a formula
+        // beside it would put an unpinned copy earlier on PATH.
+        assert!(!plan.brew.contains(&"prettier"));
+        assert!(plan.npm.contains(&"prettier"));
+    }
+
+    // Every tool with a pinned macOS artifact must come from Mash's installer,
+    // or the manifest version is not what lands on the machine.
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn tools_with_a_macos_artifact_are_not_brewed() {
+        let plan = install_plan([true, true]);
+        for component in [
+            "sentrux",
+            "marksman",
+            "texlab",
+            "latexindent",
+            "rust-analyzer",
+        ] {
+            assert!(
+                plan.pinned.contains(&component),
+                "{component} missing from the pinned plan"
+            );
+            assert!(
+                !plan.brew.iter().any(|formula| formula.contains(component)),
+                "{component} is still installed through Homebrew"
+            );
+            assert!(
+                plan.tools.contains(&component),
+                "{component} missing from the check list"
+            );
+        }
+        // The formulae that remain have no pinned macOS artifact to use.
+        assert_eq!(plan.brew.iter().filter(|f| f.contains("texlab")).count(), 0);
+        assert!(plan.brew.contains(&"gopls"));
     }
 
     // macOS installer routing: Linux installs every tool through plan.linux,
@@ -2299,24 +2416,27 @@ mod tests {
     }
 
     #[test]
-    fn nothing_missing_skips_tool_installers() {
-        // This is the loop: everything selected is already on PATH, so no tool
-        // installer may run and trip over a Homebrew-provided binary. The two
-        // environment steps are not tool installers and always run.
+    fn nothing_missing_skips_host_installers() {
+        // Host-installed tools need no retry. On macOS, a host npm binary
+        // cannot satisfy the selected Mash-owned npm component instead.
         let plan = install_plan([true, true]);
         let steps = install_steps(&plan, &[]);
         assert!(!steps.iter().any(|s| s == "Install Homebrew packages"));
-        assert!(!steps.iter().any(|s| s == "Install npm packages"));
         assert!(!steps.iter().any(|s| s == "Install Python packages"));
         assert!(!steps.iter().any(|s| s == "Install CUA Driver"));
         assert!(!steps.iter().any(|s| s == STEP_VOICE));
+        if is_linux() {
+            assert!(!steps.iter().any(|s| s == "Install npm packages"));
+        } else {
+            assert!(steps.iter().any(|s| s == "Install npm packages"));
+        }
         assert_eq!(
-            steps,
-            vec![
-                "Check selected tools",
-                STEP_HINDSIGHT,
-                STEP_HINDSIGHT_DAEMON
-            ]
+            steps.first().map(String::as_str),
+            Some("Check selected tools")
+        );
+        assert_eq!(
+            steps.last().map(String::as_str),
+            Some(STEP_HINDSIGHT_DAEMON)
         );
     }
 

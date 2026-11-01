@@ -112,6 +112,45 @@ mash_stage_runtimes() {
     return 1
   }
   rm -rf "$npm_env_home"
+
+  # The agent directory needs its own node_modules for exactly one thing: the
+  # mash-orchestration extension imports `typebox` at runtime, and Node
+  # resolves that from the extension's directory upward. It cannot reach pi's
+  # own nested copy under node/lib/node_modules/@earendil-works/pi-coding-agent.
+  #
+  # The pi packages themselves do NOT belong here. `pi list` resolves every
+  # `npm:` specifier in settings.json to node/lib/node_modules, the global
+  # prefix, and nothing in pi joins the agent directory with node_modules.
+  # Installing them here as well cost 449 MB of duplicated provider SDKs
+  # (@mariozechner, koffi, openai, @mistralai) to deliver a 5.9 MB module.
+  local typebox_spec typebox_home
+  typebox_spec="$(mash_package_spec typebox)" || {
+    echo "could not resolve the pinned typebox" >&2
+    return 1
+  }
+  typebox_home="$(mktemp -d)"
+  env HOME="$typebox_home" \
+    PATH="$res/node/bin:$PATH" \
+    npm_config_cache="${MASH_CACHE:-$typebox_home}/npm" \
+    npm_config_update_notifier=false \
+    "$res/node/bin/npm" install --prefix "$res/defaults/pi" \
+    "$typebox_spec" >/dev/null 2>&1 || {
+    echo "could not install $typebox_spec into the agent directory" >&2
+    rm -rf "$typebox_home"
+    return 1
+  }
+  rm -rf "$typebox_home"
+  # mash-orchestration loads only if Node resolves typebox from extensions/.
+  [ -f "$res/defaults/pi/node_modules/typebox/build/index.mjs" ] || {
+    echo "typebox is missing from the agent directory" >&2
+    return 1
+  }
+  env PATH="$res/node/bin:/usr/bin:/bin" "$res/node/bin/node" -e \
+    "require.resolve('typebox',{paths:['$res/defaults/pi/extensions']})" >/dev/null 2>&1 || {
+    echo "the agent directory cannot resolve typebox from extensions/" >&2
+    return 1
+  }
+
   mash_set_pi_project_dir "$res" || return 1
   "$root/packaging/tests/test_pi_runtime.sh" "$res" || return 1
 
@@ -140,7 +179,16 @@ mash_stage_runtimes() {
   }
   rm -rf "$res/share/zsh/zsh-autosuggestions"
   mkdir -p "$res/share/zsh"
-  cp -R "$zsh_plugin/zsh-autosuggestions-0.7.1" "$res/share/zsh/zsh-autosuggestions"
+  # The extracted directory name is the manifest's member path, not a literal:
+  # a version bump must not need an edit here to keep working.
+  local zsh_dir
+  zsh_dir="$zsh_plugin/$(cut -d/ -f1 <"$zsh_plugin/.mash-member")"
+  [ -d "$zsh_dir" ] || {
+    rm -rf "$zsh_plugin"
+    echo "the zsh-autosuggestions archive has no ${zsh_dir##*/} directory" >&2
+    return 1
+  }
+  cp -R "$zsh_dir" "$res/share/zsh/zsh-autosuggestions"
   rm -rf "$zsh_plugin"
 
   echo "staged node, python, the Pi packages and the bundled tools for $target"
@@ -321,7 +369,8 @@ mash_stage_fresh() {
   # One list for both the stamp and the apply loop below. A patch added to the
   # loop but not to the stamp leaves a warm cache matching the old stamp, so the
   # patch never runs and the payload ships a Fresh built without it -- silently.
-  local patches="fresh-config-dir fresh-reveal-in-finder fresh-warn-logs"
+  local patches
+  patches="$(mash_fresh_patches)"
   source_stamp="$(mash_version fresh):$(for p in $patches; do cat "$root/packaging/patches/$p.patch"; done | cksum | awk '{print $1}')"
   if [ -n "${MASH_CACHE:-}" ]; then
     src="$MASH_CACHE/fresh-src"
@@ -408,6 +457,16 @@ mash_stage_wizard() {
   echo "staged mash-wizard"
 }
 
+# Stock macOS supplies shasum; Linux normally supplies sha256sum.
+mash_verify_sha256() {
+  local sha="$1" file="$2"
+  if command -v sha256sum >/dev/null 2>&1; then
+    printf '%s  %s\n' "$sha" "$file" | sha256sum -c - >/dev/null 2>&1
+  else
+    printf '%s  %s\n' "$sha" "$file" | shasum -a 256 -c - >/dev/null 2>&1
+  fi
+}
+
 # Fetch one URL into <out>, through a cache keyed by its pinned checksum.
 #
 # The checksum is a content address, so a cache hit needs no verification beyond
@@ -418,13 +477,13 @@ mash_download() {
   cache_file="${MASH_CACHE:-}/downloads/$sha"
   if [ -n "${MASH_CACHE:-}" ] && [ -f "$cache_file" ]; then
     cp "$cache_file" "$out"
-    if echo "$sha  $out" | sha256sum -c - >/dev/null 2>&1; then
+    if mash_verify_sha256 "$sha" "$out"; then
       return 0
     fi
     rm -f "$cache_file"
   fi
   curl -fL --retry 3 --max-time 900 -o "$out" "$url" || return 1
-  if ! echo "$sha  $out" | sha256sum -c - >/dev/null 2>&1; then
+  if ! mash_verify_sha256 "$sha" "$out"; then
     rm -f "$out"
     return 1
   fi

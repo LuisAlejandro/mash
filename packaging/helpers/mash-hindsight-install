@@ -44,10 +44,35 @@ mkdir -p "$setup" "$bindir" "$data/.hindsight" "$data/.pg0" \
 
 say() { printf '%s %s\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$*" >>"$log"; }
 
-# The entry point answering is the whole readiness test.
+# Readiness is the entry point answering AND being the pinned version. Checking
+# only that it runs is what let a machine keep an old Hindsight forever: the
+# pin would move, this would still say "already installed", and nothing else
+# ever compares the two.
+installed_version() {
+  [ -x "$venv/bin/python" ] || return 1
+  "$venv/bin/python" - <<'PY' 2>/dev/null
+import sys
+try:
+    from importlib.metadata import version
+    print(version("hindsight-embed"))
+except Exception:
+    sys.exit(1)
+PY
+}
+
 if [ -x "$venv/bin/hindsight-embed" ] && "$venv/bin/hindsight-embed" --help >/dev/null 2>&1; then
-  say "hindsight-embed $pin already installed; nothing to do"
-  exit 0
+  have="$(installed_version || true)"
+  if [ -n "$have" ] && [ "$have" = "$pin" ]; then
+    say "hindsight-embed $pin already installed; nothing to do"
+    exit 0
+  fi
+  if [ -z "$have" ]; then
+    # It runs but will not report a version. Leave it alone rather than
+    # reinstalling a working environment on every launch.
+    say "hindsight-embed runs but reports no version; leaving it as it is"
+    exit 0
+  fi
+  say "hindsight-embed is $have, pin is $pin; upgrading in place"
 fi
 
 # One install at a time. A lock older than two hours belongs to a run that died

@@ -3,11 +3,11 @@
 #
 #   mash-tool-install <component> [target]
 #
-# Every tool is pinned in packaging/assets.json, so this never resolves a version
-# from the network or from whatever the host already has. Installs are versioned
-# and atomic: a new version lands beside the old one and the shim is switched
-# only after the download verified, so a failed upgrade leaves the previous tool
-# working.
+# Mash-managed tools resolve exact pins from packaging/assets.json. The package
+# strategy only reports host availability: its referenceVersion is informational
+# and never used to install, upgrade or downgrade a brew/apt dependency.
+# Release binaries land in versioned directories; their shims switch only after
+# the download verifies, so a failed download leaves the previous tool working.
 #
 # Layout, all under the data folder the launcher owns:
 #   local/tools/<component>/<version>/   the unpacked tool
@@ -55,10 +55,28 @@ done
 
 data="${MASH_DATA_DIR:-${HOME:?MASH_DATA_DIR or HOME is required}/.mash}"
 component="${1:-}"
-target="${2:-$(python3 "$manifest" target)}"
+# Installed payloads carry their own Python; source-tree test runs can fall back
+# to the host. The wizard runs before isolation, so PATH alone is not reliable.
+resolver_python="$res/bin/python3"
+[ -x "$resolver_python" ] || resolver_python=python3
+target="${2:-$("$resolver_python" "$manifest" target)}"
 [ -n "$component" ] || {
   printf 'usage: mash-tool-install <component> [target]\n' >&2
   exit 2
+}
+
+# Stock macOS has shasum, not sha256sum. A checksum that cannot be computed
+# must fail the install, never pass it, so both forms are handled explicitly.
+verify_sha256() {
+  local want="$1" file="$2" got=""
+  if command -v sha256sum >/dev/null 2>&1; then
+    got="$(sha256sum "$file" 2>/dev/null | awk '{print $1}')"
+  elif command -v shasum >/dev/null 2>&1; then
+    got="$(shasum -a 256 "$file" 2>/dev/null | awk '{print $1}')"
+  else
+    return 1
+  fi
+  [ -n "$got" ] && [ "$got" = "$want" ]
 }
 
 setup="$data/setup"
@@ -71,21 +89,36 @@ lock="$setup/tool-install.lock"
 if ! mkdir "$lock" 2>/dev/null; then
   if [ -n "$(find "$lock" -maxdepth 0 -mmin +120 2>/dev/null)" ]; then
     rm -rf "$lock"
-    mkdir "$lock" 2>/dev/null || exit 0
+    mkdir "$lock" 2>/dev/null || exit 1
   else
     say "another install is running; waiting is the caller's job"
-    exit 0
+    exit 1
   fi
 fi
 trap 'rm -rf "$lock"' EXIT
 
-spec="$(python3 "$manifest" resolve-shell "$component" "$target")" || {
+spec="$("$resolver_python" "$manifest" resolve-shell "$component" "$target")" || {
   say "$component is not pinned for $target"
   exit 1
 }
 eval "$spec"
 
-say "installing $component $VERSION for $target (strategy $STRATEGY)"
+if [ "$STRATEGY" = package ]; then
+  say "checking $component (host-managed; version not enforced)"
+else
+  say "installing $component $VERSION for $target (strategy $STRATEGY)"
+fi
+# A step that exists to honour one strategy must not silently accept another:
+# the macOS npm and pinned-binary steps each refuse anything else, rather than
+# reporting a host package as satisfied.
+if [ "${MASH_INSTALL_NPM_ONLY:-0}" = 1 ] && [ "$STRATEGY" != npm ]; then
+  say "$component requires an npm pin, got strategy $STRATEGY"
+  exit 1
+fi
+if [ "${MASH_INSTALL_BINARY_ONLY:-0}" = 1 ] && [ "$STRATEGY" != binary ]; then
+  say "$component requires a pinned binary, got strategy $STRATEGY"
+  exit 1
+fi
 
 # The names a pane runs for a component. Most packages name their executable
 # after the package; these do not. An empty list means the package is a library
@@ -93,6 +126,9 @@ say "installing $component $VERSION for $target (strategy $STRATEGY)"
 shim_names() {
   case "$1" in
   cua-driver) printf 'cua-driver\n' ;;
+  # The release asset carries a platform suffix; panes run the bare name.
+  marksman) printf 'marksman\n' ;;
+  latexindent) printf 'latexindent\n' ;;
   svelte-language-server) printf 'svelteserver\n' ;;
   python-lsp-server) printf 'pylsp\n' ;;
   vscode-langservers-extracted)
@@ -160,7 +196,7 @@ binary)
       rm -rf "$tmp"
       exit 1
     fi
-    if ! printf '%s  %s\n' "$SHA256" "$tmp/archive" | sha256sum -c - >>"$log" 2>&1; then
+    if ! verify_sha256 "$SHA256" "$tmp/archive"; then
       say "$component $VERSION failed its checksum"
       rm -rf "$tmp"
       exit 1
@@ -183,10 +219,20 @@ binary)
     rm -rf "$dest.new"
     mkdir -p "$dest.new"
     # Runtimes ship a tree; release binaries may have an architecture suffix.
+    # A tar.gz can also place its member in a subdirectory, so search when the
+    # archive did not land it at the path the manifest names.
     if [ -d "$tmp/x/$MEMBER" ]; then
       cp -R "$tmp/x/$MEMBER/." "$dest.new/"
-    else
+    elif [ -f "$tmp/x/$MEMBER" ]; then
       cp "$tmp/x/$MEMBER" "$dest.new/$name"
+    else
+      found="$(find "$tmp/x" -type f -name "$(basename "$MEMBER")" -print -quit)"
+      [ -n "$found" ] || {
+        say "$component archive has no $MEMBER"
+        rm -rf "$tmp"
+        exit 1
+      }
+      cp "$found" "$dest.new/$name"
     fi
     chmod -R u+w "$dest.new"
     printf '%s\n' "$VERSION" >"$dest.new/.mash-installed"
@@ -206,7 +252,7 @@ binary)
     if [ "$(cat "$grammars" 2>/dev/null)" != "$GRAMMARS_SHA256" ]; then
       tmp="$(mktemp -d)"
       if ! curl -fL --retry 3 --max-time 900 -o "$tmp/grammars.tar.gz" "$GRAMMARS_URL" >>"$log" 2>&1 ||
-        ! printf '%s  %s\n' "$GRAMMARS_SHA256" "$tmp/grammars.tar.gz" | sha256sum -c - >>"$log" 2>&1; then
+        ! verify_sha256 "$GRAMMARS_SHA256" "$tmp/grammars.tar.gz"; then
         say "sentrux $VERSION grammars download or checksum failed"
         rm -rf "$tmp"
         exit 1
@@ -250,7 +296,7 @@ npm)
     say "$component $VERSION is already installed"
   else
     mkdir -p "$prefix"
-    if ! env PATH="$res/node/bin:$PATH" npm_config_cache="$data/cache/npm" \
+    if ! env HOME="$data" PATH="$res/node/bin:$PATH" npm_config_cache="$data/cache/npm" \
       "$res/node/bin/npm" install --global --prefix "$prefix" \
       "${PACKAGE:-$component}@$VERSION" >>"$log" 2>&1; then
       say "npm install failed for $component $VERSION"
@@ -259,33 +305,33 @@ npm)
     printf '%s\n' "$VERSION" >"$marker"
     say "$component $VERSION installed"
   fi
-  # npm writes `#!/usr/bin/env node`, which only resolves if the bundled runtime
-  # happens to be on PATH. Mash's node is at a fixed path inside the data
-  # folder's payload, so the installed bins name it directly.
-  node_real="$res/node/bin/node"
-  # npm links most bins to the package's entry file, so the shebang lives on the
-  # target rather than on the link. Rewrite the target, following the link.
-  while IFS= read -r bin_script; do
-    resolved="$(readlink -f "$bin_script" 2>/dev/null || printf '%s' "$bin_script")"
-    [ -f "$resolved" ] || continue
-    # `read` drops NUL bytes instead of warning the way a command substitution
-    # around head does: bundled JS entry points are not guaranteed to be text.
-    first_line=""
-    IFS= read -r first_line <"$resolved" 2>/dev/null || true
-    case "$first_line" in
-    '#!/usr/bin/env node')
-      {
-        echo "#!$node_real"
-        tail -n +2 "$resolved"
-      } >"$resolved.mashshebang"
-      mv "$resolved.mashshebang" "$resolved"
-      chmod 755 "$resolved"
-      ;;
-    esac
-  done < <(find "$prefix/bin" \( -type f -o -type l \) 2>/dev/null)
-  # A symlink into the package that was just rewritten still points at it, so
-  # only the shim outside the prefix has to be refreshed. A package can expose
-  # several binaries (vscode-langservers-extracted) or none (a plugin).
+  # Linux's /opt/letsmash path is fixed, so its scripts name the bundled node
+  # directly. A macOS app can move: keep npm's `#!/usr/bin/env node` there;
+  # Mash puts the current bundle's node first on PATH in every pane and probe.
+  if [ "$(uname -s)" = Linux ]; then
+    node_real="$res/node/bin/node"
+    # npm links most bins to an entry file; rewrite that target, not the link.
+    while IFS= read -r bin_script; do
+      resolved="$(readlink -f "$bin_script" 2>/dev/null || printf '%s' "$bin_script")"
+      [ -f "$resolved" ] || continue
+      # `read` drops NUL bytes instead of warning on binary entry points.
+      first_line=""
+      IFS= read -r first_line <"$resolved" 2>/dev/null || true
+      case "$first_line" in
+      '#!/usr/bin/env node')
+        {
+          echo "#!$node_real"
+          tail -n +2 "$resolved"
+        } >"$resolved.mashshebang"
+        mv "$resolved.mashshebang" "$resolved"
+        chmod 755 "$resolved"
+        ;;
+      esac
+    done < <(find "$prefix/bin" \( -type f -o -type l \) 2>/dev/null)
+  fi
+  # A symlink into the installed package stays valid; only the shim outside
+  # the prefix has to be refreshed. A package can expose several binaries
+  # (vscode-langservers-extracted) or none (a plugin).
   if [ "${#names[@]}" -gt 0 ]; then
     for name in "${names[@]}"; do
       target_bin="$prefix/bin/$name"

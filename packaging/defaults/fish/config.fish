@@ -16,9 +16,9 @@
 # it, mash-shell augmented it). fish_add_path prepends, dedupes and is
 # idempotent in one call -- the fish spelling of zsh's `typeset -U path`.
 if set -q MASH_BIN
-    for dir in (string split : -- $MASH_BIN)
-        fish_add_path --global --prepend --move $dir
-    end
+    # One prepend per directory reverses their order. Add the whole ordered
+    # list in one call so the bundle's bin remains ahead of node and user shims.
+    fish_add_path --global --prepend --move (string split : -- $MASH_BIN)
 end
 
 if type -q atuin

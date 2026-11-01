@@ -34,19 +34,51 @@ class MacOSUpdatePackageTest(unittest.TestCase):
         )
 
     def test_macos_build_points_pi_at_the_mash_project_dir(self):
-        """The macOS build installs Pi itself, not through mash_stage_runtimes.
+        """Pi must read a project's .mash/ rather than .pi/ on macOS too.
 
-        mash_set_pi_project_dir is what makes Pi read a project's .mash/ instead
-        of .pi/, and only the shared runtime stager called it, so the Mac app
-        silently kept reading .pi/. It must run right after the Pi install, and
-        before the runtime check, so a Pi that ignores the key fails the build.
+        The macOS adapter used to install Pi itself and skipped
+        mash_set_pi_project_dir, so the Mac app silently kept reading .pi/. It
+        now goes through the shared runtime stager, which installs Pi, sets the
+        key, and then proves the installed Pi honours it. Assert the ordering
+        inside that one stager, since both platforms depend on it.
         """
         build = (ROOT / "packaging/build.sh").read_text()
-        install = build.index('--prefix "$app/Contents/Resources/node" \\\n  $pi_packages')
-        set_dir = build.index('mash_set_pi_project_dir "$app/Contents/Resources"')
-        runtime = build.index('"$root/packaging/tests/test_pi_runtime.sh" "$app/Contents/Resources"')
+        self.assertIn('mash_stage_runtimes "$app/Contents/Resources" "$target"', build)
+
+        common = (ROOT / "packaging/build-common.sh").read_text()
+        install = common.index("$pi_packages")
+        set_dir = common.index('mash_set_pi_project_dir "$res"')
+        runtime = common.index('"$root/packaging/tests/test_pi_runtime.sh" "$res"')
         self.assertLess(install, set_dir)
         self.assertLess(set_dir, runtime)
+
+    def test_defaults_merge_with_already_staged_runtime_files(self):
+        """Shared staging creates defaults/pi for typebox and the voice catalog.
+        Copying the directory itself afterwards would nest defaults/defaults.
+        Exercise the actual copy command against that pre-existing layout.
+        """
+        build = (ROOT / "packaging/build.sh").read_text()
+        copy = next(line for line in build.splitlines()
+                    if line.startswith('cp -R "$root/packaging/defaults'))
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = pathlib.Path(tmp)
+            root = tmp / "source"
+            app = tmp / "Mash.app"
+            source = root / "packaging/defaults/pi"
+            staged = app / "Contents/Resources/defaults"
+            source.mkdir(parents=True)
+            runtime = staged / "pi/node_modules/typebox"
+            runtime.mkdir(parents=True)
+            (source / "settings.json").write_text("template")
+            (runtime / "package.json").write_text("runtime")
+            subprocess.run(
+                ["bash", "-eu", "-c", copy],
+                env={"root": str(root), "app": str(app), "PATH": "/usr/bin:/bin"},
+                check=True,
+            )
+            self.assertTrue((staged / "pi/settings.json").is_file())
+            self.assertTrue((runtime / "package.json").is_file())
+            self.assertFalse((staged / "defaults").exists())
 
     def test_app_is_the_terminal_and_hands_its_launch_to_the_setup(self):
         """Mash.app is one app: its executable is the terminal.
