@@ -50,6 +50,14 @@ if [ -x "$bin_dir/mash-update-notice" ]; then
   nohup "$bin_dir/mash-update-notice" "$res" "$home/.mash" </dev/null >/dev/null 2>&1 &
 fi
 
+# Setup runs once, so without this a raised pin would only ever reach new
+# installations. The helper re-asserts the pinned version of the tools Mash
+# already installed here, and no-ops when they match -- which is the usual
+# case. Backgrounded: a launch must never wait on it, nor fail with it.
+if [ -x "$bin_dir/mash-tool-refresh" ]; then
+  nohup "$bin_dir/mash-tool-refresh" "$home/.mash" </dev/null >/dev/null 2>&1 &
+fi
+
 # First handoff after setup only: the wizard leaves a one-shot marker, and the
 # new-workspace popup opens as soon as the server answers. The marker is taken
 # (renamed) before waiting, so the popup opens once.

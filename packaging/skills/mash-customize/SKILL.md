@@ -254,14 +254,17 @@ directories (each only if it exists), then whatever was inherited:
 
 | Directory | What Mash finds there |
 |---|---|
-| `~/.local/bin` | `cua-driver` and `agent-browser`, which Mash's wizard installs |
+| `~/.local/bin` | `cua-driver`, which Mash's wizard installs |
 | `~/.bun/bin` | `bun` and `bunx` — the bun installer puts them here, not Homebrew |
 | `/opt/homebrew/bin`, `/usr/local/bin` (and their `sbin`) | the Homebrew tools below |
 
 From Homebrew: `git`, `gh`, `jq`, `fzf`, `fd`, `bat`, `rg`, `delta`, `eza`,
-`zoxide`, `sentrux`, `git-flow-next`, `gpg`, plus the language servers and
-formatters. `node@24` and `python@3.13` are needed because those servers'
-shebangs point at Homebrew's interpreters.
+`zoxide`, `sentrux`, `git-flow-next`, `gpg`, plus non-npm language servers and
+formatters (`gopls`, `rust-analyzer`, `marksman`, `texlab`, `shfmt`,
+`latexindent`). Mash-owned npm tools, including `agent-browser`, `prettier`,
+and npm language servers, use `~/.mash/local/npm` and shims in `~/.mash/bin`;
+those shims run with Mash's bundled Node. `python-lsp-server` still uses the
+host Python installer on macOS.
 
 Mash's own directories always come first, so a program Mash ships (pi, node,
 python3, fresh, herdr, lazygit, ...) never resolves to a host copy of the same

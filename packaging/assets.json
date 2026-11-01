@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "notes": "Single source of truth for pinned components. packaging/pins.txt is a projection of this file and is checked byte-for-byte by mash_pins_check; never edit one without the other.",
+  "notes": "Authority for Mash-managed pins, source refs and artifact checksums. Host package entries use referenceVersion for informational values only; brew/apt versions are not constrained. packaging/pins.txt projects only pinOrder and must be regenerated after a pin changes.",
   "targets": {
     "macos-arm64": {
       "os": "macos",
@@ -27,7 +27,7 @@
     "build": "A build-time tool the host image must provide at exactly this version; it never reaches the user.",
     "npm": "Installed by the bundled npm.",
     "pip": "Installed into a Mash venv by the bundled python.",
-    "package": "Provided by the platform package manager or the host system; never vendored by Mash."
+    "package": "Provided unversioned by brew, apt or the host system; never vendored or version-enforced by Mash. referenceVersion is informational, not a pin or minimum requirement."
   },
   "pinOrder": [
     "ghostty",
@@ -40,25 +40,14 @@
     "node",
     "python",
     "rust",
-    "git",
     "go",
     "lazygit",
     "lazydocker",
     "pet",
     "viu",
-    "zoxide",
-    "eza",
-    "fzf",
-    "fd",
-    "bat",
-    "rg",
-    "jq",
-    "gh",
-    "delta",
     "atuin",
     "starship",
     "zsh-autosuggestions",
-    "gopls",
     "rust-analyzer",
     "marksman",
     "texlab",
@@ -75,7 +64,6 @@
     "pi-monokai-pro",
     "pi-web-search",
     "typebox",
-    "shfmt",
     "prettier",
     "prettier-plugin-svelte",
     "annotate",
@@ -220,7 +208,7 @@
       }
     },
     "git": {
-      "version": "2.56.0",
+      "referenceVersion": "2.56.0",
       "strategy": "package",
       "install": "host"
     },
@@ -350,66 +338,91 @@
       }
     },
     "zoxide": {
-      "version": "0.10.0",
+      "referenceVersion": "0.10.0",
       "strategy": "package",
       "install": "host"
     },
     "eza": {
-      "version": "0.23.5",
+      "referenceVersion": "0.23.5",
       "strategy": "package",
       "install": "host"
     },
     "fzf": {
-      "version": "0.67.0",
+      "referenceVersion": "0.67.0",
       "strategy": "package",
       "install": "host"
     },
     "fd": {
-      "version": "10.5.0",
+      "referenceVersion": "10.5.0",
       "strategy": "package",
       "install": "host"
     },
     "bat": {
-      "version": "0.26.1",
+      "referenceVersion": "0.26.1",
       "strategy": "package",
       "install": "host"
     },
     "rg": {
-      "version": "15.2.0",
+      "referenceVersion": "15.2.0",
       "strategy": "package",
       "install": "host"
     },
     "jq": {
-      "version": "1.8.1",
+      "referenceVersion": "1.8.1",
       "strategy": "package",
       "install": "host"
     },
     "gh": {
-      "version": "2.95.0",
+      "referenceVersion": "2.95.0",
       "strategy": "package",
       "install": "host"
     },
     "delta": {
-      "version": "0.19.2",
+      "referenceVersion": "0.19.2",
       "strategy": "package",
       "install": "host"
     },
     "gopls": {
-      "version": "0.23.0",
+      "referenceVersion": "0.23.0",
       "strategy": "package",
       "install": "user"
     },
     "rust-analyzer": {
-      "version": "2026-09-27",
-      "strategy": "package",
-      "install": "user"
+      "version": "2026-09-28",
+      "strategy": "binary",
+      "install": "user",
+      "artifacts": {
+        "macos-arm64": {
+          "url": "https://github.com/rust-lang/rust-analyzer/releases/download/2026-09-28/rust-analyzer-aarch64-apple-darwin.gz",
+          "sha256": "54ec873d8996e2c127d758bf45d4eacb6d3371dae4f6f6d5d3f05cedbae5fd59",
+          "archive": "gz",
+          "member": "rust-analyzer"
+        },
+        "linux-amd64": {
+          "url": "https://github.com/rust-lang/rust-analyzer/releases/download/2026-09-28/rust-analyzer-x86_64-unknown-linux-gnu.gz",
+          "sha256": "23f711d86b5f826e22886f01d7355dc01e0f4c1357dafa29710a95b903b48c85",
+          "archive": "gz",
+          "member": "rust-analyzer"
+        },
+        "linux-arm64": {
+          "url": "https://github.com/rust-lang/rust-analyzer/releases/download/2026-09-28/rust-analyzer-aarch64-unknown-linux-gnu.gz",
+          "sha256": "03bad9c3dabb0f07a2678d5f9f8f1575a3742ea141506e14b3a26b42a1f896f3",
+          "archive": "gz",
+          "member": "rust-analyzer"
+        }
+      }
     },
     "marksman": {
       "version": "2026-02-08",
       "strategy": "binary",
       "install": "user",
-      "targets": ["linux-amd64", "linux-arm64"],
       "artifacts": {
+        "macos-arm64": {
+          "url": "https://github.com/artempyanykh/marksman/releases/download/2026-02-08/marksman-macos",
+          "sha256": "6a801c17b5ac0dba69787c5282b3b3bd416e66c96253fae098d311c6bbd1833b",
+          "archive": "raw",
+          "member": "marksman-macos"
+        },
         "linux-amd64": {
           "url": "https://github.com/artempyanykh/marksman/releases/download/2026-02-08/marksman-linux-x64",
           "sha256": "be5098e8213219269c47fc0d916a66fa31ce0602ec967475c722260aabf26087",
@@ -428,8 +441,13 @@
       "version": "5.26.0",
       "strategy": "binary",
       "install": "user",
-      "targets": ["linux-amd64", "linux-arm64"],
       "artifacts": {
+        "macos-arm64": {
+          "url": "https://github.com/latex-lsp/texlab/releases/download/v5.26.0/texlab-aarch64-macos.tar.gz",
+          "sha256": "af7972ffd230711ba04ada9b69cc32ce9111d9196ba69538062872faefdbee56",
+          "archive": "tar.gz",
+          "member": "texlab"
+        },
         "linux-amd64": {
           "url": "https://github.com/latex-lsp/texlab/releases/download/v5.26.0/texlab-x86_64-linux.tar.gz",
           "sha256": "8697bd5e479d4584b14b7eed5c320c80ec4e1d91ebefbb6801e6bf38e9971300",
@@ -448,8 +466,13 @@
       "version": "4.0.3",
       "strategy": "binary",
       "install": "user",
-      "targets": ["linux-amd64", "linux-arm64"],
       "artifacts": {
+        "macos-arm64": {
+          "url": "https://github.com/cmhughes/latexindent.pl/releases/download/V4.0.3/latexindent-macos",
+          "sha256": "8b4c2b3b1fe7986fd294f6caf6e3c95f8090d2ad10d4f31a3af4f7c27e3521a9",
+          "archive": "raw",
+          "member": "latexindent-macos"
+        },
         "linux-amd64": {
           "url": "https://github.com/cmhughes/latexindent.pl/releases/download/V4.0.3/latexindent-linux",
           "sha256": "6a9a16edcf1242430015316b78498852eba4b700b728f646fc58d654cdd1edbe",
@@ -537,33 +560,37 @@
       "package": "typebox"
     },
     "shfmt": {
-      "version": "3.14.1",
+      "referenceVersion": "3.14.1",
       "strategy": "package",
       "install": "user"
     },
     "prettier": {
       "version": "3.9.9",
-      "strategy": "package",
-      "install": "user"
+      "strategy": "npm",
+      "install": "user",
+      "package": "prettier"
     },
     "prettier-plugin-svelte": {
       "version": "4.1.1",
-      "strategy": "package",
-      "install": "user"
+      "strategy": "npm",
+      "install": "user",
+      "package": "prettier-plugin-svelte"
     },
     "annotate": {
-      "version": "0.8.0",
+      "version": "0.9.9",
       "strategy": "git",
       "install": "bundled",
       "repo": "plannotator/herdr-annotate",
-      "ref": "main"
+      "ref": "main",
+      "commit": "a9973b43c1fc90044a9f15755e310e12b8465abb"
     },
     "herdr-terminal-notifier": {
       "version": "0.1.0",
       "strategy": "git",
       "install": "bundled",
       "repo": "dot/herdr-terminal-notifier",
-      "ref": "main",
+      "ref": "master",
+      "commit": "321cb6e18df7c5e42030c019ed9e7c812f8998f5",
       "targets": [
         "macos-arm64"
       ]
@@ -573,21 +600,24 @@
       "strategy": "git",
       "install": "bundled",
       "repo": "fullerzz/herdr-plugin-sesh",
-      "ref": "v0.14.0"
+      "ref": "v0.14.0",
+      "commit": "ed6d355933923c2c150fc3b466bafb619c0af7ea"
     },
     "herdr.auto-title": {
       "version": "0.9.1",
       "strategy": "git",
       "install": "bundled",
       "repo": "kryptamine/herdr-auto-title",
-      "ref": "v0.9.1"
+      "ref": "v0.9.1",
+      "commit": "bb74c548c3a9f8efb7b898809a29145c2729dac2"
     },
     "persiyanov.reviewr": {
       "version": "0.39.0",
       "strategy": "git",
       "install": "bundled",
       "repo": "persiyanov/herdr-reviewr",
-      "ref": "v0.39.0"
+      "ref": "v0.39.0",
+      "commit": "cd618b48dc1f4d2cc092f3f26827ac72fb44773e"
     },
     "herdr-workspace": {
       "version": "0.1.2",
@@ -608,21 +638,29 @@
       "strategy": "git",
       "install": "bundled",
       "repo": "speardragon/herdr-plugin-manager",
-      "ref": "v0.5.0"
+      "ref": "v0.5.0",
+      "commit": "e4fef2693728a36cbb389af033a389cad2257869"
     },
     "mash-programming-skills": {
-      "version": "0.5.15",
+      "version": "0.5.16",
       "strategy": "git",
       "install": "bundled",
       "repo": "LuisAlejandro/mash-programming-skills",
-      "ref": "0.5.15"
+      "ref": "0.5.16"
     },
     "sentrux": {
       "version": "0.5.7",
       "strategy": "binary",
       "install": "user",
-      "targets": ["linux-amd64", "linux-arm64"],
       "artifacts": {
+        "macos-arm64": {
+          "url": "https://github.com/sentrux/sentrux/releases/download/v0.5.7/sentrux-darwin-arm64",
+          "sha256": "30ae1a44d4478adf294019fce6d65ce5686c25bc863eb715b320c5234927f6c2",
+          "archive": "raw",
+          "member": "sentrux-darwin-arm64",
+          "grammars_url": "https://github.com/sentrux/sentrux/releases/download/v0.5.7/grammars-darwin-arm64.tar.gz",
+          "grammars_sha256": "942a1597fae6c33823dcf7158a9850e4b67258cadf89100c20c980fc3abaf48f"
+        },
         "linux-amd64": {
           "url": "https://github.com/sentrux/sentrux/releases/download/v0.5.7/sentrux-linux-x86_64",
           "sha256": "3237f80fe20d54aad4deefa8a143f0d60543bb5d2d6ad891eb42432f155725a6",
@@ -700,11 +738,13 @@
       "version": "1.98.1",
       "strategy": "binary",
       "install": "build-host",
-      "targets": [
-        "linux-amd64",
-        "linux-arm64"
-      ],
       "artifacts": {
+        "macos-arm64": {
+          "url": "https://static.rust-lang.org/dist/rust-1.98.1-aarch64-apple-darwin.tar.gz",
+          "sha256": "cfc171d8120d401b10a1028c52646dd8e00e3e66852f949061ce087845f55afd",
+          "archive": "tar.gz",
+          "member": "."
+        },
         "linux-amd64": {
           "url": "https://static.rust-lang.org/dist/rust-1.98.1-x86_64-unknown-linux-gnu.tar.gz",
           "sha256": "24ba1338a2d35c5a3247936546429e163fa674d726102af18bdf624582c57aea",
@@ -723,11 +763,13 @@
       "version": "1.26.4",
       "strategy": "binary",
       "install": "build-host",
-      "targets": [
-        "linux-amd64",
-        "linux-arm64"
-      ],
       "artifacts": {
+        "macos-arm64": {
+          "url": "https://go.dev/dl/go1.26.4.darwin-arm64.tar.gz",
+          "sha256": "b62ad2b6d7d2464f12a5bcad7ff47f19d08325773b5efd21610e445a05a9bf53",
+          "archive": "tar.gz",
+          "member": "."
+        },
         "linux-amd64": {
           "url": "https://go.dev/dl/go1.26.4.linux-amd64.tar.gz",
           "sha256": "1153d3d50e0ac764b447adfe05c2bcf08e889d42a02e0fe0259bd47f6733ad7f",

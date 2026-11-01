@@ -103,10 +103,32 @@ fi
 #     under ~/Library) and collect_files discards its output unless
 #     status.success(), throwing away every valid path it printed.
 # Result: an empty list -> an empty popup, which is exactly what cmd+p did.
-# fd is now installed via Homebrew; this lookup is the belt-and-braces guard.
-if ! command -v fd >/dev/null 2>&1; then
+# Homebrew installs fd and bat under those names; Debian renames both, because
+# the archive already had an `fd` and a `bat`. The package depends on fd-find
+# and bat, so on Linux the commands are fdfind and batcat. Resolve each to
+# whichever name this machine actually has rather than assuming either.
+mash_tool() {
+	local candidate
+	for candidate in "$@"; do
+		if command -v "$candidate" >/dev/null 2>&1; then
+			printf '%s\n' "$candidate"
+			return 0
+		fi
+	done
+	return 1
+}
+
+fd_bin="$(mash_tool fd fdfind)" || {
 	printf 'telescope-files: fd not found; file search needs it.\n' >&2
 	"$herdr" notification show "File finder" --body "fd not found" --sound none >/dev/null 2>&1 || true
+}
+export TELESCOPE_FD="${fd_bin:-fd}"
+# The preview is optional: without bat the picker still lists and opens files,
+# so fall back to head rather than passing bat's flags to something else.
+if bat_bin="$(mash_tool bat batcat)"; then
+	preview_cmd="$bat_bin --style=numbers --color=always --line-range=:200 {2}"
+else
+	preview_cmd="head -n 200 {2}"
 fi
 
 rows="$(TELESCOPE_CWD="$cwd" "$telescope_bin" list-files 2>/dev/null || true)"
@@ -147,7 +169,7 @@ selection="$(printf '%s\n' "$list" | fzf \
 	--nth=1 \
 	--prompt="files ▸  ($count) " \
 	--header='enter open in fresh · ctrl-o force new tab · esc cancel' \
-	--preview="bat --style=numbers --color=always --line-range=:200 {2}" \
+	--preview="$preview_cmd" \
 	--preview-window='right,60%,border-left,wrap' \
 	--expect=ctrl-o \
 	--reverse \

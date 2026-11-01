@@ -75,8 +75,8 @@ fi
 
 echo "--- helpers (every file build.sh ships)"
 # The list build.sh itself copies, not every file in packaging/helpers/: that
-# folder also holds Linux-only helpers (mash-tool-install) and C sources the
-# build compiles (mash-update-swap.c), which a macOS bundle rightly lacks.
+# folder also holds tests and C sources the build compiles (mash-update-swap.c),
+# which a macOS bundle rightly lacks.
 while IFS= read -r name; do
 	compare "$root/packaging/helpers/$name" "$res/bin/$name" "Resources/bin/$name"
 done < <(sed -n '/^ship_helpers=(/,/^)/{/^ship_helpers=(/d;/^)/d;s/^[[:space:]]*//;/^$/d;p;}' "$root/packaging/build.sh")

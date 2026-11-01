@@ -4,6 +4,7 @@ Run with: python3 packaging/tests/test_assets.py
 """
 
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -47,6 +48,39 @@ class ManifestIntegrityTest(unittest.TestCase):
                 self.assertTrue(self.manifest.version(name))
 
 
+class HostReferenceTest(unittest.TestCase):
+    def test_host_reference_versions_are_not_pins(self):
+        manifest = assets.Manifest.load()
+        pinned = {name for name, c in manifest.components.items() if c["strategy"] != "package"}
+        self.assertEqual(pinned, set(manifest.pin_order))
+        for name, component in manifest.components.items():
+            if component["strategy"] != "package":
+                continue
+            with self.subTest(component=name):
+                self.assertNotIn("version", component)
+                self.assertTrue(component["referenceVersion"])
+                with self.assertRaises(assets.AssetError):
+                    manifest.version(name)
+                resolved = manifest.resolve(name, "macos-arm64")
+                self.assertNotIn("version", resolved)
+                self.assertEqual(component["referenceVersion"], resolved["reference_version"])
+
+    def test_host_resolution_still_works_without_a_version(self):
+        result = subprocess.run(
+            [sys.executable, str(PACKAGING / "assets.py"), "resolve-shell", "jq", "linux-amd64"],
+            capture_output=True, text=True, check=True,
+        )
+        spec = dict(line.split("=", 1) for line in result.stdout.splitlines())
+        self.assertEqual("package", spec["STRATEGY"])
+        self.assertIn("REFERENCE_VERSION", spec)
+        self.assertNotIn("VERSION", spec)
+        components = subprocess.run(
+            [sys.executable, str(PACKAGING / "assets.py"), "components", "macos-arm64"],
+            capture_output=True, text=True, check=True,
+        ).stdout.splitlines()
+        self.assertIn("jq", components)  # references remain in the inventory
+
+
 class PinProjectionTest(unittest.TestCase):
     def test_projection_matches_the_committed_pin_file(self):
         manifest = assets.Manifest.load()
@@ -74,6 +108,32 @@ class PinProjectionTest(unittest.TestCase):
 class TargetResolutionTest(unittest.TestCase):
     def setUp(self):
         self.manifest = assets.Manifest.load()
+
+    def test_install_specs_carry_the_pinned_version(self):
+        """A bare name installs whatever is current, so every installer gets one."""
+        for name in self.manifest.pin_order:
+            strategy = self.manifest.strategy(name)
+            if strategy not in ("npm", "pip"):
+                continue
+            with self.subTest(component=name):
+                package = self.manifest.components[name].get("package") or name
+                version = self.manifest.version(name)
+                self.assertEqual(
+                    f"{package}{'@' if strategy == 'npm' else '=='}{version}",
+                    self.manifest.install_spec(name, "macos-arm64"),
+                )
+
+    def test_host_package_strategy_refuses_a_spec(self):
+        """jq comes from the platform; returning "jq" would pin nothing."""
+        with self.assertRaises(assets.AssetError):
+            self.manifest.install_spec("jq", "macos-arm64")
+
+    def test_shared_npm_package_names_are_spelled_out(self):
+        """The npm package can differ from the component id; the spec must use it."""
+        self.assertEqual(
+            "@tailwindcss/language-server@0.16.0",
+            self.manifest.install_spec("tailwindcss-language-server", "linux-amd64"),
+        )
 
     def test_each_supported_target_resolves_its_own_exact_artifact(self):
         for target in ALL_TARGETS:
@@ -121,6 +181,25 @@ class TargetResolutionTest(unittest.TestCase):
                     spec = self.manifest.resolve(name, target)
                     self.assertIn(spec["sha256"], json.dumps(spec))
 
+    def test_every_component_the_macos_build_stages_resolves_for_macos(self):
+        """A refactor can make the build read the manifest while the manifest
+        still has only Linux artifacts. Version-only checks all pass, and the
+        first real build aborts -- exactly what happened to rust/go here.
+
+        This enumerates the components the macOS adapter stages, and resolves
+        each against its actual target, not just its version. The build and
+        this list must move together.
+        """
+        for name in (
+            "rust", "go", "node", "python", "herdr", "lazygit", "lazydocker",
+            "pet", "atuin", "starship", "viu", "zsh-autosuggestions", "fresh",
+        ):
+            with self.subTest(component=name):
+                self.assertTrue(self.manifest.applies_to(name, "macos-arm64"))
+                spec = self.manifest.resolve(name, "macos-arm64")
+                self.assertRegex(spec["sha256"], r"^[0-9a-f]{64}$")
+                self.assertTrue(spec["url"].startswith("https://"))
+
     def test_cua_driver_pins_both_linux_architectures(self):
         for target in LINUX:
             with self.subTest(target=target):
@@ -128,16 +207,29 @@ class TargetResolutionTest(unittest.TestCase):
                 self.assertEqual("cua-driver", spec["component"])
                 self.assertIn("linux", spec["url"])
 
-    def test_linux_development_tools_pin_both_architectures(self):
-        for name in ("sentrux", "marksman", "texlab", "latexindent"):
+    def test_development_tools_pin_every_architecture(self):
+        """These four were Linux-only pins; macOS installed them from Homebrew.
+
+        An unversioned formula cannot honour the manifest, so each now carries a
+        macOS artifact too and every target must resolve a checksummed one.
+        """
+        for name in ("sentrux", "marksman", "texlab", "latexindent", "rust-analyzer"):
             self.assertEqual("binary", self.manifest.strategy(name))
-            self.assertFalse(self.manifest.applies_to(name, "macos-arm64"))
-            for target in LINUX:
+            for target in ALL_TARGETS:
                 with self.subTest(component=name, target=target):
+                    self.assertTrue(self.manifest.applies_to(name, target))
                     spec = self.manifest.resolve(name, target)
                     self.assertRegex(spec["sha256"], r"^[0-9a-f]{64}$")
                     if name == "sentrux":
                         self.assertRegex(spec["grammars_sha256"], r"^[0-9a-f]{64}$")
+
+    def test_macos_artifacts_are_macos_builds(self):
+        """A Linux asset resolved for macOS would download and never run."""
+        for name in ("sentrux", "marksman", "texlab", "latexindent", "rust-analyzer"):
+            with self.subTest(component=name):
+                url = self.manifest.resolve(name, "macos-arm64")["url"]
+                self.assertNotIn("linux", url.lower())
+                self.assertRegex(url.lower(), r"macos|darwin|apple")
 
 
 class FailurePathsTest(unittest.TestCase):
@@ -165,6 +257,15 @@ class FailurePathsTest(unittest.TestCase):
         self.assertTrue(any("cua-driver" in p and "linux-arm64" in p for p in problems), problems)
         with self.assertRaises(assets.AssetError):
             manifest.resolve("cua-driver", "linux-arm64")
+
+    def test_host_reference_cannot_be_mislabeled_as_a_pin(self):
+        def mutate(data):
+            data["components"]["jq"]["version"] = "1.8.1"
+            data["pinOrder"].append("jq")
+
+        problems = self._manifest(mutate).problems()
+        self.assertTrue(any("jq: host packages use referenceVersion" in p for p in problems))
+        self.assertTrue(any("jq: host reference must not appear in pinOrder" in p for p in problems))
 
     def test_duplicate_pin_is_reported(self):
         def mutate(data):

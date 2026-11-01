@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Single resolver for Mash's pinned artifacts.
+"""Resolver for Mash's pinned artifacts and informational host dependencies.
 
-Build scripts, preflight and the first-run installer all read pins through this
-module so a version and its checksum cannot disagree between them.
+Build scripts, preflight and the installer read pins through this module.
+Host package referenceVersion values are inventory only: they never become
+install constraints and are excluded from packaging/pins.txt.
 
 Standard library only: the build runs it with whichever python3 the host or the
 bundle provides, before any dependency has been installed.
@@ -103,7 +104,10 @@ class Manifest:
             raise AssetError(f"unknown component {name!r}") from None
 
     def version(self, name: str) -> str:
-        version = self._component(name).get("version")
+        component = self._component(name)
+        if component.get("strategy") == "package":
+            raise AssetError(f"component {name!r} is host-managed; referenceVersion is not a pin")
+        version = component.get("version")
         if not version:
             raise AssetError(f"component {name!r} has no version")
         return str(version)
@@ -129,16 +133,21 @@ class Manifest:
             raise AssetError(f"component {name!r} has no entry for unsupported target {target!r}")
 
         strategy = component.get("strategy")
+        if strategy == "package":
+            return {"component": name, "target": target, "strategy": strategy,
+                    "reference_version": component.get("referenceVersion")}
         artifacts = component.get("artifacts") or {}
         spec = artifacts.get(target) or artifacts.get("*")
         if spec is None:
             if strategy in DOWNLOADED:
                 raise AssetError(f"component {name!r} has no artifact for {target}")
-            # A package/npm/pip/git pin resolves from the platform, not a URL.
+            # An npm/pip/git/build pin resolves without a download URL here.
+            # `commit` is what makes a git pin reproducible: a ref can move,
+            # so a build that clones one has to verify what it actually got.
             return {"component": name, "target": target, "strategy": strategy,
                     "version": self.version(name),
                     "package": component.get("package"), "ref": component.get("ref"),
-                    "repo": component.get("repo")}
+                    "repo": component.get("repo"), "commit": component.get("commit")}
 
         resolved = {"component": name, "target": target, "strategy": strategy,
                     "version": self.version(name)}
@@ -153,6 +162,24 @@ class Manifest:
         if self.strategy(name) not in DOWNLOADED:
             raise AssetError(f"component {name!r} is not a downloaded artifact")
         return self.resolve(name, target)
+
+    def install_spec(self, name: str, target: str) -> str:
+        """The pinned spec an installer takes: `name@version`, or `name==version`.
+
+        Callers that install a package have to state the version in the same
+        argument as the name, so this is the only place that knows how each
+        package manager spells it. A strategy with no installable spec raises
+        rather than returning a bare name, because a bare name installs whatever
+        is current.
+        """
+        resolved = self.resolve(name, target)
+        strategy = resolved.get("strategy")
+        if strategy not in ("npm", "pip"):
+            raise AssetError(
+                f"component {name!r} has no pinned install spec (strategy {strategy!r})")
+        package = resolved.get("package") or name
+        separator = "@" if strategy == "npm" else "=="
+        return f"{package}{separator}{resolved['version']}"
 
     # -- projections ------------------------------------------------------
 
@@ -203,12 +230,22 @@ class Manifest:
             if name in seen:
                 problems.append(f"duplicate component {name!r}")
             seen.add(name)
-            if not component.get("version"):
-                problems.append(f"{name}: no version")
             strategy = component.get("strategy")
             if not strategy:
                 problems.append(f"{name}: no strategy")
                 continue
+            if strategy == "package":
+                if "version" in component:
+                    problems.append(f"{name}: host packages use referenceVersion, not version")
+                if not component.get("referenceVersion"):
+                    problems.append(f"{name}: no referenceVersion")
+                if name in self.pin_order:
+                    problems.append(f"{name}: host reference must not appear in pinOrder")
+                continue
+            if not component.get("version"):
+                problems.append(f"{name}: no version")
+            if name not in self.pin_order:
+                problems.append(f"{name}: pinned component is missing from pinOrder")
             if strategy not in DOWNLOADED:
                 continue
             artifacts = component.get("artifacts") or {}
@@ -265,7 +302,10 @@ def _main(argv: list[str]) -> int:
             for problem in problems:
                 print(f"assets: {problem}", file=sys.stderr)
             return 1
-        print(f"assets: {len(manifest.components)} components, {len(manifest.supported)} targets")
+        host_count = sum(c.get("strategy") == "package" for c in manifest.components.values())
+        print(f"assets: {len(manifest.components)} components "
+              f"({len(manifest.pin_order)} pins, {host_count} host references), "
+              f"{len(manifest.supported)} targets")
         return 0
 
     if command == "pins":
@@ -289,9 +329,23 @@ def _main(argv: list[str]) -> int:
 
     if command == "components":
         target = normalise_target(argv[2]) if len(argv) > 2 else host_target()
-        for name in manifest.pin_order:
+        for name in manifest.components:
             if manifest.applies_to(name, target):
                 print(name)
+        return 0
+
+    if command == "specs":
+        # One pinned install spec per line, for the installers that take the
+        # version in the same argument as the package name.
+        if len(argv) < 3:
+            print("usage: assets.py specs <component>...", file=sys.stderr)
+            return 2
+        for name in argv[2:]:
+            try:
+                print(manifest.install_spec(name, host_target()))
+            except AssetError as error:
+                print(f"assets: {error}", file=sys.stderr)
+                return 1
         return 0
 
     if command == "resolve-shell":
@@ -305,9 +359,9 @@ def _main(argv: list[str]) -> int:
         except AssetError as error:
             print(f"assets: {error}", file=sys.stderr)
             return 1
-        for key in ("component", "target", "strategy", "version", "url", "sha256",
+        for key in ("component", "target", "strategy", "version", "reference_version", "url", "sha256",
                     "archive", "member", "grammars_url", "grammars_sha256",
-                    "package", "ref", "repo"):
+                    "package", "ref", "repo", "commit"):
             value = spec.get(key)
             if value is None:
                 continue

@@ -29,6 +29,13 @@ home="$(dscl . -read "/Users/$(id -un)" NFSHomeDirectory | awk '{print $2}')"
   echo "Mash builds for arm64 only." >&2
   exit 1
 }
+# The manifest target this build resolves every pinned artifact for. The Linux
+# adapter derives it the same way; nothing may assume a literal.
+target="$(python3 "$root/packaging/assets.py" target)"
+[ "$target" = "macos-arm64" ] || {
+  echo "expected target macos-arm64, resolved $target" >&2
+  exit 1
+}
 
 ship_helpers=(
   mash-bin
@@ -51,6 +58,8 @@ ship_helpers=(
   herdr-annotate-paste
   mash-orchestration
   mash-hindsight-install
+  mash-tool-install
+  mash-tool-refresh
   hindsight-embed
   mash-voice-model
   mash-notify
@@ -176,51 +185,18 @@ unpack_bin() {
   esac
 }
 
-fetch "https://nodejs.org/dist/v24.16.0/node-v24.16.0-darwin-arm64.tar.gz" \
-  "$work/node.tar.gz" \
-  "39189dab4eeb15706c424af0ac08a3044c9e48f7db12a7d77f6b7aafc7dd5df6"
-tar -xzf "$work/node.tar.gz" -C "$work"
-
-fetch "https://github.com/astral-sh/python-build-standalone/releases/download/20261003/cpython-3.13.16%2B20261003-aarch64-apple-darwin-install_only.tar.gz" \
-  "$work/python.tar.gz" \
-  "d8975d7df4f08f7b1c7aafcdfacbddcec3d366415f2c1a72b2466b6850815933"
-tar -xzf "$work/python.tar.gz" -C "$work"
-
-# Herdr is Mash's core UI process. None of the opt-in host utilities are
-# downloaded here; Git comes from the build machine for plugin source clones.
-fetch_bottle herdr \
-  "https://ghcr.io/v2/homebrew/core/herdr/blobs/sha256:d381e8af36dc499593101d33b80098dd7316ba9f167b1535e4eeb76b2ac2e58a" \
-  "d381e8af36dc499593101d33b80098dd7316ba9f167b1535e4eeb76b2ac2e58a"
+# Herdr is the one component still fetched here: macOS takes it from a Homebrew
+# bottle whose dylibs are rewritten into the bundle below, which the shared
+# stager (a single pinned binary) does not model. Everything else now comes
+# from the manifest through mash_stage_runtimes, so a version lives in exactly
+# one place. None of the opt-in host utilities are downloaded; Git comes from
+# the build machine for plugin source clones.
+mash_resolve herdr "$target" || {
+  echo "could not resolve the pinned herdr bottle" >&2
+  exit 1
+}
+fetch_bottle herdr "$URL" "$SHA256"
 take_bin herdr "$(bottle_bin herdr herdr)"
-
-unpack_bin lazygit \
-  "https://github.com/jesseduffield/lazygit/releases/download/v0.65.1/lazygit_0.65.1_darwin_arm64.tar.gz" \
-  "65a367c6ea9a88efebaaf7998a6835eedb987e04916cef677264ff9b31b1b13e" \
-  "lazygit"
-unpack_bin lazydocker \
-  "https://github.com/jesseduffield/lazydocker/releases/download/v0.25.2/lazydocker_0.25.2_Darwin_arm64.tar.gz" \
-  "4a54d7b4abdf255b2bce9806641eac5568d5b7fbc820c1b5d3f9e34ea1367d60" \
-  "lazydocker"
-unpack_bin pet \
-  "https://github.com/knqyf263/pet/releases/download/v1.0.1/pet_1.0.1_darwin_arm64.tar.gz" \
-  "f3ba11bc1cb2b2edc8725648e52d871e417eaa76d8b1c12fa8e24e4f1c704f03" \
-  "pet"
-unpack_bin atuin \
-  "https://github.com/atuinsh/atuin/releases/download/v18.23.0/atuin-aarch64-apple-darwin.tar.gz" \
-  "c988be1cde19cd7295ce64bc8b955d42fb1855e5227cb640c87fc09c8408c3fc" \
-  "atuin-aarch64-apple-darwin/atuin"
-unpack_bin starship \
-  "https://github.com/starship/starship/releases/download/v1.27.0/starship-aarch64-apple-darwin.tar.gz" \
-  "5362da8cb2928f98f3ce0ffda697cf0f8de70081db000dae316d6d3a404f6cf0" \
-  "starship"
-
-# zsh-autosuggestions is source, not an executable: keep its whole pinned tree
-# beside the program directory so zsh can source it from the read-only bundle.
-fetch "https://github.com/zsh-users/zsh-autosuggestions/archive/refs/tags/v0.7.1.tar.gz" \
-  "$work/zsh-autosuggestions.tar.gz" \
-  "0df7affff21cd87ed298e6a3970ed08a1dd66a6efa676454ee5b091ad503badf"
-mkdir -p "$work/zsh-autosuggestions"
-tar -xzf "$work/zsh-autosuggestions.tar.gz" -C "$work/zsh-autosuggestions"
 
 # Host utilities (git, gh, fzf, fd, bat, rg, jq, delta, eza, zoxide) and
 # Fresh's formatters and language servers are installed on the user's machine
@@ -261,24 +237,21 @@ orig="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$ghostty_src/Con
   exit 1
 }
 
-fetch "https://static.rust-lang.org/dist/rust-1.98.1-aarch64-apple-darwin.tar.gz" \
-  "$work/rust.tar.gz" \
-  "cfc171d8120d401b10a1028c52646dd8e00e3e66852f949061ce087845f55afd"
-tar -xzf "$work/rust.tar.gz" -C "$work"
-"$work/rust-1.98.1-aarch64-apple-darwin/install.sh" \
-  --prefix="$work/rustc" --without=rust-docs
-fetch "https://go.dev/dl/go1.26.4.darwin-arm64.tar.gz" \
-  "$work/go.tar.gz" \
-  "b62ad2b6d7d2464f12a5bcad7ff47f19d08325773b5efd21610e445a05a9bf53"
-tar -xzf "$work/go.tar.gz" -C "$work"
+# Rust and Go build Fresh, the wizard and two plugins. Build-only, pinned in
+# the manifest for every target, and cached between runs like the Linux build.
+mash_ensure_toolchain rust "$target" "$work/rustc" || {
+  echo "could not stage the rust toolchain" >&2
+  exit 1
+}
+mash_ensure_toolchain go "$target" "$work/go" || {
+  echo "could not stage the go toolchain" >&2
+  exit 1
+}
 
+# Only herdr needs its Homebrew dylibs embedded; the rest are self-contained
+# and are staged straight into the bundle by mash_stage_runtimes.
 tools=(
   "herdr:$work/tools/herdr"
-  "lazygit:$work/tools/lazygit"
-  "lazydocker:$work/tools/lazydocker"
-  "pet:$work/tools/pet"
-  "atuin:$work/tools/atuin"
-  "starship:$work/tools/starship"
 )
 
 if ps -ax -o command= | grep -F "$dest/" | grep -v grep >/dev/null; then
@@ -295,72 +268,15 @@ fi
 # it back with Mash's environment.
 rm -rf "$app"
 ditto "$ghostty_src" "$app"
-mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources/bin" "$app/Contents/Resources/lib" \
-  "$app/Contents/Resources/node"
-cp -R "$work/node-v24.16.0-darwin-arm64/bin" "$work/node-v24.16.0-darwin-arm64/lib" \
-  "$app/Contents/Resources/node/"
-[ -d "$work/python/bin" ] || {
-  echo "python archive has no bin/" >&2
+mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources/bin" "$app/Contents/Resources/lib"
+
+# The runtimes, the Pi packages, the bundled tools and the zsh plugin, all from
+# the manifest. The same call serves the Linux build, so a pin is honoured
+# identically on both platforms and lives in exactly one file.
+MASH_CACHE="$work/cache" mash_stage_runtimes "$app/Contents/Resources" "$target" || {
+  echo "could not stage the runtimes" >&2
   exit 1
 }
-cp -R "$work/python" "$app/Contents/Resources/python"
-
-# Resolve the pins first: bash ignores the exit status of a failing command
-# substitution inside an argument list, so a broken pin would otherwise install
-# a shorter package set and still exit 0.
-pi_packages="$(mash_pi_packages)" || {
-  echo "could not resolve the pinned Pi packages" >&2
-  exit 1
-}
-env HOME="$work/home" \
-  npm_config_cache="$work/npm-cache" \
-  npm_config_update_notifier=false \
-  npm_config_fund=false \
-  npm_config_audit=false \
-  "$app/Contents/Resources/node/bin/npm" install --global \
-  --prefix "$app/Contents/Resources/node" \
-  $pi_packages
-# Pi reads a project's .mash/ instead of .pi/. This install does not go through
-# mash_stage_runtimes, so the step has to be called here too; it fails the build
-# if the installed Pi no longer honors the setting.
-mash_set_pi_project_dir "$app/Contents/Resources" || exit 1
-"$root/packaging/tests/test_pi_runtime.sh" "$app/Contents/Resources"
-
-node_real="$app/Contents/Resources/node/bin/node"
-while IFS= read -r script; do
-  case "$(head -n 1 "$script")" in
-  "#!$node_real"*)
-    {
-      echo '#!/usr/bin/env node'
-      tail -n +2 "$script"
-    } >"$script.mashshebang"
-    mv "$script.mashshebang" "$script"
-    chmod 755 "$script"
-    ;;
-  esac
-done < <(find "$app/Contents/Resources/node" -type f)
-
-cat >"$app/Contents/Resources/bin/node" <<'EOF'
-#!/bin/bash
-exec "$(cd "$(dirname "$0")/../node/bin" && pwd)/node" "$@"
-EOF
-cat >"$app/Contents/Resources/bin/npm" <<'EOF'
-#!/bin/bash
-exec "$(cd "$(dirname "$0")/../node/bin" && pwd)/npm" "$@"
-EOF
-cat >"$app/Contents/Resources/bin/python3" <<'EOF'
-#!/bin/bash
-# Interpreter choke point for everything on a pane's PATH. PYTHONDONTWRITEBYTECODE
-# belongs here, not only in the launcher: the launcher's export covers the panes
-# it starts, while this covers every other caller -- plugin startup processes,
-# hourly helpers, anything a user types -- and Mash.app is signed, so a stray
-# __pycache__ inside it breaks the seal.
-export PYTHONNOUSERSITE=1
-export PYTHONDONTWRITEBYTECODE=1
-exec "$(cd "$(dirname "$0")/../python/bin" && pwd)/python3" "$@"
-EOF
-chmod 755 "$app/Contents/Resources/bin/node" "$app/Contents/Resources/bin/npm" \
-  "$app/Contents/Resources/bin/python3"
 
 lib="$app/Contents/Resources/lib"
 cellar_dep() {
@@ -438,32 +354,19 @@ chmod 755 "$app/Contents/Resources/bin/mash-launch" \
   "$app/Contents/Resources/bin/mash-shell" \
   "$app/Contents/Resources/bin/mash-wizard"
 cp "$root/packaging/Mash.icns" "$app/Contents/Resources/Mash.icns"
-cp -R "$root/packaging/defaults" "$app/Contents/Resources/defaults"
-# zsh plugin code is shipped read-only; Mash's zshrc sources it from here.
-mkdir -p "$app/Contents/Resources/share/zsh"
-cp -R "$work/zsh-autosuggestions/zsh-autosuggestions-0.7.1" \
-  "$app/Contents/Resources/share/zsh/zsh-autosuggestions"
-# The wizard embeds this catalog at compile time and mash-voice-model reads it
-# at runtime from Resources/defaults/pi/catalog. Both have to match the pi-voice
-# the bundle actually ships; the shared stager checks that and copies them.
-mash_stage_pi_voice_catalog "$app/Contents/Resources"
+# Shared runtime staging already created defaults/pi; merge without nesting.
+cp -R "$root/packaging/defaults/." "$app/Contents/Resources/defaults/"
+# The wizard's Mash-owned npm installer and host pip installer resolve pinned
+# versions from this manifest. Both refuse an unpinned network install.
+mkdir -p "$app/Contents/Resources/assets"
+cp "$root/packaging/assets.json" "$root/packaging/assets.py" \
+  "$app/Contents/Resources/assets/"
+chmod 644 "$app/Contents/Resources/assets/assets.json"
+chmod 755 "$app/Contents/Resources/assets/assets.py"
+# The zsh plugin, the Pi Voice catalog and the agent directory's typebox all
+# come from mash_stage_runtimes above, which both adapters call.
 cp "$root/packaging/uninstall" "$app/Contents/Resources/uninstall"
 chmod 755 "$app/Contents/Resources/uninstall"
-# The agent directory needs its own node_modules for exactly one thing: the
-# mash-orchestration extension imports `typebox` at runtime, and Node resolves
-# that from the extension's directory upward. It cannot reach pi's own nested
-# copy under node/lib/node_modules/@earendil-works/pi-coding-agent.
-#
-# The pi packages themselves do NOT belong here. `pi list` resolves every
-# `npm:` specifier in settings.json to node/lib/node_modules, the global
-# prefix, and nothing in pi joins the agent directory with node_modules.
-# Installing the five packages here as well cost 449 MB of duplicated provider
-# SDKs (@mariozechner, koffi, openai, @mistralai) to deliver a 5.9 MB module.
-env HOME="$work/home" \
-  npm_config_cache="$work/npm-cache" \
-  npm_config_update_notifier=false \
-  "$app/Contents/Resources/node/bin/npm" install --prefix "$app/Contents/Resources/defaults/pi" \
-  typebox@1.3.36
 mash_install_skills
 export PATH="$work/rustc/bin:$work/go/bin:$app/Contents/Resources/bin:$PATH"
 # The downloaded Go owns its own standard library. An inherited GOROOT (for

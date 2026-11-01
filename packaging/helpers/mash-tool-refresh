@@ -1,0 +1,119 @@
+#!/bin/bash
+# Re-assert the pinned versions of the tools Mash installed, on launch.
+#
+#   mash-tool-refresh [DATA_DIR]
+#
+# Setup runs once. Without this, raising a pin in packaging/assets.json reaches
+# only new installations: the machines that already ran setup keep whatever
+# they first received, forever. This closes that gap by re-running the pinned
+# installer for the components this machine already has.
+#
+# What it refreshes, and nothing else: a component is a candidate only when
+# Mash's own install marker for it exists. Those markers are written by
+# mash-tool-install, so the set is exactly "what Mash installed here" --
+# never a tool the user declined, and never a tool the platform provides.
+#
+#   local/tools/<component>/<version>/.mash-installed   pinned release binaries
+#   local/npm/.mash-version-<component>                 npm packages
+#   local/venv/<component>/.mash-version                python tools
+#
+# Hindsight uses local/share/mash/hindsight instead; when that environment
+# already exists, its dedicated installer performs the version comparison.
+#
+# mash-tool-install compares the marker to the manifest and exits immediately
+# when they agree, so the usual run costs one resolve per component and no
+# network. Work happens only when a pin actually moved.
+#
+# Launched in the background by the launcher, so it must never block a window,
+# never prompt, and never fail a startup. Every path exits 0.
+set -uo pipefail
+
+self="$(cd "$(dirname "$0")" && pwd)"
+res="$(cd "$self/.." && pwd)"
+data="${1:-${MASH_DATA_DIR:-$HOME/.mash}}"
+
+installer="$self/mash-tool-install"
+[ -x "$installer" ] || exit 0
+
+setup="$data/setup"
+log="$setup/tool-refresh.log"
+mkdir -p "$setup"
+say() { printf '%s %s\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$*" >>"$log"; }
+
+# One refresh at a time, and never while a setup install is running: both drive
+# the same installer, and mash-tool-install's own lock would make one of them
+# report a failure that is really just contention.
+lock="$setup/tool-refresh.lock"
+if ! mkdir "$lock" 2>/dev/null; then
+  if [ -n "$(find "$lock" -maxdepth 0 -mmin +120 2>/dev/null)" ]; then
+    rm -rf "$lock"
+    mkdir "$lock" 2>/dev/null || exit 0
+  else
+    exit 0
+  fi
+fi
+trap 'rm -rf "$lock"' EXIT
+[ -d "$setup/tool-install.lock" ] && exit 0
+
+# The components this machine actually has, from Mash's own markers.
+installed_components() {
+  local path component
+  for path in "$data"/local/tools/*/; do
+    [ -d "$path" ] || continue
+    component="$(basename "$path")"
+    # A versioned directory with no completed install is a failed attempt.
+    if find "$path" -maxdepth 2 -name .mash-installed -print -quit 2>/dev/null | grep -q .; then
+      printf '%s\n' "$component"
+    fi
+  done
+  for path in "$data"/local/npm/.mash-version-*; do
+    [ -f "$path" ] || continue
+    printf '%s\n' "${path##*/.mash-version-}"
+  done
+  for path in "$data"/local/venv/*/.mash-version; do
+    [ -f "$path" ] || continue
+    component="$(basename "$(dirname "$path")")"
+    printf '%s\n' "$component"
+  done
+}
+
+components="$(installed_components | sort -u)"
+hindsight="$data/local/share/mash/hindsight/bin/hindsight-embed"
+[ -n "$components" ] || [ -x "$hindsight" ] || exit 0
+
+refreshed=0
+failed=0
+while IFS= read -r component; do
+  [ -n "$component" ] || continue
+  # The installer is the one place that knows whether anything needs doing: it
+  # compares the marker to the manifest and no-ops when they agree. Its own log
+  # records which. Exit 3 means the platform supplies it, which is not a
+  # failure and not something to retry.
+  if MASH_DATA_DIR="$data" "$installer" "$component" >/dev/null 2>&1; then
+    refreshed=$((refreshed + 1))
+  else
+    status=$?
+    [ "$status" = 3 ] && continue
+    # A tool that cannot be refreshed right now keeps the version it has. Say
+    # so and move on: a launch must not depend on the network.
+    say "$component could not be refreshed (exit $status); keeping the installed version"
+    failed=$((failed + 1))
+  fi
+done <<EOF
+$components
+EOF
+
+# Its environment predates the generic installer, so it has no generic marker.
+# Do not install it for a user who never selected it; refresh only an existing
+# Mash-owned environment, using the dedicated installer's version-only check.
+if [ -x "$hindsight" ]; then
+  if MASH_DATA_DIR="$data" "$self/mash-hindsight-install" "$data" >/dev/null 2>&1; then
+    refreshed=$((refreshed + 1))
+  else
+    say "Hindsight could not be refreshed; keeping the installed environment"
+    failed=$((failed + 1))
+  fi
+fi
+
+say "checked $refreshed component(s), $failed could not be refreshed"
+exit 0

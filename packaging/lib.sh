@@ -124,10 +124,10 @@ mash_isolate() {
   # whatever was inherited. Mash's own programs are never resolved by bare name
   # against a host directory, because nearly every one of them has a twin a user
   # may have installed -- /opt/homebrew/bin carries pi, herdr, node, npm, npx,
-  # python3, fresh, lazygit, lazydocker and pet, and ~/.local/bin is where the
-  # wizard puts agent-browser and CUA Driver. Pinning MASH_BIN to the front
-  # makes "Mash runs the version it ships" a property of this function rather
-  # than of the caller's environment. The programs that are host-provided on
+  # python3, fresh, lazygit, lazydocker and pet. Mash-owned npm shims (including
+  # agent-browser) are in ~/.mash/bin; CUA Driver is in ~/.local/bin. Pinning
+  # MASH_BIN to the front makes "Mash runs the version it ships" a property of
+  # this function rather than of the caller's environment. The programs that are host-provided on
   # purpose (fd, rg, eza, fzf, bat, git, gh) are not shipped by Mash at all, so
   # the host tier is what reaches them.
   #
@@ -142,7 +142,7 @@ mash_isolate() {
   # and fzf, bat and rg for Fresh. The sesh picker runs its configured preview
   # through `sh -lc` on the inherited PATH, so without the tier it fails with
   # "exit status 127". ~/.local/bin leads the tier because the wizard puts
-  # agent-browser and CUA Driver there, not Homebrew. ~/.bun/bin is next for
+  # CUA Driver there, not Homebrew. ~/.bun/bin is next for
   # the same reason: bun is not a Homebrew package, the bun installer puts
   # bun and bunx there (and a Bash-it shim points the name at it), and nothing
   # else in this file could reach them -- a `bun install` in a pane would write

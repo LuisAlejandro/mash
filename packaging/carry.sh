@@ -33,11 +33,7 @@ mash_fetch_pinned() {
     rm -rf "$tmp"
     return 1
   }
-  echo "$SHA256  $tmp/archive" | sha256sum -c - >/dev/null || {
-    echo "$component $VERSION for $target failed its checksum" >&2
-    rm -rf "$tmp"
-    return 1
-  }
+  # mash_download already verified the archive (including cached downloads).
   mkdir -p "$outdir"
   case "$ARCHIVE" in
   tar.gz) tar -xzf "$tmp/archive" -C "$tmp" ;;
@@ -140,6 +136,55 @@ mash_pins_text() {
   mash_assets pins
 }
 
+# The pinned git ref of one component, from the manifest alone. Same rule as
+# mash_version: a clone that names its own tag is a second source of truth.
+mash_ref() {
+  local ref
+  ref="$(mash_assets resolve-shell "$1" "$(mash_assets target)" | sed -n 's/^REF=//p')"
+  if [ -z "$ref" ]; then
+    echo "no pinned ref for $1" >&2
+    return 1
+  fi
+  printf '%s\n' "$ref"
+}
+
+# The pinned commit of one component, or empty when it has none.
+mash_commit() {
+  mash_assets resolve-shell "$1" "$(mash_assets target)" | sed -n 's/^COMMIT=//p'
+}
+
+# Clone one pinned component and prove the result is the pinned commit.
+#
+#   mash_clone_pinned <component> <repo-url> <destination>
+#
+# A ref alone is not reproducible: a branch moves by design and a tag can be
+# repointed. Every build therefore checks what it actually got against the
+# manifest, the way release CI already does for the Ghostty fork. A component
+# with no pinned commit clones its ref and says so, rather than failing -- that
+# keeps the gate honest about which components are reproducible today.
+mash_clone_pinned() {
+  local component="$1" url="$2" dest="$3" ref commit actual
+  ref="$(mash_ref "$component")" || exit 1
+  commit="$(mash_commit "$component")"
+
+  git clone --quiet --branch "$ref" "$url" "$dest" || {
+    echo "could not clone $component from $url at $ref" >&2
+    exit 1
+  }
+  actual="$(git -C "$dest" rev-parse HEAD)"
+
+  if [ -z "$commit" ]; then
+    echo "warning: $component has no pinned commit; built $ref @ ${actual:0:12}" >&2
+    return 0
+  fi
+  if [ "$actual" != "$commit" ]; then
+    echo "$component: $ref is at $actual, but the manifest pins $commit" >&2
+    echo "The ref moved. Update packaging/assets.json or check out the pin." >&2
+    exit 1
+  fi
+  echo "$component pinned at ${actual:0:12}"
+}
+
 mash_pins_check() {
   local pins="$root/packaging/pins.txt"
   if ! mash_assets validate; then
@@ -151,6 +196,13 @@ mash_pins_check() {
     echo "packaging/pins.txt does not match packaging/assets.json. Leaving dist/Mash.app in place." >&2
     exit 1
   fi
+}
+
+# Ordered once for source checks, the macOS build and Linux's source-cache key.
+# The clipboard patch shares file_explorer.rs with reveal-in-finder, so it goes last.
+mash_fresh_patches() {
+  printf '%s\n' fresh-config-dir fresh-reveal-in-finder fresh-warn-logs \
+    fresh-explorer-clipboard
 }
 
 mash_require_sources() {
@@ -175,7 +227,7 @@ mash_require_sources() {
       exit 1
     }
   done
-  for name in fresh-config-dir fresh-reveal-in-finder fresh-warn-logs; do
+  for name in $(mash_fresh_patches); do
     [ -f "$root/packaging/patches/$name.patch" ] || {
       echo "missing Fresh patch $name" >&2
       exit 1
@@ -538,9 +590,18 @@ mash_build_ghostty() {
     exit 1
   }
 
-  local commit
-  commit="$(git -C "$src" rev-parse --short HEAD)"
-  echo "building Ghostty from $src @ $commit"
+  # The fork is supplied as a checkout rather than cloned, so the build has to
+  # say what it is building. Release CI clones the pinned commit and refuses
+  # anything else; a local build warns instead of failing, because a maintainer
+  # testing a fork change needs to build an unpinned tree on purpose.
+  local commit want
+  commit="$(git -C "$src" rev-parse HEAD)"
+  want="$(mash_commit ghostty)"
+  if [ -n "$want" ] && [ "$commit" != "$want" ]; then
+    echo "warning: Ghostty checkout is ${commit:0:12}, manifest pins ${want:0:12}" >&2
+    echo "         a release must build the pin; CI enforces it." >&2
+  fi
+  echo "building Ghostty from $src @ ${commit:0:12}"
 
   # GhosttyKit is the Zig core the Swift app links against. Built release,
   # without the app: xcodebuild produces that part.
@@ -564,24 +625,37 @@ mash_build_ghostty() {
   rm -rf "$work/Ghostty.app"
   ditto "$built" "$work/Ghostty.app"
   # Record what went in, so the bundle can be traced back to a fork commit.
-  /usr/libexec/PlistBuddy -c "Add :MashGhosttyCommit string $commit" \
+  /usr/libexec/PlistBuddy -c "Add :MashGhosttyCommit string ${commit:0:12}" \
     "$work/Ghostty.app/Contents/Info.plist" 2>/dev/null ||
-    /usr/libexec/PlistBuddy -c "Set :MashGhosttyCommit $commit" \
+    /usr/libexec/PlistBuddy -c "Set :MashGhosttyCommit ${commit:0:12}" \
       "$work/Ghostty.app/Contents/Info.plist"
 }
 
 mash_build_fresh() {
-  local tarball="$work/fresh.tar.gz"
-  curl -fL --retry 2 --max-time 300 -o "$tarball" \
-    "https://github.com/sinelaw/fresh/archive/refs/tags/v0.5.1.tar.gz"
+  local version tarball="$work/fresh.tar.gz"
+  version="$(mash_version fresh)" || exit 1
+  local COMPONENT TARGET STRATEGY VERSION URL SHA256 ARCHIVE MEMBER
+  mash_resolve fresh "$target" || {
+    echo "could not resolve the pinned fresh source" >&2
+    exit 1
+  }
+  curl -fL --retry 2 --max-time 300 -o "$tarball" "$URL"
+  echo "$SHA256  $tarball" | shasum -a 256 -c - || {
+    echo "fresh $version failed its checksum" >&2
+    exit 1
+  }
   tar -xzf "$tarball" -C "$work"
-  local src="$work/fresh-0.5.1"
-  grep -q 'version = "0.5.1"' "$src/Cargo.toml"
+  local src="$work/$MEMBER"
+  grep -q "version = \"$version\"" "$src/Cargo.toml"
   # Every patch here is Mash-owned and rebased onto the pinned tag, so a
   # failure means upstream moved under it. Naming the patch in the message is
   # what makes that a one-minute fix instead of a bisect. herdr-workspace's
   # patch is deliberately absent: it targets a plugin, not Fresh.
-  for name in fresh-config-dir fresh-reveal-in-finder fresh-warn-logs; do
+  #
+  # Order matters: fresh-explorer-clipboard edits app/file_explorer.rs, which
+  # fresh-reveal-in-finder already touches, so it goes last and expects that
+  # context.
+  for name in $(mash_fresh_patches); do
     if ! patch -p1 -d "$src" <"$root/packaging/patches/$name.patch"; then
       echo "$name.patch did not apply. Leaving dist/Mash.app in place." >&2
       exit 1
@@ -624,7 +698,7 @@ exec "$(cd "$(dirname "$0")/../libexec" && pwd)/fresh" "$@"
 EOF
   chmod 755 "$(mash_res)/bin/fresh"
   tar -C "$work" --exclude target --exclude .git -czf \
-    "$root/dist/fresh-0.5.1-patched.tar.gz" fresh-0.5.1
+    "$root/dist/fresh-$version-patched.tar.gz" "$MEMBER"
 }
 
 mash_go() {
@@ -671,21 +745,23 @@ mash_build_plugins() {
     "$plugins/telescope/bin/herdr-telescope"
   chmod 755 "$plugins/telescope/bin/herdr-telescope"
 
-  git clone --depth 1 --branch v0.14.0 \
+  local sesh_version
+  sesh_version="$(mash_version fullerzz.sesh)" || exit 1
+  mash_clone_pinned fullerzz.sesh \
     https://github.com/fullerzz/herdr-plugin-sesh.git "$work/src/sesh"
   mash_copy_tree "$work/src/sesh" "$plugins/fullerzz.sesh"
   mkdir -p "$plugins/fullerzz.sesh/bin"
   (cd "$plugins/fullerzz.sesh" && mash_go "$plugins/fullerzz.sesh" \
-    -ldflags="-X=github.com/fullerzz/herdr-plugin-sesh/internal/app.Version=0.14.0" \
+    -ldflags="-X=github.com/fullerzz/herdr-plugin-sesh/internal/app.Version=$sesh_version" \
     -o bin/herdr-sesh ./cmd/herdr-sesh)
 
-  git clone --depth 1 --branch v0.9.1 \
+  mash_clone_pinned herdr.auto-title \
     https://github.com/kryptamine/herdr-auto-title.git "$work/src/auto-title"
   mash_copy_tree "$work/src/auto-title" "$plugins/herdr.auto-title"
   (cd "$plugins/herdr.auto-title" && mash_go "$plugins/herdr.auto-title" \
     -o herdr-auto-title ./cmd/herdr-auto-title)
 
-  git clone --depth 1 --branch v0.39.0 \
+  mash_clone_pinned persiyanov.reviewr \
     https://github.com/persiyanov/herdr-reviewr.git "$work/src/reviewr"
   mash_copy_tree "$work/src/reviewr" "$plugins/persiyanov.reviewr"
   mash_cargo "$plugins/persiyanov.reviewr/Cargo.toml" reviewr
@@ -694,7 +770,7 @@ mash_build_plugins() {
     "$plugins/persiyanov.reviewr/bin/herdr-reviewr"
   chmod 755 "$plugins/persiyanov.reviewr/bin/herdr-reviewr"
 
-  git clone --depth 1 --branch v0.5.0 \
+  mash_clone_pinned ray.plugin-manager \
     https://github.com/speardragon/herdr-plugin-manager.git "$work/src/plugin-manager"
   mash_copy_tree "$work/src/plugin-manager" "$plugins/ray.plugin-manager"
 
@@ -702,7 +778,8 @@ mash_build_plugins() {
   # Herdr and the terminal instead, so the plugin is not staged there -- and the
   # plist and codesign steps below are Apple-only regardless.
   if [ "$(uname -s)" = "Darwin" ]; then
-    git clone --depth 1 https://github.com/dot/herdr-terminal-notifier.git "$work/src/notifier"
+    mash_clone_pinned herdr-terminal-notifier \
+      https://github.com/dot/herdr-terminal-notifier.git "$work/src/notifier"
     mash_copy_tree "$work/src/notifier" "$plugins/dot.terminal-notifier"
     local notifier="$plugins/dot.terminal-notifier/assets/HerdrNotify.app"
     local plist="$notifier/Contents/Info.plist"
@@ -719,7 +796,8 @@ mash_build_plugins() {
     codesign --force --deep --sign - "$notifier"
   fi
 
-  git clone --depth 1 https://github.com/plannotator/herdr-annotate.git "$work/src/annotate"
+  mash_clone_pinned annotate \
+    https://github.com/plannotator/herdr-annotate.git "$work/src/annotate"
   (cd "$work/src/annotate" && bash scripts/fetch-herdr-annotate.sh)
   mash_copy_tree "$work/src/annotate" "$plugins/annotate"
 }
@@ -791,9 +869,11 @@ mash_require_skills() {
     echo "Set MASH_SKILLS_SRC to a checkout of the pinned release." >&2
     exit 1
   fi
+  local want
+  want="$(mash_version mash-programming-skills)" || exit 1
   ver="$(tr -d '[:space:]' <"$src/VERSION")"
-  if [ "$ver" != "0.5.15" ]; then
-    echo "Mash Programming Skills VERSION is $ver, want 0.5.15." >&2
+  if [ "$ver" != "$want" ]; then
+    echo "Mash Programming Skills VERSION is $ver, want $want." >&2
     exit 1
   fi
 }
@@ -863,7 +943,7 @@ mash_install_skills() {
   mash_write_append_system "$src" "$pi/APPEND_SYSTEM.md"
   mash_rewrite_skill_paths "$pi" "$cfg/references"
   mash_write_hindsight_extension "$pi"
-  printf '0.8.3\n' >"$cfg/hindsight-pin"
+  printf '%s\n' "$(mash_version hindsight-embed)" >"$cfg/hindsight-pin"
   mash_write_hindsight_config "$cfg"
   mash_build_parallel_venv "$cfg/venvs/mash-parallel"
   [ -f "$pi/skills/mash-plan/SKILL.md" ] || {
@@ -1385,7 +1465,7 @@ MASH_HINDSIGHT
       "command": "npx",
       "args": [
         "-y",
-        "chrome-devtools-mcp@1.10.1",
+        "chrome-devtools-mcp@__MASH_CHROME_DEVTOOLS_MCP__",
         "--categoryInput=false",
         "--categoryEmulation=false",
         "--categoryNetwork=false",
@@ -1397,6 +1477,17 @@ MASH_HINDSIGHT
   }
 }
 EOF
+  # The heredoc is quoted so nothing in it expands by accident; the one pinned
+  # version is substituted afterwards, from the manifest.
+  local chrome_pin
+  chrome_pin="$(mash_version chrome-devtools-mcp)" || exit 1
+  # BSD and GNU sed disagree about -i, so write through a temporary file.
+  sed "s/__MASH_CHROME_DEVTOOLS_MCP__/$chrome_pin/" "$pi/mcp.json" >"$pi/mcp.json.tmp" &&
+    mv "$pi/mcp.json.tmp" "$pi/mcp.json"
+  grep -q "chrome-devtools-mcp@$chrome_pin" "$pi/mcp.json" || {
+    echo "mcp.json does not name the pinned chrome-devtools-mcp" >&2
+    exit 1
+  }
 }
 
 # Seeded to ~/.mash/.hindsight/embed on first launch. Never carries a secret:
