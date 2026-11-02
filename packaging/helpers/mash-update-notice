@@ -1,7 +1,7 @@
 #!/bin/bash
-# Tell the user, once per version, that a newer Mash is available.
+# Check for updates and announce newer Mash versions.
 #
-#   mash-update-notice <resource-root> <data-dir>
+#   mash-update-notice [--manual] <resource-root> <data-dir>
 #
 # Started in the background by herdr-pane for every window. Where the next
 # version comes from is the only thing that differs by platform:
@@ -14,12 +14,19 @@
 #          package manager to delegate to, so the notice is interactive and
 #          Mash installs the release itself.
 #
-# Once per version, across every window: the version is recorded under a lock
-# before any surface fires, so two windows opening together cannot both
-# announce it, and a version is never announced twice even when a surface
-# fails. Every failure is silent -- this must never get in the way of a launch.
+# Automatic announcements are recorded under a lock before any surface fires,
+# so two windows cannot both announce one release. An explicit manual check can
+# bypass the daily check interval and reopen an already-announced release.
+# Automatic failures are silent -- this must never get in the way of a launch,
+# so every decision and every error goes to local/state/update-notice.log
+# instead of the streams herdr-pane discards.
 set -u
 
+manual=0
+if [ "${1:-}" = "--manual" ]; then
+  manual=1
+  shift
+fi
 res="${1:-}"
 d="${2:-}"
 [ -n "$res" ] && [ -n "$d" ] && [ -d "$d" ] || exit 0
@@ -30,6 +37,15 @@ record="$state/update-notice"
 checked="$state/update-checked"
 lock="$state/update-notice.lock"
 mkdir -p "$state" 2>/dev/null || exit 0
+
+# herdr-pane starts this helper with both streams on /dev/null, so a check that
+# failed -- or one that never ran -- leaves no trace anywhere. One timestamped
+# line per decision, plus any stray stderr, goes to a log instead. The file
+# lives beside the state it explains, so it is removed with that state.
+log="$state/update-notice.log"
+: >>"$log" 2>/dev/null || log=/dev/null
+exec 2>>"$log"
+mash_log() { printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >>"$log"; }
 
 # The portable mkdir lock, as in mash-seed-sync: flock is not on macOS, and
 # these scripts are shared. A lock whose owner died must not strand the notice.
@@ -61,6 +77,7 @@ mash_linux_candidate() {
   installed="$(dpkg-query -W -f='${Version}' letsmash 2>/dev/null)" || return 1
   candidate="$(apt-cache policy letsmash 2>/dev/null | sed -n 's/^ *Candidate: *//p' | head -n 1)"
   [ -n "$installed" ] && [ -n "$candidate" ] && [ "$candidate" != "(none)" ] || return 1
+  check_ok=1
   dpkg --compare-versions "$candidate" gt "$installed" 2>/dev/null
 }
 
@@ -107,18 +124,28 @@ mash_macos_candidate() {
   case "$last" in
   '' | *[!0-9]*) last=0 ;;
   esac
-  [ "$((now - last))" -ge 86400 ] || return 1
+  if [ "$manual" != 1 ] && [ "$((now - last))" -lt 86400 ]; then
+    mash_log "macos: next check in $((86400 - (now - last)))s"
+    return 1
+  fi
   mash_write "$checked" "$now"
   local body
-  body="$(curl -fsSL --max-time 10 \
+  if ! body="$(curl -fsSL --max-time 10 \
     -H 'Accept: application/vnd.github+json' \
-    https://api.github.com/repos/LuisAlejandro/mash/releases/latest 2>/dev/null)" || return 1
+    https://api.github.com/repos/LuisAlejandro/mash/releases/latest 2>/dev/null)"; then
+    mash_log "macos: release check failed"
+    return 1
+  fi
   candidate="$(printf '%s' "$body" | python3 -c 'import json,sys
 try:
     print(json.load(sys.stdin).get("tag_name", "").strip().lstrip("vV"))
 except Exception:
     pass' 2>/dev/null)"
-  [ -n "$candidate" ] || return 1
+  if [ -z "$candidate" ] || [[ ! "$candidate" =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]; then
+    mash_log "macos: release tag '$candidate' is not a Mash version"
+    return 1
+  fi
+  check_ok=1
   mash_version_gt "$candidate" "$installed"
 }
 
@@ -144,7 +171,20 @@ mash_macos_app() {
 
 mash_show_notice() {
   local title body command herdr
-  if [ "$entrypoint" = updated ]; then
+  if [ "$manual_status" = up-to-date ]; then
+    title="Mash is up to date"
+    if [ "$system" = Darwin ]; then
+      body="Everything is up to date. Mash $installed is current."
+    else
+      body="No newer Mash version found in the current APT metadata."
+    fi
+  elif [ "$manual_status" = check-unavailable ]; then
+    title="Couldn't check for Mash updates"
+    body="Check your internet connection and try again."
+  elif [ "$manual_status" = apt-unavailable ]; then
+    title="Couldn't check for Mash updates"
+    body="Verify the APT repository and run sudo apt update."
+  elif [ "$entrypoint" = updated ]; then
     title="Mash updated to $installed"
     body="Mash is running the new version."
   elif [ "$system" = Darwin ]; then
@@ -189,7 +229,9 @@ mash_show_notice() {
     --env "MASH_UPDATE_CANDIDATE=$candidate" \
     --env "MASH_UPDATE_CAN_APPLY=$can_apply" \
     --env "MASH_UPDATE_APP=$app" \
-    --env "MASH_UPDATE_DATA=$d" >/dev/null 2>&1 || true
+    --env "MASH_UPDATE_DATA=$d" \
+    --env "MASH_UPDATE_STATUS=$manual_status" \
+    --env "MASH_UPDATE_SYSTEM=$system" >/dev/null 2>&1 || true
 }
 
 # --- decide --------------------------------------------------------------------
@@ -197,6 +239,8 @@ installed=""
 candidate=""
 app=""
 can_apply=0
+check_ok=0
+manual_status=""
 entrypoint=notice
 
 # If power was lost after confirmation, compare the version that was about to
@@ -243,7 +287,15 @@ fi
 
 case "$system" in
 Linux)
-  mash_linux_candidate || exit 0
+  if ! mash_linux_candidate; then
+    mash_log "linux: no newer candidate (installed=${installed:-none} candidate=${candidate:-none})"
+    [ "$manual" = 1 ] || exit 0
+    if [ "$check_ok" = 1 ]; then
+      manual_status=up-to-date
+    else
+      manual_status=apt-unavailable
+    fi
+  fi
   ;;
 Darwin)
   entrypoint=update
@@ -258,25 +310,42 @@ Darwin)
   if [ -n "$retry" ] && mash_version_gt "$retry" "$installed"; then
     candidate="$retry"
   elif ! mash_macos_candidate; then
-    rm -rf "$lock"
-    exit 0
+    if [ "$manual" != 1 ]; then
+      rm -rf "$lock"
+      exit 0
+    fi
+    if [ "$check_ok" = 1 ]; then
+      manual_status=up-to-date
+    else
+      manual_status=check-unavailable
+    fi
   fi
   mash_macos_app && can_apply=1
   ;;
 *) exit 0 ;;
 esac
 
+if [ -n "$manual_status" ]; then
+  mash_log "manual check: $manual_status (running ${installed:-unknown})"
+  [ "$system" != Darwin ] || rm -rf "$lock"
+  entrypoint=notice
+  mash_show_notice
+  exit 0
+fi
+
 # --- claim ---------------------------------------------------------------------
 # Linux has not taken the lock yet; macOS already holds it.
 if [ "$system" != Darwin ]; then
   mash_take_lock || exit 0
 fi
-if [ "$(cat "$record" 2>/dev/null)" = "$candidate" ]; then
+if [ "$manual" != 1 ] && [ "$(cat "$record" 2>/dev/null)" = "$candidate" ]; then
+  mash_log "$candidate already announced"
   rm -rf "$lock"
   exit 0
 fi
 mash_write "$record" "$candidate"
 rm -rf "$lock"
+mash_log "announcing $candidate via $entrypoint (running ${installed:-unknown})"
 
 # --- announce ------------------------------------------------------------------
 mash_show_notice

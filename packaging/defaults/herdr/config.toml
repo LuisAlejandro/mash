@@ -660,3 +660,10 @@ command = "telescope-sessions"
 description = "Session search"
 width = "70%"
 height = "70%"
+
+# Explicitly run the update check without waiting for the daily automatic check.
+[[keys.command]]
+key = "cmd+shift+u"
+type = "shell"
+command = '"${HERDR_BIN_PATH%/*}/mash-update-notice" --manual "${HERDR_BIN_PATH%/*}/.." "$HOME/.mash"'
+description = "Check for Updates"

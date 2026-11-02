@@ -621,3 +621,10 @@ command = "PATH=\"${HERDR_BIN_PATH%/*}:$PATH\"; telescope-sessions"
 description = "Session search"
 width = "70%"
 height = "70%"
+
+# Run an update check against the current APT metadata.
+[[keys.command]]
+key = "ctrl+alt+shift+u"
+type = "shell"
+command = '"${HERDR_BIN_PATH%/*}/mash-update-notice" --manual "${HERDR_BIN_PATH%/*}/.." "$HOME/.mash"'
+description = "Check for Updates"

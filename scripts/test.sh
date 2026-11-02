@@ -7,6 +7,10 @@
 set -uo pipefail
 cd "$(cd "$(dirname "$0")/.." && pwd)"
 
+if [ -n "${MASH_GHOSTTY_SRC:-}" ] && [ -d "$MASH_GHOSTTY_SRC" ]; then
+  ./packaging/helpers/mash-ghostty-patch-menu "$MASH_GHOSTTY_SRC"
+fi
+
 failed=0
 ran=0
 skipped=()

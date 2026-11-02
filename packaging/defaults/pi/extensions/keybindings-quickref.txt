@@ -31,6 +31,6 @@
   ⌘F         Find / replace in buffer                   ⌘R         Reload config
   ⌘⇧F        Find / replace in files                    ⌘Y         Open notification target
   ⌘⇧E        Toggle file explorer                       ⌘B         Toggle sidebar
-  ⌘D         Add cursor to next match
+  ⌘D         Add cursor to next match                   ⌘⇧U       Check for updates
   ⌘⌥C        Copy file path
   ⌥⇧↓        Duplicate line

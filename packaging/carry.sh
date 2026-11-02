@@ -295,6 +295,8 @@ mash_ghostty_trim_check() {
     return 1
   }
 
+  "$root/packaging/helpers/mash-ghostty-patch-menu" "$src" || return 1
+
   # The shared rejection, which is what covers both platforms.
   grep -q 'mash_removed_ui' "$src/src/Surface.zig" 2>/dev/null || {
     echo "Ghostty fork lost the shared action rejection in src/Surface.zig" >&2

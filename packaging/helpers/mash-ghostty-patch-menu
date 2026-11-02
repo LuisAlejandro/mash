@@ -1,0 +1,19 @@
+#!/bin/bash
+# Apply Mash-owned menu patches to a Ghostty fork checkout.
+#
+# Some menu items live in the fork but ship from this repository until the fork
+# branch catches up. CI and `make test` call this when MASH_GHOSTTY_SRC is set;
+# mash_ghostty_trim_check runs it before menu-chords and the trim assertions.
+set -euo pipefail
+root="$(cd "$(dirname "$0")/../.." && pwd)"
+src="${1:?usage: mash-ghostty-patch-menu <ghostty-src>}"
+patch="$root/packaging/patches/ghostty-check-for-updates-menu.patch"
+[ -d "$src" ] || {
+  echo "ghostty checkout missing: $src" >&2
+  exit 1
+}
+[ -f "$patch" ] || exit 0
+patch -p1 -N -d "$src" <"$patch" || {
+  echo "ghostty-check-for-updates-menu.patch did not apply to $src" >&2
+  exit 1
+}
