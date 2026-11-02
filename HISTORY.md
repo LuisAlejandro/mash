@@ -1,6 +1,23 @@
 # Changelog
 
 
+## 0.2.2 (2026-11-02)
+
+### Fixed
+
+* Restore agent panes once, not twice. [Luis Alejandro Martínez Faneyth]
+
+* Keep managed tools at their pinned versions. [Luis Alejandro Martínez Faneyth]
+
+* Preserve tool precedence in Fish panes. [Luis Alejandro Martínez Faneyth]
+
+* Share Fresh file copies across editor tabs. [Luis Alejandro Martínez Faneyth]
+
+* Point a failed Hindsight start at the right log. [Luis Alejandro Martínez Faneyth]
+
+* Focus pi in a new Agent workspace. [Luis Alejandro Martínez Faneyth]
+
+
 ## 0.2.1 (2026-10-31)
 
 ### Fixed
