@@ -1175,11 +1175,60 @@ EOF
     cat <<'EOF'
 ## Tool-call recovery
 
-- For `ask_user`, use exactly one form: `question` for one question, or
-  `questions` for a batch of 2–4 independent questions. Never include both.
-  With `questions`, put `context`, `options`, `allowMultiple` and
-  `allowFreeform` on each entry, never at the top level.
-  On validation error, correct the payload; never retry it unchanged.
+### `ask_user`: construct the payload, then check its shape
+
+- Call `ask_user` directly and by itself, never through `codemode` or a parallel
+  wrapper. It is model-only: `tools.ask_user()` is not a supported fallback.
+- Default to one focused question. Omit unused optional parameters, including
+  selection flags, UI preferences, shortcuts and timeouts; do not fill every
+  available field with defaults. Copy this single-question shape:
+
+```json
+{
+  "question": "Which approach should I take?",
+  "context": "The failure is not reproduced. Production remains unchanged.",
+  "options": [{"title": "Continue diagnosis"}, {"title": "Pause"}]
+}
+```
+
+- Batch only 2–4 independent questions with settled prerequisites. Ask dependent
+  questions after the earlier answer, not in the same batch.
+- Before sending a batch, check its top-level keys. Put `context`, `options`,
+  `allowMultiple` and `allowFreeform` inside each entry only. Delete those keys
+  from the top level entirely: empty strings, `[]`, `false` and `true` still
+  count as supplied values. Use this shape:
+
+```json
+{
+  "questions": [
+    {
+      "question": "Which log format should we use?",
+      "context": "Both formats are supported by the existing logger.",
+      "options": [{"title": "JSON"}, {"title": "Text"}]
+    },
+    {
+      "question": "Which test scope should we run?",
+      "context": "Both scopes are available regardless of log format.",
+      "options": [{"title": "Focused tests"}, {"title": "Full suite"}]
+    }
+  ]
+}
+```
+
+- Choose `question` or `questions`. Never include both in Mash calls: the
+  extension supports an optional batch heading in `question`, but Mash omits
+  it to keep one unambiguous shape per mode.
+- On an argument/validation error, no usable question was delivered and no
+  approval exists. Discard the failed payload; changing its wording is not a
+  structural fix. Retry once with the single-question shape above: only
+  `question`, `context` and `options`, never `questions` or extra flags.
+- If that corrected direct call also fails, or the tool is unavailable, explain
+  the tool failure, ask one focused question in plain chat, and wait for an
+  explicit answer. Do not loop, switch invocation mechanisms, or proceed as if approved.
+  Cancellation, timeout and skipped answers are not approval either.
+
+### Codemode working-directory failures
+
 - If `codemode` fails before script execution with `uv_cwd`, `process.cwd`, or
   a missing-working-directory error, treat it as a session/environment failure,
   not a script bug. Do not retry `codemode` or try to fix cwd inside its script.
