@@ -35,3 +35,6 @@ echo "Pi Codemode: PASS"
 # without a host Pi. Runtime staging precedes plugin copying on both platforms.
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 "$node" "$root/packaging/plugins/fork-from-message/tests/test_pi_session.mjs" "$pi"
+
+# The wizard bridge inspects models/auth without starting Pi or using a network.
+"$node" "$root/packaging/tests/test_wizard_model_catalog.mjs" "$pi"
