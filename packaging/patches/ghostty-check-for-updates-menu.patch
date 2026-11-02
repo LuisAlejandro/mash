@@ -1,0 +1,51 @@
+diff --git a/macos/Sources/App/MashMenus.swift b/macos/Sources/App/MashMenus.swift
+index 5bd1e3a..991d1b3 100644
+--- a/macos/Sources/App/MashMenus.swift
++++ b/macos/Sources/App/MashMenus.swift
+@@ -90,6 +90,7 @@ enum MashMenus {
+ 
+     static let help: [Entry] = [
+         .item("Mash Help", "cmd+shift+i"),
++        .item("Check for Updates…", "cmd+shift+u"),
+     ]
+ 
+     /// Herdr's own settings, reload and detach chords, used by the app menu.
+@@ -156,6 +157,7 @@ enum MashMenus {
+ 
+     static let nativeHelp: [Entry] = [
+         .item("Mash Help", "ctrl+b>shift+slash"),
++        .item("Check for Updates…", "ctrl+b>shift+z"),
+     ]
+ 
+     /// Whether Mash seeded the Native keymap. Set at menu install. The
+diff --git a/src/apprt/gtk/ui/1.5/window.blp b/src/apprt/gtk/ui/1.5/window.blp
+index 05574f2..be6892f 100644
+--- a/src/apprt/gtk/ui/1.5/window.blp
++++ b/src/apprt/gtk/ui/1.5/window.blp
+@@ -462,6 +462,13 @@ menu main_menu {
+       accel: "<Control><Shift>i";
+     }
+ 
++    item {
++      label: _("Check for Updates…");
++      action: "win.mash-send-key";
++      target: "ctrl+alt+shift+u";
++      accel: "<Control><Alt><Shift>u";
++    }
++
+     item {
+       label: _("About Mash Terminal");
+       action: "win.about";
+@@ -789,6 +796,12 @@ menu main_menu_native {
+       target: "ctrl+b>shift+slash";
+     }
+ 
++    item {
++      label: _("Check for Updates…  ·  Ctrl+B Z");
++      action: "win.mash-send-key";
++      target: "ctrl+b>shift+z";
++    }
++
+     item {
+       label: _("About Mash Terminal");
+       action: "win.about";
