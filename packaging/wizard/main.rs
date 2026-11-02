@@ -1,4 +1,6 @@
 mod font_page;
+mod model_picker;
+mod pi_models;
 mod provider_page;
 mod skills_page;
 mod theme;
@@ -361,14 +363,18 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
     let mut started = false;
     let mut start_button = Rect::default();
     loop {
+        providers.set_services(page == 2);
+        if !preview && page == 1 {
+            providers.poll_models();
+        }
         terminal
             .draw(|frame| {
                 if started {
                     match page {
                         0 => draw_choices(frame, &app),
-                        1 => providers.draw(frame),
-                        2 => skills.draw(frame),
-                        3 => fonts.draw(frame),
+                        1 | 2 => providers.draw(frame),
+                        3 => skills.draw(frame),
+                        4 => fonts.draw(frame),
                         _ => voice.draw(frame),
                     }
                 } else {
@@ -379,6 +385,11 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                 }
             })
             .map_err(|e| e.to_string())?;
+        if providers.is_loading()
+            && !event::poll(Duration::from_millis(50)).map_err(|e| e.to_string())?
+        {
+            continue;
+        }
         let event = event::read().map_err(|e| e.to_string())?;
         if !started {
             if welcome_page::starts_on(&event, start_button) {
@@ -398,10 +409,11 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
         let click = wizard_style::clicked(&event);
         if let Some(id) = click.filter(|id| *id >= wizard_style::SIDEBAR_BASE) {
             providers.close_menu();
+            providers.cancel_loading();
             page = id - wizard_style::SIDEBAR_BASE;
             continue;
         }
-        if page == 1
+        if matches!(page, 1 | 2)
             && providers.menu_open()
             && click.is_none()
             && matches!(&event, Event::Mouse(mouse) if mouse.kind == MouseEventKind::Down(MouseButton::Left))
@@ -415,21 +427,30 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                 // the page: nothing is validated or saved in a preview.
                 let step = match page {
                     0 => app.on_click(id).map(|_| 1),
-                    1 => providers.on_click(id).map(|d| {
+                    1 | 2 => providers.on_click(id).map(|d| {
                         if matches!(d, provider_page::Decision::Back) {
                             -1
+                        } else if matches!(d, provider_page::Decision::Save)
+                            && page == 1
+                            && !providers.advance(
+                                &mash_resources(),
+                                &data_dir().join("pi/agent"),
+                                true,
+                            )
+                        {
+                            0
                         } else {
                             1
                         }
                     }),
-                    2 => skills.on_click(id).map(|d| {
+                    3 => skills.on_click(id).map(|d| {
                         if matches!(d, skills_page::Decision::Back) {
                             -1
                         } else {
                             1
                         }
                     }),
-                    3 => fonts.on_click(id).map(|d| match d {
+                    4 => fonts.on_click(id).map(|d| match d {
                         font_page::Decision::Back => -1,
                         font_page::Decision::Next => 1,
                         font_page::Decision::Cancel => 0,
@@ -442,8 +463,13 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                         }
                     }),
                 };
-                page = (page as isize + step.unwrap_or(0)).clamp(0, 4) as usize;
-            } else if page == 1 && providers.menu_open() && wizard_style::wheel(&event).is_some() {
+                page = (page as isize + step.unwrap_or(0))
+                    .clamp(0, wizard_style::PAGE_COUNT as isize - 1)
+                    as usize;
+            } else if matches!(page, 1 | 2)
+                && providers.menu_open()
+                && wizard_style::wheel(&event).is_some()
+            {
                 let code = if wizard_style::wheel(&event) == Some(-1) {
                     KeyCode::Up
                 } else {
@@ -452,8 +478,9 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                 let _ = providers.on_key(code, KeyModifiers::NONE);
             } else if let Event::Key(key) = event {
                 if key.kind == KeyEventKind::Press {
-                    if page == 1
+                    if matches!(page, 1 | 2)
                         && (providers.menu_open()
+                            || providers.has_model_step()
                             || matches!(
                                 key.code,
                                 KeyCode::Enter
@@ -464,7 +491,19 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                         && !(key.code == KeyCode::Char('c')
                             && key.modifiers.contains(KeyModifiers::CONTROL))
                     {
-                        let _ = providers.on_key(key.code, key.modifiers);
+                        match providers.on_key(key.code, key.modifiers) {
+                            Some(provider_page::Decision::Back) => page = page.saturating_sub(1),
+                            Some(provider_page::Decision::Save)
+                                if providers.advance(
+                                    &mash_resources(),
+                                    &data_dir().join("pi/agent"),
+                                    true,
+                                ) =>
+                            {
+                                page += 1
+                            }
+                            _ => {}
+                        }
                     } else if preview_key(&mut started, &mut page, key.code, key.modifiers) {
                         return Ok(EXIT_NOT_DONE);
                     }
@@ -500,7 +539,7 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                 Some(Outcome::Next) => page = 1,
                 None => {}
             },
-            1 => match if let Some(id) = click {
+            1 | 2 => match if let Some(id) = click {
                 providers.on_click(id)
             } else {
                 providers.on_key(code, modifiers)
@@ -510,11 +549,19 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                         return Ok(EXIT_NOT_DONE);
                     }
                 }
-                Some(provider_page::Decision::Back) => page = 0,
-                Some(provider_page::Decision::Save) if providers.validate() => page = 2,
+                Some(provider_page::Decision::Back) => page -= 1,
+                Some(provider_page::Decision::Save)
+                    if providers.advance(
+                        &mash_resources(),
+                        &data_dir().join("pi/agent"),
+                        false,
+                    ) =>
+                {
+                    page += 1
+                }
                 _ => {}
             },
-            2 => match if let Some(id) = click {
+            3 => match if let Some(id) = click {
                 skills.on_click(id)
             } else {
                 skills.on_key(code, modifiers)
@@ -524,11 +571,11 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                         return Ok(EXIT_NOT_DONE);
                     }
                 }
-                Some(skills_page::Decision::Back) => page = 1,
-                Some(skills_page::Decision::Save) => page = 3,
+                Some(skills_page::Decision::Back) => page = 2,
+                Some(skills_page::Decision::Save) => page = 4,
                 _ => {}
             },
-            3 => match if let Some(id) = click {
+            4 => match if let Some(id) = click {
                 fonts.on_click(id)
             } else {
                 fonts.on_key(code, modifiers)
@@ -538,8 +585,8 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                         return Ok(EXIT_NOT_DONE);
                     }
                 }
-                Some(font_page::Decision::Back) => page = 2,
-                Some(font_page::Decision::Next) => page = 4,
+                Some(font_page::Decision::Back) => page = 3,
+                Some(font_page::Decision::Next) => page = 5,
                 None => {}
             },
             _ => match if let Some(id) = click {
@@ -552,7 +599,7 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                         return Ok(EXIT_NOT_DONE);
                     }
                 }
-                Some(voice_page::Decision::Back) => page = 3,
+                Some(voice_page::Decision::Back) => page = 4,
                 Some(voice_page::Decision::Skip) => break,
                 Some(voice_page::Decision::Save) if voice.validate() => break,
                 _ => {}
@@ -583,7 +630,7 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
 }
 
 // A preview shows the pages without letting fields, saves or installers run.
-// Esc returns to the logo, then exits; arrows and 1–5 browse the real pages.
+// Esc returns to the logo, then exits; arrows and page digits browse the pages.
 fn preview_key(
     started: &mut bool,
     page: &mut usize,
@@ -601,9 +648,9 @@ fn preview_key(
         return true;
     }
     match code {
-        KeyCode::Right => *page = (*page + 1).min(4),
+        KeyCode::Right => *page = (*page + 1).min(wizard_style::PAGE_COUNT - 1),
         KeyCode::Left => *page = page.saturating_sub(1),
-        KeyCode::Char('1'..='5') => {
+        KeyCode::Char('1'..='6') => {
             if let KeyCode::Char(digit) = code {
                 *page = digit as usize - '1' as usize;
             }
@@ -714,6 +761,7 @@ fn review_and_apply<B: Backend>(
         save_state(&state_dir, &state);
         return Err(ApplyError::Failed(state.error));
     }
+    check_saved_model(terminal);
     let missing: Vec<&str> = plan
         .tools
         .iter()
@@ -754,6 +802,113 @@ fn review_and_apply<B: Backend>(
     }
     mark_complete(&state_dir, &mut state);
     Ok(())
+}
+
+/// Diagnostic failures are notes, never setup failures or early completion.
+fn check_saved_model<B: Backend>(terminal: &mut Terminal<B>) {
+    let agent = data_dir().join("pi/agent");
+    let selected = fs::read_to_string(agent.join("settings.json"))
+        .ok()
+        .and_then(|text| serde_json::from_str::<serde_json::Value>(&text).ok())
+        .is_some_and(|value| {
+            value["defaultProvider"]
+                .as_str()
+                .is_some_and(|s| !s.is_empty())
+                && value["defaultModel"]
+                    .as_str()
+                    .is_some_and(|s| !s.is_empty())
+        });
+    if !selected {
+        return;
+    }
+    let request = serde_json::json!({"version":1,"action":"verify","agentDir":agent});
+    let mut job = pi_models::Job::start(&mash_resources(), request).ok();
+    let notes = if let Some(job) = job.as_mut() {
+        loop {
+            if let Some(result) = job.poll() {
+                break result.map(|report| report.warnings()).unwrap_or_else(|_| vec!["Pi model check unavailable. Your configuration was kept; use Pi /model and /login after setup.".into()]);
+            }
+            if terminal
+                .draw(|frame| draw_model_check(frame, &[], true))
+                .is_err()
+            {
+                return;
+            }
+            if event::poll(Duration::from_millis(50)).unwrap_or(true) {
+                match event::read() {
+                    Ok(event) if acknowledges_model_check(&event) => return,
+                    Ok(_) => {}
+                    Err(_) => return,
+                }
+            }
+        }
+    } else {
+        vec!["Pi model check unavailable. Your configuration was kept; use Pi /model and /login after setup.".into()]
+    };
+    drop(job);
+    if notes.is_empty() {
+        return;
+    }
+    loop {
+        if terminal
+            .draw(|frame| draw_model_check(frame, &notes, false))
+            .is_err()
+        {
+            return;
+        }
+        match event::read() {
+            Ok(event) if acknowledges_model_check(&event) => return,
+            Ok(_) => {}
+            Err(_) => return,
+        }
+    }
+}
+
+fn acknowledges_model_check(event: &Event) -> bool {
+    matches!(event, Event::Key(key) if key.kind == KeyEventKind::Press && matches!(key.code, KeyCode::Enter | KeyCode::Esc))
+        || wizard_style::clicked(event) == Some(0)
+}
+
+fn draw_model_check(frame: &mut Frame, notes: &[String], loading: bool) {
+    let parts = Layout::vertical([
+        Constraint::Length(3),
+        Constraint::Min(4),
+        Constraint::Length(3),
+    ])
+    .split(wizard_style::page_area(frame, None));
+    wizard_style::header(frame, parts[0], "Model check");
+    let body = wizard_style::section(
+        frame,
+        parts[1],
+        if loading {
+            "Checking saved local configuration..."
+        } else {
+            "Configuration notes (non-blocking)"
+        },
+    );
+    let mut lines: Vec<Line> = notes
+        .iter()
+        .flat_map(|note| [Line::from(note.clone()), Line::default()])
+        .collect();
+    lines.push(Line::from(
+        "No server authentication or account entitlement was checked.",
+    ));
+    frame.render_widget(Paragraph::new(lines).wrap(Wrap { trim: true }), body);
+    wizard_style::render_buttons(
+        frame,
+        parts[2],
+        &[(
+            wizard_style::button(
+                true,
+                if loading {
+                    " Skip check "
+                } else {
+                    " Continue "
+                },
+            ),
+            Some(0),
+        )],
+    );
 }
 
 fn now_millis() -> u128 {
@@ -804,8 +959,8 @@ fn save_state(dir: &Path, state: &State) {
     );
 }
 
-// Host installers (Homebrew, pip, CUA) must not resolve Mash's bundled runtimes
-// or install into the signed bundle. npm tools use mash-tool-install instead.
+// Host installers (Homebrew, CUA) must not resolve Mash's bundled runtimes
+// or install into the signed bundle. npm and Python tools use mash-tool-install.
 fn host_path() -> OsString {
     let inherited = env::var_os("PATH").unwrap_or_default();
     let mut dirs: Vec<OsString> = env::split_paths(&inherited)
@@ -840,8 +995,8 @@ fn host_path() -> OsString {
 }
 
 fn is_available(tool: &str) -> bool {
-    // Installed npm shims live in Mash's bin on both platforms. On macOS the
-    // host path remains available for Homebrew tools and the host pip step.
+    // Managed tool shims live in Mash's bin on both platforms. On macOS the
+    // host path remains available for Homebrew tools and CUA Driver.
     if data_dir().join("bin").join(tool).is_file() {
         return true;
     }
@@ -884,9 +1039,9 @@ fn seed_selected_skills() -> Result<(), String> {
     Ok(())
 }
 
-// Host installers run only when a selected tool is missing. Mash-owned npm
-// tools install even when the host has a copy: a host binary cannot satisfy
-// Mash's pinned, isolated install. Environment steps always run.
+// Host installers run only when a selected tool is missing. Mash-owned tools
+// install even when the host has a copy: a host binary cannot satisfy Mash's
+// pinned, isolated install. Environment steps always run.
 const STEP_HINDSIGHT: &str = "Install the Hindsight environment";
 const STEP_HINDSIGHT_DAEMON: &str = "Start Hindsight and fetch its models";
 const STEP_VOICE: &str = "Install the dictation model";
@@ -910,13 +1065,11 @@ fn install_steps(plan: &Plan, missing: &[&str]) -> Vec<String> {
     if !plan.pinned.is_empty() {
         steps.push(STEP_PINNED_TOOLS.to_string());
     }
-    if !missing.is_empty() {
-        if !plan.python.is_empty() {
-            steps.push("Install Python packages".to_string());
-        }
-        if !plan.installer.is_empty() {
-            steps.push("Install CUA Driver".to_string());
-        }
+    if !plan.python.is_empty() {
+        steps.push("Install Python packages".to_string());
+    }
+    if !missing.is_empty() && !plan.installer.is_empty() {
+        steps.push("Install CUA Driver".to_string());
     }
     if plan.programming {
         steps.push(STEP_HINDSIGHT.to_string());
@@ -1112,7 +1265,7 @@ fn install_voice_model<B: Backend>(
     }
 }
 
-/// Install selected components into Mash's data folder (Linux tools or macOS npm).
+/// Install selected components into Mash's data folder through the manifest.
 ///
 /// One helper call per component, so a failure is attributable and a tool that
 /// is already present costs nothing. Exit 3 means the platform supplies that
@@ -1237,14 +1390,15 @@ fn apply_steps<B: Backend>(
     for (index, step) in steps.iter().enumerate() {
         draw_apply(terminal, index, steps.len(), step, &messages);
         let result = if index == 0 {
-            let mut report =
-                if missing.is_empty() && !(plan.npm.is_empty() && plan.pinned.is_empty()) {
-                    "Host tools are present; installing Mash's pinned tools.".to_string()
-                } else if missing.is_empty() {
-                    "Everything selected is already installed.".to_string()
-                } else {
-                    format!("Missing: {}", missing.join(", "))
-                };
+            let mut report = if missing.is_empty()
+                && !(plan.npm.is_empty() && plan.pinned.is_empty() && plan.python.is_empty())
+            {
+                "Host tools are present; installing Mash's pinned tools.".to_string()
+            } else if missing.is_empty() {
+                "Everything selected is already installed.".to_string()
+            } else {
+                format!("Missing: {}", missing.join(", "))
+            };
             for tool in &plan.apple {
                 if !apple_tool_available(tool) {
                     report.push_str(&format!(
@@ -1284,7 +1438,7 @@ fn apply_steps<B: Backend>(
                 plan.voice.as_ref().expect("STEP_VOICE follows a choice"),
             )
         } else {
-            install_python(&plan.python)
+            install_mash_tools(terminal, index, steps.len(), step, &messages, &plan.python)
         };
         // The same collision can surface when only some tools are missing and
         // an installer trips over one that is already present. The step is
@@ -1298,6 +1452,7 @@ fn apply_steps<B: Backend>(
             Err(_)
                 if !environment_step
                     && step != "Install npm packages"
+                    && step != "Install Python packages"
                     && step != STEP_PINNED_TOOLS
                     && tools_available(&plan.tools) =>
             {
@@ -1357,58 +1512,6 @@ fn find_brew() -> String {
         }
     }
     "brew".into()
-}
-
-// The host pip installer still needs its pinned specs. npm components use
-// mash-tool-install and the bundled runtime instead.
-fn pinned_specs(components: &[&'static str]) -> Result<Vec<String>, String> {
-    if components.is_empty() {
-        return Ok(Vec::new());
-    }
-    let resources = mash_resources();
-    let resolver = resources.join("assets/assets.py");
-    if !resolver.is_file() {
-        return Err(format!("{} is missing from the bundle", resolver.display()));
-    }
-    let output = Command::new(resources.join("bin/python3"))
-        .env("PYTHONDONTWRITEBYTECODE", "1")
-        .arg(&resolver)
-        .arg("specs")
-        .args(components)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output()
-        .map_err(|e| format!("could not read the pinned versions: {e}"))?;
-    if !output.status.success() {
-        return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
-    }
-    let specs: Vec<String> = String::from_utf8_lossy(&output.stdout)
-        .lines()
-        .map(str::trim)
-        .filter(|line| !line.is_empty())
-        .map(str::to_string)
-        .collect();
-    if specs.len() != components.len() {
-        return Err(format!(
-            "the manifest resolved {} of {} pinned packages",
-            specs.len(),
-            components.len()
-        ));
-    }
-    Ok(specs)
-}
-
-fn install_python(components: &[&'static str]) -> Result<String, String> {
-    if components.is_empty() {
-        return Ok("nothing requested".into());
-    }
-    let specs = pinned_specs(components)?;
-    let mut command = Command::new("python3");
-    command
-        .env("PATH", host_path())
-        .args(["-m", "pip", "install", "--user"])
-        .args(&specs);
-    run_logged(command)
 }
 
 // The vendor installer drops CuaDriver.app and its CLI. Accessibility and
@@ -1610,7 +1713,11 @@ fn draw_choices(frame: &mut Frame, app: &App) {
         Constraint::Length(3),
     ])
     .split(area);
-    wizard_style::header(frame, chunks[0], "Mash first-launch setup — page 1/5");
+    wizard_style::header(
+        frame,
+        chunks[0],
+        &wizard_style::page_title("Mash first-launch setup", 0),
+    );
 
     let mut lines: Vec<(Line<'static>, Option<usize>)> = vec![
         (Line::from(
@@ -1719,6 +1826,7 @@ struct Plan {
     npm: Vec<&'static str>,
     /// Pinned release binaries for `mash-tool-install` on macOS.
     pinned: Vec<&'static str>,
+    /// pip component names for `mash-tool-install` on macOS.
     python: Vec<&'static str>,
     apple: Vec<&'static str>,
     installer: Vec<&'static str>,
@@ -2030,6 +2138,29 @@ mod tests {
     }
 
     #[test]
+    fn model_check_is_readable_and_acknowledged_at_compact_sizes() {
+        for (width, height) in [(80, 24), (100, 30)] {
+            let mut terminal =
+                ratatui::Terminal::new(ratatui::backend::TestBackend::new(width, height)).unwrap();
+            terminal
+                .draw(|frame| {
+                    draw_model_check(
+                        frame,
+                        &["No configured credentials for the saved provider.".into()],
+                        false,
+                    )
+                })
+                .unwrap();
+            wizard_style::tests::find(terminal.backend().buffer(), "Continue");
+            wizard_style::tests::find(terminal.backend().buffer(), "No configured credentials");
+        }
+        let event = Event::Key(event::KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
+        assert!(acknowledges_model_check(&event));
+        let event = Event::Key(event::KeyEvent::new(KeyCode::Char('x'), KeyModifiers::NONE));
+        assert!(!acknowledges_model_check(&event));
+    }
+
+    #[test]
     fn preview_only_changes_pages_and_returns_to_the_logo() {
         let mut started = true;
         let mut page = 0;
@@ -2111,8 +2242,8 @@ mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect::<String>();
-        assert!(rendered.contains("Mash first-launch setup — page 1/5"));
-        assert!(rendered.contains("Providers"));
+        assert!(rendered.contains("Mash first-launch setup — page 1/6"));
+        assert!(rendered.contains("Model provider"));
         assert!(rendered.contains("ada@example.org"));
         // Sidebar: logo rows 1-10, SETUP, blank, then page 1 on row 13.
         assert_eq!(buffer[(0, 13)].bg, wizard_style::PANEL);
@@ -2349,8 +2480,8 @@ mod tests {
     #[cfg(target_os = "macos")]
     #[test]
     fn package_groups_name_manifest_components_not_specs() {
-        // The Mash helper and host pip installer take component names; a
-        // version here would fail to resolve against the bundled manifest.
+        // The Mash helper takes component names; a version here would fail
+        // to resolve against the bundled manifest.
         let plan = install_plan([true, true]);
         for component in &plan.npm {
             assert!(
@@ -2416,19 +2547,33 @@ mod tests {
     }
 
     #[test]
+    fn python_packages_install_even_when_host_tools_are_present() {
+        let plan = Plan {
+            python: vec!["python-lsp-server"],
+            tools: vec!["pylsp"],
+            ..Plan::default()
+        };
+        assert_eq!(
+            install_steps(&plan, &[]),
+            vec!["Check selected tools", "Install Python packages"]
+        );
+    }
+
+    #[test]
     fn nothing_missing_skips_host_installers() {
-        // Host-installed tools need no retry. On macOS, a host npm binary
-        // cannot satisfy the selected Mash-owned npm component instead.
+        // Host-installed tools need no retry. Host binaries cannot satisfy
+        // Mash-owned npm or Python components on macOS.
         let plan = install_plan([true, true]);
         let steps = install_steps(&plan, &[]);
         assert!(!steps.iter().any(|s| s == "Install Homebrew packages"));
-        assert!(!steps.iter().any(|s| s == "Install Python packages"));
         assert!(!steps.iter().any(|s| s == "Install CUA Driver"));
         assert!(!steps.iter().any(|s| s == STEP_VOICE));
         if is_linux() {
             assert!(!steps.iter().any(|s| s == "Install npm packages"));
+            assert!(!steps.iter().any(|s| s == "Install Python packages"));
         } else {
             assert!(steps.iter().any(|s| s == "Install npm packages"));
+            assert!(steps.iter().any(|s| s == "Install Python packages"));
         }
         assert_eq!(
             steps.first().map(String::as_str),

@@ -1,4 +1,8 @@
-use crate::wizard_style;
+use crate::{
+    model_picker::{Action, ModelPicker},
+    pi_models::{Job, Model, Report},
+    wizard_style,
+};
 use ratatui::{
     crossterm::event::{KeyCode, KeyModifiers},
     layout::{Constraint, Layout},
@@ -223,6 +227,14 @@ struct Dropdown {
     highlighted: usize,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ModelStep {
+    Credentials,
+    Loading,
+    Picker,
+    Manual,
+}
+
 pub struct ProviderPage {
     pi: Input,
     search: SearchInput,
@@ -231,6 +243,14 @@ pub struct ProviderPage {
     error: Option<String>,
     dropdown: Option<Dropdown>,
     saved_auth: HashSet<String>,
+    services: bool,
+    current: Option<(String, String)>,
+    selected_model: Option<(String, String)>,
+    model_step: ModelStep,
+    picker: Option<ModelPicker>,
+    model_job: Option<(u64, Job)>,
+    generation: u64,
+    models_cached: bool,
 }
 
 impl ProviderPage {
@@ -243,11 +263,209 @@ impl ProviderPage {
             error: None,
             dropdown: None,
             saved_auth: HashSet::new(),
+            services: false,
+            current: None,
+            selected_model: None,
+            model_step: ModelStep::Credentials,
+            picker: None,
+            model_job: None,
+            generation: 0,
+            models_cached: false,
+        }
+    }
+
+    /// Both pages share one draft, so service credential reuse cannot drift.
+    pub fn set_services(&mut self, services: bool) {
+        if self.services != services {
+            self.services = services;
+            self.dropdown = None;
+            self.error = None;
+            self.focus = if services {
+                Field::WebSearchProvider
+            } else {
+                Field::PiProvider
+            };
+        }
+    }
+
+    fn configured_provider(&self) -> String {
+        if self.pi.choice() == Choice::Compatible {
+            self.pi.id.trim().to_string()
+        } else {
+            self.pi.choice().provider_id().into()
+        }
+    }
+
+    fn invalidate_models(&mut self) {
+        self.generation = self.generation.wrapping_add(1);
+        self.model_job = None;
+        self.picker = None;
+        self.selected_model = None;
+        self.models_cached = false;
+        self.model_step = ModelStep::Credentials;
+    }
+
+    pub fn is_loading(&self) -> bool {
+        !self.services && self.model_step == ModelStep::Loading
+    }
+
+    pub fn has_model_step(&self) -> bool {
+        !self.services && self.model_step != ModelStep::Credentials
+    }
+
+    pub fn cancel_loading(&mut self) {
+        if self.model_job.is_some() {
+            self.invalidate_models();
+        }
+    }
+
+    pub fn poll_models(&mut self) {
+        let Some((generation, job)) = self.model_job.as_mut() else {
+            return;
+        };
+        let generation = *generation;
+        let Some(result) = job.poll() else {
+            return;
+        };
+        self.model_job = None;
+        if generation == self.generation {
+            self.receive_models(result);
+        }
+    }
+
+    fn receive_models(&mut self, result: Result<Report, String>) {
+        self.models_cached = true;
+        match result {
+            Ok(report) if !report.models.is_empty() => {
+                self.picker = Some(ModelPicker::new(
+                    report.models,
+                    &self.configured_provider(),
+                    self.current.as_ref(),
+                ));
+                self.model_step = ModelStep::Picker;
+                self.error = None;
+            }
+            _ => {
+                self.model_step = ModelStep::Manual;
+                self.focus = Field::PiModel;
+                self.error = Some("Model list unavailable or empty. Enter the exact model ID; setup can continue.".into());
+            }
+        }
+    }
+
+    fn accept_model(&mut self, model: Model) {
+        if model.provider == self.configured_provider() {
+            self.pi.model = model.id.clone();
+        }
+        self.selected_model = Some((model.provider, model.id));
+        self.error = None;
+    }
+
+    fn picker_action(&mut self, action: Option<Action>) -> Option<Decision> {
+        match action? {
+            Action::Choose(model) => {
+                self.accept_model(model);
+                Some(Decision::Save)
+            }
+            Action::Manual => {
+                self.selected_model = None;
+                self.model_step = ModelStep::Manual;
+                self.focus = Field::PiModel;
+                None
+            }
+            Action::Back => {
+                self.model_step = ModelStep::Credentials;
+                self.selected_model = None;
+                self.error = None;
+                None
+            }
+            Action::Cancel => Some(Decision::Cancel),
+        }
+    }
+
+    /// Credential confirmation is the only discovery trigger. Keep/preview never runs Pi.
+    pub fn advance(&mut self, resources: &Path, agent: &Path, preview: bool) -> bool {
+        if self.services {
+            return preview || self.validate();
+        }
+        if self.pi.choice() == Choice::Keep {
+            return true;
+        }
+        if self.selected_model.is_some() {
+            return true;
+        }
+        if self.model_step == ModelStep::Manual {
+            if !preview && !self.validate() {
+                return false;
+            }
+            self.selected_model = Some((self.configured_provider(), self.pi.model.trim().into()));
+            return true;
+        }
+        if self.model_step != ModelStep::Credentials {
+            return false;
+        }
+        if !preview {
+            self.error = validate_credentials(&self.pi, true).err();
+            if self.error.is_some() {
+                return false;
+            }
+        }
+        if self.models_cached {
+            self.model_step = if self.picker.is_some() {
+                ModelStep::Picker
+            } else {
+                ModelStep::Manual
+            };
+            self.focus = Field::PiModel;
+            return false;
+        }
+        if preview {
+            self.picker = Some(ModelPicker::new(
+                vec![Model {
+                    provider: self.configured_provider(),
+                    id: "preview-model".into(),
+                    name: "Preview model".into(),
+                }],
+                &self.configured_provider(),
+                None,
+            ));
+            self.model_step = ModelStep::Picker;
+            return false;
+        }
+        let provider = self.configured_provider();
+        let mut draft = serde_json::json!({"provider":provider,"key":self.pi.key});
+        if self.pi.choice() == Choice::Compatible {
+            draft["baseUrl"] = Value::String(self.pi.url.trim().into());
+        }
+        let request = serde_json::json!({"version":1,"action":"discover","agentDir":agent,"provider":provider,"draft":draft});
+        match Job::start(resources, request) {
+            Ok(job) => {
+                self.model_job = Some((self.generation, job));
+                self.model_step = ModelStep::Loading;
+            }
+            Err(error) => self.receive_models(Err(error)),
+        }
+        false
+    }
+
+    fn validate_pi(&self) -> Result<(), String> {
+        if self.selected_model.is_some() {
+            validate_credentials(&self.pi, true)
+        } else {
+            validate_input(&self.pi, true)
         }
     }
 
     // Keep only provider names, never credential values, in wizard state.
     pub fn load_existing_auth(&mut self, agent: &Path) {
+        self.current = read_json_object(&agent.join("settings.json"))
+            .ok()
+            .and_then(|settings| {
+                let provider = settings.get("defaultProvider")?.as_str()?.trim();
+                let model = settings.get("defaultModel")?.as_str()?.trim();
+                (!provider.is_empty() && !model.is_empty())
+                    .then(|| (provider.to_string(), model.to_string()))
+            });
         if let Ok(auth) = read_json_object(&agent.join("auth.json")) {
             self.saved_auth = auth
                 .into_iter()
@@ -265,12 +483,20 @@ impl ProviderPage {
     }
 
     fn fields(&self) -> Vec<Field> {
-        let mut fields = vec![Field::PiProvider];
-        if self.pi.choice() == Choice::Compatible {
-            fields.extend([Field::PiId, Field::PiUrl]);
-        }
-        if self.pi.choice().configured() {
-            fields.extend([Field::PiModel, Field::PiKey]);
+        let mut fields = Vec::new();
+        if !self.services {
+            if self.model_step == ModelStep::Manual {
+                return vec![Field::PiModel, Field::Back, Field::Save];
+            }
+            fields.push(Field::PiProvider);
+            if self.pi.choice() == Choice::Compatible {
+                fields.extend([Field::PiId, Field::PiUrl]);
+            }
+            if self.pi.choice().configured() {
+                fields.push(Field::PiKey);
+            }
+            fields.extend([Field::Back, Field::Save]);
+            return fields;
         }
         fields.push(Field::WebSearchProvider);
         if self.search.choice().configured() {
@@ -316,15 +542,43 @@ impl ProviderPage {
         )
     }
 
-    fn options(field: Field) -> Vec<&'static str> {
+    fn pi_label(&self, choice: Choice) -> String {
+        if choice == Choice::Keep {
+            return self.current.as_ref().map_or_else(
+                || "Set up later".into(),
+                |(provider, model)| {
+                    format!("Keep current: {provider}/{model}")
+                        .chars()
+                        .filter(|c| !c.is_control())
+                        .collect()
+                },
+            );
+        }
+        let mut label = choice.label(true).to_string();
+        if choice != Choice::Compatible
+            && self
+                .current
+                .as_ref()
+                .is_some_and(|(id, _)| id == choice.provider_id())
+        {
+            label.push_str(" (currently configured)");
+        }
+        label
+    }
+
+    fn options(&self, field: Field) -> Vec<String> {
         match field {
-            Field::PiProvider => PI_CHOICES.iter().map(|choice| choice.label(true)).collect(),
-            Field::WebSearchProvider => {
-                SEARCH_CHOICES.iter().map(|choice| choice.label()).collect()
-            }
+            Field::PiProvider => PI_CHOICES
+                .iter()
+                .map(|choice| self.pi_label(*choice))
+                .collect(),
+            Field::WebSearchProvider => SEARCH_CHOICES
+                .iter()
+                .map(|choice| choice.label().into())
+                .collect(),
             Field::HindsightProvider => HINDSIGHT_CHOICES
                 .iter()
-                .map(|choice| choice.label(false))
+                .map(|choice| choice.label(false).into())
                 .collect(),
             _ => Vec::new(),
         }
@@ -354,6 +608,7 @@ impl ProviderPage {
             Field::PiProvider => {
                 if let Some(&choice) = PI_CHOICES.get(index) {
                     if choice != self.pi.choice() {
+                        self.invalidate_models();
                         self.pi.choice = Some(choice);
                         self.pi.model.clear();
                         self.pi.key.clear();
@@ -411,10 +666,27 @@ impl ProviderPage {
 
     /// Field clicks open a selector; menu clicks commit the highlighted value.
     pub fn on_click(&mut self, index: usize) -> Option<Decision> {
+        if !self.services && self.model_step == ModelStep::Picker {
+            let action = self.picker.as_mut()?.on_click(index);
+            return self.picker_action(action);
+        }
+        if self.is_loading() {
+            self.cancel_loading();
+            return None;
+        }
+        if !self.services
+            && self.model_step == ModelStep::Manual
+            && self.fields().get(index) == Some(&Field::Back)
+        {
+            self.model_step = ModelStep::Credentials;
+            self.selected_model = None;
+            self.error = None;
+            return None;
+        }
         if let Some(menu) = self.dropdown {
             if index >= MENU_BASE {
                 let option = index - MENU_BASE;
-                if option < Self::options(menu.field).len() {
+                if option < self.options(menu.field).len() {
                     self.commit_option(menu.field, option);
                 }
                 return None;
@@ -439,10 +711,40 @@ impl ProviderPage {
 
     pub fn on_key(&mut self, code: KeyCode, modifiers: KeyModifiers) -> Option<Decision> {
         if modifiers.contains(KeyModifiers::CONTROL) && code == KeyCode::Char('c') {
+            self.cancel_loading();
             return Some(Decision::Cancel);
         }
+        if !self.services && self.model_step == ModelStep::Picker {
+            let action = self.picker.as_mut()?.on_key(code, modifiers);
+            return self.picker_action(action);
+        }
+        if self.is_loading() {
+            if code == KeyCode::Esc || code == KeyCode::Enter {
+                self.cancel_loading();
+            }
+            return None;
+        }
+        if !self.services
+            && self.model_step == ModelStep::Manual
+            && (code == KeyCode::Esc || code == KeyCode::Enter && self.focus == Field::Back)
+        {
+            self.model_step = ModelStep::Credentials;
+            self.selected_model = None;
+            self.focus = Field::PiProvider;
+            self.error = None;
+            return None;
+        }
+        if matches!(code, KeyCode::Backspace | KeyCode::Char(_))
+            && matches!(self.focus, Field::PiId | Field::PiUrl | Field::PiKey)
+        {
+            self.invalidate_models();
+            self.pi.model.clear();
+        }
+        if matches!(code, KeyCode::Backspace | KeyCode::Char(_)) && self.focus == Field::PiModel {
+            self.selected_model = None;
+        }
         if let Some(menu) = self.dropdown {
-            let count = Self::options(menu.field).len();
+            let count = self.options(menu.field).len();
             match code {
                 KeyCode::Esc => self.dropdown = None,
                 KeyCode::Up | KeyCode::Left | KeyCode::Down | KeyCode::Right => {
@@ -531,9 +833,12 @@ impl ProviderPage {
     }
 
     pub fn validate(&mut self) -> bool {
-        let result = validate_input(&self.pi, true)
-            .and_then(|()| validate_input(&self.hindsight, false))
-            .and_then(|()| validate_search(&self.search, self.search_uses_pi_key()));
+        let result = if self.services {
+            validate_input(&self.hindsight, false)
+                .and_then(|()| validate_search(&self.search, self.search_uses_pi_key()))
+        } else {
+            self.validate_pi()
+        };
         self.error = result.err();
         self.error.is_none()
     }
@@ -576,8 +881,16 @@ impl ProviderPage {
     }
 
     pub fn save(&self, root: &Path) -> Result<(), String> {
-        validate_input(&self.pi, true)?;
-        validate_input(&self.hindsight, false)?;
+        // The final skills choice also governs seeding: an opt-out (or no
+        // choice yet) must neither require nor modify Hindsight's config.
+        let programming = fs::read_to_string(root.join("setup/skills-choice"))
+            .unwrap_or_default()
+            .lines()
+            .any(|line| line == "programming=true");
+        self.validate_pi()?;
+        if programming {
+            validate_input(&self.hindsight, false)?;
+        }
         validate_search(&self.search, self.search_uses_pi_key())?;
         if self.pi.choice().configured() {
             let id = if self.pi.choice() == Choice::Compatible {
@@ -594,12 +907,21 @@ impl ProviderPage {
                     .or_insert_with(|| Value::Object(Map::new()))
                     .as_object_mut()
                     .ok_or("Pi models.json has an invalid providers object")?;
+                let model_definitions = if self.pi.model.trim().is_empty() {
+                    providers
+                        .get(&id)
+                        .and_then(|p| p.get("models"))
+                        .cloned()
+                        .unwrap_or_else(|| serde_json::json!([]))
+                } else {
+                    serde_json::json!([{"id": self.pi.model.trim()}])
+                };
                 providers.insert(
                     id.clone(),
                     serde_json::json!({
                         "baseUrl": self.pi.url.trim(),
                         "api": "openai-responses",
-                        "models": [{"id": self.pi.model.trim()}]
+                        "models": model_definitions
                     }),
                 );
                 Some(models)
@@ -607,15 +929,20 @@ impl ProviderPage {
                 None
             };
             let mut auth = read_json_object(&agent.join("auth.json"))?;
-            auth.insert(
-                id.clone(),
-                serde_json::json!({"type": "api_key", "key": self.pi.key.trim()}),
-            );
-            settings.insert("defaultProvider".into(), Value::String(id));
-            settings.insert(
-                "defaultModel".into(),
-                Value::String(self.pi.model.trim().into()),
-            );
+            let mut credential = serde_json::json!({"type": "api_key", "key": self.pi.key.trim()});
+            if let Some(env) = auth.get(&id).and_then(|entry| entry.get("env")) {
+                if !env.is_object() {
+                    return Err("Pi: existing provider environment is invalid".into());
+                }
+                credential["env"] = env.clone();
+            }
+            auth.insert(id.clone(), credential);
+            let (model_provider, model_id) = self
+                .selected_model
+                .clone()
+                .unwrap_or_else(|| (id, self.pi.model.trim().into()));
+            settings.insert("defaultProvider".into(), Value::String(model_provider));
+            settings.insert("defaultModel".into(), Value::String(model_id));
             settings.insert(
                 "defaultThinkingLevel".into(),
                 Value::String("medium".into()),
@@ -648,7 +975,7 @@ impl ProviderPage {
             save_json(&path, &config)?;
         }
 
-        if self.hindsight.choice() != Choice::Keep {
+        if programming && self.hindsight.choice() != Choice::Keep {
             let choice = self.hindsight.choice();
             let model = choice.configured().then_some(self.hindsight.model.trim());
             let url = (choice == Choice::Compatible).then_some(self.hindsight.url.trim());
@@ -669,14 +996,61 @@ impl ProviderPage {
     }
 
     pub fn draw(&self, frame: &mut Frame) {
+        if !self.services && self.model_step == ModelStep::Picker {
+            if let Some(picker) = &self.picker {
+                picker.draw(frame);
+                return;
+            }
+        }
+        if self.is_loading() {
+            let parts = Layout::vertical([
+                Constraint::Length(3),
+                Constraint::Min(3),
+                Constraint::Length(3),
+            ])
+            .split(wizard_style::page_area(frame, Some(1)));
+            wizard_style::header(
+                frame,
+                parts[0],
+                &wizard_style::page_title("Model provider", 1),
+            );
+            let body = wizard_style::section(frame, parts[1], "Loading local Pi models...");
+            frame.render_widget(
+                Paragraph::new(
+                    "No server authentication or account entitlement check is performed.",
+                ),
+                body,
+            );
+            wizard_style::render_buttons(
+                frame,
+                parts[2],
+                &[(wizard_style::button(true, " Back "), Some(0))],
+            );
+            return;
+        }
         let parts = Layout::vertical([
             Constraint::Length(3),
             Constraint::Min(10),
             Constraint::Length(3),
         ])
-        .split(wizard_style::page_area(frame, Some(1)));
-        wizard_style::header(frame, parts[0], "Mash provider setup — page 2/5");
-        let mut lines: Vec<(Line<'static>, Option<usize>)> = vec![
+        .split(wizard_style::page_area(
+            frame,
+            Some(if self.services { 2 } else { 1 }),
+        ));
+        wizard_style::header(
+            frame,
+            parts[0],
+            &wizard_style::page_title(
+                if self.services {
+                    "Services"
+                } else {
+                    "Model provider"
+                },
+                if self.services { 2 } else { 1 },
+            ),
+        );
+        let mut lines: Vec<(Line<'static>, Option<usize>)> =
+            vec![
             (
                 Line::from(
                     "API keys stay private. Enter or click opens a provider menu; Esc closes it.",
@@ -686,13 +1060,14 @@ impl ProviderPage {
             (Line::from(""), None),
             (
                 Line::from(Span::styled(
-                    "Pi",
+                    if self.services { "Optional services" } else { "Pi" },
                     Style::default().add_modifier(Modifier::BOLD),
                 )),
                 None,
             ),
         ];
         let fields = self.fields();
+        let pi_label = self.pi_label(self.pi.choice());
         let mut menu_after = None;
         for (index, &field) in fields.iter().enumerate() {
             if matches!(field, Field::Back | Field::Save) {
@@ -713,7 +1088,7 @@ impl ProviderPage {
                 ));
             }
             let (label, value, secret) = match field {
-                Field::PiProvider => ("Provider", self.pi.choice().label(true), false),
+                Field::PiProvider => ("Provider", pi_label.as_str(), false),
                 Field::PiId => ("Provider ID", self.pi.id.as_str(), false),
                 Field::PiUrl => ("Base URL", self.pi.url.as_str(), false),
                 Field::PiModel => ("Model ID", self.pi.model.as_str(), false),
@@ -791,7 +1166,7 @@ impl ProviderPage {
         }
         let body = wizard_style::section(frame, parts[1], "Providers");
         if let Some((menu, at)) = self.dropdown.zip(menu_after) {
-            let options = Self::options(menu.field);
+            let options = self.options(menu.field);
             // Expand in the flow instead of covering the next provider. Keep a
             // viewport on short terminals; arrows scroll the highlighted row.
             let used: usize = lines
@@ -855,7 +1230,18 @@ impl ProviderPage {
                 ),
                 (Span::raw("    "), None),
                 (
-                    wizard_style::button(self.focus == Field::Save, " Next — Skills "),
+                    wizard_style::button(
+                        self.focus == Field::Save,
+                        if self.services {
+                            " Next — Skills "
+                        } else if self.model_step == ModelStep::Credentials
+                            && self.pi.choice().configured()
+                        {
+                            " Choose model "
+                        } else {
+                            " Next — Services "
+                        },
+                    ),
                     position(Field::Save),
                 ),
             ],
@@ -899,6 +1285,19 @@ fn valid_https_url(url: &str) -> bool {
 }
 
 fn validate_input(input: &Input, pi: bool) -> Result<(), String> {
+    validate_credentials(input, pi)?;
+    if input.choice().configured()
+        && (input.model.trim().is_empty() || input.model.chars().any(char::is_control))
+    {
+        return Err(format!(
+            "{}: enter an exact model ID",
+            if pi { "Pi" } else { "Hindsight" }
+        ));
+    }
+    Ok(())
+}
+
+fn validate_credentials(input: &Input, pi: bool) -> Result<(), String> {
     let label = if pi { "Pi" } else { "Hindsight" };
     let choice = input.choice();
     if !choice.configured() {
@@ -921,9 +1320,6 @@ fn validate_input(input: &Input, pi: bool) -> Result<(), String> {
                 "{label}: enter an HTTPS base URL without credentials"
             ));
         }
-    }
-    if input.model.trim().is_empty() || input.model.contains(['\n', '\r']) {
-        return Err(format!("{label}: enter an exact model ID"));
     }
     if input.key.is_empty() || !input.key.chars().all(|c| c.is_ascii_graphic()) {
         return Err(format!(
@@ -1048,7 +1444,194 @@ mod tests {
         ));
         fs::create_dir_all(path.join("pi/agent")).unwrap();
         fs::create_dir_all(path.join(".hindsight")).unwrap();
+        fs::create_dir_all(path.join("setup")).unwrap();
+        fs::write(path.join("setup/skills-choice"), "programming=true\n").unwrap();
         path
+    }
+
+    #[test]
+    fn current_model_label_is_named_and_keep_preserves_files() {
+        let root = root();
+        let agent = root.join("pi/agent");
+        let settings = "{\"defaultProvider\":\"openai\",\"defaultModel\":\"gpt-4\"}";
+        let auth = "{\"openai\":{\"type\":\"oauth\",\"access\":\"never-display\"}}";
+        fs::write(agent.join("settings.json"), settings).unwrap();
+        fs::write(agent.join("auth.json"), auth).unwrap();
+        let mut page = ProviderPage::new();
+        page.load_existing_auth(&agent);
+        let mut terminal =
+            ratatui::Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+        terminal.draw(|frame| page.draw(frame)).unwrap();
+        let text: String = terminal
+            .backend()
+            .buffer()
+            .content()
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect();
+        assert!(text.contains("Keep current: openai/gpt-4"));
+        assert!(!text.contains("never-display"));
+        page.save(&root).unwrap();
+        assert_eq!(
+            fs::read_to_string(agent.join("settings.json")).unwrap(),
+            settings
+        );
+        assert_eq!(fs::read_to_string(agent.join("auth.json")).unwrap(), auth);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn catalog_flow_keeps_credential_provider_separate_from_fallback_model() {
+        let root = root();
+        let resources = root.join("resource root with spaces");
+        fs::create_dir_all(resources.join("node/bin")).unwrap();
+        let report = serde_json::json!({"version":1,"status":"ok","serverVerified":false,"catalogComplete":true,"modelKnown":null,"auth":{"status":"ready"},"models":[{"provider":"anthropic","id":"namespace/model","name":"Fallback model"}]});
+        let node = resources.join("node/bin/node");
+        fs::write(
+            &node,
+            format!(
+                "#!/bin/sh\n/bin/cat >/dev/null\nprintf '%s\\n' '{}'\n",
+                report
+            ),
+        )
+        .unwrap();
+        fs::set_permissions(&node, fs::Permissions::from_mode(0o755)).unwrap();
+        let agent = root.join("pi/agent");
+        fs::write(agent.join("auth.json"), r#"{"openai":{"type":"api_key","key":"old","env":{"KEEP":"yes"}},"anthropic":{"type":"api_key","key":"keep-this-key"}}"#).unwrap();
+        let mut page = ProviderPage::new();
+        page.pi.choice = Some(Choice::OpenAi);
+        page.pi.key = "new-key".into();
+        assert!(page.pi.model.is_empty());
+        assert!(!page.advance(&resources, &agent, false));
+        assert!(page.is_loading());
+        let until = std::time::Instant::now() + std::time::Duration::from_secs(3);
+        while page.is_loading() {
+            page.poll_models();
+            assert!(std::time::Instant::now() < until);
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
+        assert!(page.model_step == ModelStep::Picker);
+        assert!(matches!(
+            page.on_key(KeyCode::Enter, KeyModifiers::NONE),
+            Some(Decision::Save)
+        ));
+        assert!(page.advance(&resources, &agent, false));
+        page.save(&root).unwrap();
+        let settings = read_json_object(&agent.join("settings.json")).unwrap();
+        assert_eq!(settings["defaultProvider"], "anthropic");
+        assert_eq!(settings["defaultModel"], "namespace/model");
+        let auth = read_json_object(&agent.join("auth.json")).unwrap();
+        assert_eq!(auth["openai"]["key"], "new-key");
+        assert_eq!(auth["openai"]["env"]["KEEP"], "yes");
+        assert_eq!(auth["anthropic"]["key"], "keep-this-key");
+
+        page.on_key(KeyCode::Esc, KeyModifiers::NONE);
+        assert!(!page.advance(&root.join("missing"), &agent, false));
+        assert!(
+            page.model_job.is_none(),
+            "cached models must not restart a helper"
+        );
+        page.on_key(KeyCode::Esc, KeyModifiers::NONE);
+        page.focus = Field::PiKey;
+        let generation = page.generation;
+        page.on_key(KeyCode::Char('x'), KeyModifiers::NONE);
+        assert_ne!(page.generation, generation);
+        assert!(!page.models_cached);
+        assert!(page.selected_model.is_none());
+        assert!(!page.advance(&root.join("missing"), &agent, false));
+        assert!(page.model_step == ModelStep::Manual);
+        page.pi.model = "manual-model".into();
+        assert!(page.advance(&resources, &agent, false));
+        page.save(&root).unwrap();
+        assert_eq!(
+            read_json_object(&agent.join("settings.json")).unwrap()["defaultModel"],
+            "manual-model"
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn preview_and_keep_do_not_start_helpers_or_save_credentials() {
+        let root = root();
+        let mut page = ProviderPage::new();
+        assert!(page.advance(&root.join("missing"), &root.join("pi/agent"), false));
+        assert!(page.model_job.is_none());
+        page.pi.choice = Some(Choice::OpenAi);
+        assert!(!page.advance(&root.join("missing"), &root.join("pi/agent"), true));
+        assert!(page.model_step == ModelStep::Picker);
+        assert!(page.model_job.is_none());
+        assert!(!root.join("pi/agent/auth.json").exists());
+        assert!(!root.join("pi/agent/settings.json").exists());
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn current_custom_and_incomplete_defaults_are_truthfully_labelled() {
+        let root = root();
+        let agent = root.join("pi/agent");
+        let mut page = ProviderPage::new();
+        for settings in [r#"{}"#, r#"{"defaultProvider":"openai"}"#, "not JSON"] {
+            fs::write(agent.join("settings.json"), settings).unwrap();
+            page.load_existing_auth(&agent);
+            assert_eq!(page.pi_label(Choice::Keep), "Set up later");
+        }
+        fs::write(
+            agent.join("settings.json"),
+            r#"{"defaultProvider":"custom-provider","defaultModel":"namespace/model"}"#,
+        )
+        .unwrap();
+        page.load_existing_auth(&agent);
+        assert_eq!(
+            page.pi_label(Choice::Keep),
+            "Keep current: custom-provider/namespace/model"
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn page_split_keeps_pi_separate_from_services() {
+        use ratatui::{backend::TestBackend, Terminal};
+        let page = ProviderPage::new();
+        let mut terminal = Terminal::new(TestBackend::new(100, 30)).unwrap();
+        terminal.draw(|frame| page.draw(frame)).unwrap();
+        let text: String = terminal
+            .backend()
+            .buffer()
+            .content()
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect();
+        assert!(!text.contains("Web search"));
+        assert!(!text.contains("Hindsight"));
+    }
+
+    #[test]
+    fn pi_theme_switches_after_provider_setup_reserializes_settings() {
+        let root = root();
+        let settings = root.join("pi/agent/settings.json");
+        fs::write(&settings, include_str!("../defaults/pi/settings.json")).unwrap();
+        let mut page = ProviderPage::new();
+        page.pi.choice = Some(Choice::OpenAi);
+        page.pi.model = "test-model".into();
+        page.pi.key = "test-key".into();
+        page.save(&root).unwrap();
+
+        for (theme, expected) in [
+            (crate::theme::Theme::Light, "Mash Light"),
+            (crate::theme::Theme::Dark, "Monokai Pro (CE)"),
+        ] {
+            theme.apply(&root).unwrap();
+            let saved = read_json_object(&settings).unwrap();
+            assert_eq!(saved["theme"], expected);
+            assert_eq!(saved["defaultProvider"], "openai");
+            assert_eq!(saved["defaultModel"], "test-model");
+        }
+        let mut custom = read_json_object(&settings).unwrap();
+        custom.insert("theme".into(), Value::String("User theme".into()));
+        save_json(&settings, &custom).unwrap();
+        crate::theme::Theme::Light.apply(&root).unwrap();
+        assert_eq!(read_json_object(&settings).unwrap(), custom);
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -1105,6 +1688,41 @@ mod tests {
     }
 
     #[test]
+    fn programming_opt_out_skips_unseeded_hindsight_config() {
+        let root = root();
+        fs::write(root.join("setup/skills-choice"), "programming=false\n").unwrap();
+        let mut page = ProviderPage::new();
+        page.hindsight.choice = Some(Choice::None);
+        page.save(&root).unwrap();
+        assert!(!root.join(".hindsight/embed").exists());
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn programming_opt_out_keeps_existing_hindsight_but_saves_pi() {
+        let root = root();
+        let embed = root.join(".hindsight/embed");
+        let original = "HINDSIGHT_API_LLM_PROVIDER=none\n";
+        fs::write(&embed, original).unwrap();
+        fs::write(root.join("setup/skills-choice"), "programming=false\n").unwrap();
+        let mut page = ProviderPage::new();
+        page.pi.choice = Some(Choice::OpenAi);
+        page.pi.model = "test-model".into();
+        page.pi.key = "test-key".into();
+        // Ignore even an incomplete Hindsight input when its suite is off.
+        page.hindsight.choice = Some(Choice::Compatible);
+        page.save(&root).unwrap();
+        assert_eq!(fs::read_to_string(&embed).unwrap(), original);
+        let settings = read_json_object(&root.join("pi/agent/settings.json")).unwrap();
+        assert_eq!(settings["defaultProvider"], "openai");
+
+        fs::remove_file(root.join("setup/skills-choice")).unwrap();
+        page.save(&root).unwrap();
+        assert_eq!(fs::read_to_string(&embed).unwrap(), original);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn none_removes_old_hindsight_endpoint_without_touching_pi() {
         let root = root();
         fs::write(root.join(".hindsight/embed"), "HINDSIGHT_API_PORT=8998\nHINDSIGHT_API_LLM_PROVIDER=openai\nHINDSIGHT_API_LLM_BASE_URL=https://old.invalid/v1\nHINDSIGHT_API_LLM_MODEL=old\nHINDSIGHT_API_LLM_API_KEY=old\n").unwrap();
@@ -1155,13 +1773,7 @@ mod tests {
         let mut page = ProviderPage::new();
         assert_eq!(
             page.fields(),
-            vec![
-                Field::PiProvider,
-                Field::WebSearchProvider,
-                Field::HindsightProvider,
-                Field::Back,
-                Field::Save
-            ]
+            vec![Field::PiProvider, Field::Back, Field::Save]
         );
         page.commit_option(Field::PiProvider, 4);
         page.pi.key = "secret".into();
@@ -1194,6 +1806,7 @@ mod tests {
     #[test]
     fn web_search_dropdown_commits_only_after_confirmation() {
         let mut page = ProviderPage::new();
+        page.set_services(true);
         assert!(!page.fields().contains(&Field::WebSearchModel));
         page.focus = Field::WebSearchProvider;
         page.on_key(KeyCode::Right, KeyModifiers::NONE);
@@ -1218,6 +1831,7 @@ mod tests {
     #[test]
     fn changing_web_search_provider_clears_model_only_on_commit() {
         let mut page = ProviderPage::new();
+        page.set_services(true);
         page.search.choice = Some(SearchChoice::OpenAi);
         page.search.model = "gpt-5.1".into();
         page.search.key = "old-key".into();
@@ -1253,8 +1867,10 @@ mod tests {
         page.on_key(KeyCode::Enter, KeyModifiers::NONE);
         assert_eq!(page.pi.choice(), Choice::OpenAi);
         assert!(page.pi.key.is_empty());
-        assert!(page.fields().contains(&Field::PiModel));
+        assert!(!page.fields().contains(&Field::PiModel));
+        assert!(page.fields().contains(&Field::PiKey));
 
+        page.set_services(true);
         page.focus = Field::HindsightProvider;
         page.on_key(KeyCode::Char(' '), KeyModifiers::NONE);
         page.on_key(KeyCode::Down, KeyModifiers::NONE);
@@ -1267,6 +1883,7 @@ mod tests {
     fn opening_menu_pushes_following_provider_sections_down() {
         use wizard_style::tests::{click, find};
         let mut page = ProviderPage::new();
+        page.set_services(true);
         let render = |page: &ProviderPage| {
             let mut terminal =
                 ratatui::Terminal::new(ratatui::backend::TestBackend::new(120, 34)).unwrap();
@@ -1281,12 +1898,12 @@ mod tests {
         let (x, option_y) = find(&open, "OpenAI");
         let (_, web_open) = find(&open, "Web search");
         let (_, hindsight_open) = find(&open, "Hindsight");
-        assert_eq!(web_open, web_closed + PI_CHOICES.len() as u16);
-        assert_eq!(hindsight_open, hindsight_closed + PI_CHOICES.len() as u16);
-        assert!(option_y < web_open);
+        assert_eq!(web_open, web_closed);
+        assert!(hindsight_open > hindsight_closed);
+        assert!(option_y < hindsight_open);
         assert_eq!(
             wizard_style::clicked(&click(x, option_y)),
-            Some(MENU_BASE + 1)
+            Some(MENU_BASE + 2)
         );
     }
 
@@ -1294,6 +1911,7 @@ mod tests {
     fn long_menu_scrolls_inside_a_short_terminal_and_clicks_the_visible_option() {
         use wizard_style::tests::{click, find};
         let mut page = ProviderPage::new();
+        page.set_services(true);
         page.focus = Field::WebSearchProvider;
         page.on_key(KeyCode::Enter, KeyModifiers::NONE);
         page.on_key(KeyCode::End, KeyModifiers::NONE);
@@ -1365,6 +1983,7 @@ mod tests {
         )
         .unwrap();
         let mut page = ProviderPage::new();
+        page.set_services(true);
         page.search.choice = Some(SearchChoice::Xai);
         page.search.model = "grok-model".into();
         page.search.key = "search-secret".into();
@@ -1409,6 +2028,7 @@ mod tests {
         )
         .unwrap();
         let mut page = ProviderPage::new();
+        page.set_services(true);
         page.load_existing_auth(&agent);
         page.search.choice = Some(SearchChoice::Google);
         page.search.model = "gemini-3.1-flash-lite".into();
@@ -1435,6 +2055,7 @@ mod tests {
         for choice in [SearchChoice::OpenAiCodex, SearchChoice::Copilot] {
             let root = root();
             let mut page = ProviderPage::new();
+            page.set_services(true);
             page.search.choice = Some(choice);
             page.search.model = "search-model".into();
             assert!(!page.fields().contains(&Field::WebSearchKey));
@@ -1459,6 +2080,7 @@ mod tests {
     fn web_search_reuses_the_chat_provider_credential() {
         let root = root();
         let mut page = ProviderPage::new();
+        page.set_services(true);
         page.pi.choice = Some(Choice::OpenAi);
         page.pi.model = "chat-model".into();
         page.pi.key = "shared-secret".into();
@@ -1482,6 +2104,7 @@ mod tests {
         )
         .unwrap();
         let mut page = ProviderPage::new();
+        page.set_services(true);
         page.search.choice = Some(SearchChoice::Azure);
         page.search.model = "deployment-name".into();
         page.search.key = "azure-secret".into();
@@ -1530,6 +2153,7 @@ mod tests {
     fn only_key_based_search_choices_offer_a_key_field() {
         for choice in SEARCH_CHOICES {
             let mut page = ProviderPage::new();
+            page.set_services(true);
             page.search.choice = Some(*choice);
             assert_eq!(
                 page.fields().contains(&Field::WebSearchKey),
@@ -1541,6 +2165,7 @@ mod tests {
     #[test]
     fn web_search_needs_an_exact_model_id() {
         let mut page = ProviderPage::new();
+        page.set_services(true);
         page.search.choice = Some(SearchChoice::Google);
         assert!(!page.validate());
         assert!(page
@@ -1588,8 +2213,9 @@ mod tests {
     }
 
     #[test]
-    fn web_search_section_is_labelled_on_page_two() {
+    fn web_search_section_is_labelled_on_services_page() {
         let mut page = ProviderPage::new();
+        page.set_services(true);
         page.search.choice = Some(SearchChoice::Copilot);
         page.search.model = "gpt-5.6-sol".into();
         let mut terminal =
@@ -1610,6 +2236,7 @@ mod tests {
     fn clicks_open_a_menu_select_an_option_and_press_buttons() {
         use wizard_style::tests::{click, find};
         let mut page = ProviderPage::new();
+        page.set_services(true);
         let render = |page: &ProviderPage| {
             let mut terminal =
                 ratatui::Terminal::new(ratatui::backend::TestBackend::new(120, 34)).unwrap();

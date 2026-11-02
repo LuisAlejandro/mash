@@ -158,9 +158,17 @@ impl Theme {
                             Theme::Dark => (light, dark),
                             Theme::Light => (dark, light),
                         };
-                        if *file == relative && line == *from {
+                        if *file == relative
+                            && (line == *from || from.strip_suffix(',') == Some(line))
+                        {
+                            // Provider setup can move a JSON theme to the last
+                            // property. Preserve its missing trailing comma.
                             changed = true;
-                            return *to;
+                            return if line.ends_with(',') {
+                                to
+                            } else {
+                                to.strip_suffix(',').unwrap_or(to)
+                            };
                         }
                     }
                     line

@@ -105,8 +105,8 @@ impl SkillsPage {
             Constraint::Min(8),
             Constraint::Length(3),
         ])
-        .split(wizard_style::page_area(frame, Some(2)));
-        wizard_style::header(frame, parts[0], "Skills — page 3/5");
+        .split(wizard_style::page_area(frame, Some(3)));
+        wizard_style::header(frame, parts[0], &wizard_style::page_title("Skills", 3));
         let id = |field| FIELDS.iter().position(|f| *f == field);
         let lines: Vec<(Line<'static>, Option<usize>)> = vec![
             (

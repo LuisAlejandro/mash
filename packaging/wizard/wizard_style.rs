@@ -103,9 +103,34 @@ pub fn button_targets(area: Rect, spans: &[(Span<'static>, Option<usize>)]) {
 pub fn render_form(
     frame: &mut Frame,
     area: Rect,
-    lines: Vec<(Line<'static>, Option<usize>)>,
+    mut lines: Vec<(Line<'static>, Option<usize>)>,
     trim: bool,
 ) {
+    // Scroll whole wrapped rows, so drawing and mouse targets stay identical.
+    if let Some(focus) = lines.iter().rposition(|(line, _)| {
+        line.style.bg == Some(ACTIVE_ROW)
+            || line
+                .spans
+                .iter()
+                .any(|span| span.style.bg == Some(ACTIVE_ROW) || span.style.fg == Some(RED))
+    }) {
+        let heights: Vec<_> = lines[..=focus]
+            .iter()
+            .map(|(line, _)| {
+                Paragraph::new(line.clone())
+                    .wrap(Wrap { trim })
+                    .line_count(area.width)
+                    .max(1)
+            })
+            .collect();
+        let mut height: usize = heights.iter().sum();
+        let mut start = 0;
+        while height > area.height as usize && start < focus {
+            height -= heights[start];
+            start += 1;
+        }
+        lines.drain(..start);
+    }
     let rows = form_targets(area, &lines, trim);
     for ((line, _), row) in lines.iter().zip(&rows) {
         // Text inputs mark their value span; checkboxes, radios and dropdown
@@ -171,13 +196,20 @@ pub const SURFACE: Color = Color::Rgb(52, 53, 47); // surface0, for section head
 const BACKGROUND: Color = Color::Rgb(39, 40, 34); // Ghostty's Monokai Cursor
 const ACCENT: Color = Color::Rgb(204, 204, 204);
 const ACTIVE_ROW: Color = Color::Rgb(51, 51, 51);
-const PAGES: [&str; 5] = [
+const PAGES: [&str; 6] = [
     "Tools & identity",
-    "Providers",
+    "Model provider",
+    "Services",
     "Skills",
     "Appearance",
     "Dictation",
 ];
+
+pub const PAGE_COUNT: usize = PAGES.len();
+
+pub fn page_title(title: &str, index: usize) -> String {
+    format!("{title} — page {}/{}", index + 1, PAGE_COUNT)
+}
 
 pub fn selected() -> Style {
     Style::default().fg(TEXT).bg(ACTIVE_ROW)
@@ -327,11 +359,11 @@ const LOGO_ROWS: u16 = 10;
 // The logo needs its 10 rows plus SETUP, the page list and the hint; a short
 // terminal falls back to the one-line MASH title instead of clipping the list.
 fn shows_logo(area: Rect) -> bool {
-    area.height >= LOGO_ROWS + 13
+    area.height >= LOGO_ROWS + PAGE_COUNT as u16 + 8
 }
 
 /// Draw the common shell and return the form's rectangle. None means setup is
-/// being applied after all five pages have been completed.
+/// being applied after all setup pages have been completed.
 pub fn page_area(frame: &mut Frame, page: Option<usize>) -> Rect {
     clear_targets();
     let area = frame.area();
@@ -441,7 +473,7 @@ pub fn page_area(frame: &mut Frame, page: Option<usize>) -> Rect {
 pub fn preview_hint(frame: &mut Frame) {
     let area = frame.area();
     if area.width >= 90 && area.height >= 16 {
-        // Same rows page_area stacks: header, blank, five pages, blank.
+        // Same rows page_area stacks: header, blank, page list, blank.
         let header = if shows_logo(area) { LOGO_ROWS + 1 } else { 2 };
         let width = SIDEBAR_WIDTH - 2;
         frame.render_widget(
@@ -451,7 +483,12 @@ pub fn preview_hint(frame: &mut Frame) {
                 width = width as usize
             ))
             .style(Style::default().fg(MUTED).bg(PANEL)),
-            Rect::new(area.x + 1, area.y + 1 + header + 7, width, 1),
+            Rect::new(
+                area.x + 1,
+                area.y + 1 + header + PAGE_COUNT as u16 + 2,
+                width,
+                1,
+            ),
         );
     }
 }
@@ -534,6 +571,27 @@ pub mod tests {
     }
 
     #[test]
+    fn overflowing_forms_keep_the_focused_field_and_mouse_target_visible() {
+        let mut terminal = Terminal::new(TestBackend::new(30, 3)).unwrap();
+        terminal
+            .draw(|frame| {
+                clear_targets();
+                let mut lines = vec![
+                    (
+                        Line::from("long introductory text that wraps over several rows"),
+                        None
+                    );
+                    5
+                ];
+                lines.push((text_field(true, "Focused", "value".into()), Some(9)));
+                render_form(frame, frame.area(), lines, true);
+            })
+            .unwrap();
+        let (x, y) = find(terminal.backend().buffer(), "Focused");
+        assert_eq!(clicked(&click(x, y)), Some(9));
+    }
+
+    #[test]
     fn wrapped_rows_get_targets_on_the_row_they_render_on() {
         let lines = vec![
             (Line::from("one two three four five six seven"), None),
@@ -555,6 +613,28 @@ pub mod tests {
         assert!(y > 1, "first line must wrap for this test to mean anything");
         assert_eq!(clicked(&click(x, y)), Some(7));
         assert_eq!(clicked(&click(x, y - 1)), None);
+    }
+
+    #[test]
+    fn page_split_exposes_six_named_pages() {
+        assert_eq!(
+            PAGES,
+            [
+                "Tools & identity",
+                "Model provider",
+                "Services",
+                "Skills",
+                "Appearance",
+                "Dictation"
+            ]
+        );
+        let mut terminal = Terminal::new(TestBackend::new(80, 24)).unwrap();
+        terminal
+            .draw(|frame| {
+                page_area(frame, Some(5));
+            })
+            .unwrap();
+        find(terminal.backend().buffer(), "Setup 6/6");
     }
 
     #[test]
@@ -633,8 +713,8 @@ pub mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect::<String>();
-        assert!(text.contains("✓ 04 Appearance"));
-        assert!(text.contains("✓ 05 Dictation"));
+        assert!(text.contains("✓ 05 Appearance"));
+        assert!(text.contains("✓ 06 Dictation"));
         assert!(text.contains("Installing…"));
     }
 
@@ -652,7 +732,7 @@ pub mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect::<String>();
-        assert!(text.contains("Setup 1/5"));
+        assert!(text.contains("Setup 1/6"));
         assert!(!text.contains("Providers"));
         assert_eq!(form.x, 0);
         assert_eq!(form.width, 80);

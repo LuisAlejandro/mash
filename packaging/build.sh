@@ -62,6 +62,7 @@ ship_helpers=(
   mash-tool-refresh
   hindsight-embed
   mash-voice-model
+  mash-pi-models.mjs
   mash-notify
   mash-seed-sync
   mash-update-notice
