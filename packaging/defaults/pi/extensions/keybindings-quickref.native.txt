@@ -48,6 +48,7 @@ menu, and Pi's Left arrow.
   m                Manage annotations
   u                Pick link or ID
   Shift+U          Plugin manager
+  Shift+Z          Check for updates
   Shift+N          New workspace (layout profile)
   Shift+G          New worktree (layout profile)
   Shift+F          Workspace picker (sessions)

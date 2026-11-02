@@ -22,6 +22,7 @@ the editing ones.
   Ctrl+Tab         Next tab
   Ctrl+Alt+Shift+] Next workspace
   Ctrl+Alt+Y       Open notification
+  Ctrl+Alt+Shift+U Check for updates
   Ctrl+Shift+Up    Previous agent
   Ctrl+Alt+[       Previous pane
   Ctrl+Shift+Tab   Previous tab

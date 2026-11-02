@@ -85,6 +85,18 @@ class MenuChordTest(unittest.TestCase):
         for table in ("macOS cursor:", "macOS native:", "Linux cursor:", "Linux native:"):
             self.assertIn(table, result.stdout)
 
+    def test_update_check_is_in_both_platform_keymaps(self):
+        root = fork_root()
+        if root is None:
+            self.skipTest("Ghostty fork not available (set MASH_GHOSTTY_SRC)")
+        for relative in (
+            "macos/Sources/App/MashMenus.swift",
+            "src/apprt/gtk/ui/1.5/window.blp",
+        ):
+            with self.subTest(platform=relative):
+                source = (root / relative).read_text(encoding="utf-8")
+                self.assertGreaterEqual(source.count("Check for Updates…"), 2)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

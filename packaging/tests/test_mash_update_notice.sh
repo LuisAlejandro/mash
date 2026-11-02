@@ -61,6 +61,7 @@ stub curl 'echo "curl $*" >>"$CALLS"
 [ -n "${FAKE_CURL_RC:-}" ] && exit "$FAKE_CURL_RC" 2>/dev/null
 printf "{\"tag_name\": \"%s\", \"name\": \"Release\"}\n" "${FAKE_RELEASE-0.2.0}"'
 stub notify-send 'echo "notify $*" >>"$CALLS"'
+stub clear ':'
 stub gdbus 'echo "gdbus $*" >>"$CALLS"; exit "${FAKE_GDBUS_RC:-0}"'
 stub codesign 'echo "TeamIdentifier=${FAKE_TEAM:-4SCJW6LZ6T}" >&2'
 stub herdr 'case "$1 $2" in
@@ -73,7 +74,19 @@ run() { # run [VAR=value...] -- one launch's worth of the helper
   env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" "$@" \
     bash "$helper" "$res" "$data" 2>"$tmp/stderr"
 }
+run_manual() { # run_manual [VAR=value...] -- one user-requested check
+  mkdir -p "$data/local/state"
+  env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" "$@" \
+    bash "$helper" --manual "$res" "$data" 2>"$tmp/stderr"
+}
 count() { grep -c "^$1 " "$calls" 2>/dev/null || true; }
+show_status() { # show_status STATUS SYSTEM -- render the manual result pane
+  env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" \
+    MASH_UPDATE_STATUS="$1" MASH_UPDATE_SYSTEM="$2" \
+    MASH_UPDATE_INSTALLED=0.2.0 HERDR_PANE_ID=manual \
+    bash "$root/packaging/plugins/mash-update-notice/notice.sh" \
+    >"$tmp/status-out" 2>"$tmp/status-stderr" || true
+}
 fresh() {
   data="$tmp/data-$1"
   mkdir -p "$data"
@@ -84,6 +97,8 @@ fresh() {
 fresh newer
 run FAKE_INSTALLED=0.1.1 FAKE_CANDIDATE=0.2.0
 check "the newer version is recorded" grep -qx 0.2.0 "$data/local/state/update-notice"
+check "the announcement is logged" \
+  grep -q 'announcing 0\.2\.0 via notice (running 0\.1\.1)' "$data/local/state/update-notice.log"
 check "one desktop notification" test "$(count notify)" = 1
 check "the notification names both versions and the command" \
   grep -q 'notify .*0\.2\.0.*0\.1\.1.*sudo apt install --only-upgrade letsmash' "$calls"
@@ -176,6 +191,11 @@ mac() { # mac [VAR=value...] -- one macOS launch, run from inside the bundle
   env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" FAKE_UNAME=Darwin "$@" \
     bash "$appres/bin/mash-update-notice" "$appres" "$data" 2>"$tmp/stderr"
 }
+mac_manual() { # mac_manual [VAR=value...] -- one user-requested macOS check
+  mkdir -p "$data/local/state"
+  env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" FAKE_UNAME=Darwin "$@" \
+    bash "$appres/bin/mash-update-notice" --manual "$appres" "$data" 2>"$tmp/stderr"
+}
 setversion() { printf '%s\n' "$1" >"$appres/VERSION"; }
 
 # --- a newer release: check, record, notify, open the interactive pane ---------
@@ -207,11 +227,69 @@ mac FAKE_RELEASE=0.3.0
 check "a launch after 24h asks again" test "$(count curl)" = 1
 check "a newer release after the window is announced" test "$(count popup)" = 1
 
-# --- an announced version is not re-announced ----------------------------------
+# --- a user-requested check bypasses the daily cooldown ------------------------
+fresh mac-manual-repeat
+setversion 0.1.1
+mkdir -p "$data/local/state"
+echo 0.2.0 >"$data/local/state/update-notice"
+echo "$(date +%s)" >"$data/local/state/update-checked"
+mac_manual FAKE_RELEASE=0.2.0
+check "manual check asks despite the 24h cooldown" test "$(count curl)" = 1
+check "manual check reopens an already-announced update" test "$(count popup)" = 1
 : >"$calls"
+mac FAKE_RELEASE=0.2.0
+check "manual check leaves automatic checks rate-limited for 24h" test "$(count curl)" = 0
+check "the reason a launch showed nothing is logged" \
+  grep -q 'macos: next check in [0-9]*s' "$data/local/state/update-notice.log"
+
+fresh mac-manual-current
+setversion 0.2.0
+mac_manual FAKE_RELEASE=0.2.0
+check "manual check reports that Mash is up to date" \
+  grep -q 'MASH_UPDATE_STATUS=up-to-date' "$calls"
+check "manual up-to-date result opens the status pane" \
+  grep -q 'plugin pane open --plugin mash-update-notice --entrypoint notice' "$calls"
+
+fresh mac-manual-offline
+setversion 0.1.1
+mac_manual FAKE_RELEASE=0.2.0 FAKE_CURL_RC=7
+check "manual offline check reports that it could not check" \
+  grep -q 'MASH_UPDATE_STATUS=check-unavailable' "$calls"
+check "a failed release check is logged" \
+  grep -q 'macos: release check failed' "$data/local/state/update-notice.log"
+fresh mac-manual-malformed
+setversion 0.1.1
+mac_manual FAKE_RELEASE=not-a-version
+check "manual check rejects an unparseable release tag" \
+  grep -q 'MASH_UPDATE_STATUS=check-unavailable' "$calls"
+
+fresh linux-manual-current
+run_manual FAKE_INSTALLED=0.2.0 FAKE_CANDIDATE=0.2.0
+check "manual Linux check reports that Mash is up to date" \
+  grep -q 'MASH_UPDATE_STATUS=up-to-date' "$calls"
+
+fresh linux-manual-cache
+run_manual FAKE_INSTALLED=0.2.0 'FAKE_CANDIDATE=(none)'
+check "manual Linux check explains missing APT metadata" \
+  grep -q 'MASH_UPDATE_STATUS=apt-unavailable' "$calls"
+
+show_status up-to-date Darwin
+check "macOS manual status says everything is up to date" \
+  grep -q 'Everything is up to date' "$tmp/status-out"
+show_status up-to-date Linux
+check "Linux manual status qualifies its cached APT result" \
+  grep -q 'No newer Mash version found in the current APT metadata' "$tmp/status-out"
+
+# --- an announced version is not re-announced ----------------------------------
+fresh mac-already-announced
+setversion 0.1.1
+mkdir -p "$data/local/state"
+echo 0.3.0 >"$data/local/state/update-notice"
 printf '%s\n' "$(($(date +%s) - 90000))" >"$data/local/state/update-checked"
 mac FAKE_RELEASE=0.3.0
 check "an announced release is not shown again" test "$(count popup)" = 0
+check "a suppressed re-announcement is logged" \
+  grep -q '0\.3\.0 already announced' "$data/local/state/update-notice.log"
 
 # --- equal, older, and unparseable tags ----------------------------------------
 fresh mac-equal
