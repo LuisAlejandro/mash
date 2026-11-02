@@ -9,21 +9,30 @@ stays agent-agnostic:
 * Fork exactly before one of them, and report the new session identity.
 * How is that new session opened in a pane?
 
-Pi stores sessions as JSONL transcript paths and forks over its RPC interface.
+Pi stores sessions as JSONL paths; a storage-only Node helper uses its SDK.
 """
 
 from __future__ import annotations
 
-import sys
+import json
+import shutil
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
 
-sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
+HELPER = Path(__file__).resolve().parent.parent / "pi_session.mjs"
+HELPER_TIMEOUT_SECONDS = 15
 
 
 class AgentError(RuntimeError):
     """A backend failure that should be shown to the user as-is."""
+
+
+@dataclass(frozen=True)
+class ForkedSession:
+    session_file: str
+    selected_text: str
 
 
 @dataclass(frozen=True)
@@ -74,17 +83,17 @@ class Agent:
         """Native arguments that open an existing session in a new pane."""
         raise NotImplementedError
 
-    def list_messages(self, session: str) -> list[dict[str, str]]:
-        """User messages worth forking, oldest first."""
+    def list_messages(self, session: str) -> list[dict[str, Any]]:
+        """Rendered user messages, oldest first, with fork availability."""
         raise NotImplementedError
 
-    def fork(self, session: str, message_id: str) -> str:
-        """Fork before `message_id`; return the new session identity."""
+    def fork(self, session: str, message_id: str) -> ForkedSession:
+        """Fork before `message_id`; return the new session and unsent draft."""
         raise NotImplementedError
 
 
 class PiAgent(Agent):
-    """Pi: JSONL transcript paths, forked over the RPC interface."""
+    """Pi storage only: no second agent process, extension or MCP startup."""
 
     def __init__(self) -> None:
         super().__init__(kind="pi", name="Pi", session_kind="path", executable="pi")
@@ -92,23 +101,69 @@ class PiAgent(Agent):
     def launch_args(self, fork_session: str) -> list[str]:
         return ["--session", fork_session]
 
-    def list_messages(self, session: str) -> list[dict[str, str]]:
-        from pi_rpc import PiRpc, PiRpcError
+    def _runtime(self) -> tuple[Path, Path]:
+        executable = shutil.which(self.executable)
+        if not executable:
+            raise AgentError("Pi executable not found in PATH.")
+        package = node = None
+        for parent in Path(executable).resolve().parents:
+            manifest = parent / "package.json"
+            if package is None and manifest.is_file() and (parent / "dist/index.js").is_file():
+                try:
+                    if json.loads(manifest.read_text())["name"] == "@earendil-works/pi-coding-agent":
+                        package = parent / "dist/index.js"
+                except (OSError, ValueError, KeyError):
+                    pass
+            if node is None and (parent / "bin/node").is_file():
+                node = parent / "bin/node"
+            if package and node:
+                return node, package
+        raise AgentError("Cannot resolve bundled Pi SessionManager and Node from the Pi executable.")
 
+    def _call(self, command: str, session: str, *args: str) -> Mapping[str, Any]:
+        if not HELPER.is_file():
+            raise AgentError(f"Pi session helper is missing: {HELPER}")
+        node, module = self._runtime()
         try:
-            with PiRpc(session, self.executable) as rpc:
-                return rpc.fork_messages()
-        except PiRpcError as exc:
-            raise AgentError(str(exc)) from exc
-
-    def fork(self, session: str, message_id: str) -> str:
-        from pi_rpc import PiRpc, PiRpcError
-
+            response = subprocess.run(
+                [str(node), str(HELPER), str(module), command, session, *args],
+                capture_output=True, text=True, check=True, timeout=HELPER_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise AgentError(f"Pi session {command} timed out.") from exc
+        except subprocess.CalledProcessError as exc:
+            raise AgentError((exc.stderr or f"Pi session {command} failed.").strip()) from exc
+        except OSError as exc:
+            raise AgentError(f"Cannot run Pi session {command}: {exc}") from exc
         try:
-            with PiRpc(session, self.executable) as rpc:
-                return rpc.fork(message_id)
-        except PiRpcError as exc:
-            raise AgentError(str(exc)) from exc
+            data = json.loads(response.stdout)
+            if not isinstance(data, dict):
+                raise ValueError("expected an object")
+            return data
+        except ValueError as exc:
+            raise AgentError(f"Pi session {command} helper returned invalid JSON.") from exc
+
+    def list_messages(self, session: str) -> list[dict[str, Any]]:
+        entries = self._call("list", session).get("entries")
+        if not isinstance(entries, list) or any(
+            not isinstance(e, dict) or not isinstance(e.get("id"), str)
+            or not isinstance(e.get("text"), str) or not isinstance(e.get("forkable"), bool)
+            or e.get("visibility") != "rendered" for e in entries
+        ):
+            raise AgentError("Pi session list helper returned malformed entries.")
+        if not entries:
+            raise AgentError("No user messages are present in this session's rendered transcript.")
+        return entries
+
+    def fork(self, session: str, message_id: str) -> ForkedSession:
+        data = self._call("fork", session, message_id)
+        fork = self._as_session_path(data.get("sessionFile"))
+        if self.same_session(session, fork) or not Path(fork).is_file():
+            raise AgentError("Pi session fork helper did not create a distinct session file.")
+        text = data.get("selectedText")
+        if not isinstance(text, str):
+            raise AgentError("Pi session fork helper returned no draft text.")
+        return ForkedSession(fork, text)
 
 
 AGENTS: dict[str, Agent] = {agent.kind: agent for agent in (PiAgent(),)}

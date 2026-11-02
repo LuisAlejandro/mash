@@ -9,12 +9,13 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 import fork_from_message as ffm  # noqa: E402
 import picker  # noqa: E402
-from agents import AgentError, agent_for  # noqa: E402
+from agents import AgentError, ForkedSession, agent_for  # noqa: E402
 
 
 SOURCE_PANE = "w1:p1"
@@ -55,7 +56,8 @@ class FakeAgent:
 
     def fork(self, session, message_id):
         self.calls.append(("fork", session, message_id))
-        return self.fork_session
+        message = next(m for m in self.messages if m["id"] == message_id)
+        return ForkedSession(self.fork_session, message["text"])
 
 
 class FakeClient:
@@ -86,6 +88,8 @@ class FakeClient:
         if self.fail_on and tuple(args[:len(self.fail_on)]) == self.fail_on:
             raise ffm.ForkError("simulated Herdr failure")
         head = " ".join(args[:2])
+        if head == "agent focus" and not any(c[:2] == ["agent", "start"] for c in self.calls):
+            raise ffm.ForkError("agent_not_found: target is still a shell")
         if head == "pane get":
             if args[2] == PICKER_PANE:
                 if not self.picker_alive:
@@ -113,9 +117,13 @@ class FakeClient:
             return {"result": {"tab": {"tab_id": "w1:t2"}, "root_pane": {"pane_id": FRESH_PANE}}}
         if head == "pane split":
             return {"result": {"pane": {"pane_id": FORK_PANE}}}
+        if head == "workspace create":
+            return {"result": {"workspace": {"workspace_id": "w2"}, "tab": {"tab_id": "w2:t1"}, "root_pane": {"pane_id": FORK_PANE}}}
+        if head == "pane layout":
+            return {"result": {"layout": {"panes": [{"pane_id": SOURCE_PANE, "rect": {"width": 100, "height": 40}}]}}}
         if head == "agent get":
             value = self.reported if self.reported is not None else self.source_session
-            return {"result": {"agent": {"agent_session": self._session(value)}}}
+            return {"result": {"agent": {"agent_session": self._session(value), "interactive_ready": True}}}
         return {"result": {"type": "ok"}}
 
 
@@ -125,6 +133,7 @@ def _context(tmp: Path) -> dict:
         "workspace_id": "w1",
         "focused_pane_cwd": str(tmp),
         "tab_label": "agent - work",
+        "tab_id": "w1:t1",
     }
 
 
@@ -153,10 +162,11 @@ def assert_fork_tab_layout(client: FakeClient, session: str) -> None:
     assert start[-2:] == ["--session", session], start
     assert len([c for c in calls if c[:2] == ["agent", "start"]]) == 1, calls
     assert calls.index(run) < calls.index(start) < calls.index(["agent", "get", FORK_PANE]), calls
-    assert calls[-2:] == [
-        ["tab", "rename", "w1:t2", "Fork · agent - work"],
-        ["tab", "focus", "w1:t2"],
-    ], calls
+    assert calls.index(["tab", "focus", "w1:t2"]) < calls.index(start), calls
+    assert calls.index(["tab", "rename", "w1:t2", "Fork · agent - work"]) > calls.index(start), calls
+    send = next(c for c in calls if c[:2] == ["pane", "send-text"])
+    assert calls.index(["agent", "get", FORK_PANE]) < calls.index(send), calls
+    assert send[2] == FORK_PANE, calls
 
 
 def test_pi_backend(tmp: Path) -> None:
@@ -391,8 +401,174 @@ def test_pane_run_accepts_a_silent_herdr(tmp: Path) -> None:
         raise AssertionError("json() must still reject a silent response")
 
 
+def test_real_pi_helper_backend(tmp: Path) -> None:
+    import shutil
+    if not shutil.which("pi"):
+        print("skip - real Pi helper backend (Pi absent; checked by bundle gate)")
+        return
+    source = tmp / "source.jsonl"
+    records = [
+        {"type": "session", "version": 3, "id": "test", "timestamp": "2026-11-02T00:00:00.000Z", "cwd": str(tmp)},
+        {"type": "message", "id": "u1", "parentId": None, "message": {"role": "user", "content": "first"}},
+        {"type": "message", "id": "a1", "parentId": "u1", "message": {"role": "assistant", "content": []}},
+        {"type": "message", "id": "u2", "parentId": "a1", "message": {"role": "user", "content": "--dash\n  quotes $ ` — 🚀\n"}},
+    ]
+    original = "\n".join(json.dumps(r) for r in records) + "\n"
+    source.write_text(original)
+    pi = agent_for("pi")
+    rows = pi.list_messages(str(source))
+    assert [m["id"] for m in rows] == ["u1", "u2"], rows
+    assert rows[0]["forkable"] is False
+    branch = pi.fork(str(source), "u2")
+    assert branch.selected_text == records[-1]["message"]["content"]
+    assert Path(branch.session_file).is_file()
+    assert source.read_text() == original
+    assert not any(r.get("id") == "u2" for r in map(json.loads, Path(branch.session_file).read_text().splitlines()))
+
+
+def test_helper_failures_are_named(tmp: Path) -> None:
+    pi = agent_for("pi")
+    with patch.object(pi.__class__, "_runtime", return_value=(Path("/node"), Path("/pi/dist/index.js"))):
+        for error, expected in [(subprocess.TimeoutExpired("node", 10), "timed out"),
+                                (OSError("not executable"), "not executable"),
+                                (subprocess.CalledProcessError(2, "node", stderr="incompatible SessionManager"), "incompatible SessionManager")]:
+            with patch("agents.subprocess.run", side_effect=error):
+                try:
+                    pi.list_messages("/a/source.jsonl")
+                except AgentError as exc:
+                    assert expected in str(exc), exc
+                else:
+                    raise AssertionError("helper failure accepted")
+
+
+def test_draft_and_focus_order_all_destinations(tmp: Path) -> None:
+    text = '--dash\n  "quotes" $DOLLAR `backtick` — 🚀\n'
+    for destination, focus in [("tab", ["tab", "focus", "w1:t2"]), ("pane", None), ("workspace", ["workspace", "focus", "w2"])]:
+        # Shells cannot be focused through the agent surface. Pane creation
+        # must focus the split itself, before agent start.
+        agent = FakeAgent("pi", "path", "Pi", PI_FORK, messages=[{"id": "e2", "text": text, "forkable": True}])
+        client = FakeClient(tmp, choice="e2", agent_kind="pi", source_session=PI_SOURCE, reported=PI_FORK)
+        original = _wire(agent)
+        try:
+            result = ffm.ForkWorkflow(client, _context(tmp), destination).execute()
+        finally:
+            ffm.agent_for = original
+        start = next(c for c in client.calls if c[:2] == ["agent", "start"])
+        # Herdr consumes the text tail literally: a separate "--" is pasted
+        # into the editor, not parsed as an option terminator.
+        send = ["pane", "send-text", FORK_PANE, text]
+        if focus is None:
+            focus = next(c for c in client.calls if c[:2] == ["pane", "split"])
+            assert "--focus" in focus
+        assert client.calls.index(focus) < client.calls.index(start) < client.calls.index(["agent", "get", FORK_PANE]) < client.calls.index(send)
+        assert result.fork_session == PI_FORK
+        assert not any(c[:2] in (["agent", "prompt"], ["agent", "send-keys"]) for c in client.calls)
+
+
+def test_failed_injection_keeps_fork(tmp: Path) -> None:
+    agent = FakeAgent("pi", "path", "Pi", PI_FORK)
+    client = FakeClient(tmp, choice="e2", agent_kind="pi", source_session=PI_SOURCE, reported=PI_FORK, fail_on=("pane", "send-text"))
+    original = _wire(agent)
+    try:
+        result = ffm.ForkWorkflow(client, _context(tmp)).execute()
+    finally:
+        ffm.agent_for = original
+    assert result.warnings and "draft" in result.warnings[0].lower()
+    assert ["tab", "close", "w1:t2"] not in client.calls
+
+
+def test_failed_start_cleans_owned_file(tmp: Path) -> None:
+    fork = tmp / "fork.jsonl"
+    fork.write_text("owned branch")
+    agent = FakeAgent("pi", "path", "Pi", str(fork))
+    client = FakeClient(tmp, choice="e2", agent_kind="pi", source_session=PI_SOURCE, reported=str(fork), fail_on=("agent", "start"))
+    original = _wire(agent)
+    try:
+        try:
+            ffm.ForkWorkflow(client, _context(tmp)).execute()
+        except ffm.ForkError as exc:
+            assert "simulated Herdr failure" in str(exc)
+        else:
+            raise AssertionError("expected failed start")
+    finally:
+        ffm.agent_for = original
+    assert ["tab", "close", "w1:t2"] in client.calls
+    assert not fork.exists(), "orphaned branch left behind"
+    assert not any(c[:2] == ["pane", "send-text"] for c in client.calls)
+
+
+def test_invalid_choice_is_rejected(tmp: Path) -> None:
+    for choice in ("not-in-list", "e2"):
+        agent = FakeAgent("pi", "path", "Pi", PI_FORK, messages=[{"id": "e2", "text": "first", "forkable": False}])
+        client = FakeClient(tmp, choice=choice, agent_kind="pi", source_session=PI_SOURCE)
+        original = _wire(agent)
+        try:
+            try:
+                ffm.ForkWorkflow(client, _context(tmp)).execute()
+            except ffm.ForkError:
+                pass
+            else:
+                raise AssertionError("invalid choice accepted")
+        finally:
+            ffm.agent_for = original
+        assert not any(c[:2] == ["tab", "create"] for c in client.calls)
+        assert not any(c[0] == "fork" for c in agent.calls)
+
+
+def test_picker_transcript_preview_and_disabled_choice(tmp: Path) -> None:
+    import io
+    import re
+    from types import SimpleNamespace
+    entries = [
+        {"id": "old", "text": "ABANDONED", "visibility": "history"},
+        {"id": "first", "text": "same opening\nfirst detail", "forkable": False},
+        {"id": "second", "text": "same opening\nsecond detail", "forkable": True},
+    ]
+    with patch("picker.shutil.get_terminal_size", return_value=os.terminal_size((50, 24))):
+        output = picker.render(entries, 1, 0, 4, "Restart message")
+        assert "ABANDONED" not in output
+        assert "first detail" in output and "second detail" in output
+        assert "no earlier history" in output
+        assert "\x1b[H" not in picker._visible("unsafe\x1b[H\x00", 40)
+        assert "\n" not in output.replace("\r\n", "")
+        for line in re.sub(r"\x1b\[[0-9;]*[A-Za-z]", "", output).splitlines():
+            assert len(line) <= 50, repr(line)
+    # Exercise the input loop: unavailable Enter must not return the first id.
+    class Tty(io.StringIO):
+        def fileno(self):
+            return 0
+    terminal = Tty()
+    with patch("builtins.open", side_effect=[Tty(), terminal]), \
+         patch("picker.termios.tcgetattr", return_value=[]), \
+         patch("picker.termios.tcsetattr"), patch("picker.tty.setraw"), \
+         patch("picker._read_key", side_effect=["home", "\r", "end", "\r"]):
+        assert picker.choose(entries, "Restart message") == "second"
+
+
+def test_picker_width_and_short_pane(tmp: Path) -> None:
+    import re
+    import unicodedata
+    for width, height in [(22, 10), (80, 24)]:
+        with patch("picker.shutil.get_terminal_size", return_value=os.terminal_size((width, height))):
+            out = picker.render([{"id": "x", "text": "中🚀e\u0301 " * 80}], 0, 0, 1, "Restart message")
+            plain = re.sub(r"\x1b\[[0-9;]*[A-Za-z]", "", out)
+            assert len(plain.splitlines()) <= height
+            for line in plain.splitlines():
+                columns = sum(0 if unicodedata.combining(c) else 2 if unicodedata.east_asian_width(c) in "WF" else 1 for c in line)
+                assert columns <= width, (width, columns, line)
+            assert "…" in plain
+
+
 def main() -> int:
     tests = [
+        test_picker_transcript_preview_and_disabled_choice,
+        test_picker_width_and_short_pane,
+        test_real_pi_helper_backend,
+        test_helper_failures_are_named,
+        test_draft_and_focus_order_all_destinations,
+        test_failed_injection_keeps_fork,
+        test_failed_start_cleans_owned_file,
+        test_invalid_choice_is_rejected,
         test_pi_backend,
         test_source_pane_never_touched,
         test_picker_splits_from_source_pane,

@@ -30,3 +30,8 @@ for specifier in "${checks[@]}"; do
   fi
 done
 echo "Pi Codemode: PASS"
+
+# Exercise the storage API against the freshly staged pin, even on builders
+# without a host Pi. Runtime staging precedes plugin copying on both platforms.
+root="$(cd "$(dirname "$0")/../.." && pwd)"
+"$node" "$root/packaging/plugins/fork-from-message/tests/test_pi_session.mjs" "$pi"
