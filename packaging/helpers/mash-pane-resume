@@ -24,6 +24,29 @@ case "$pane" in *[!A-Za-z0-9:]* | "" | :* | *:) exit 1 ;; esac
 entry="$state/mash/pane-resume/${pane/:/_}"
 [ -f "$entry" ] || exit 1
 
+# An ordinary restart needs nothing from this helper: pi was still running when
+# Herdr saved, so Herdr kept its own resume command and replays it itself. Only
+# a logout needs the ledger, because macOS kills pi about twenty seconds before
+# Herdr stops and Herdr keeps a resume command only while the agent that
+# reported it runs -- so by its last save the pane is a plain shell.
+#
+# Herdr's own claim on the pane is what separates the two, and it is readable
+# here, in the window before the replay lands: `pane get` reports this pane's
+# agent as "pi" exactly when Herdr still holds a record it is about to replay,
+# and reports nothing when the record is gone. Resuming anyway is what put
+# `pi --session <file>` in the composer of a restored conversation: the ledger
+# started pi, then Herdr's replay was typed into it.
+#
+# The entry is deliberately LEFT IN PLACE when Herdr owns the restore. It is
+# this pane's only cover for the next logout, and pi rewrites it on every report
+# anyway; consuming it here would trade one bug for the older one.
+herdr="${HERDR_BIN_PATH:-herdr}"
+if claim="$("$herdr" pane get "$pane" 2>/dev/null)" && [ -n "$claim" ]; then
+	case "$claim" in
+	*'"agent":"pi"'*) exit 1 ;;
+	esac
+fi
+
 taken="$entry.taken.$$"
 mv "$entry" "$taken" 2>/dev/null || exit 1
 argv=()
