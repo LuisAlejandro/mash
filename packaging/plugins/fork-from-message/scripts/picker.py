@@ -15,6 +15,7 @@ import shutil
 import sys
 import termios
 import tty
+import unicodedata
 from pathlib import Path
 
 
@@ -69,35 +70,81 @@ def _read_key(fd: int) -> str:
     return ARROW_KEYS.get(final, "")
 
 
+def _clean(text: str) -> str:
+    # Transcript text is untrusted terminal output; never render its escapes.
+    return "".join(ch if ch.isprintable() or ch in "\n\t" else " " for ch in str(text)).expandtabs(4)
+
+
+def _columns(ch: str) -> int:
+    # ponytail: conservative codepoint width; overcounts joined emoji rather
+    # than letting a preview wrap into another row. Use grapheme layout if needed.
+    if unicodedata.combining(ch):
+        return 0
+    return 2 if unicodedata.east_asian_width(ch) in "WF" or ch == "\ufe0f" else 1
+
+
+def _prefix(text: str, width: int) -> str:
+    used = 0
+    for index, ch in enumerate(text):
+        used += _columns(ch)
+        if used > width:
+            return text[:index]
+    return text
+
+
 def _visible(text: str, width: int) -> str:
-    flat = " ".join(str(text).split())
-    if len(flat) <= width:
-        return flat
-    return flat[: max(0, width - 1)] + "…"
+    flat = " ".join(_clean(text).split())
+    head = _prefix(flat, max(0, width))
+    return head if head == flat else _prefix(flat, max(0, width - 1)) + "…"
 
 
-def render(messages, selected: int, offset: int, rows: int, title: str) -> str:
-    width = max(20, shutil.get_terminal_size((100, 24)).columns - 4)
+def _preview(text: str, width: int, limit: int) -> list[str]:
+    lines = []
+    for line in _clean(text).split("\n"):
+        if not line:
+            lines.append("")
+        while line:
+            head = _prefix(line, width)
+            lines.append(head or "…")
+            line = line[max(1, len(head)):]
+            if len(lines) > limit:
+                break
+        if len(lines) > limit:
+            return lines[:limit - 1] + [_prefix(lines[limit - 1], width - 1) + "…"]
+    return lines
+
+
+def rendered_messages(messages):
+    return [e for e in messages if e.get("visibility", "rendered") == "rendered"]
+
+
+def render(messages, selected: int, offset: int, rows: int, title: str, notice: str = "") -> str:
+    messages = rendered_messages(messages)
+    size = shutil.get_terminal_size((100, 24))
+    width = max(1, size.columns - 7)
+    line_limit = min(3, max(1, (size.lines - 6) // max(1, rows)))
     out = [
         CLEAR,
-        f" {BOLD}{title}{RESET}{NL}",
-        f" {DIM}↑/↓ choose · Enter fork · Esc cancel{RESET}{NL}{NL}",
+        f" {BOLD}{_visible(title, size.columns - 2)}{RESET}{NL}",
+        f" {DIM}{_visible('↑/↓ choose · Enter restart · Esc cancel', size.columns - 2)}{RESET}{NL}{NL}",
     ]
     for index in range(offset, min(len(messages), offset + rows)):
         entry = messages[index]
-        label = _visible(entry["text"], width - 8)
-        number = f"{index + 1:>3}"
-        if index == selected:
-            out.append(f" {REVERSE} {number} {label} {RESET}{NL}")
-        else:
-            out.append(f"  {DIM}{number}{RESET} {label}{NL}")
-    if len(messages) > rows:
-        out.append(f"{NL} {DIM}{selected + 1} of {len(messages)}{RESET}{NL}")
+        text = entry["text"]
+        if entry.get("forkable") is False:
+            text = "[no earlier history] " + text
+        for part, line in enumerate(_preview(text, width, line_limit)):
+            prefix = f"{index + 1:>3}  " if part == 0 else "     "
+            style = REVERSE if index == selected else DIM if entry.get("forkable") is False else ""
+            out.append(f" {style}{prefix}{line}{RESET}{NL}")
+    out.append(f" {DIM}{_visible(f'{selected + 1} of {len(messages)}', size.columns - 2)}{RESET}{NL}")
+    out.append(f" {DIM}{_visible(notice or 'Restart before selection; draft stays unsent.', size.columns - 2)}{RESET}{NL}")
     return "".join(out)
 
 
 def choose(messages, title: str) -> str | None:
     """Run the interactive loop on the controlling terminal."""
+    messages = rendered_messages(messages)
     if not messages:
         return None
     tty_in = open("/dev/tty", "r", encoding="utf-8", errors="replace")
@@ -105,14 +152,16 @@ def choose(messages, title: str) -> str | None:
     saved = termios.tcgetattr(tty_in)
     selected = len(messages) - 1  # Newest message, matching Pi's own default.
     offset = 0
+    notice = ""
     try:
         tty.setraw(tty_in.fileno())
         tty_out.write(HIDE_CURSOR)
         while True:
-            rows = max(3, shutil.get_terminal_size((100, 24)).lines - 6)
+            rows = max(1, (shutil.get_terminal_size((100, 24)).lines - 6) // 3)
             offset = min(max(offset, selected - rows + 1), selected)
             offset = max(0, min(offset, max(0, len(messages) - rows)))
-            tty_out.write(render(messages, selected, offset, rows, title))
+            tty_out.write(render(messages, selected, offset, rows, title, notice))
+            notice = ""
             tty_out.flush()
             key = _read_key(tty_in.fileno())
             if key in ("up", "k"):
@@ -124,6 +173,9 @@ def choose(messages, title: str) -> str | None:
             elif key == "end":
                 selected = len(messages) - 1
             elif key in ("\r", "\n"):
+                if messages[selected].get("forkable") is False:
+                    notice = "No earlier history before this first user message."
+                    continue
                 return messages[selected]["id"]
             elif key in ("\x1b", "q", "\x03", "\x04", ""):
                 return None
@@ -152,7 +204,9 @@ def main() -> int:
     chosen = choose(messages, title)
     if chosen is None:
         return 0
-    result_path.write_text(json.dumps({"id": chosen}))
+    temporary = result_path.with_suffix(".tmp")
+    temporary.write_text(json.dumps({"id": chosen}))
+    temporary.replace(result_path)
     return 0
 
 

@@ -5,9 +5,9 @@ The plugin reads the forkable user messages for whichever agent occupies the
 focused pane, asks the user to pick one in a Herdr plugin pane, forks exactly at
 that message, and opens the new session in a tab, split pane, or workspace.
 
-The source pane is never resumed, written to, or closed, and no transcript file
-is ever read or rewritten. Pi is the supported agent; any other pane fails
-with an explicit message.
+The source pane is never resumed, written to, or closed. Pi's session SDK reads
+an immutable snapshot and creates a separate branch; the source file is never
+rewritten. Pi is the supported agent; any other pane fails explicitly.
 """
 
 from __future__ import annotations
@@ -65,6 +65,7 @@ class ForkResult:
     workspace_id: str
     tab_id: str
     cwd: str
+    warnings: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -194,6 +195,7 @@ class ForkWorkflow:
         self.context = context
         self.destination = destination
         self.created_resource: tuple[str, str] | None = None
+        self.created_session: str | None = None
         self.cleanup_error: str | None = None
 
     def execute(self) -> ForkResult:
@@ -220,23 +222,37 @@ class ForkWorkflow:
             self.context, pane
         )
 
-        # Read and fork through the agent's own interface. The source pane keeps
-        # its own process attached to the source session, which is never opened a
-        # second time.
+        # Read storage without booting a second agent on the source session.
         try:
             messages = agent.list_messages(source_session)
         except AgentError as exc:
             raise ForkError(str(exc)) from exc
         entry_id = self._choose_message(messages, source_pane_id, agent)
+        chosen = next((m for m in messages if m.get("id") == entry_id), None)
+        if chosen is None or chosen.get("forkable") is False:
+            raise ForkError("The picker returned an unavailable message. Retry the action.")
+        _notify(self.client, "Forking session", "Creating a branch before the selected message…")
         try:
-            fork_session = agent.fork(source_session, entry_id)
+            branch = agent.fork(source_session, entry_id)
         except AgentError as exc:
             raise ForkError(str(exc)) from exc
-
+        fork_session = branch.session_file
+        if agent.same_session(source_session, fork_session):
+            raise ForkError("The backend returned the source session instead of a fork.")
+        self.created_session = fork_session
         target = self._create_target(source_pane_id, workspace_id, cwd)
+        self._focus_target(target)
+        _notify(self.client, "Starting fork", "Waiting for Pi to be ready before restoring the unsent draft…")
         self._start_fork_agent(target.pane_id, fork_session, agent)
         self._verify_fork_session(target.pane_id, fork_session, agent)
-        self._focus_target(target)
+        self.client.json(["agent", "focus", target.pane_id])
+        if target.destination == "tab":
+            self.client.json(["tab", "rename", target.tab_id, _fork_label(self.context)])
+
+        # From here the fork is usable. A paste failure must never tear it down.
+        self.created_resource = None
+        self.created_session = None
+        warnings = self._restore_draft(target.pane_id, branch.selected_text)
 
         result = ForkResult(
             source_pane_id=source_pane_id,
@@ -249,12 +265,12 @@ class ForkWorkflow:
             workspace_id=target.workspace_id,
             tab_id=target.tab_id,
             cwd=cwd,
+            warnings=warnings,
         )
-        self.created_resource = None
         return result
 
     def _choose_message(
-        self, messages: Sequence[Mapping[str, str]], source_pane_id: str, agent: Agent
+        self, messages: Sequence[Mapping[str, Any]], source_pane_id: str, agent: Agent
     ) -> str:
         """Render the picker in a Herdr plugin pane and wait for a selection.
 
@@ -428,7 +444,7 @@ class ForkWorkflow:
                 direction,
                 "--cwd",
                 cwd,
-                "--no-focus",
+                "--focus",
             ]
         )
         pane = _object(_object(response.get("result"), "pane split result").get("pane"), "pane")
@@ -470,14 +486,10 @@ class ForkWorkflow:
 
     def _focus_target(self, target: ForkTarget) -> None:
         if target.destination == "pane":
-            self.client.json(["agent", "focus", target.pane_id])
-        elif target.destination == "workspace":
+            return  # The split was focused at creation; it is not an agent yet.
+        if target.destination == "workspace":
             self.client.json(["workspace", "focus", target.workspace_id])
         else:
-            # Rename only after the fork is running. The event hook already
-            # made its decision from the creation payload, so this restores
-            # the user's fork label without ever triggering dev-tab.
-            self.client.json(["tab", "rename", target.tab_id, _fork_label(self.context)])
             self.client.json(["tab", "focus", target.tab_id])
 
     def _start_fork_agent(self, pane_id: str, fork_session: str, agent: Agent) -> None:
@@ -509,29 +521,48 @@ class ForkWorkflow:
         agent_data = _object(
             _object(response.get("result"), "agent result").get("agent"), "agent data"
         )
+        if agent_data.get("interactive_ready") is not True:
+            raise ForkError("The destination agent is no longer interactively ready; no draft was sent.")
         session = agent_data.get("agent_session")
-        if not isinstance(session, dict):
-            return  # Agents report their session shortly after start; absence is not a failure.
-        reported = _nonempty_string(session.get("value"))
-        if reported and not agent.same_session(reported, fork_session):
+        reported = _nonempty_string(session.get("value")) if isinstance(session, dict) else None
+        if reported is None:
+            raise ForkError("The destination did not report its session identity; no draft was sent.")
+        if not agent.same_session(reported, fork_session):
             raise ForkError(
                 f"The new pane opened {reported} instead of the forked session."
             )
 
+    def _restore_draft(self, pane_id: str, text: str) -> tuple[str, ...]:
+        if not text:
+            return ()
+        try:
+            # Never let a stored terminal escape end bracketed paste or trigger keys.
+            if any(ord(ch) < 32 and ch not in "\n\t" or ord(ch) == 127 for ch in text):
+                raise ForkError("Draft contains terminal control characters; paste skipped for safety.")
+            # No "--": Herdr takes the text operand literally, so a separate
+            # terminator would be pasted into the editor.
+            self.client.ok(["pane", "send-text", pane_id, text])
+        except (ForkError, OSError, ValueError) as exc:
+            warning = f"Fork opened, but the draft could not be restored: {exc}"
+            _notify(self.client, "Fork draft not restored", warning)
+            print(warning, file=sys.stderr)
+            return (warning,)
+        return ()
+
     def _cleanup(self) -> None:
         resource = self.created_resource
-        if resource is None:
-            return
-        kind, resource_id = resource
         try:
-            self.client.json([kind, "close", resource_id])
-        except Exception as exc:  # Preserve the original failure while surfacing cleanup trouble.
-            self.cleanup_error = (
-                f"Could not remove incomplete {kind} {resource_id}: {exc}. "
-                f"Close that {kind} manually."
-            )
+            if resource is not None:
+                kind, resource_id = resource
+                self.client.json([kind, "close", resource_id])
+            if self.created_session is not None:
+                Path(self.created_session).unlink(missing_ok=True)
+        except Exception as exc:
+            # Keep the file when closing a pane fails: it may still be running.
+            self.cleanup_error = f"Could not remove incomplete fork: {exc}. Close it manually."
         finally:
             self.created_resource = None
+            self.created_session = None
 
 
 def _herdr_executable(env: Mapping[str, str]) -> str:
@@ -542,6 +573,13 @@ def _herdr_executable(env: Mapping[str, str]) -> str:
     if discovered:
         return discovered
     raise ForkError("Herdr is not available in PATH and HERDR_BIN_PATH was not provided.")
+
+
+def _notify(client: HerdrClient, title: str, message: str) -> None:
+    try:
+        client.json(["notification", "show", title, "--body", message])
+    except Exception:
+        pass  # Feedback must not become a fork failure.
 
 
 def _notify_failure(client: HerdrClient, message: str) -> None:
@@ -602,6 +640,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "destination": result.destination,
                 "workspace_id": result.workspace_id,
                 "cwd": result.cwd,
+                "warnings": list(result.warnings),
             },
             sort_keys=True,
         )

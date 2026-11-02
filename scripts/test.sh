@@ -61,6 +61,8 @@ if command -v node >/dev/null 2>&1; then
     [ -f "$extension_test" ] || continue
     run "$extension_test" node "$extension_test"
   done
+  run "fork-from-message session helper" \
+    node packaging/plugins/fork-from-message/tests/test_pi_session.mjs
 else
   skipped+=("extension tests: node not installed")
 fi
