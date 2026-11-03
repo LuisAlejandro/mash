@@ -383,8 +383,8 @@ impl FontPage {
             Constraint::Length(3),
             Constraint::Length(3),
         ])
-        .split(wizard_style::page_area(frame, Some(4)));
-        wizard_style::header(frame, parts[0], &wizard_style::page_title("Appearance", 4));
+        .split(wizard_style::page_area(frame, Some(5)));
+        wizard_style::header(frame, parts[0], &wizard_style::page_title("Appearance", 5));
         self.draw_theme(frame, parts[1]);
         self.draw_keybindings(frame, parts[2]);
         let parts = &parts[2..];
@@ -611,7 +611,7 @@ mod tests {
         let mut terminal = Terminal::new(TestBackend::new(80, 28)).unwrap();
         terminal.draw(|frame| page.draw(frame)).unwrap();
         let buffer = terminal.backend().buffer();
-        wizard_style::tests::find(buffer, "Appearance — page 5/6");
+        wizard_style::tests::find(buffer, "Appearance — page 6/7");
         let default_size = if cfg!(target_os = "linux") { 10 } else { 13 };
         wizard_style::tests::find(buffer, &default_size.to_string());
         let (x, y) = wizard_style::tests::find(buffer, "Filter fonts");

@@ -206,9 +206,9 @@ impl VoicePage {
             Constraint::Length(7),
             Constraint::Length(3),
         ])
-        .split(wizard_style::page_area(frame, Some(5)));
+        .split(wizard_style::page_area(frame, Some(6)));
 
-        wizard_style::header(frame, parts[0], &wizard_style::page_title("Dictation", 5));
+        wizard_style::header(frame, parts[0], &wizard_style::page_title("Dictation", 6));
 
         self.draw_languages(frame, parts[1]);
         self.draw_pick(frame, parts[2]);
@@ -448,7 +448,7 @@ mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect::<String>();
-        assert!(rendered.contains("Dictation — page 6/6"));
+        assert!(rendered.contains("Dictation — page 7/7"));
         assert!(rendered.contains("MiB"));
         assert!(rendered.contains("English"));
     }

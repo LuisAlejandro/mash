@@ -1,6 +1,7 @@
 mod font_page;
 mod model_picker;
 mod pi_models;
+mod pi_providers;
 mod provider_page;
 mod skills_page;
 mod theme;
@@ -133,36 +134,18 @@ impl Group {
     }
 }
 
-struct App {
+struct IdentityPage {
     name: String,
     email: String,
     signing_key: String,
-    selections: [bool; 2],
     focus: usize,
 }
 
-// The identity fields come first so they stay on screen even when the tool list
-// is taller than the window.
 const FOCUS_NAME: usize = 0;
 const FOCUS_EMAIL: usize = 1;
 const FOCUS_SIGNING_KEY: usize = 2;
-const FOCUS_GROUP_UTILITIES: usize = 3;
-const FOCUS_GROUP_FORMATTERS: usize = 4;
-const FOCUS_BUTTON: usize = 5;
-const FOCUS_COUNT: usize = 6;
-
-// Focus row carrying group `index`.
-fn focus_for_group(index: usize) -> usize {
-    if index == 0 {
-        FOCUS_GROUP_UTILITIES
-    } else {
-        FOCUS_GROUP_FORMATTERS
-    }
-}
-
-fn is_text_field(focus: usize) -> bool {
-    matches!(focus, FOCUS_NAME | FOCUS_EMAIL | FOCUS_SIGNING_KEY)
-}
+const FOCUS_IDENTITY_NEXT: usize = 3;
+const IDENTITY_FOCUS_COUNT: usize = 4;
 
 #[derive(Default, Clone)]
 struct Identity {
@@ -171,13 +154,12 @@ struct Identity {
     signing_key: String,
 }
 
-impl App {
+impl IdentityPage {
     fn new() -> Self {
         Self {
             name: git_config_value("user.name"),
             email: git_config_value("user.email"),
             signing_key: git_config_value("user.signingkey"),
-            selections: [true, true],
             focus: FOCUS_NAME,
         }
     }
@@ -190,59 +172,46 @@ impl App {
         }
     }
 
-    fn text_mut(&mut self) -> &mut String {
-        match self.focus {
-            FOCUS_NAME => &mut self.name,
-            FOCUS_EMAIL => &mut self.email,
-            FOCUS_SIGNING_KEY => &mut self.signing_key,
-            _ => unreachable!("text field must be focused"),
-        }
-    }
-
-    // Which checkbox the focus is on, if any.
-    fn selection(&self) -> Option<usize> {
-        match self.focus {
-            FOCUS_GROUP_UTILITIES => Some(0),
-            FOCUS_GROUP_FORMATTERS => Some(1),
-            _ => None,
-        }
-    }
-
-    /// A click focuses the row; a checkbox toggles too, and the button advances.
+    /// A click focuses the row; the button advances.
     fn on_click(&mut self, focus: usize) -> Option<Outcome> {
         self.focus = focus;
-        if let Some(index) = self.selection() {
-            self.selections[index] = !self.selections[index];
-        }
-        (focus == FOCUS_BUTTON).then_some(Outcome::Next)
+        (focus == FOCUS_IDENTITY_NEXT).then_some(Outcome::Next)
     }
 
     fn on_key(&mut self, code: KeyCode, modifiers: KeyModifiers) -> Option<Outcome> {
         if modifiers.contains(KeyModifiers::CONTROL) && code == KeyCode::Char('c') {
             return Some(Outcome::Cancel);
         }
+        let step = |focus, direction, wrap| {
+            wizard_style::focus_step(focus, IDENTITY_FOCUS_COUNT, direction, wrap)
+        };
         // A focused text field takes every character. `q`, `j` and `k` are
         // letters in a name, so they cannot double as cancel and navigation
         // while one is focused; Esc still cancels and Enter still continues.
-        if is_text_field(self.focus) {
+        if self.focus != FOCUS_IDENTITY_NEXT {
+            let text = match self.focus {
+                FOCUS_NAME => &mut self.name,
+                FOCUS_EMAIL => &mut self.email,
+                _ => &mut self.signing_key,
+            };
             return match code {
                 KeyCode::Esc => Some(Outcome::Cancel),
                 KeyCode::Enter => Some(Outcome::Next),
                 KeyCode::Up | KeyCode::BackTab => {
-                    self.focus = wizard_style::focus_step(self.focus, FOCUS_COUNT, -1, false);
+                    self.focus = step(self.focus, -1, false);
                     None
                 }
                 KeyCode::Down | KeyCode::Tab => {
-                    self.focus = wizard_style::focus_step(self.focus, FOCUS_COUNT, 1, false);
+                    self.focus = step(self.focus, 1, false);
                     None
                 }
                 KeyCode::Backspace => {
-                    self.text_mut().pop();
+                    text.pop();
                     None
                 }
                 KeyCode::Char(c) => {
                     if !modifiers.contains(KeyModifiers::CONTROL) {
-                        self.text_mut().push(c);
+                        text.push(c);
                     }
                     None
                 }
@@ -252,34 +221,114 @@ impl App {
         match code {
             KeyCode::Esc | KeyCode::Char('q') => Some(Outcome::Cancel),
             KeyCode::Down | KeyCode::Char('j') => {
-                self.focus = wizard_style::focus_step(self.focus, FOCUS_COUNT, 1, false);
+                self.focus = step(self.focus, 1, false);
                 None
             }
             KeyCode::Up | KeyCode::Char('k') => {
-                self.focus = wizard_style::focus_step(self.focus, FOCUS_COUNT, -1, false);
+                self.focus = step(self.focus, -1, false);
                 None
             }
-            KeyCode::Tab | KeyCode::BackTab => {
-                self.focus = wizard_style::focus_step(self.focus, FOCUS_COUNT, 1, true);
+            KeyCode::Tab => {
+                self.focus = step(self.focus, 1, true);
+                None
+            }
+            KeyCode::BackTab => {
+                self.focus = step(self.focus, -1, true);
+                None
+            }
+            KeyCode::Enter => Some(Outcome::Next),
+            _ => None,
+        }
+    }
+}
+
+struct ToolsPage {
+    selections: [bool; 2],
+    focus: usize,
+}
+
+// Rows 0 and 1 are the groups, in `Group::ALL` order.
+const FOCUS_GROUP_UTILITIES: usize = 0;
+const FOCUS_GROUP_FORMATTERS: usize = 1;
+const FOCUS_TOOLS_BACK: usize = 2;
+const FOCUS_TOOLS_NEXT: usize = 3;
+const TOOLS_FOCUS_COUNT: usize = 4;
+
+impl ToolsPage {
+    fn new() -> Self {
+        Self {
+            selections: [true, true],
+            focus: FOCUS_GROUP_UTILITIES,
+        }
+    }
+
+    // Which checkbox the focus is on, if any.
+    fn selection(&self) -> Option<usize> {
+        (self.focus < Group::ALL.len()).then_some(self.focus)
+    }
+
+    fn toggle(&mut self, index: usize) {
+        self.selections[index] = !self.selections[index];
+    }
+
+    /// A click focuses the row; a checkbox toggles too, and the buttons act.
+    fn on_click(&mut self, focus: usize) -> Option<Outcome> {
+        self.focus = focus;
+        if let Some(index) = self.selection() {
+            self.toggle(index);
+        }
+        match focus {
+            FOCUS_TOOLS_BACK => Some(Outcome::Back),
+            FOCUS_TOOLS_NEXT => Some(Outcome::Next),
+            _ => None,
+        }
+    }
+
+    fn on_key(&mut self, code: KeyCode, modifiers: KeyModifiers) -> Option<Outcome> {
+        if modifiers.contains(KeyModifiers::CONTROL) && code == KeyCode::Char('c') {
+            return Some(Outcome::Cancel);
+        }
+        let step = |focus, direction, wrap| {
+            wizard_style::focus_step(focus, TOOLS_FOCUS_COUNT, direction, wrap)
+        };
+        match code {
+            KeyCode::Esc | KeyCode::Char('q') => Some(Outcome::Cancel),
+            KeyCode::Down | KeyCode::Char('j') => {
+                self.focus = step(self.focus, 1, false);
+                None
+            }
+            KeyCode::Up | KeyCode::Char('k') => {
+                self.focus = step(self.focus, -1, false);
+                None
+            }
+            KeyCode::Tab => {
+                self.focus = step(self.focus, 1, true);
+                None
+            }
+            KeyCode::BackTab => {
+                self.focus = step(self.focus, -1, true);
                 None
             }
             KeyCode::Char(' ') => {
                 if let Some(index) = self.selection() {
-                    self.selections[index] = !self.selections[index];
+                    self.toggle(index);
                 }
                 None
             }
-            KeyCode::Char('1') => {
-                self.selections[0] = !self.selections[0];
-                self.focus = FOCUS_GROUP_UTILITIES;
+            KeyCode::Char(digit @ ('1' | '2')) => {
+                self.focus = if digit == '1' {
+                    FOCUS_GROUP_UTILITIES
+                } else {
+                    FOCUS_GROUP_FORMATTERS
+                };
+                self.toggle(self.focus);
                 None
             }
-            KeyCode::Char('2') => {
-                self.selections[1] = !self.selections[1];
-                self.focus = FOCUS_GROUP_FORMATTERS;
-                None
-            }
-            KeyCode::Enter if self.focus == FOCUS_BUTTON => Some(Outcome::Next),
+            KeyCode::Enter => match self.focus {
+                FOCUS_TOOLS_BACK => Some(Outcome::Back),
+                FOCUS_TOOLS_NEXT => Some(Outcome::Next),
+                _ => None,
+            },
             _ => None,
         }
     }
@@ -287,6 +336,7 @@ impl App {
 
 enum Outcome {
     Next,
+    Back,
     Cancel,
 }
 
@@ -350,7 +400,8 @@ fn run() -> Result<i32, String> {
 }
 
 fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<i32, String> {
-    let mut app = App::new();
+    let mut identity = IdentityPage::new();
+    let mut tools = ToolsPage::new();
     let mut providers = provider_page::ProviderPage::new();
     providers.load_existing_auth(&data_dir().join("pi/agent"));
     let mut skills = skills_page::SkillsPage::new();
@@ -363,18 +414,19 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
     let mut started = false;
     let mut start_button = Rect::default();
     loop {
-        providers.set_services(page == 2);
-        if !preview && page == 1 {
+        providers.set_services(page == 3);
+        if !preview && page == 2 {
             providers.poll_models();
         }
         terminal
             .draw(|frame| {
                 if started {
                     match page {
-                        0 => draw_choices(frame, &app),
-                        1 | 2 => providers.draw(frame),
-                        3 => skills.draw(frame),
-                        4 => fonts.draw(frame),
+                        0 => draw_identity(frame, &identity),
+                        1 => draw_tools(frame, &tools),
+                        2 | 3 => providers.draw(frame),
+                        4 => skills.draw(frame),
+                        5 => fonts.draw(frame),
                         _ => voice.draw(frame),
                     }
                 } else {
@@ -413,7 +465,7 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
             page = id - wizard_style::SIDEBAR_BASE;
             continue;
         }
-        if matches!(page, 1 | 2)
+        if matches!(page, 2 | 3)
             && providers.menu_open()
             && click.is_none()
             && matches!(&event, Event::Mouse(mouse) if mouse.kind == MouseEventKind::Down(MouseButton::Left))
@@ -426,12 +478,15 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                 // Clicks show real focus and toggles, but a button only turns
                 // the page: nothing is validated or saved in a preview.
                 let step = match page {
-                    0 => app.on_click(id).map(|_| 1),
-                    1 | 2 => providers.on_click(id).map(|d| {
+                    0 => identity.on_click(id).map(|_| 1),
+                    1 => tools
+                        .on_click(id)
+                        .map(|o| if matches!(o, Outcome::Back) { -1 } else { 1 }),
+                    2 | 3 => providers.on_click(id).map(|d| {
                         if matches!(d, provider_page::Decision::Back) {
                             -1
                         } else if matches!(d, provider_page::Decision::Save)
-                            && page == 1
+                            && page == 2
                             && !providers.advance(
                                 &mash_resources(),
                                 &data_dir().join("pi/agent"),
@@ -443,14 +498,14 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                             1
                         }
                     }),
-                    3 => skills.on_click(id).map(|d| {
+                    4 => skills.on_click(id).map(|d| {
                         if matches!(d, skills_page::Decision::Back) {
                             -1
                         } else {
                             1
                         }
                     }),
-                    4 => fonts.on_click(id).map(|d| match d {
+                    5 => fonts.on_click(id).map(|d| match d {
                         font_page::Decision::Back => -1,
                         font_page::Decision::Next => 1,
                         font_page::Decision::Cancel => 0,
@@ -466,7 +521,7 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                 page = (page as isize + step.unwrap_or(0))
                     .clamp(0, wizard_style::PAGE_COUNT as isize - 1)
                     as usize;
-            } else if matches!(page, 1 | 2)
+            } else if matches!(page, 2 | 3)
                 && providers.menu_open()
                 && wizard_style::wheel(&event).is_some()
             {
@@ -478,7 +533,7 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                 let _ = providers.on_key(code, KeyModifiers::NONE);
             } else if let Event::Key(key) = event {
                 if key.kind == KeyEventKind::Press {
-                    if matches!(page, 1 | 2)
+                    if matches!(page, 2 | 3)
                         && (providers.menu_open()
                             || providers.has_model_step()
                             || matches!(
@@ -526,20 +581,27 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
         }
         let (code, modifiers) = key.unwrap_or((KeyCode::Null, KeyModifiers::NONE));
         match page {
-            0 => match if let Some(id) = click {
-                app.on_click(id)
+            0 | 1 => match if let Some(id) = click {
+                if page == 0 {
+                    identity.on_click(id)
+                } else {
+                    tools.on_click(id)
+                }
+            } else if page == 0 {
+                identity.on_key(code, modifiers)
             } else {
-                app.on_key(code, modifiers)
+                tools.on_key(code, modifiers)
             } {
                 Some(Outcome::Cancel) => {
                     if confirm_quit(terminal)? {
                         return Ok(EXIT_NOT_DONE);
                     }
                 }
-                Some(Outcome::Next) => page = 1,
+                Some(Outcome::Next) => page += 1,
+                Some(Outcome::Back) => page -= 1,
                 None => {}
             },
-            1 | 2 => match if let Some(id) = click {
+            2 | 3 => match if let Some(id) = click {
                 providers.on_click(id)
             } else {
                 providers.on_key(code, modifiers)
@@ -561,7 +623,7 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                 }
                 _ => {}
             },
-            3 => match if let Some(id) = click {
+            4 => match if let Some(id) = click {
                 skills.on_click(id)
             } else {
                 skills.on_key(code, modifiers)
@@ -571,11 +633,11 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                         return Ok(EXIT_NOT_DONE);
                     }
                 }
-                Some(skills_page::Decision::Back) => page = 2,
-                Some(skills_page::Decision::Save) => page = 4,
+                Some(skills_page::Decision::Back) => page = 3,
+                Some(skills_page::Decision::Save) => page = 5,
                 _ => {}
             },
-            4 => match if let Some(id) = click {
+            5 => match if let Some(id) = click {
                 fonts.on_click(id)
             } else {
                 fonts.on_key(code, modifiers)
@@ -585,8 +647,8 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                         return Ok(EXIT_NOT_DONE);
                     }
                 }
-                Some(font_page::Decision::Back) => page = 3,
-                Some(font_page::Decision::Next) => page = 5,
+                Some(font_page::Decision::Back) => page = 4,
+                Some(font_page::Decision::Next) => page = 6,
                 None => {}
             },
             _ => match if let Some(id) = click {
@@ -599,7 +661,7 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                         return Ok(EXIT_NOT_DONE);
                     }
                 }
-                Some(voice_page::Decision::Back) => page = 4,
+                Some(voice_page::Decision::Back) => page = 5,
                 Some(voice_page::Decision::Skip) => break,
                 Some(voice_page::Decision::Save) if voice.validate() => break,
                 _ => {}
@@ -607,10 +669,10 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
         }
     }
 
-    let mut plan = install_plan(app.selections);
+    let mut plan = install_plan(tools.selections);
     plan.voice = voice.choice();
     plan.programming = skills.programming();
-    let identity = app.identity();
+    let identity = identity.identity();
     match review_and_apply(
         terminal,
         &plan,
@@ -620,7 +682,7 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
         &mut providers,
     ) {
         Ok(()) => {
-            if app.selections[0] {
+            if tools.selections[0] {
                 offer_github_login(terminal)?;
             }
             Ok(0)
@@ -650,7 +712,7 @@ fn preview_key(
     match code {
         KeyCode::Right => *page = (*page + 1).min(wizard_style::PAGE_COUNT - 1),
         KeyCode::Left => *page = page.saturating_sub(1),
-        KeyCode::Char('1'..='6') => {
+        KeyCode::Char('1'..='7') => {
             if let KeyCode::Char(digit) = code {
                 *page = digit as usize - '1' as usize;
             }
@@ -1705,7 +1767,7 @@ fn run_logged(mut command: Command) -> Result<String, String> {
     Ok("complete".into())
 }
 
-fn draw_choices(frame: &mut Frame, app: &App) {
+fn draw_identity(frame: &mut Frame, page: &IdentityPage) {
     let area = wizard_style::page_area(frame, Some(0));
     let chunks = Layout::vertical([
         Constraint::Length(3),
@@ -1716,22 +1778,19 @@ fn draw_choices(frame: &mut Frame, app: &App) {
     wizard_style::header(
         frame,
         chunks[0],
-        &wizard_style::page_title("Mash first-launch setup", 0),
+        &wizard_style::page_title("Git identity", 0),
     );
 
     let mut lines: Vec<(Line<'static>, Option<usize>)> = vec![
-        (Line::from(
-            "Choose tools and Git identity. GitHub sign-in is offered after installation when utilities are selected.",
-        ), None),
+        (Line::from("Git identity for commits made in Mash."), None),
         (Line::from(""), None),
-        (Line::from("Git identity for commits made in Mash:"), None),
     ];
     for (focus, label, value) in [
-        (FOCUS_NAME, "Name       ", &app.name),
-        (FOCUS_EMAIL, "Email      ", &app.email),
-        (FOCUS_SIGNING_KEY, "Signing key", &app.signing_key),
+        (FOCUS_NAME, "Name       ", &page.name),
+        (FOCUS_EMAIL, "Email      ", &page.email),
+        (FOCUS_SIGNING_KEY, "Signing key", &page.signing_key),
     ] {
-        let focused = app.focus == focus;
+        let focused = page.focus == focus;
         lines.push((
             wizard_style::text_field(focused, label, value.clone()),
             Some(focus),
@@ -1747,13 +1806,44 @@ fn draw_choices(frame: &mut Frame, app: &App) {
             ));
         }
     }
-    lines.push((Line::from(""), None));
+
+    let body = wizard_style::section(frame, chunks[1], "Identity");
+    wizard_style::render_form(frame, body, lines, true);
+    wizard_style::render_buttons(
+        frame,
+        chunks[2],
+        &[(
+            wizard_style::button(page.focus == FOCUS_IDENTITY_NEXT, " Next — choose tools "),
+            Some(FOCUS_IDENTITY_NEXT),
+        )],
+    );
+}
+
+fn draw_tools(frame: &mut Frame, page: &ToolsPage) {
+    let area = wizard_style::page_area(frame, Some(1));
+    let chunks = Layout::vertical([
+        Constraint::Length(3),
+        Constraint::Min(8),
+        Constraint::Length(3),
+    ])
+    .split(area);
+    wizard_style::header(frame, chunks[0], &wizard_style::page_title("Tools", 1));
+
+    let mut lines: Vec<(Line<'static>, Option<usize>)> = vec![
+        (
+            Line::from(
+                "Choose tools to install. GitHub sign-in is offered after installation when utilities are selected.",
+            ),
+            None,
+        ),
+        (Line::from(""), None),
+    ];
     for (index, group) in Group::ALL.iter().enumerate() {
-        let focused = app.focus == focus_for_group(index);
-        let mut line = wizard_style::checkbox(focused, group.title(), app.selections[index]);
+        let focused = page.focus == index;
+        let mut line = wizard_style::checkbox(focused, group.title(), page.selections[index]);
         line.spans
             .push(Span::raw(format!(" — {}", group.summary())));
-        lines.push((line, Some(focus_for_group(index))));
+        lines.push((line, Some(index)));
         for (tool, description) in group.tools() {
             lines.push((Line::from(format!("      {tool:<24} {description}")), None));
         }
@@ -1765,10 +1855,20 @@ fn draw_choices(frame: &mut Frame, app: &App) {
     wizard_style::render_buttons(
         frame,
         chunks[2],
-        &[(
-            wizard_style::button(app.focus == FOCUS_BUTTON, " Next — configure providers "),
-            Some(FOCUS_BUTTON),
-        )],
+        &[
+            (
+                wizard_style::button(page.focus == FOCUS_TOOLS_BACK, " Back "),
+                Some(FOCUS_TOOLS_BACK),
+            ),
+            (Span::raw("    "), None),
+            (
+                wizard_style::button(
+                    page.focus == FOCUS_TOOLS_NEXT,
+                    " Next — configure providers ",
+                ),
+                Some(FOCUS_TOOLS_NEXT),
+            ),
+        ],
     );
 }
 
@@ -1948,7 +2048,7 @@ mod tests {
     fn identity_fields_take_letters_that_otherwise_navigate() {
         // q cancels and j/k navigate on the checkbox rows, but all three are
         // valid letters in a name, so a focused field has to take them.
-        let mut app = App::new();
+        let mut app = IdentityPage::new();
         app.focus = FOCUS_NAME;
         // Prefilled from the machine, so start from empty to isolate typing.
         app.name.clear();
@@ -1956,12 +2056,12 @@ mod tests {
             assert!(app.on_key(KeyCode::Char(c), KeyModifiers::NONE).is_none());
         }
         assert_eq!(app.name, "jkq1 ");
-        assert!(app.selections[0] && app.selections[1]);
+        assert_eq!(app.focus, FOCUS_NAME);
     }
 
     #[test]
     fn identity_is_prefilled_from_the_machines_git_config() {
-        let app = App::new();
+        let app = IdentityPage::new();
         assert_eq!(app.name, git_config_value("user.name"));
         assert_eq!(app.email, git_config_value("user.email"));
         assert_eq!(app.signing_key, git_config_value("user.signingkey"));
@@ -2005,12 +2105,12 @@ mod tests {
 
     #[test]
     fn backspace_edits_only_the_focused_field() {
-        let mut app = App::new();
+        let mut app = IdentityPage::new();
         app.focus = FOCUS_EMAIL;
         app.email = "abc".into();
         app.on_key(KeyCode::Backspace, KeyModifiers::NONE);
         assert_eq!(app.email, "ab");
-        assert_eq!(app.name, App::new().name);
+        assert_eq!(app.name, IdentityPage::new().name);
         app.focus = FOCUS_SIGNING_KEY;
         app.signing_key = "ABC".into();
         app.on_key(KeyCode::Backspace, KeyModifiers::NONE);
@@ -2019,53 +2119,77 @@ mod tests {
     }
 
     #[test]
-    fn tab_visits_every_row_and_wraps() {
-        let mut app = App::new();
-        let mut seen = vec![app.focus];
-        for _ in 0..FOCUS_COUNT {
-            app.on_key(KeyCode::Tab, KeyModifiers::NONE);
-            seen.push(app.focus);
+    fn tab_visits_every_row_on_each_page_and_wraps() {
+        let mut identity = IdentityPage::new();
+        let mut seen = vec![identity.focus];
+        for _ in 0..IDENTITY_FOCUS_COUNT {
+            identity.on_key(KeyCode::Tab, KeyModifiers::NONE);
+            seen.push(identity.focus);
         }
-        assert_eq!(seen, vec![0, 1, 2, 3, 4, 5, 0]);
+        assert_eq!(seen, vec![0, 1, 2, 3, 0]);
+        let mut tools = ToolsPage::new();
+        let mut seen = vec![tools.focus];
+        for _ in 0..TOOLS_FOCUS_COUNT {
+            tools.on_key(KeyCode::Tab, KeyModifiers::NONE);
+            seen.push(tools.focus);
+        }
+        assert_eq!(seen, vec![0, 1, 2, 3, 0]);
+        tools.on_key(KeyCode::BackTab, KeyModifiers::NONE);
+        assert_eq!(tools.focus, FOCUS_TOOLS_NEXT);
     }
 
     #[test]
     fn space_toggles_only_on_checkbox_rows() {
-        let mut app = App::new();
+        let mut app = ToolsPage::new();
         app.focus = FOCUS_GROUP_UTILITIES;
         app.on_key(KeyCode::Char(' '), KeyModifiers::NONE);
         assert!(!app.selections[0]);
-        app.focus = FOCUS_BUTTON;
+        app.focus = FOCUS_TOOLS_NEXT;
         app.on_key(KeyCode::Char(' '), KeyModifiers::NONE);
         assert!(!app.selections[0] && app.selections[1]);
+        app.on_key(KeyCode::Char('2'), KeyModifiers::NONE);
+        assert!(!app.selections[1]);
+        assert_eq!(app.focus, FOCUS_GROUP_FORMATTERS);
     }
 
     #[test]
-    fn enter_advances_from_the_button_and_from_a_field() {
-        let mut app = App::new();
-        app.focus = FOCUS_BUTTON;
+    fn enter_moves_between_identity_tools_and_providers() {
+        let mut identity = IdentityPage::new();
+        identity.focus = FOCUS_EMAIL;
         assert!(matches!(
-            app.on_key(KeyCode::Enter, KeyModifiers::NONE),
+            identity.on_key(KeyCode::Enter, KeyModifiers::NONE),
             Some(Outcome::Next)
         ));
-        app.focus = FOCUS_EMAIL;
+        identity.focus = FOCUS_IDENTITY_NEXT;
         assert!(matches!(
-            app.on_key(KeyCode::Enter, KeyModifiers::NONE),
+            identity.on_key(KeyCode::Enter, KeyModifiers::NONE),
+            Some(Outcome::Next)
+        ));
+        let mut tools = ToolsPage::new();
+        assert!(tools.on_key(KeyCode::Enter, KeyModifiers::NONE).is_none());
+        tools.focus = FOCUS_TOOLS_BACK;
+        assert!(matches!(
+            tools.on_key(KeyCode::Enter, KeyModifiers::NONE),
+            Some(Outcome::Back)
+        ));
+        tools.focus = FOCUS_TOOLS_NEXT;
+        assert!(matches!(
+            tools.on_key(KeyCode::Enter, KeyModifiers::NONE),
             Some(Outcome::Next)
         ));
     }
 
     #[test]
-    fn esc_cancels_from_both_kinds_of_row() {
-        let mut app = App::new();
-        app.focus = FOCUS_NAME;
+    fn esc_cancels_from_both_pages() {
+        let mut identity = IdentityPage::new();
+        identity.focus = FOCUS_NAME;
         assert!(matches!(
-            app.on_key(KeyCode::Esc, KeyModifiers::NONE),
+            identity.on_key(KeyCode::Esc, KeyModifiers::NONE),
             Some(Outcome::Cancel)
         ));
-        app.focus = FOCUS_GROUP_UTILITIES;
+        let mut tools = ToolsPage::new();
         assert!(matches!(
-            app.on_key(KeyCode::Esc, KeyModifiers::NONE),
+            tools.on_key(KeyCode::Esc, KeyModifiers::NONE),
             Some(Outcome::Cancel)
         ));
     }
@@ -2114,25 +2238,50 @@ mod tests {
     }
 
     #[test]
-    fn clicking_page_one_focuses_fields_toggles_groups_and_advances() {
+    fn clicking_identity_and_tools_pages_focuses_toggles_and_navigates() {
         use wizard_style::tests::{click, find};
-        let mut app = App::new();
-        let render = |app: &App| {
-            let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(140, 60)).unwrap();
-            terminal.draw(|frame| draw_choices(frame, app)).unwrap();
-            terminal.backend().buffer().clone()
+        let text = |buffer: &ratatui::buffer::Buffer| {
+            buffer
+                .content()
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect::<String>()
         };
-        let at = |app: &App, label| {
-            let (x, y) = find(&render(app), label);
+        let target = |buffer: &ratatui::buffer::Buffer, label| {
+            let (x, y) = find(buffer, label);
             wizard_style::clicked(&click(x, y)).expect("label is clickable")
         };
-        assert!(app.on_click(at(&app, "Email")).is_none());
-        assert_eq!(app.focus, FOCUS_EMAIL);
-        let before = app.selections[0];
-        assert!(app.on_click(at(&app, "Mash utilities")).is_none());
-        assert_ne!(app.selections[0], before);
+        let mut identity = IdentityPage::new();
+        let render_identity = |page: &IdentityPage| {
+            let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(140, 60)).unwrap();
+            terminal.draw(|frame| draw_identity(frame, page)).unwrap();
+            terminal.backend().buffer().clone()
+        };
+        let buffer = render_identity(&identity);
+        assert!(!text(&buffer).contains("Mash utilities"));
+        assert!(identity.on_click(target(&buffer, "Email")).is_none());
+        assert_eq!(identity.focus, FOCUS_EMAIL);
         assert!(matches!(
-            app.on_click(at(&app, "Next — configure")),
+            identity.on_click(target(&render_identity(&identity), "Next — choose tools")),
+            Some(Outcome::Next)
+        ));
+
+        let mut tools = ToolsPage::new();
+        let render_tools = |page: &ToolsPage| {
+            let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(140, 60)).unwrap();
+            terminal.draw(|frame| draw_tools(frame, page)).unwrap();
+            terminal.backend().buffer().clone()
+        };
+        let buffer = render_tools(&tools);
+        assert!(!text(&buffer).contains("Signing key"));
+        assert!(tools.on_click(target(&buffer, "Mash utilities")).is_none());
+        assert!(!tools.selections[0]);
+        assert!(matches!(
+            tools.on_click(target(&render_tools(&tools), "Back")),
+            Some(Outcome::Back)
+        ));
+        assert!(matches!(
+            tools.on_click(target(&render_tools(&tools), "Next — configure")),
             Some(Outcome::Next)
         ));
     }
@@ -2226,23 +2375,23 @@ mod tests {
 
     #[test]
     fn first_page_uses_sidebar_and_panel_palette() {
-        let app = App {
+        let app = IdentityPage {
             name: "Ada".into(),
             email: "ada@example.org".into(),
             signing_key: String::new(),
-            selections: [true, true],
             focus: FOCUS_NAME,
         };
         let mut terminal =
             ratatui::Terminal::new(ratatui::backend::TestBackend::new(120, 40)).unwrap();
-        terminal.draw(|frame| draw_choices(frame, &app)).unwrap();
+        terminal.draw(|frame| draw_identity(frame, &app)).unwrap();
         let buffer = terminal.backend().buffer();
         let rendered = buffer
             .content()
             .iter()
             .map(|cell| cell.symbol())
             .collect::<String>();
-        assert!(rendered.contains("Mash first-launch setup — page 1/6"));
+        assert!(rendered.contains("Git identity — page 1/7"));
+        assert!(rendered.contains("Tools"));
         assert!(rendered.contains("Model provider"));
         assert!(rendered.contains("ada@example.org"));
         // Sidebar: logo rows 1-10, SETUP, blank, then page 1 on row 13.
@@ -2253,14 +2402,14 @@ mod tests {
 
     #[test]
     fn selection_maps_only_the_checkbox_rows() {
-        let mut app = App::new();
-        app.focus = FOCUS_NAME;
-        assert_eq!(app.selection(), None);
+        let mut app = ToolsPage::new();
         app.focus = FOCUS_GROUP_UTILITIES;
         assert_eq!(app.selection(), Some(0));
         app.focus = FOCUS_GROUP_FORMATTERS;
         assert_eq!(app.selection(), Some(1));
-        app.focus = FOCUS_BUTTON;
+        app.focus = FOCUS_TOOLS_BACK;
+        assert_eq!(app.selection(), None);
+        app.focus = FOCUS_TOOLS_NEXT;
         assert_eq!(app.selection(), None);
     }
 
