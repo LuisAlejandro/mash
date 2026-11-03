@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Real PTY journey: six pages and model/manual selection, with no setup writes."""
+"""Real PTY journey: seven pages and model/manual selection, with no setup writes."""
 import fcntl
+import json
 import os
 from pathlib import Path
 import pty
@@ -25,8 +26,13 @@ class WizardPreviewTest(unittest.TestCase):
     def setUpClass(cls):
         subprocess.run(["cargo", "build", "--locked", "--manifest-path", str(ROOT / "packaging/wizard/Cargo.toml")], check=True, capture_output=True)
         cls.binary = Path(os.environ.get("CARGO_TARGET_DIR", ROOT / "packaging/wizard/target")) / "debug/mash-wizard"
+        providers = json.loads((ROOT / "packaging/wizard/data/pi-providers.json").read_text())["providers"]
+        choices = [(p["id"], p["name"]) for p in providers if p["chat"]] + [("custom", "Custom provider")]
+        featured = {name: i for i, name in enumerate(("openai", "anthropic", "xai", "google", "openrouter"))}
+        choices.sort(key=lambda p: (featured.get(p[0], 99), p[1].lower(), p[0]))
+        cls.custom_index = 1 + next(i for i, p in enumerate(choices) if p[0] == "custom")
 
-    def test_six_page_keyboard_journey_and_manual_fallback_are_read_only(self):
+    def test_seven_page_keyboard_journey_and_manual_fallback_are_read_only(self):
         for width in (80, 100):
             with self.subTest(width=width), tempfile.TemporaryDirectory(prefix="mash-preview-") as tmp:
                 home = Path(tmp) / "home"
@@ -76,18 +82,28 @@ class WizardPreviewTest(unittest.TestCase):
                     while "Start config wizard" not in ANSI.sub("", initial.decode("utf-8", errors="replace")):
                         self.assertLess(time.monotonic(), deadline, "wizard never reached its welcome screen")
                         initial += drain(0.1)
-                    self.assertIn("page 1/6", frame(b"\r"))
-                    self.assertIn("page 2/6", frame(b"2"))
+                    identity = frame(b"\r")
+                    self.assertIn("Git identity — page 1/7", identity)
+                    self.assertIn("Signing key", identity)
+                    tools = frame(b"2")
+                    self.assertIn("Tools — page 2/7", tools)
+                    self.assertIn("Mash utilities", tools)
+                    self.assertIn("page 3/7", frame(b"3"))
                     frame(b"\r\x1b[B\r")  # Choose OpenAI.
                     self.assertIn("Filter models", frame(b"\t\t\t\r"))
                     self.assertIn("Model ID", frame(b"zzzz\r"))  # Always-available manual entry.
                     self.assertIn("Choose model", frame(b"\x1b"))
-                    services = frame(b"3")
-                    self.assertIn("page 3/6", services)
+                    self.assertIn("Z.AI Coding CN", frame(b"\r\x1b[F"))
+                    self.assertIn("Z.AI Coding CN", frame(b"\r"))
+                    self.assertIn("Custom provider", frame(b"\r\x1b[H" + b"\x1b[B" * self.custom_index + b"\r"))
+                    self.assertIn("Anthropic Messages", frame(b"\t\t\t\r\x1b[F"))
+                    self.assertIn("Anthropic Messages", frame(b"\r"))
+                    services = frame(b"4")
+                    self.assertIn("page 4/7", services)
                     self.assertIn("Web search", services)
                     self.assertIn("Hindsight", services)
-                    for page in (4, 5, 6):
-                        self.assertIn(f"page {page}/6", frame(str(page).encode()))
+                    for page in (5, 6, 7):
+                        self.assertIn(f"page {page}/7", frame(str(page).encode()))
                     self.assertIn("Start config wizard", frame(b"\x1b"))
                     os.write(master, b"\x03")
                     deadline = time.monotonic() + 5

@@ -151,11 +151,11 @@ impl ModelPicker {
             Constraint::Min(3),
             Constraint::Length(3),
         ])
-        .split(wizard_style::page_area(frame, Some(1)));
+        .split(wizard_style::page_area(frame, Some(2)));
         wizard_style::header(
             frame,
             parts[0],
-            &wizard_style::page_title("Model provider", 1),
+            &wizard_style::page_title("Model provider", 2),
         );
         let filter = wizard_style::section(
             frame,

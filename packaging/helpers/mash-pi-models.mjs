@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Local catalog/auth inspection only. Launch with Mash's bundled Node.
-// stdin: {version:1,action:"discover"|"verify",agentDir,provider?,draft?}
+// stdin: {version:1,action:"providers"|"discover"|"verify",agentDir?,provider?,draft?}
+// providers is build-time metadata inspection only; the wizard embeds its snapshot.
 // Secrets travel on stdin and in memory, never argv, output or credential files.
 import { realpathSync } from "node:fs";
 import { readFile } from "node:fs/promises";
@@ -37,15 +38,43 @@ async function loadRuntime(packageDir) {
 }
 
 function validRequest(request) {
-  if (!object(request) || request.version !== 1 || !["discover", "verify"].includes(request.action) || !text(request.agentDir) || !isAbsolute(request.agentDir)) return false;
+  if (!object(request) || request.version !== 1) return false;
+  if (request.action === "providers") return request.agentDir === undefined && request.provider === undefined && request.draft === undefined;
+  if (!["discover", "verify"].includes(request.action) || !text(request.agentDir) || !isAbsolute(request.agentDir)) return false;
   if (request.provider !== undefined && !identifier(request.provider)) return false;
   if (request.action === "discover" && !identifier(request.provider)) return false;
   if (request.draft !== undefined) {
     const draft = request.draft;
     if (request.action !== "discover" || !object(draft) || !identifier(draft.provider) || !text(draft.key) || draft.key.startsWith("!")) return false;
     if (draft.baseUrl !== undefined && !text(draft.baseUrl)) return false;
+    if (draft.api !== undefined && (!["openai-completions", "openai-responses", "anthropic-messages"].includes(draft.api) || !text(draft.baseUrl))) return false;
   }
   return true;
+}
+
+async function providerCatalog(sdk, packageDir) {
+  const { version: piVersion } = await readObject(join(packageDir, "package.json"));
+  if (typeof piVersion !== "string" || !/^\d+\.\d+\.\d+(?:[-+][a-zA-Z0-9.-]+)?$/.test(piVersion)) throw new Error("Invalid version");
+  const runtime = await sdk.ModelRuntime.create({
+    credentials: new sdk.InMemoryCredentialStore(),
+    modelsStore: new sdk.InMemoryModelsStore(),
+    modelsPath: null,
+    refreshOnCreate: false,
+    allowModelNetwork: false,
+    signal: AbortSignal.timeout(8000),
+  });
+  const seen = new Set();
+  const providers = runtime.getProviders().map(provider => {
+    const { id, name } = provider;
+    const apiKey = !!provider.auth?.apiKey;
+    const keyName = apiKey ? provider.auth.apiKey.name : "";
+    if (!identifier(id) || !text(name) || name.length > 256 || seen.has(id) || apiKey && (!text(keyName) || keyName.length > 256)) throw new Error("Invalid provider metadata");
+    seen.add(id);
+    return { id, name, chat: runtime.getModels(id).length > 0, apiKey, keyName, oauth: !!provider.auth?.oauth };
+  });
+  if (!providers.length) throw new Error("Empty provider catalog");
+  providers.sort((a, b) => a.id.localeCompare(b.id));
+  return { version: 1, status: "ok", piVersion, providers, serverVerified: false };
 }
 
 /** Injectable packageDir is for staged-pin tests, never a CLI argument or PATH lookup. */
@@ -58,6 +87,7 @@ export async function inspectModels(request, { packageDir = join(dirname(fileURL
     return unavailable("runtime_unavailable");
   }
   try {
+    if (request.action === "providers") return await providerCatalog(sdk, packageDir);
     const signal = AbortSignal.timeout(8000);
     const settings = request.action === "verify" ? await readObject(join(request.agentDir, "settings.json")) : {};
     const provider = request.action === "verify" ? settings.defaultProvider : request.provider;
@@ -90,6 +120,7 @@ export async function inspectModels(request, { packageDir = join(dirname(fileURL
     if (!runtime || required.some(name => typeof runtime[name] !== "function")) return unavailable("runtime_unavailable");
     if (runtime.getError()) return unavailable("invalid_state");
 
+    const matchesDraft = row => request.draft?.api === undefined || row.provider !== request.draft.provider || row.api === request.draft.api && row.baseUrl === request.draft.baseUrl;
     const statuses = new Map();
     const rows = [];
     for (const entry of runtime.getProviders()) {
@@ -100,6 +131,7 @@ export async function inspectModels(request, { packageDir = join(dirname(fileURL
       else if (!credential && runtime.getProviderAuthStatus(id)?.source === "models_json_command") reason = "command_secret";
       else if (credential?.type === "oauth" && credential.expires <= Date.now()) reason = "oauth_expired";
       else if (request.draft?.provider === id && request.draft.baseUrl !== undefined && entry.baseUrl !== request.draft.baseUrl) reason = "endpoint_changed";
+      else if (request.draft?.provider === id && request.draft.api !== undefined && !runtime.getModels(id).some(matchesDraft)) reason = "catalog_changed";
       if (reason) {
         statuses.set(id, { status: "unverified", reason });
         continue;
@@ -107,7 +139,7 @@ export async function inspectModels(request, { packageDir = join(dirname(fileURL
       try {
         const auth = await runtime.checkAuth(id, { signal });
         statuses.set(id, auth ? { status: "ready", type: auth.type } : { status: "not_ready", reason: "credentials_not_configured" });
-        if (auth && request.action === "discover") rows.push(...await runtime.getAvailable(id, { signal }));
+        if (auth && request.action === "discover") rows.push(...(await runtime.getAvailable(id, { signal })).filter(matchesDraft));
       } catch {
         statuses.set(id, { status: "unverified", reason: "auth_unavailable" });
       }
@@ -116,7 +148,7 @@ export async function inspectModels(request, { packageDir = join(dirname(fileURL
     const models = [...new Map(rows.filter(row => identifier(row.provider) && identifier(row.id) && (!row.type || row.type === "chat")).map(row => [JSON.stringify([row.provider, row.id]), { provider: row.provider, id: row.id, name: text(row.name) ? row.name : row.id }])).values()];
     models.sort((a, b) => a.provider.localeCompare(b.provider) || a.id.localeCompare(b.id));
     const registered = provider && runtime.getProvider(provider);
-    const catalog = registered ? runtime.getModels(provider) : [];
+    const catalog = registered ? runtime.getModels(provider).filter(matchesDraft) : [];
     const auth = provider ? statuses.get(provider) ?? { status: "unverified", reason: "provider_not_found" } : { status: "unverified", reason: "not_configured" };
     return {
       version: 1,

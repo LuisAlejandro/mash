@@ -196,8 +196,9 @@ pub const SURFACE: Color = Color::Rgb(52, 53, 47); // surface0, for section head
 const BACKGROUND: Color = Color::Rgb(39, 40, 34); // Ghostty's Monokai Cursor
 const ACCENT: Color = Color::Rgb(204, 204, 204);
 const ACTIVE_ROW: Color = Color::Rgb(51, 51, 51);
-const PAGES: [&str; 6] = [
-    "Tools & identity",
+const PAGES: [&str; 7] = [
+    "Git identity",
+    "Tools",
     "Model provider",
     "Services",
     "Skills",
@@ -616,11 +617,12 @@ pub mod tests {
     }
 
     #[test]
-    fn page_split_exposes_six_named_pages() {
+    fn page_split_exposes_seven_named_pages() {
         assert_eq!(
             PAGES,
             [
-                "Tools & identity",
+                "Git identity",
+                "Tools",
                 "Model provider",
                 "Services",
                 "Skills",
@@ -631,10 +633,10 @@ pub mod tests {
         let mut terminal = Terminal::new(TestBackend::new(80, 24)).unwrap();
         terminal
             .draw(|frame| {
-                page_area(frame, Some(5));
+                page_area(frame, Some(6));
             })
             .unwrap();
-        find(terminal.backend().buffer(), "Setup 6/6");
+        find(terminal.backend().buffer(), "Setup 7/7");
     }
 
     #[test]
@@ -646,7 +648,7 @@ pub mod tests {
             })
             .unwrap();
         let buffer = terminal.backend().buffer().clone();
-        let (x, y) = find(&buffer, "Tools & identity");
+        let (x, y) = find(&buffer, "Git identity");
         assert_eq!(clicked(&click(x, y)), Some(SIDEBAR_BASE));
         let (x, y) = find(&buffer, "Dictation");
         assert_eq!(clicked(&click(x, y)), None);
@@ -665,7 +667,7 @@ pub mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect::<String>();
-        assert!(text.contains("Tools & identity"));
+        assert!(text.contains("Git identity"));
         assert!(text.contains("Skills"));
         assert_eq!(form.x, 31); // flush against the separator column
         assert_eq!((form.y, form.width, form.height), (0, 89, 30));
@@ -713,8 +715,8 @@ pub mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect::<String>();
-        assert!(text.contains("✓ 05 Appearance"));
-        assert!(text.contains("✓ 06 Dictation"));
+        assert!(text.contains("✓ 06 Appearance"));
+        assert!(text.contains("✓ 07 Dictation"));
         assert!(text.contains("Installing…"));
     }
 
@@ -732,7 +734,7 @@ pub mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect::<String>();
-        assert!(text.contains("Setup 1/6"));
+        assert!(text.contains("Setup 1/7"));
         assert!(!text.contains("Providers"));
         assert_eq!(form.x, 0);
         assert_eq!(form.width, 80);

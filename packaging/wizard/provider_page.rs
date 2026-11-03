@@ -1,7 +1,7 @@
 use crate::{
     model_picker::{Action, ModelPicker},
     pi_models::{Job, Model, Report},
-    wizard_style,
+    pi_providers, wizard_style,
 };
 use ratatui::{
     crossterm::event::{KeyCode, KeyModifiers},
@@ -29,6 +29,7 @@ enum Choice {
     Anthropic,
     OpenRouter,
     Compatible,
+    Builtin(&'static pi_providers::Provider),
 }
 
 /// One dot per typed character, so the field shows how long a secret is
@@ -42,13 +43,41 @@ pub fn masked(value: &str) -> String {
     "•".repeat(value.chars().count())
 }
 
-const PI_CHOICES: &[Choice] = &[
-    Choice::Keep,
-    Choice::OpenAi,
-    Choice::Anthropic,
-    Choice::OpenRouter,
-    Choice::Compatible,
-];
+fn pi_choices() -> &'static [Choice] {
+    static CHOICES: std::sync::OnceLock<Vec<Choice>> = std::sync::OnceLock::new();
+    CHOICES.get_or_init(|| {
+        let mut choices: Vec<_> = pi_providers::all()
+            .iter()
+            .filter(|provider| provider.chat)
+            .map(|provider| match provider.id.as_str() {
+                "openai" => Choice::OpenAi,
+                "anthropic" => Choice::Anthropic,
+                "openrouter" => Choice::OpenRouter,
+                _ => Choice::Builtin(provider),
+            })
+            .chain([Choice::Compatible])
+            .collect();
+        let rank = |choice: Choice| {
+            if choice == Choice::Compatible {
+                usize::MAX
+            } else {
+                pi_providers::rank(choice.provider_id())
+            }
+        };
+        choices.sort_by(|a, b| {
+            rank(*a)
+                .cmp(&rank(*b))
+                .then_with(|| {
+                    a.label(true)
+                        .to_lowercase()
+                        .cmp(&b.label(true).to_lowercase())
+                })
+                .then_with(|| a.provider_id().cmp(b.provider_id()))
+        });
+        choices.insert(0, Choice::Keep);
+        choices
+    })
+}
 const HINDSIGHT_CHOICES: &[Choice] = &[
     Choice::Keep,
     Choice::None,
@@ -59,15 +88,31 @@ const HINDSIGHT_CHOICES: &[Choice] = &[
 ];
 
 impl Choice {
+    fn pi_provider(self) -> Option<&'static pi_providers::Provider> {
+        match self {
+            Choice::Builtin(provider) => Some(provider),
+            Choice::OpenAi | Choice::Anthropic | Choice::OpenRouter => {
+                pi_providers::get(self.provider_id())
+            }
+            _ => None,
+        }
+    }
+
     fn label(self, pi: bool) -> &'static str {
+        if pi {
+            if let Some(provider) = self.pi_provider() {
+                return &provider.name;
+            }
+        }
         match self {
             Choice::Keep => "Keep existing / set up later",
             Choice::None => "None (no LLM)",
             Choice::OpenAi => "OpenAI",
             Choice::Anthropic => "Anthropic",
             Choice::OpenRouter => "OpenRouter",
-            Choice::Compatible if pi => "OpenAI-compatible (Responses)",
+            Choice::Compatible if pi => "Custom provider",
             Choice::Compatible => "OpenAI-compatible (Chat Completions)",
+            Choice::Builtin(provider) => &provider.name,
         }
     }
 
@@ -78,11 +123,16 @@ impl Choice {
             Choice::OpenRouter => "openrouter",
             Choice::None => "none",
             Choice::Keep => "",
+            Choice::Builtin(provider) => &provider.id,
         }
     }
 
     fn configured(self) -> bool {
-        !matches!(self, Choice::Keep | Choice::None)
+        match self {
+            Choice::Keep | Choice::None => false,
+            Choice::Builtin(provider) => provider.can_configure(),
+            _ => true,
+        }
     }
 }
 
@@ -198,6 +248,7 @@ enum Field {
     PiProvider,
     PiId,
     PiUrl,
+    PiApi,
     PiModel,
     PiKey,
     WebSearchProvider,
@@ -237,6 +288,7 @@ enum ModelStep {
 
 pub struct ProviderPage {
     pi: Input,
+    pi_api: pi_providers::Api,
     search: SearchInput,
     hindsight: Input,
     focus: Field,
@@ -257,6 +309,7 @@ impl ProviderPage {
     pub fn new() -> Self {
         Self {
             pi: Input::default(),
+            pi_api: pi_providers::Api::default(),
             search: SearchInput::default(),
             hindsight: Input::default(),
             focus: Field::PiProvider,
@@ -388,7 +441,7 @@ impl ProviderPage {
         if self.services {
             return preview || self.validate();
         }
-        if self.pi.choice() == Choice::Keep {
+        if !self.pi.choice().configured() {
             return true;
         }
         if self.selected_model.is_some() {
@@ -436,6 +489,7 @@ impl ProviderPage {
         let mut draft = serde_json::json!({"provider":provider,"key":self.pi.key});
         if self.pi.choice() == Choice::Compatible {
             draft["baseUrl"] = Value::String(self.pi.url.trim().into());
+            draft["api"] = Value::String(self.pi_api.id().into());
         }
         let request = serde_json::json!({"version":1,"action":"discover","agentDir":agent,"provider":provider,"draft":draft});
         match Job::start(resources, request) {
@@ -490,7 +544,7 @@ impl ProviderPage {
             }
             fields.push(Field::PiProvider);
             if self.pi.choice() == Choice::Compatible {
-                fields.extend([Field::PiId, Field::PiUrl]);
+                fields.extend([Field::PiId, Field::PiUrl, Field::PiApi]);
             }
             if self.pi.choice().configured() {
                 fields.push(Field::PiKey);
@@ -538,7 +592,7 @@ impl ProviderPage {
     fn is_selector(field: Field) -> bool {
         matches!(
             field,
-            Field::PiProvider | Field::WebSearchProvider | Field::HindsightProvider
+            Field::PiProvider | Field::PiApi | Field::WebSearchProvider | Field::HindsightProvider
         )
     }
 
@@ -568,9 +622,13 @@ impl ProviderPage {
 
     fn options(&self, field: Field) -> Vec<String> {
         match field {
-            Field::PiProvider => PI_CHOICES
+            Field::PiProvider => pi_choices()
                 .iter()
                 .map(|choice| self.pi_label(*choice))
+                .collect(),
+            Field::PiApi => pi_providers::Api::ALL
+                .iter()
+                .map(|api| api.label().into())
                 .collect(),
             Field::WebSearchProvider => SEARCH_CHOICES
                 .iter()
@@ -586,9 +644,12 @@ impl ProviderPage {
 
     fn open_menu(&mut self, field: Field) {
         let highlighted = match field {
-            Field::PiProvider => PI_CHOICES
+            Field::PiProvider => pi_choices()
                 .iter()
                 .position(|choice| *choice == self.pi.choice()),
+            Field::PiApi => pi_providers::Api::ALL
+                .iter()
+                .position(|api| *api == self.pi_api),
             Field::WebSearchProvider => SEARCH_CHOICES
                 .iter()
                 .position(|choice| *choice == self.search.choice()),
@@ -606,12 +667,22 @@ impl ProviderPage {
     fn commit_option(&mut self, field: Field, index: usize) {
         match field {
             Field::PiProvider => {
-                if let Some(&choice) = PI_CHOICES.get(index) {
+                if let Some(&choice) = pi_choices().get(index) {
                     if choice != self.pi.choice() {
                         self.invalidate_models();
                         self.pi.choice = Some(choice);
+                        self.pi_api = pi_providers::Api::default();
                         self.pi.model.clear();
                         self.pi.key.clear();
+                    }
+                }
+            }
+            Field::PiApi => {
+                if let Some(&api) = pi_providers::Api::ALL.get(index) {
+                    if api != self.pi_api {
+                        self.invalidate_models();
+                        self.pi.model.clear();
+                        self.pi_api = api;
                     }
                 }
             }
@@ -920,7 +991,7 @@ impl ProviderPage {
                     id.clone(),
                     serde_json::json!({
                         "baseUrl": self.pi.url.trim(),
-                        "api": "openai-responses",
+                        "api": self.pi_api.id(),
                         "models": model_definitions
                     }),
                 );
@@ -1008,11 +1079,11 @@ impl ProviderPage {
                 Constraint::Min(3),
                 Constraint::Length(3),
             ])
-            .split(wizard_style::page_area(frame, Some(1)));
+            .split(wizard_style::page_area(frame, Some(2)));
             wizard_style::header(
                 frame,
                 parts[0],
-                &wizard_style::page_title("Model provider", 1),
+                &wizard_style::page_title("Model provider", 2),
             );
             let body = wizard_style::section(frame, parts[1], "Loading local Pi models...");
             frame.render_widget(
@@ -1035,7 +1106,7 @@ impl ProviderPage {
         ])
         .split(wizard_style::page_area(
             frame,
-            Some(if self.services { 2 } else { 1 }),
+            Some(if self.services { 3 } else { 2 }),
         ));
         wizard_style::header(
             frame,
@@ -1046,7 +1117,7 @@ impl ProviderPage {
                 } else {
                     "Model provider"
                 },
-                if self.services { 2 } else { 1 },
+                if self.services { 3 } else { 2 },
             ),
         );
         let mut lines: Vec<(Line<'static>, Option<usize>)> =
@@ -1091,8 +1162,16 @@ impl ProviderPage {
                 Field::PiProvider => ("Provider", pi_label.as_str(), false),
                 Field::PiId => ("Provider ID", self.pi.id.as_str(), false),
                 Field::PiUrl => ("Base URL", self.pi.url.as_str(), false),
+                Field::PiApi => ("API type", self.pi_api.label(), false),
                 Field::PiModel => ("Model ID", self.pi.model.as_str(), false),
-                Field::PiKey => ("API key", self.pi.key.as_str(), true),
+                Field::PiKey => (
+                    self.pi
+                        .choice()
+                        .pi_provider()
+                        .map_or("API key", |provider| provider.key_label()),
+                    self.pi.key.as_str(),
+                    true,
+                ),
                 Field::WebSearchProvider => ("Provider", self.search.choice().label(), false),
                 Field::WebSearchModel => ("Model ID", self.search.model.as_str(), false),
                 Field::WebSearchKey => ("API key", self.search.key.as_str(), true),
@@ -1121,6 +1200,11 @@ impl ProviderPage {
                 Some(index),
             ));
             match field {
+                Field::PiProvider => {
+                    if let Some(guidance) = self.pi.choice().pi_provider().and_then(|provider| provider.guidance()) {
+                        lines.push((Line::from(guidance), None));
+                    }
+                }
                 Field::WebSearchModel if self.search_uses_pi_key() => lines.push((
                     Line::from("  Uses the Pi credential selected above."), None,
                 )),
@@ -1185,9 +1269,12 @@ impl ProviderPage {
                 .saturating_sub(visible - 1)
                 .min(options.len() - visible);
             let selected = match menu.field {
-                Field::PiProvider => PI_CHOICES
+                Field::PiProvider => pi_choices()
                     .iter()
                     .position(|choice| *choice == self.pi.choice()),
+                Field::PiApi => pi_providers::Api::ALL
+                    .iter()
+                    .position(|api| *api == self.pi_api),
                 Field::WebSearchProvider => SEARCH_CHOICES
                     .iter()
                     .position(|choice| *choice == self.search.choice()),
@@ -1310,7 +1397,7 @@ fn validate_credentials(input: &Input, pi: bool) -> Result<(), String> {
                 || !id
                     .chars()
                     .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-' || c == '_')
-                || ["openai", "anthropic", "openrouter", "azure", "none"].contains(&id)
+                || pi_providers::reserved(id)
             {
                 return Err("Pi: use a unique lowercase provider ID (e.g. omniroute)".into());
             }
@@ -1589,6 +1676,229 @@ mod tests {
     }
 
     #[test]
+    fn expanded_pi_providers_save_canonical_keys_and_defaults() {
+        for (label, id) in [
+            ("DeepSeek", "deepseek"),
+            ("Google", "google"),
+            ("Groq", "groq"),
+            ("Mistral", "mistral"),
+        ] {
+            let root = root();
+            let mut page = ProviderPage::new();
+            let options = page.options(Field::PiProvider);
+            assert!(options.len() > 30);
+            let index = options
+                .iter()
+                .position(|name| name == label)
+                .expect("Pi provider missing");
+            page.commit_option(Field::PiProvider, index);
+            page.pi.key = "fixture-key".into();
+            page.pi.model = "exact-model".into();
+            assert!(page.validate());
+            page.save(&root).unwrap();
+            let agent = root.join("pi/agent");
+            assert_eq!(
+                read_json_object(&agent.join("settings.json")).unwrap()["defaultProvider"],
+                id
+            );
+            assert_eq!(
+                read_json_object(&agent.join("auth.json")).unwrap()[id]["key"],
+                "fixture-key"
+            );
+            assert!(!agent.join("models.json").exists());
+            fs::remove_dir_all(root).unwrap();
+        }
+    }
+
+    #[test]
+    fn pi_handoffs_never_validate_a_key_launch_a_job_or_write_defaults() {
+        let root = root();
+        let agent = root.join("pi/agent");
+        let files = [
+            (
+                "auth.json",
+                r#"{"openai":{"type":"oauth","access":"secret"},"custom":{"type":"api_key","key":"!must-not-run"}}"#,
+            ),
+            (
+                "settings.json",
+                r#"{"defaultProvider":"custom","defaultModel":"old"}"#,
+            ),
+            (
+                "models.json",
+                r#"{"providers":{"custom":{"api":"openai-responses","baseUrl":"https://example.invalid","models":[{"id":"old"}]}}}"#,
+            ),
+        ];
+        for (file, text) in files {
+            fs::write(agent.join(file), text).unwrap();
+        }
+        for label in [
+            "Azure",
+            "Cloudflare AI Gateway",
+            "Cloudflare Workers AI",
+            "OpenAI Codex (legacy)",
+        ] {
+            let mut page = ProviderPage::new();
+            let index = page
+                .options(Field::PiProvider)
+                .iter()
+                .position(|name| name == label)
+                .expect("handoff provider missing");
+            page.commit_option(Field::PiProvider, index);
+            assert!(!page.fields().contains(&Field::PiKey));
+            assert!(page.advance(&root.join("missing"), &agent, false));
+            assert!(page.model_job.is_none());
+            page.save(&root).unwrap();
+            let mut terminal =
+                ratatui::Terminal::new(ratatui::backend::TestBackend::new(80, 24)).unwrap();
+            terminal.draw(|frame| page.draw(frame)).unwrap();
+            wizard_style::tests::find(terminal.backend().buffer(), "/login");
+            for (file, text) in files {
+                assert_eq!(fs::read_to_string(agent.join(file)).unwrap(), text);
+            }
+        }
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn pi_catalog_order_and_compact_last_option_hit_target_agree() {
+        use wizard_style::tests::{click, find};
+        let mut page = ProviderPage::new();
+        let names = page.options(Field::PiProvider);
+        assert_eq!(
+            &names[1..6],
+            ["OpenAI", "Anthropic", "xAI", "Google", "OpenRouter"]
+        );
+        assert!(!names.iter().any(|name| name == "TypeSafe"));
+        assert!(names[6..]
+            .windows(2)
+            .all(|pair| pair[0].to_lowercase() <= pair[1].to_lowercase()));
+        for (width, height) in [(80, 24), (100, 30)] {
+            page.open_menu(Field::PiProvider);
+            page.on_key(KeyCode::End, KeyModifiers::NONE);
+            let mut terminal =
+                ratatui::Terminal::new(ratatui::backend::TestBackend::new(width, height)).unwrap();
+            terminal.draw(|frame| page.draw(frame)).unwrap();
+            let (x, y) = find(terminal.backend().buffer(), names.last().unwrap());
+            assert_eq!(
+                wizard_style::clicked(&click(x, y)),
+                Some(MENU_BASE + names.len() - 1)
+            );
+        }
+    }
+
+    #[test]
+    fn custom_api_choice_is_saved_and_invalidates_a_previous_selection() {
+        let root = root();
+        let agent = root.join("pi/agent");
+        let mut page = ProviderPage::new();
+        page.pi.choice = Some(Choice::Compatible);
+        page.pi.id = "my-gateway".into();
+        page.pi.url = "https://example.invalid/v1".into();
+        page.pi.key = "fixture-key".into();
+        assert!(page.fields().contains(&Field::PiApi));
+        assert_eq!(page.pi_api, pi_providers::Api::Chat);
+        assert_eq!(
+            page.options(Field::PiApi),
+            [
+                "OpenAI Chat Completions",
+                "OpenAI Responses",
+                "Anthropic Messages"
+            ]
+        );
+        for (index, api) in [
+            "openai-completions",
+            "openai-responses",
+            "anthropic-messages",
+        ]
+        .iter()
+        .enumerate()
+        {
+            page.commit_option(Field::PiApi, index);
+            page.pi.model = "exact-model".into();
+            page.save(&root).unwrap();
+            let models = read_json_object(&agent.join("models.json")).unwrap();
+            assert_eq!(models["providers"]["my-gateway"]["api"], *api);
+            let original = fs::read(agent.join("models.json")).unwrap();
+            ProviderPage::new().save(&root).unwrap();
+            assert_eq!(fs::read(agent.join("models.json")).unwrap(), original);
+            page.models_cached = true;
+            page.selected_model = Some(("my-gateway".into(), "old-model".into()));
+            let generation = page.generation;
+            page.commit_option(Field::PiApi, (index + 1) % 3);
+            assert!(!page.models_cached);
+            assert!(page.selected_model.is_none());
+            assert_ne!(page.generation, generation);
+        }
+        page.set_services(true);
+        assert!(!page.fields().contains(&Field::PiApi));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn custom_api_reaches_the_stdin_bridge_and_compact_mouse_target() {
+        use wizard_style::tests::{click, find};
+        let root = root();
+        let resources = root.join("resources with spaces");
+        fs::create_dir_all(resources.join("node/bin")).unwrap();
+        let node = resources.join("node/bin/node");
+        fs::write(&node, "#!/bin/sh\n/bin/cat > request.json\nprintf '%s\\n' \"$@\" > argv.txt\nprintf '{}\\n'\n").unwrap();
+        fs::set_permissions(&node, fs::Permissions::from_mode(0o755)).unwrap();
+        for api in pi_providers::Api::ALL {
+            let mut page = ProviderPage::new();
+            page.pi.choice = Some(Choice::Compatible);
+            page.pi.id = "my-gateway".into();
+            page.pi.url = "https://example.invalid/v1".into();
+            page.pi.key = "stdin-secret".into();
+            page.pi_api = api;
+            assert!(!page.advance(&resources, &root.join("pi/agent"), false));
+            let until = std::time::Instant::now() + std::time::Duration::from_secs(3);
+            while page.is_loading() {
+                page.poll_models();
+                assert!(std::time::Instant::now() < until);
+                std::thread::sleep(std::time::Duration::from_millis(5));
+            }
+            let request: Value =
+                serde_json::from_slice(&fs::read(resources.join("request.json")).unwrap()).unwrap();
+            assert_eq!(request["draft"]["api"], api.id());
+            assert_eq!(request["draft"]["baseUrl"], "https://example.invalid/v1");
+            assert!(!fs::read_to_string(resources.join("argv.txt"))
+                .unwrap()
+                .contains("stdin-secret"));
+            assert!(page.model_step == ModelStep::Manual);
+        }
+        for (width, height) in [(80, 24), (100, 30)] {
+            let mut page = ProviderPage::new();
+            page.pi.choice = Some(Choice::Compatible);
+            page.open_menu(Field::PiApi);
+            page.on_key(KeyCode::End, KeyModifiers::NONE);
+            let mut terminal =
+                ratatui::Terminal::new(ratatui::backend::TestBackend::new(width, height)).unwrap();
+            terminal.draw(|frame| page.draw(frame)).unwrap();
+            let (x, y) = find(terminal.backend().buffer(), "Anthropic Messages");
+            let id = wizard_style::clicked(&click(x, y)).unwrap();
+            assert_eq!(id, MENU_BASE + 2);
+            page.on_click(id);
+            assert_eq!(page.pi_api, pi_providers::Api::Anthropic);
+        }
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn every_builtin_id_is_reserved_from_custom_replacement() {
+        let mut page = ProviderPage::new();
+        page.pi.choice = Some(Choice::Compatible);
+        page.pi.url = "https://example.invalid/v1".into();
+        page.pi.key = "key".into();
+        page.pi.model = "model".into();
+        for provider in crate::pi_providers::all() {
+            page.pi.id = provider.id.clone();
+            assert!(!page.validate(), "reserved ID accepted: {}", provider.id);
+        }
+        page.pi.id = "my-gateway".into();
+        assert!(page.validate());
+    }
+
+    #[test]
     fn page_split_keeps_pi_separate_from_services() {
         use ratatui::{backend::TestBackend, Terminal};
         let page = ProviderPage::new();
@@ -1652,6 +1962,7 @@ mod tests {
         let mut page = ProviderPage::new();
         page.pi.choice = Some(Choice::Compatible);
         page.pi.id = "omniroute".into();
+        page.pi_api = pi_providers::Api::Responses;
         page.pi.url = "https://example.invalid/v1".into();
         page.pi.model = "route-model".into();
         page.pi.key = "secret-pi".into();
@@ -1775,7 +2086,12 @@ mod tests {
             page.fields(),
             vec![Field::PiProvider, Field::Back, Field::Save]
         );
-        page.commit_option(Field::PiProvider, 4);
+        let custom = page
+            .options(Field::PiProvider)
+            .iter()
+            .position(|name| name == "Custom provider")
+            .unwrap();
+        page.commit_option(Field::PiProvider, custom);
         page.pi.key = "secret".into();
         assert!(page.fields().contains(&Field::PiUrl));
         assert!(page.fields().contains(&Field::PiKey));
