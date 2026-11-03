@@ -1,0 +1,276 @@
+#!/bin/bash
+# Shared macOS updater protocol. Only the owning attempt writes the transaction;
+# GUI/server acknowledgements are separate files, never competing state writers.
+mash_update_init() {
+  MU_DATA="$1"
+  case "$MU_DATA" in /*) ;; *) return 1 ;; esac
+  case "$MU_DATA" in *$'\n'* | *$'\t'*) return 1 ;; esac
+  MU_BIN="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" || return 1
+  MU_STATE="$MU_DATA/local/state"
+  MU_TX="$MU_STATE/update-transaction.plist"
+  MU_LOCK="$MU_STATE/update-install.lock"
+  [ ! -L "$MU_DATA" ] && [ ! -L "$MU_DATA/local" ] && [ ! -L "$MU_STATE" ] || return 1
+  (umask 077; mkdir -p "$MU_STATE") || return 1
+  [ "$(/usr/bin/stat -f %u "$MU_STATE")" = "$(id -u)" ] || return 1
+  [ ! -L "$MU_TX" ] && [ ! -L "$MU_LOCK" ] && [ ! -L "$MU_LOCK/id" ] || return 1
+  if [ -e "$MU_TX" ] && [ ! -f "$MU_TX" ]; then return 1; fi
+}
+mash_update_read() {
+  [ -f "$MU_TX" ] && [ ! -L "$MU_TX" ] || return 1
+  /usr/bin/plutil -extract "$1" raw -o - "$MU_TX" 2>/dev/null
+}
+mash_update_stamp() {
+  if [ -x "$MU_BIN/mash-update-processes" ]; then
+    "$MU_BIN/mash-update-processes" stamp "$1"
+  else
+    # Before native staging (source-only tests). Production entry points refuse
+    # to install without the native inspector; never use this for signalling.
+    /bin/ps -p "$1" -o lstart= 2>/dev/null
+  fi
+}
+mash_update_active() {
+  local phase pid stamp
+  [ "$(mash_update_read boot)" = "$("$MU_BIN/mash-update-processes" boot)" ] || return 1
+  phase="$(mash_update_read phase)" || return 1
+  case "$phase" in preparing | ready | quiescing | swap-intent | awaiting-ready) ;; *) return 1 ;; esac
+  pid="$(mash_update_read owner_pid)" || return 1
+  case "$pid" in '' | *[!0-9]*) return 1 ;; esac
+  stamp="$(mash_update_read owner_start)" || return 1
+  [ -n "$stamp" ] && [ "$(mash_update_stamp "$pid")" = "$stamp" ]
+}
+mash_update_legacy_active() {
+  # A loaded job without a process is not an active installer.
+  launchctl print "gui/$(id -u)/app.mash.update" 2>/dev/null |
+    grep -Eq '^[[:space:]]*pid = [1-9][0-9]*$'
+}
+mash_update_log() {
+  local log="$MU_STATE/mash-update.log" size
+  [ ! -L "$log" ] && [ ! -L "$log.1" ] || return 1
+  size="$(/usr/bin/stat -f %z "$log" 2>/dev/null || echo 0)"
+  if [ "$size" -gt 1048576 ]; then mv -f "$log" "$log.1" || return 1; fi
+  (umask 077; printf '%s attempt=%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${MU_ID:-none}" "$*" >>"$log")
+}
+mash_update_write() {
+  if [ "${MU_SERIAL:-0}" != 1 ]; then
+    "$MU_BIN/mash-update-processes" locked "$MU_STATE/update-mutex" /bin/bash "$MU_BIN/mash-update-common" "$MU_DATA" write "$$" "${MU_ID:-}" "$@"
+    return $?
+  fi
+  local key="$1" value="$2" tmp
+  [ -n "${MU_ID:-}" ] && [ "$(mash_update_read id)" = "$MU_ID" ] || return 1
+  tmp="$(mktemp "$MU_STATE/.update-state-XXXXXX")" || return 1
+  if cp "$MU_TX" "$tmp" && /usr/bin/plutil -replace "$key" -string "$value" "$tmp" && mv -f "$tmp" "$MU_TX"; then
+    return 0
+  fi
+  rm -f "$tmp"
+  return 1
+}
+mash_update_begin() {
+  if [ "${MU_SERIAL:-0}" != 1 ]; then
+    "$MU_BIN/mash-update-processes" locked "$MU_STATE/update-mutex" /bin/bash "$MU_BIN/mash-update-common" "$MU_DATA" begin "$$" '' "$@" || return 1
+    MU_ID="$(mash_update_read id)"
+    return 0
+  fi
+  local app="$1" candidate="$2" old="$3" work="$4" tmp owner
+  [[ "$candidate" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || return 1
+  case "$app" in /*.app) ;; *) return 1 ;; esac
+  case "$app$work" in *$'\n'* | *$'\t'*) return 1 ;; esac
+  case "$work" in /*/mash-update-??????) ;; *) return 1 ;; esac
+  case "$work/" in "$app/"* | "$MU_STATE/"*) return 1 ;; esac
+  [ -d "$app/Contents" ] && [ ! -L "$app" ] && [ -d "$work" ] && [ ! -L "$work" ] && [ ! -L "$MU_TX" ] || return 1
+  if [ -f "$MU_TX" ]; then
+    case "$(mash_update_read phase || true)" in
+    swap-intent | awaiting-ready | recovery-required) return 1 ;;
+    esac
+  fi
+  if ! (umask 077; mkdir "$MU_LOCK") 2>/dev/null; then
+    mash_update_active && return 1
+    # A stale preparation owner is reclaimable; a committed/unconfirmed update
+    # needs recovery, not another download that overwrites its backup location.
+    case "$(mash_update_read phase || true)" in
+    preparing | ready | cancelled | failed-before-swap | confirmed) ;;
+    *) return 1 ;;
+    esac
+    owner="$(mash_update_read id)" || return 1
+    [ "$(cat "$MU_LOCK/id" 2>/dev/null)" = "$owner" ] || return 1
+    # All state writers hold the native kernel mutex. It is released even
+    # after a crash, unlike the attempt directory; stale reclaim cannot race
+    # another claimant or delete a newly acquired directory.
+    rm -rf "$MU_LOCK" || return 1
+    (umask 077; mkdir "$MU_LOCK") 2>/dev/null || return 1
+  fi
+  MU_ID="$(uuidgen | tr '[:upper:]' '[:lower:]')" || return 1
+  printf '%s\n' "$MU_ID" >"$MU_LOCK/id"
+  printf '%s\n' "$MU_ID" >"$work/.mash-update-owner" || return 1
+  tmp="$(mktemp "$MU_STATE/.update-state-XXXXXX")" || return 1
+  printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict/></plist>' >"$tmp"
+  local key value
+  for key in schema id phase app candidate old_version work owner_pid owner_start boot job; do
+    case "$key" in
+    schema) value=1 ;; id) value="$MU_ID" ;; phase) value=preparing ;;
+    app) value="$app" ;; candidate) value="$candidate" ;; old_version) value="$old" ;;
+    work) value="$work" ;; owner_pid) value="$MU_OWNER_PID" ;; owner_start) value="$(mash_update_stamp "$MU_OWNER_PID")" ;;
+    boot) value="$("$MU_BIN/mash-update-processes" boot)" ;;
+    job) value="app.mash.update.$MU_ID" ;;
+    esac
+    /usr/bin/plutil -insert "$key" -string "$value" "$tmp" || { rm -f "$tmp"; return 1; }
+  done
+  chmod 600 "$tmp"
+  mv -f "$tmp" "$MU_TX" || return 1
+  mash_update_log 'phase=preparing'
+}
+mash_update_phase() {
+  mash_update_write phase "$1" && mash_update_log "phase=$1"
+}
+mash_update_finish() {
+  if [ "${MU_SERIAL:-0}" != 1 ]; then
+    "$MU_BIN/mash-update-processes" locked "$MU_STATE/update-mutex" /bin/bash "$MU_BIN/mash-update-common" "$MU_DATA" finish "$$" "${MU_ID:-}" "$@"
+    return $?
+  fi
+  [ -n "${MU_ID:-}" ] && [ "$(mash_update_read id)" = "$MU_ID" ] || return 1
+  [ "$(mash_update_read phase)" != confirmed ] || return 1
+  mash_update_phase "$1" || return 1
+  if [ "$(cat "$MU_LOCK/id" 2>/dev/null)" = "$MU_ID" ]; then
+    rm -f "$MU_LOCK/id"
+    rmdir "$MU_LOCK" || return 1
+  fi
+}
+mash_update_claim() {
+  if [ "${MU_SERIAL:-0}" != 1 ]; then
+    "$MU_BIN/mash-update-processes" locked "$MU_STATE/update-mutex" /bin/bash "$MU_BIN/mash-update-common" "$MU_DATA" claim "$$" "${MU_ID:-}"
+    return $?
+  fi
+  [ "$(mash_update_read id)" = "$MU_ID" ] || return 1
+  local tmp
+  tmp="$(mktemp "$MU_STATE/.update-state-XXXXXX")" || return 1
+  if cp "$MU_TX" "$tmp" &&
+    /usr/bin/plutil -replace owner_pid -string "$MU_OWNER_PID" "$tmp" &&
+    /usr/bin/plutil -replace owner_start -string "$(mash_update_stamp "$MU_OWNER_PID")" "$tmp" &&
+    mv -f "$tmp" "$MU_TX"; then return 0; fi
+  rm -f "$tmp"
+  return 1
+}
+mash_update_confirm() {
+  if [ "${MU_SERIAL:-0}" != 1 ]; then
+    "$MU_BIN/mash-update-processes" locked "$MU_STATE/update-mutex" /bin/bash "$MU_BIN/mash-update-common" "$MU_DATA" confirm "$$" "${MU_ID:-}"
+    return $?
+  fi
+  [ "$(mash_update_read id)" = "$MU_ID" ] || return 1
+  local phase
+  phase="$(mash_update_read phase)"
+  case "$phase" in
+  awaiting-ready) ;;
+  recovery-required)
+    # An earlier worker can finish reporting failure without racing a late
+    # successful retry. Only a dead owner may be reconciled here.
+    if [ "$(mash_update_stamp "$(mash_update_read owner_pid)")" = "$(mash_update_read owner_start)" ]; then return 1; fi
+    ;;
+  *) return 1 ;;
+  esac
+  local gui="$MU_STATE/update-gui-$MU_ID.plist" server="$MU_STATE/update-server-$MU_ID.plist"
+  local pid stamp uuid app candidate spid sstamp socket canonical
+  [ -f "$gui" ] && [ ! -L "$gui" ] && [ -f "$server" ] && [ ! -L "$server" ] || return 1
+  app="$(mash_update_read app)" candidate="$(mash_update_read candidate)" uuid="$(mash_update_read expected_uuid)"
+  [ "$(/usr/bin/plutil -extract id raw -o - "$gui")" = "$MU_ID" ] &&
+    [ "$(/usr/bin/plutil -extract uuid raw -o - "$gui")" = "$uuid" ] &&
+    [ "$(/usr/bin/plutil -extract version raw -o - "$gui")" = "$candidate" ] || return 1
+  canonical="$(cd "$app" && pwd -P)" || return 1
+  pid="$(/usr/bin/plutil -extract pid raw -o - "$gui")" stamp="$(/usr/bin/plutil -extract start raw -o - "$gui")"
+  "$MU_BIN/mash-update-processes" alive "$pid" "$stamp" &&
+    [ "$("$MU_BIN/mash-update-processes" image "$pid")" = "$canonical/Contents/MacOS/mash-terminal" ] || return 1
+  [ "$(/usr/bin/plutil -extract gui_pid raw -o - "$server")" = "$pid" ] &&
+    [ "$(/usr/bin/plutil -extract id raw -o - "$server")" = "$MU_ID" ] || return 1
+  spid="$(/usr/bin/plutil -extract pid raw -o - "$server")" sstamp="$(/usr/bin/plutil -extract start raw -o - "$server")"
+  "$MU_BIN/mash-update-processes" alive "$spid" "$sstamp" &&
+    [ "$("$MU_BIN/mash-update-processes" image "$spid")" = "$canonical/Contents/Resources/bin/herdr" ] || return 1
+  socket="$MU_DATA/run/herdr.sock"
+  [ -S "$socket" ] && /usr/sbin/lsof -t "$socket" 2>/dev/null | grep -qx "$spid" || return 1
+  # The pre-shutdown snapshot also catches old system-interpreter children
+  # that no longer have a bundle-backed parent after reparenting.
+  local work old_pid old_stamp
+  work="$(mash_update_read work)"
+  if [ -f "$work/old-processes" ]; then
+    while read -r old_pid old_stamp; do
+      [ -n "$old_pid" ] || continue
+      if "$MU_BIN/mash-update-processes" alive "$old_pid" "$old_stamp"; then return 1; fi
+    done <"$work/old-processes"
+  fi
+  # Readiness records may only be consumed once; the worker owns phase changes.
+  mash_update_finish confirmed || return 1
+  printf '%s\n' "$candidate" >"$MU_STATE/update-success"
+  rm -f "$MU_STATE/update-pending" "$MU_STATE/update-retry"
+  # A dead worker has no EXIT trap left to remove recovery material. Reclaim
+  # only exact resources bearing this attempt's private ownership marker.
+  if [ "$(mash_update_stamp "$(mash_update_read owner_pid)")" != "$(mash_update_read owner_start)" ]; then
+    local sibling parent
+    sibling="$(mash_update_read sibling 2>/dev/null || true)"
+    parent="$(dirname "$app")"
+    case "$sibling" in
+    "$parent"/.mash-update-??????)
+      if [ ! -L "$sibling" ] && [ "$(cat "$sibling/.mash-update-owner" 2>/dev/null)" = "$MU_ID" ]; then rm -rf "$sibling"; fi
+      ;;
+    esac
+    case "$work" in
+    /*/mash-update-??????)
+      if [ ! -L "$work" ] && [ "$(cat "$work/.mash-update-owner" 2>/dev/null)" = "$MU_ID" ]; then rm -rf "$work"; fi
+      ;;
+    esac
+  fi
+}
+mash_update_bootstrap() {
+  local apply="$1" job arg n=0
+  shift
+  job="$(mash_update_read work)/update-job.plist"
+  printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><dict/></plist>' >"$job" || return 1
+  /usr/bin/plutil -insert Label -string "$(mash_update_read job)" "$job" || return 1
+  /usr/bin/plutil -insert ProgramArguments -json '[]' "$job" || return 1
+  for arg in "$apply" "$@"; do
+    /usr/bin/plutil -insert "ProgramArguments.$n" -string "$arg" "$job" || return 1
+    n=$((n + 1))
+  done
+  /usr/bin/plutil -insert RunAtLoad -bool YES "$job" &&
+    /usr/bin/plutil -insert AbandonProcessGroup -bool YES "$job" &&
+    /usr/bin/plutil -insert StandardOutPath -string "$MU_STATE/mash-update.log" "$job" &&
+    /usr/bin/plutil -insert StandardErrorPath -string "$MU_STATE/mash-update.log" "$job" || return 1
+  # UUID-scoped label: never boot out an existing job to make room.
+  launchctl bootstrap "gui/$(id -u)" "$job"
+}
+mash_update_run() {
+  # One deadline covers each external request. A timeout is not permission to
+  # SIGKILL work or exchange the app. Only this command's child gets TERM.
+  local budget="$1" tag="$2" child start now rc
+  shift 2
+  [ "$budget" -gt 0 ] || return 124
+  mash_update_log "start=$tag"
+  "$@" >>"$MU_STATE/mash-update.log" 2>&1 &
+  child=$!
+  start="$("$MU_BIN/mash-update-processes" now)" || return 1
+  while kill -0 "$child" 2>/dev/null; do
+    now="$("$MU_BIN/mash-update-processes" now)" || return 1
+    if [ "$((now - start))" -ge "$budget" ]; then
+      kill -TERM "$child" 2>/dev/null || true
+      MU_COMMAND_BUSY="$child"
+      mash_update_log "end=$tag exit=124 timeout=${budget}s pid=$child; retain preparation until child exits"
+      return 124
+    fi
+    sleep 0.2
+  done
+  rc=0
+  wait "$child" || rc=$?
+  mash_update_log "end=$tag exit=$rc"
+  return "$rc"
+}
+
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+  [ "$#" -ge 4 ] || exit 2
+  data="$1" action="$2" MU_OWNER_PID="$3" MU_ID="$4" MU_SERIAL=1
+  shift 4
+  mash_update_init "$data" || exit 1
+  case "$action" in
+  begin) [ "$#" = 4 ] && mash_update_begin "$@" ;;
+  write) [ "$#" = 2 ] && mash_update_write "$@" ;;
+  finish) [ "$#" = 1 ] && mash_update_finish "$@" ;;
+  claim) [ "$#" = 0 ] && mash_update_claim ;;
+  confirm) [ "$#" = 0 ] && mash_update_confirm ;;
+  *) exit 2 ;;
+  esac
+fi

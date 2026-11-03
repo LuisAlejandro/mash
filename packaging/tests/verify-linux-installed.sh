@@ -86,7 +86,7 @@ fi
 # --- product tree ---------------------------------------------------------
 # bin/herdr is the name herdr-pane execs; an asset installed under its release
 # name instead (herdr-linux-x86_64) would look present and fail at launch.
-for entry in bin/mash-terminal bin/herdr bin/lib.sh bin/mash-shell bin/herdr-pane lib/libgtk4-layer-shell.so; do
+for entry in bin/mash-terminal bin/herdr bin/gh bin/lib.sh bin/mash-shell bin/herdr-pane lib/libgtk4-layer-shell.so; do
   [ -e "$product/$entry" ] && ok "product has $entry" || fail "product is missing $entry"
 done
 

@@ -243,13 +243,64 @@ check_ok=0
 manual_status=""
 entrypoint=notice
 
+# The native executable exports its captured version. Never substitute mutable
+# on-disk metadata when a runtime identity is available.
+runtime_version="${MASH_RUNNING_VERSION:-}"
+common="$res/bin/mash-update-common"
+if [ "$system" = Darwin ] && [ -f "$common" ]; then
+  # shellcheck source=mash-update-common
+  source "$common"
+  mash_update_init "$d" || exit 0
+  if [ -f "$MU_TX" ]; then
+    MU_ID="$(mash_update_read id)"
+    phase="$(mash_update_read phase)"
+    case "$phase" in
+    preparing | ready | quiescing | swap-intent)
+      if mash_update_active; then mash_log "update $MU_ID active: $phase"; exit 0; fi
+      ;;
+    awaiting-ready | recovery-required)
+      # Background notice waits; the window/server must not wait for this
+      # notice or for the worker to exit, which would deadlock readiness.
+      for _ in $(seq 1 900); do
+        [ "$(mash_update_read id)" = "$MU_ID" ] || exit 0
+        case "$(mash_update_read phase)" in awaiting-ready | recovery-required) ;; *) break ;; esac
+        if ! mash_update_active; then
+          if mash_update_confirm; then break; fi
+        fi
+        sleep 0.2
+      done
+      ;;
+    esac
+    phase="$(mash_update_read phase)"
+    case "$phase" in
+    preparing | ready | quiescing | swap-intent)
+      # A dead owner is not a running installer. Before the exchange we can
+      # safely re-offer; ambiguous/committed attempts retain recovery state.
+      if [ "$phase" = preparing ] || [ "$phase" = ready ]; then
+        mash_update_finish failed-before-swap || exit 0
+      else
+        mash_update_finish recovery-required || exit 0
+        exit 0
+      fi
+      ;;
+    awaiting-ready | recovery-required) exit 0 ;;
+    esac
+  fi
+  # Old released workers use this fixed label but no transaction protocol.
+  if mash_update_legacy_active; then mash_log 'legacy installer still active'; exit 0; fi
+else
+  # Read-only legacy notice fixtures and Linux do not ship the macOS protocol.
+  mash_update_legacy_active() { return 1; }
+  mash_update_active() { return 1; }
+fi
+
 # If power was lost after confirmation, compare the version that was about to
 # install with the one that actually runs now. A crash before or after the
 # atomic exchange leaves a complete app at the destination in either case.
 if [ "$system" = Darwin ] && [ -f "$state/update-pending" ]; then
   mash_take_lock || exit 0
   pending="$(mash_read_line "$state/update-pending")"
-  running="$(mash_read_line "$res/VERSION")"
+  running="${runtime_version:-$(mash_read_line "$res/VERSION")}"
   rm -f "$state/update-pending"
   if [ -n "$pending" ] && [ "$pending" = "$running" ]; then
     mash_write "$state/update-success" "$pending"
@@ -270,7 +321,7 @@ fi
 # proving the newly running version without making a network request.
 if [ "$system" = Darwin ] && [ -f "$state/update-success" ]; then
   mash_take_lock || exit 0
-  installed="$(mash_read_line "$res/VERSION")"
+  installed="${runtime_version:-$(mash_read_line "$res/VERSION")}"
   if [ -n "$installed" ] && [ "$(mash_read_line "$state/update-success")" = "$installed" ]; then
     rm -f "$state/update-success"
     # Installing is already proof of the latest version; do not immediately

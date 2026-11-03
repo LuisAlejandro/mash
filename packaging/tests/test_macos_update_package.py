@@ -170,15 +170,36 @@ class MacOSUpdatePackageTest(unittest.TestCase):
         build = (ROOT / "packaging/build.sh").read_text()
         helpers = build.split("ship_helpers=(", 1)[1].split("\n)", 1)[0].split()
         self.assertTrue(
-            {"mash-update-notice", "mash-update-verify", "mash-update-apply"}.issubset(helpers)
+            {
+                "mash-update-notice", "mash-update-verify", "mash-update-apply",
+                "mash-update-common", "mash-update-gate",
+            }.issubset(helpers)
         )
-        self.assertIn("packaging/helpers/mash-update-swap.c", build)
+        for source in ("mash-update-swap", "mash-update-processes"):
+            self.assertIn(f"packaging/helpers/{source}.c", build)
+            self.assertIn(f'"$app/Contents/Resources/bin/{source}"', build)
         self.assertIn("-mmacosx-version-min=14.0", build)
-        self.assertIn('"$app/Contents/Resources/bin/mash-update-swap"', build)
+
+    def test_detached_worker_dependencies_are_copied_out_of_the_bundle(self):
+        verify = (ROOT / "packaging/helpers/mash-update-verify").read_text()
+        copied = verify.split("for helper in", 2)[2].split(";", 1)[0].split()
+        for helper in ("mash-update-common", "mash-update-processes", "mash-update-gate",
+                       "mash-update-apply", "mash-update-swap"):
+            self.assertIn(helper, copied)
+
+    def test_native_lifecycle_patch_ships_and_is_applied_by_the_build_seam(self):
+        patch = (ROOT / "packaging/patches/ghostty-update-lifecycle.patch").read_text()
+        self.assertIn("macos/Sources/App/main.swift", patch)
+        self.assertIn("mashUpdateObserveReadiness()", patch)
+        self.assertIn(
+            "ghostty-update-lifecycle.patch",
+            (ROOT / "packaging/helpers/mash-ghostty-patch-menu").read_text(),
+        )
 
     def test_linux_payload_keeps_apt_and_excludes_macos_helpers(self):
         build = (ROOT / "packaging/build-common.sh").read_text()
-        for name in ("mash-update-verify", "mash-update-apply", "mash-update-swap.c"):
+        for name in ("mash-update-verify", "mash-update-apply", "mash-update-common",
+                     "mash-update-gate", "mash-update-processes.c", "mash-update-swap.c"):
             self.assertIn(name, build)
         launcher = (ROOT / "packaging/herdr-pane").read_text()
         self.assertIn('"$bin_dir/mash-update-notice" "$res" "$home/.mash"', launcher)

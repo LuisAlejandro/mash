@@ -168,10 +168,14 @@ class HostUtilityDependsTest(unittest.TestCase):
         self.depends = extra.replace("$host_utilities", utilities)
 
     def test_every_host_utility_is_a_dependency(self):
-        for package in ("git", "gh", "zoxide", "eza", "fzf", "fd-find", "bat",
+        for package in ("git", "zoxide", "eza", "fzf", "fd-find", "bat",
                         "ripgrep", "jq", "git-delta", "gopls", "shfmt"):
             with self.subTest(package=package):
                 self.assertRegex(self.depends, rf"(^|[, ]){re.escape(package)}($|[, ])")
+
+    def test_gh_is_bundled_not_a_host_dependency(self):
+        """Mash ships its own pinned gh; an apt gh would only shadow nothing."""
+        self.assertNotRegex(self.depends, r"(^|[, ])gh($|[, ])")
 
     def test_debian_names_are_used_not_command_names(self):
         """Three of these are not named after the command they provide.

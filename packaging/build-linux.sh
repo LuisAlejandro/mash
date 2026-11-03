@@ -349,7 +349,7 @@ installed_kb="$(du -sk --exclude=DEBIAN "$stage" | awk '{print $1}')"
 #
 # rust-analyzer is deliberately absent: noble ships no such package. It stays a
 # tool the user provides, and setup reports it missing rather than failing.
-host_utilities="git, gh, zoxide, eza, fzf, fd-find, bat, ripgrep, jq, git-delta, gopls, shfmt"
+host_utilities="git, zoxide, eza, fzf, fd-find, bat, ripgrep, jq, git-delta, gopls, shfmt"
 extra_depends="ca-certificates, rsync, xdg-utils, wl-clipboard, $host_utilities"
 sed -e "s#@EXTRA_DEPENDS@#$extra_depends#" \
   -e "s#@VERSION@#$version#" \

@@ -7,13 +7,21 @@
 set -euo pipefail
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 src="${1:?usage: mash-ghostty-patch-menu <ghostty-src>}"
-patch="$root/packaging/patches/ghostty-check-for-updates-menu.patch"
 [ -d "$src" ] || {
   echo "ghostty checkout missing: $src" >&2
   exit 1
 }
-[ -f "$patch" ] || exit 0
-patch -p1 -N -d "$src" <"$patch" || {
-  echo "ghostty-check-for-updates-menu.patch did not apply to $src" >&2
-  exit 1
-}
+for name in ghostty-check-for-updates-menu.patch ghostty-update-lifecycle.patch; do
+  patch="$root/packaging/patches/$name"
+  [ -f "$patch" ] || continue
+  # Idempotent only when the exact patch can be reversed. A changed or partly
+  # applied source must fail, not be silently treated as already patched.
+  if patch --dry-run -f -R -p1 -d "$src" <"$patch" >/dev/null 2>&1; then
+    continue
+  fi
+  patch --dry-run -f -p1 -d "$src" <"$patch" >/dev/null 2>&1 &&
+    patch -f -p1 -d "$src" <"$patch" || {
+    echo "$name did not apply cleanly to $src" >&2
+    exit 1
+  }
+done

@@ -1,0 +1,140 @@
+--- a/macos/Sources/App/main.swift
++++ b/macos/Sources/App/main.swift
+@@ -1,6 +1,119 @@
+ import AppKit
+ import Cocoa
+ import GhosttyKit
++
++import MachO
++
++// Capture the loaded image and version before a replacement can change disk
++// metadata. A marker or rereading VERSION is not evidence of this runtime.
++let mashUpdateLoadedVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
++let mashUpdateLoadedUUID: String = {
++    guard let header = _dyld_get_image_header(0) else { return "" }
++    let h = UnsafeRawPointer(header).assumingMemoryBound(to: mach_header_64.self).pointee
++    guard h.magic == MH_MAGIC_64 else { return "" }
++    var cursor = UnsafeRawPointer(header).advanced(by: MemoryLayout<mach_header_64>.size)
++    var remaining = Int(h.sizeofcmds)
++    for _ in 0..<h.ncmds {
++        guard remaining >= MemoryLayout<load_command>.size else { return "" }
++        let command = cursor.load(as: load_command.self)
++        guard command.cmdsize >= MemoryLayout<load_command>.size, Int(command.cmdsize) <= remaining else { return "" }
++        if command.cmd == LC_UUID, command.cmdsize >= MemoryLayout<uuid_command>.size {
++            var value = cursor.load(as: uuid_command.self).uuid
++            return withUnsafeBytes(of: &value) { $0.map { String(format: "%02X", $0) }.joined() }
++        }
++        cursor = cursor.advanced(by: Int(command.cmdsize))
++        remaining -= Int(command.cmdsize)
++    }
++    return ""
++}()
++
++func mashUpdateState() -> (URL, [String: String])? {
++    let data = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".mash")
++    let path = data.appendingPathComponent("local/state/update-transaction.plist")
++    guard let attrs = try? FileManager.default.attributesOfItem(atPath: path.path),
++          attrs[.type] as? FileAttributeType == .typeRegular,
++          (attrs[.ownerAccountID] as? NSNumber)?.uint32Value == getuid(),
++          let bytes = try? Data(contentsOf: path),
++          let state = try? PropertyListSerialization.propertyList(from: bytes, format: nil) as? [String: String],
++          state["schema"] == "1", let id = state["id"], UUID(uuidString: id) != nil,
++          let app = state["app"],
++          URL(fileURLWithPath: app).resolvingSymlinksInPath() == Bundle.main.bundleURL.resolvingSymlinksInPath() else { return nil }
++    return (data, state)
++}
++
++func mashUpdateWait(_ data: URL, _ state: [String: String]) -> Never {
++    guard let work = state["work"], let id = state["id"],
++          work.hasPrefix("/"), URL(fileURLWithPath: work).lastPathComponent.range(of: "^mash-update-[A-Za-z0-9]{6}$", options: .regularExpression) != nil,
++          (try? String(contentsOfFile: work + "/.mash-update-owner", encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)) == id,
++          let attrs = try? FileManager.default.attributesOfItem(atPath: work),
++          attrs[.type] as? FileAttributeType == .typeDirectory,
++          (attrs[.ownerAccountID] as? NSNumber)?.uint32Value == getuid() else {
++        mashSetupFailed("The update helper is unavailable. The installed app was not removed.")
++    }
++    let helper = URL(fileURLWithPath: work).appendingPathComponent("mash-update-gate").path
++    let args = ["/bin/bash", helper, "wait", Bundle.main.bundleURL.path, data.path, id] + CommandLine.arguments.dropFirst()
++    var argv = args.map { strdup($0) }
++    argv.append(nil)
++    execv("/bin/bash", argv)
++    mashSetupFailed("Could not wait for the active update. See mash-update.log.")
++}
++
++func mashUpdateEntry() {
++    if CommandLine.arguments.dropFirst().contains(where: { $0.hasPrefix("+") }) { return }
++    setenv("MASH_RUNNING_VERSION", mashUpdateLoadedVersion, 1)
++    guard let (data, state) = mashUpdateState(), let phase = state["phase"] else {
++        let path = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".mash/local/state/update-transaction.plist")
++        if FileManager.default.fileExists(atPath: path.path) { mashSetupFailed("Mash's update record is invalid. See mash-update.log before retrying.") }
++        return
++    }
++    if phase == "quiescing" || phase == "swap-intent" ||
++        (phase == "awaiting-ready" && state["expected_uuid"] != mashUpdateLoadedUUID) {
++        mashUpdateWait(data, state)
++    }
++    if phase == "recovery-required" {
++        let alert = NSAlert()
++        alert.messageText = "Mash update needs recovery"
++        alert.informativeText = "The replacement was installed, but startup was not confirmed. The previous app was retained. Details are in ~/.mash/local/state/mash-update.log."
++        alert.addButton(withTitle: "Try starting the installed app")
++        alert.runModal()
++    }
++}
++
++private var mashUpdateReadinessTimer: Timer?
++func mashUpdateObserveReadiness() {
++    guard mashUpdateReadinessTimer == nil, let (data, initial) = mashUpdateState(),
++          ["awaiting-ready", "recovery-required"].contains(initial["phase"] ?? ""), let id = initial["id"],
++          initial["expected_uuid"] == mashUpdateLoadedUUID,
++          initial["candidate"] == mashUpdateLoadedVersion else { return }
++    let started = ProcessInfo.processInfo.systemUptime
++    mashUpdateReadinessTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { timer in
++        guard ProcessInfo.processInfo.systemUptime - started < 180,
++              let (_, current) = mashUpdateState(), current["id"] == id,
++              ["awaiting-ready", "recovery-required"].contains(current["phase"] ?? "") else { timer.invalidate(); return }
++        guard TerminalController.all.contains(where: { $0.window?.isVisible == true }) else { return }
++        let process = Process()
++        process.executableURL = Bundle.main.resourceURL?.appendingPathComponent("bin/mash-update-processes")
++        process.arguments = ["stamp", String(getpid())]
++        let pipe = Pipe()
++        process.standardOutput = pipe
++        process.standardError = FileHandle.nullDevice
++        do { try process.run() } catch { timer.invalidate(); return }
++        let bytes = pipe.fileHandleForReading.readDataToEndOfFile()
++        process.waitUntilExit()
++        guard process.terminationStatus == 0,
++              let stamp = String(data: bytes, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
++              !stamp.isEmpty else { timer.invalidate(); return }
++        let ack = ["id": id, "pid": String(getpid()), "start": stamp,
++                   "uuid": mashUpdateLoadedUUID, "version": mashUpdateLoadedVersion]
++        let target = data.appendingPathComponent("local/state/update-gui-\(id).plist")
++        do {
++            let encoded = try PropertyListSerialization.data(fromPropertyList: ack, format: .binary, options: 0)
++            try encoded.write(to: target, options: .atomic)
++            try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: target.path)
++        } catch { }
++        timer.invalidate()
++    }
++}
+ 
+ // Mash: this binary is Mash.app's own executable. Whatever starts it -- the
+ // Dock, Finder, Spotlight, `open -a`, or macOS reopening apps after a restart
+@@ -17,6 +130,7 @@
+ // shows it in an alert before quitting. The same alert covers a script that
+ // cannot run, and one that returned without MASH_BIN -- execing it again
+ // would loop forever.
++mashUpdateEntry()
+ mashHandOffToSetup()
+ 
+ func mashHandOffToSetup() {
+--- a/macos/Sources/App/AppDelegate.swift
++++ b/macos/Sources/App/AppDelegate.swift
+@@ -263,6 +263,7 @@
+ 
+         // Setup signal handlers
+         setupSignals()
++        mashUpdateObserveReadiness()
+ 
+         switch Ghostty.launchSource {
+         case .app:

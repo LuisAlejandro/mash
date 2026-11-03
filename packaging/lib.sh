@@ -128,8 +128,9 @@ mash_isolate() {
   # agent-browser) are in ~/.mash/bin; CUA Driver is in ~/.local/bin. Pinning
   # MASH_BIN to the front makes "Mash runs the version it ships" a property of
   # this function rather than of the caller's environment. The programs that are host-provided on
-  # purpose (fd, rg, eza, fzf, bat, git, gh) are not shipped by Mash at all, so
-  # the host tier is what reaches them.
+  # purpose (fd, rg, eza, fzf, bat, git) are not shipped by Mash at all, so
+  # the host tier is what reaches them. gh is bundled, so Mash's pinned gh wins
+  # over a Homebrew one inside Mash; its login stays in GH_CONFIG_DIR either way.
   #
   # The tiers are built here rather than by appending MASH_BIN to the inherited
   # PATH. That older form made the order depend on who called last: a host

@@ -1,0 +1,80 @@
+#!/bin/bash
+# Outside-bundle launch waiter and healthy-server acknowledgement. A waiting
+# launch execs /bin/bash here so it does not retain the old GUI executable.
+set -u
+[ "$#" -ge 3 ] || exit 2
+action="$1" app="$2" data="$3"
+shift 3
+bin="$(cd "$(dirname "$0")" && pwd)" || exit 2
+# shellcheck source=mash-update-common
+source "$bin/mash-update-common" || exit 1
+mash_update_init "$data" || exit 1
+case "$action" in
+wait)
+  [ "$#" -ge 1 ] || exit 2
+  MU_ID="$1"; shift
+  printed=0
+  while [ "$(mash_update_read id 2>/dev/null)" = "$MU_ID" ]; do
+    phase="$(mash_update_read phase)"
+    case "$phase" in
+    quiescing | swap-intent)
+      if ! mash_update_active; then
+        # Actual identities settle whether exchange happened between journal
+        # writes. Do not install a second candidate or blindly roll back data.
+        expected="$(mash_update_read expected_uuid)"
+        actual="$("$bin/mash-update-processes" uuid "$app/Contents/MacOS/mash-terminal" 2>/dev/null || true)"
+        if [ -n "$expected" ] && [ "$actual" = "$expected" ]; then
+          mash_update_phase recovery-required || exit 1
+        else
+          mash_update_finish failed-before-swap || exit 1
+        fi
+        break
+      fi
+      if [ "$printed" = 0 ]; then
+        printf 'Mash is updating. Waiting for the prepared application...\n' >&2
+        printed=1
+      fi
+      sleep 0.2
+      ;;
+    *) break ;;
+    esac
+  done
+  # This is an exec of the currently installed executable, never the old
+  # binary path captured before exchange. New native entry revalidates state.
+  unset MASH_BIN MASH_SETUP_HANDOFF MASH_SETUP_ERROR
+  exec "$app/Contents/MacOS/mash-terminal" "$@"
+  ;;
+server-ready)
+  # Native GUI owns its own ACK; this signal only proves the new server and
+  # explicitly binds it to that GUI's process identity.
+  [ "$#" = 1 ] || exit 2
+  gui_pid="$1"
+  case "$(mash_update_read phase 2>/dev/null)" in awaiting-ready | recovery-required) ;; *) exit 0 ;; esac
+  MU_ID="$(mash_update_read id)"
+  [ "$(mash_update_read app)" = "$app" ] || exit 1
+  canonical="$(cd "$app" && pwd -P)" || exit 1
+  herdr="$canonical/Contents/Resources/bin/herdr"
+  for _ in $(seq 1 150); do
+    [ "$(mash_update_read id)" = "$MU_ID" ] || exit 0
+    case "$(mash_update_read phase)" in awaiting-ready | recovery-required) ;; *) exit 0 ;; esac
+    if HERDR_SOCKET_PATH="$data/run/herdr.sock" "$herdr" status server 2>/dev/null | grep -q 'status: running'; then
+      for pid in $(/usr/sbin/lsof -t "$data/run/herdr.sock" 2>/dev/null | sort -u); do
+        [ "$("$bin/mash-update-processes" image "$pid" 2>/dev/null)" = "$herdr" ] || continue
+        stamp="$("$bin/mash-update-processes" stamp "$pid")" || continue
+        target="$MU_STATE/update-server-$MU_ID.plist"
+        tmp="$(mktemp "$MU_STATE/.update-server-XXXXXX")" || exit 1
+        printf '%s\n' '<?xml version="1.0"?><plist version="1.0"><dict/></plist>' >"$tmp"
+        /usr/bin/plutil -insert id -string "$MU_ID" "$tmp" &&
+          /usr/bin/plutil -insert pid -string "$pid" "$tmp" &&
+          /usr/bin/plutil -insert start -string "$stamp" "$tmp" &&
+          /usr/bin/plutil -insert gui_pid -string "$gui_pid" "$tmp" &&
+          chmod 600 "$tmp" && mv -f "$tmp" "$target" || { rm -f "$tmp"; exit 1; }
+        exit 0
+      done
+    fi
+    sleep 0.2
+  done
+  exit 1
+  ;;
+*) exit 2 ;;
+esac

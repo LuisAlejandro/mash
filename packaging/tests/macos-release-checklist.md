@@ -80,7 +80,7 @@ launch. Delete the account afterwards.
 | Shell | a new pane shows the Starship prompt, completion works in zsh, bash and fish, and `viu` and `latexindent` run |
 | Editor | Fresh opens files from the file finder and right-click reaches Fresh, not Herdr |
 | Clipboard and mouse | copy, paste, selection and scrolling work in a shell pane and in Fresh |
-| Self-update notice | covered by the blocking sign-off in `linux-release-checklist.md`; it needs an older signed build that already contains the updater, so 0.1.1 cannot exercise it |
+| Self-update journey | covered by the blocking sign-off in `linux-release-checklist.md`: a disposable account, a notarized pair, mid-install relaunches, About Mash on the new version, no surviving old-bundle process, refusal and post-exchange recovery paths, and the 0.2.1/0.2.2 legacy transition |
 
 **Blocking:** do not tag the release until every row passes. Record anything
 skipped, and why, on the release.

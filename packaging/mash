@@ -35,6 +35,20 @@ res="$ROOT/Resources"
 
 home="$(mash_real_home)"
 d="$home/.mash"
+# Also gate script entry before seeding. Native main performs this before its
+# environment shortcut, so inherited MASH_BIN cannot bypass the barrier.
+if [ -f "$d/local/state/update-transaction.plist" ]; then
+  source "$ROOT/Resources/bin/mash-update-common" || fail "Mash's updater is incomplete."
+  mash_update_init "$d" || fail "Mash's update state is unsafe."
+  case "$(mash_update_read phase || true)" in
+  quiescing | swap-intent)
+    update_work="$(mash_update_read work)"
+    case "$update_work" in /*/mash-update-??????) ;; *) fail "Mash's update location is invalid." ;; esac
+    [ ! -L "$update_work" ] && [ -f "$update_work/mash-update-gate" ] || fail "Mash's update helper is missing."
+    exec /bin/bash "$update_work/mash-update-gate" wait "$(dirname "$ROOT")" "$d" "$(mash_update_read id)" "${args[@]+"${args[@]}"}"
+    ;;
+  esac
+fi
 # The record of the last setup, which is where the alert sends the user. Only
 # redirected when it can be opened: an unwritable ~/.mash is exactly the case
 # the record exists for, and a failed redirection would end this script.

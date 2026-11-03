@@ -77,17 +77,34 @@ Choosing an item, or pressing its shortcut, does the Herdr command exactly once
 in that window only. Settings opens Herdr's settings, Reload Configuration
 reloads Ghostty and Herdr, and Detach closes the window.
 
-**macOS self-update sign-off (blocking for a macOS release):** Install an older
-Developer ID-signed Mash.app that already contains this updater in a writable
-location, then publish a newer signed, notarized DMG. Builds predating this
-feature (including 0.1.1) need one manual upgrade and cannot self-update. Launch the old app: a centered update
-popup and a desktop notification appear once. Press `u`: the DMG downloads with
-progress and is verified, then one confirmation names how many Mash windows
-will close. With two windows open, confirm: both terminal windows and all
-bundled Herdr servers exit, the installed app is exchanged, and the new Mash
-reopens with a one-time confirmation of the running version. Check that
-`~/.mash` workspaces, user edits and credentials are intact. Repeat using a
-signed DMG from another Team ID and a read-only mounted DMG: verification must
-reject the former before quitting, and the latter must show the notice without
-an update key. The app on disk must remain usable after every refusal. A real
-notarized pair is required; stub tests cannot prove Gatekeeper or process exit.
+**macOS self-update sign-off (blocking for a macOS release):** Run this in a
+disposable logged-in macOS account, never against your own installed Mash.
+Install an older Developer ID-signed Mash.app in a writable location, then
+publish a newer signed, notarized DMG.
+
+Fixed-to-fixed journey, with both builds carrying this updater: launch the old
+app, press `u` at the popup, and confirm. During preparation Mash stays usable
+and cancellation changes nothing. After confirmation, reopen Mash repeatedly
+from the Dock and Spotlight while it installs: each launch waits and reports
+updating rather than failure, and no old-version window appears. When it
+finishes, About Mash shows the new version, `lsof -p <pid> -d txt` names the
+installed bundle, no process from the previous bundle survives, the one-time
+confirmation names the new version, and `~/.mash` workspaces, credentials and
+edited files are intact. `~/.mash/local/state/mash-update.log` must show the
+phase chain through `confirmed`.
+
+Refusals: a DMG signed by another Team ID, a wrong-version or non-Mash bundle,
+and a read-only mounted install must each be refused before Mash closes, with
+the installed app still usable. Simulate a failure after exchange (quit the new
+app before it reports ready): the recovery copy and log must remain, the state
+must read `recovery-required`, and no success must be announced.
+
+Legacy transition (also blocking): repeat starting from the released 0.2.1 and
+0.2.2 builds. Those outgoing updaters run their own code, so this release
+cannot retrofit their launch gating or readiness proof. Record the outcome. If
+the old-client race still occurs, publication requires release notes naming it
+plus a supported one-time manual reinstall for that population. Builds
+predating the updater (including 0.1.1) still need one manual upgrade.
+
+A real notarized pair is required; fixture suites cannot prove Gatekeeper,
+real process exit, or About Mash.
