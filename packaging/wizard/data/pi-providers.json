@@ -1,0 +1,344 @@
+{
+  "version": 1,
+  "status": "ok",
+  "piVersion": "1.1.0",
+  "providers": [
+    {
+      "id": "amazon-bedrock",
+      "name": "Amazon Bedrock",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "AWS credentials or bearer token",
+      "oauth": false
+    },
+    {
+      "id": "ant-ling",
+      "name": "Ant Ling",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Ant Ling API key",
+      "oauth": false
+    },
+    {
+      "id": "anthropic",
+      "name": "Anthropic",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Anthropic API key",
+      "oauth": true
+    },
+    {
+      "id": "azure",
+      "name": "Azure",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Azure OpenAI API key",
+      "oauth": false
+    },
+    {
+      "id": "baseten",
+      "name": "Baseten",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Baseten API key",
+      "oauth": false
+    },
+    {
+      "id": "cerebras",
+      "name": "Cerebras",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Cerebras API key",
+      "oauth": false
+    },
+    {
+      "id": "cloudflare-ai-gateway",
+      "name": "Cloudflare AI Gateway",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Cloudflare API key",
+      "oauth": false
+    },
+    {
+      "id": "cloudflare-workers-ai",
+      "name": "Cloudflare Workers AI",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Cloudflare API key",
+      "oauth": false
+    },
+    {
+      "id": "deepseek",
+      "name": "DeepSeek",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "DeepSeek API key",
+      "oauth": false
+    },
+    {
+      "id": "fireworks",
+      "name": "Fireworks",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Fireworks API key",
+      "oauth": false
+    },
+    {
+      "id": "github-copilot",
+      "name": "GitHub Copilot",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "GitHub Copilot token",
+      "oauth": true
+    },
+    {
+      "id": "google",
+      "name": "Google",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Gemini API key",
+      "oauth": false
+    },
+    {
+      "id": "google-vertex",
+      "name": "Google Vertex AI",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Google Cloud credentials",
+      "oauth": false
+    },
+    {
+      "id": "groq",
+      "name": "Groq",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Groq API key",
+      "oauth": false
+    },
+    {
+      "id": "huggingface",
+      "name": "Hugging Face",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Hugging Face token",
+      "oauth": false
+    },
+    {
+      "id": "kimi-coding",
+      "name": "Kimi For Coding",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Kimi API key",
+      "oauth": true
+    },
+    {
+      "id": "meta",
+      "name": "Meta",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Meta Model API key",
+      "oauth": true
+    },
+    {
+      "id": "minimax",
+      "name": "MiniMax",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "MiniMax API key",
+      "oauth": false
+    },
+    {
+      "id": "minimax-cn",
+      "name": "MiniMax CN",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "MiniMax CN API key",
+      "oauth": false
+    },
+    {
+      "id": "mistral",
+      "name": "Mistral",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Mistral API key",
+      "oauth": false
+    },
+    {
+      "id": "moonshotai",
+      "name": "Moonshot AI",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Moonshot AI API key",
+      "oauth": false
+    },
+    {
+      "id": "moonshotai-cn",
+      "name": "Moonshot AI CN",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Moonshot AI API key",
+      "oauth": false
+    },
+    {
+      "id": "nvidia",
+      "name": "NVIDIA",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "NVIDIA API key",
+      "oauth": false
+    },
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "OpenAI API key",
+      "oauth": true
+    },
+    {
+      "id": "openai-codex",
+      "name": "OpenAI Codex (legacy)",
+      "chat": true,
+      "apiKey": false,
+      "keyName": "",
+      "oauth": true
+    },
+    {
+      "id": "opencode",
+      "name": "OpenCode Zen",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "OpenCode API key",
+      "oauth": false
+    },
+    {
+      "id": "opencode-go",
+      "name": "OpenCode Go",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "OpenCode API key",
+      "oauth": false
+    },
+    {
+      "id": "openrouter",
+      "name": "OpenRouter",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "OpenRouter API key",
+      "oauth": true
+    },
+    {
+      "id": "qwen-token-plan",
+      "name": "Qwen Token Plan",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Qwen Token Plan API key",
+      "oauth": false
+    },
+    {
+      "id": "qwen-token-plan-cn",
+      "name": "Qwen Token Plan CN",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Qwen Token Plan CN API key",
+      "oauth": false
+    },
+    {
+      "id": "qwen-token-plan-individual",
+      "name": "Qwen Token Plan Individual",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Qwen Token Plan Individual API key",
+      "oauth": false
+    },
+    {
+      "id": "radius",
+      "name": "Radius",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Radius API key",
+      "oauth": true
+    },
+    {
+      "id": "together",
+      "name": "Together",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Together API key",
+      "oauth": false
+    },
+    {
+      "id": "typesafe",
+      "name": "TypeSafe",
+      "chat": false,
+      "apiKey": true,
+      "keyName": "TypeSafe API key",
+      "oauth": false
+    },
+    {
+      "id": "vercel-ai-gateway",
+      "name": "Vercel AI Gateway",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Vercel AI Gateway API key",
+      "oauth": false
+    },
+    {
+      "id": "xai",
+      "name": "xAI",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "xAI API key",
+      "oauth": true
+    },
+    {
+      "id": "xiaomi",
+      "name": "Xiaomi",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Xiaomi API key",
+      "oauth": false
+    },
+    {
+      "id": "xiaomi-token-plan-ams",
+      "name": "Xiaomi Token Plan AMS",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Xiaomi Token Plan AMS API key",
+      "oauth": false
+    },
+    {
+      "id": "xiaomi-token-plan-cn",
+      "name": "Xiaomi Token Plan CN",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Xiaomi Token Plan CN API key",
+      "oauth": false
+    },
+    {
+      "id": "xiaomi-token-plan-sgp",
+      "name": "Xiaomi Token Plan SGP",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Xiaomi Token Plan SGP API key",
+      "oauth": false
+    },
+    {
+      "id": "zai",
+      "name": "Z.AI",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Z.AI API key",
+      "oauth": false
+    },
+    {
+      "id": "zai-coding-cn",
+      "name": "Z.AI Coding CN",
+      "chat": true,
+      "apiKey": true,
+      "keyName": "Z.AI Coding CN API key",
+      "oauth": false
+    }
+  ],
+  "serverVerified": false
+}

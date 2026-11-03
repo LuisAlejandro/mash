@@ -36,5 +36,6 @@ echo "Pi Codemode: PASS"
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 "$node" "$root/packaging/plugins/fork-from-message/tests/test_pi_session.mjs" "$pi"
 
-# The wizard bridge inspects models/auth without starting Pi or using a network.
+# Check wizard models/auth and the embedded provider snapshot against this pin.
+# Metadata inspection must never resolve credentials or use a network.
 "$node" "$root/packaging/tests/test_wizard_model_catalog.mjs" "$pi"
