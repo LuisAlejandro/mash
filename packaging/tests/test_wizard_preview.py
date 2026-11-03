@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-"""Real PTY journey: seven pages and model/manual selection, with no setup writes."""
+"""Real PTY: eight pages, source choices and all three model pickers; no writes."""
 import fcntl
-import json
 import os
 from pathlib import Path
 import pty
@@ -18,39 +17,50 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 ANSI = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+DOWN = b"\x1b[B"
+HOME = b"\x1b[H"
+END = b"\x1b[F"
 
 
 @unittest.skipUnless(os.name == "posix" and shutil.which("cargo"), "PTY/cargo unavailable")
 class WizardPreviewTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        subprocess.run(["cargo", "build", "--locked", "--manifest-path", str(ROOT / "packaging/wizard/Cargo.toml")], check=True, capture_output=True)
+        subprocess.run(
+            ["cargo", "build", "--locked", "--manifest-path", str(ROOT / "packaging/wizard/Cargo.toml")],
+            check=True, capture_output=True,
+        )
         cls.binary = Path(os.environ.get("CARGO_TARGET_DIR", ROOT / "packaging/wizard/target")) / "debug/mash-wizard"
-        providers = json.loads((ROOT / "packaging/wizard/data/pi-providers.json").read_text())["providers"]
-        choices = [(p["id"], p["name"]) for p in providers if p["chat"]] + [("custom", "Custom provider")]
-        featured = {name: i for i, name in enumerate(("openai", "anthropic", "xai", "google", "openrouter"))}
-        choices.sort(key=lambda p: (featured.get(p[0], 99), p[1].lower(), p[0]))
-        cls.custom_index = 1 + next(i for i, p in enumerate(choices) if p[0] == "custom")
 
-    def test_seven_page_keyboard_journey_and_manual_fallback_are_read_only(self):
+    def test_eight_page_keyboard_journey_is_simulated_and_read_only(self):
         for width in (80, 100):
             with self.subTest(width=width), tempfile.TemporaryDirectory(prefix="mash-preview-") as tmp:
                 home = Path(tmp) / "home"
                 home.mkdir()
+                resources = Path(tmp) / "resources"
+                node = resources / "node/bin/node"
+                node.parent.mkdir(parents=True)
+                node.write_text('#!/bin/sh\nprintf launched > "$HOME/helper-launched"\nexit 99\n')
+                node.chmod(0o755)
                 master, slave = pty.openpty()
                 columns = width
 
                 def size():
-                    fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 30 if width == 100 else 24, columns, 0, 0))
+                    fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack(
+                        "HHHH", 30 if width == 100 else 24, columns, 0, 0,
+                    ))
 
                 def attach():
                     os.setsid()
                     fcntl.ioctl(0, termios.TIOCSCTTY, 0)
 
                 size()
-                process = subprocess.Popen([str(self.binary), "--preview"], stdin=slave, stdout=slave, stderr=slave,
-                                           cwd=ROOT, preexec_fn=attach,
-                                           env={"HOME": str(home), "PATH": os.environ["PATH"], "TERM": "xterm-256color", "MASH_RES_ROOT": str(Path(tmp) / "absent-resources")})
+                process = subprocess.Popen(
+                    [str(self.binary), "--preview"], stdin=slave, stdout=slave, stderr=slave,
+                    cwd=ROOT, preexec_fn=attach,
+                    env={"HOME": str(home), "PATH": os.environ["PATH"], "TERM": "xterm-256color",
+                         "MASH_RES_ROOT": str(resources)},
+                )
 
                 def drain(seconds):
                     output = b""
@@ -68,42 +78,77 @@ class WizardPreviewTest(unittest.TestCase):
                     nonlocal columns
                     if keys:
                         os.write(master, keys)
-                    # A resize forces a full redraw, not a diff against a prior page.
                     drain(0.12)
+                    # A resize requests a full frame, not an ANSI diff.
                     columns = width + (columns == width)
                     size()
                     os.kill(process.pid, signal.SIGWINCH)
-                    raw = drain(0.2).decode("utf-8", errors="replace")
-                    return ANSI.sub("", raw)
+                    return ANSI.sub("", drain(0.25).decode("utf-8", errors="replace"))
 
                 try:
                     initial = b""
                     deadline = time.monotonic() + 5
                     while "Start config wizard" not in ANSI.sub("", initial.decode("utf-8", errors="replace")):
-                        self.assertLess(time.monotonic(), deadline, "wizard never reached its welcome screen")
+                        self.assertLess(time.monotonic(), deadline, "wizard did not start")
                         initial += drain(0.1)
                     identity = frame(b"\r")
-                    self.assertIn("Git identity — page 1/7", identity)
+                    self.assertIn("Identity — page 1/7", identity)
                     self.assertIn("Signing key", identity)
+                    self.assertIn("Sign in to GitHub", identity)
                     tools = frame(b"2")
                     self.assertIn("Tools — page 2/7", tools)
-                    self.assertIn("Mash utilities", tools)
-                    self.assertIn("page 3/7", frame(b"3"))
-                    frame(b"\r\x1b[B\r")  # Choose OpenAI.
-                    self.assertIn("Filter models", frame(b"\t\t\t\r"))
-                    self.assertIn("Model ID", frame(b"zzzz\r"))  # Always-available manual entry.
-                    self.assertIn("Choose model", frame(b"\x1b"))
-                    self.assertIn("Z.AI Coding CN", frame(b"\r\x1b[F"))
-                    self.assertIn("Z.AI Coding CN", frame(b"\r"))
-                    self.assertIn("Custom provider", frame(b"\r\x1b[H" + b"\x1b[B" * self.custom_index + b"\r"))
-                    self.assertIn("Anthropic Messages", frame(b"\t\t\t\r\x1b[F"))
-                    self.assertIn("Anthropic Messages", frame(b"\r"))
-                    services = frame(b"4")
-                    self.assertIn("page 4/7", services)
-                    self.assertIn("Web search", services)
-                    self.assertIn("Hindsight", services)
-                    for page in (5, 6, 7):
+                    self.assertIn("Install Programming Skills", tools)
+                    self.assertIn("[x] agent-browser", tools)
+                    self.assertIn("(Mash only)", tools)
+                    self.assertIn("[ ] agent-browser", frame(b" "))
+                    self.assertIn("[x] agent-browser", frame(b"\r"))
+
+                    providers = frame(b"3")
+                    self.assertIn("Model provider — page 3/7", providers)
+                    self.assertIn("Custom provider", providers)
+                    self.assertIn("( ) OpenAI", providers)
+                    self.assertIn("Connection details", providers)
+                    frame(HOME + DOWN * 2 + b"\r")  # OpenAI, then credential selector.
+                    deferred = frame(b"\r" + END + b"\r")
+                    self.assertIn("Sign in later in Pi", deferred)
+                    self.assertIn("Filter models", frame(b"\t\t\r"))
+                    self.assertIn("Model ID", frame(b"zzzz\r"))  # Manual remains reachable.
+                    frame(b"\x1b")
+                    self.assertIn("Z.AI Coding CN", frame(END))
+                    self.assertIn("(*) Z.AI Coding CN", frame(b" "))
+                    frame(HOME + DOWN + b"\r")  # Custom provider is directly below Keep.
+                    self.assertIn("Anthropic Messages", frame(b"\t\t\r" + END))
+                    frame(b"\r")
+                    button = frame(b"\t\t\t\r")
+                    self.assertIn("Test connection", button)
+                    self.assertIn("Preview only", button)
+                    self.assertNotIn("Press Enter: sends", button)
+
+                    search = frame(b"4")
+                    self.assertIn("Web search — page 4/7", search)
+                    self.assertIn("Keep current: google/preview-search-model", search)
+                    self.assertIn("Use chat model", search)
+                    frame(HOME + DOWN * 2 + b" ")  # Google uses its simulated saved credential.
+                    source = frame(b"\t\t")
+                    self.assertIn("Use saved Pi credentials", source)
+                    picker = frame(b"\t\r")
+                    self.assertIn("Filter models", picker)
+                    self.assertIn("preview-search-model", picker)
+                    memory = frame(b"\r")  # Accepting the search model continues to Memory.
+                    self.assertIn("Memory — page 5/7", memory)
+                    self.assertNotIn("Hindsight", memory)
+                    self.assertIn("Custom endpoint/preview-memory-model", memory)
+                    frame(END + b"\r")  # Existing custom memory connection.
+                    self.assertIn("Keep saved memory key", frame(b"\t"))
+                    picker = frame(b"\t\t\r")
+                    self.assertIn("Filter models", picker)
+                    self.assertIn("preview-memory-model", picker)
+                    self.assertIn("Model ID", frame(END + b"\r"))
+                    frame(b"\x1b")
+                    for page in (6, 7):
                         self.assertIn(f"page {page}/7", frame(str(page).encode()))
+                    dictation = frame(b"7")
+                    self.assertNotIn("Skip dictation", dictation)
                     self.assertIn("Start config wizard", frame(b"\x1b"))
                     os.write(master, b"\x03")
                     deadline = time.monotonic() + 5
@@ -112,7 +157,7 @@ class WizardPreviewTest(unittest.TestCase):
                         drain(0.05)
                     process.wait()
                     self.assertEqual(process.returncode, 3)
-                    self.assertEqual(list(home.rglob("*")), [], "preview wrote user settings or state")
+                    self.assertEqual(list(home.rglob("*")), [], "preview wrote data or launched a helper")
                 finally:
                     if process.poll() is None:
                         process.kill()

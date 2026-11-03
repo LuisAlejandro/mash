@@ -10,13 +10,65 @@ use ratatui::{
     widgets::{Block, Paragraph, Wrap},
     Frame,
 };
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 
 // What the last draw put on screen and where, so a click maps to the same
 // row the user sees. Each draw clears it; pages register targets while
 // drawing, so hit areas can never drift from the rendered layout.
 thread_local! {
     static TARGETS: RefCell<Vec<(Rect, usize)>> = const { RefCell::new(Vec::new()) };
+    static LIGHT: Cell<bool> = const { Cell::new(false) };
+}
+
+/// Show the wizard in the light theme. Pages paint with the dark constants
+/// below and `finish` translates the frame, so a page never needs to know
+/// which theme is on.
+pub fn set_light(light: bool) {
+    LIGHT.with(|cell| cell.set(light));
+}
+
+// Dark colour -> light colour. The light side is Mash's own light theme as it
+// ships elsewhere: Herdr's [theme.custom] light values and the Ghostty
+// "Monokai Cursor Light" theme, so the wizard matches what setup opens into.
+const LIGHT_PALETTE: [(Color, Color); 11] = [
+    (TEXT, Color::Rgb(0x27, 0x28, 0x22)),
+    (MUTED, Color::Rgb(0x6b, 0x67, 0x56)),
+    (YELLOW, Color::Rgb(0x8a, 0x64, 0x00)),
+    (RED, Color::Rgb(0xc4, 0x26, 0x5e)),
+    (GREEN, Color::Rgb(0x4f, 0x72, 0x00)),
+    (PANEL, Color::Rgb(0xf0, 0xef, 0xe8)),
+    (SURFACE, Color::Rgb(0xe2, 0xe1, 0xd8)),
+    (BACKGROUND, Color::Rgb(0xfa, 0xfa, 0xf7)),
+    (ACCENT, Color::Rgb(0x3e, 0x3d, 0x32)),
+    (ACTIVE_ROW, Color::Rgb(0xe6, 0xe4, 0xd6)),
+    // The Mash logo's grey letters, from header-art.ansi; its reds read on both.
+    (Color::Rgb(170, 170, 170), Color::Rgb(0x6b, 0x67, 0x56)),
+];
+
+fn to_light(color: Color, unset: Color) -> Color {
+    if color == Color::Reset {
+        // Cells left to the terminal default would otherwise show the dark
+        // terminal's colours whenever its own theme was not switched too.
+        return unset;
+    }
+    LIGHT_PALETTE
+        .iter()
+        .find_map(|(dark, light)| (*dark == color).then_some(*light))
+        .unwrap_or(color)
+}
+
+/// Translate the finished frame into the current theme. Call once per draw,
+/// after every page and overlay has painted.
+pub fn finish(frame: &mut Frame) {
+    if !LIGHT.with(Cell::get) {
+        return;
+    }
+    let text = to_light(TEXT, TEXT);
+    let background = to_light(BACKGROUND, BACKGROUND);
+    for cell in frame.buffer_mut().content.iter_mut() {
+        cell.fg = to_light(cell.fg, text);
+        cell.bg = to_light(cell.bg, background);
+    }
 }
 
 /// Sentinel ids for the shared shell: the sidebar index and the scroll wheel.
@@ -196,12 +248,12 @@ pub const SURFACE: Color = Color::Rgb(52, 53, 47); // surface0, for section head
 const BACKGROUND: Color = Color::Rgb(39, 40, 34); // Ghostty's Monokai Cursor
 const ACCENT: Color = Color::Rgb(204, 204, 204);
 const ACTIVE_ROW: Color = Color::Rgb(51, 51, 51);
-const PAGES: [&str; 7] = [
-    "Git identity",
+pub const PAGES: [&str; 7] = [
+    "Identity",
     "Tools",
     "Model provider",
-    "Services",
-    "Skills",
+    "Web search",
+    "Memory",
     "Appearance",
     "Dictation",
 ];
@@ -248,23 +300,6 @@ pub fn text_field(focused: bool, label: &str, value: String) -> Line<'static> {
             Style::default()
                 .fg(YELLOW)
                 .bg(if focused { ACTIVE_ROW } else { PANEL }),
-        ),
-    ])
-}
-
-pub fn selector(focused: bool, label: &str, value: &str) -> Line<'static> {
-    Line::from(vec![
-        Span::styled(
-            format!("{label}: "),
-            Style::default().add_modifier(Modifier::BOLD),
-        ),
-        Span::styled(
-            format!("{value} ▾"),
-            if focused {
-                selected()
-            } else {
-                Style::default()
-            },
         ),
     ])
 }
@@ -499,6 +534,86 @@ pub mod tests {
     use super::*;
     use ratatui::{backend::TestBackend, Terminal};
 
+    fn luminance(color: Color) -> f64 {
+        let Color::Rgb(r, g, b) = color else {
+            panic!("{color:?} is not an RGB colour");
+        };
+        let channel = |value: u8| {
+            let value = value as f64 / 255.0;
+            if value <= 0.03928 {
+                value / 12.92
+            } else {
+                ((value + 0.055) / 1.055).powf(2.4)
+            }
+        };
+        0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
+    }
+
+    fn contrast(a: Color, b: Color) -> f64 {
+        let (a, b) = (luminance(a), luminance(b));
+        (a.max(b) + 0.05) / (a.min(b) + 0.05)
+    }
+
+    #[test]
+    fn every_foreground_stays_readable_on_every_surface_in_both_themes() {
+        let backgrounds = [PANEL, SURFACE, BACKGROUND, ACTIVE_ROW];
+        let foregrounds = [TEXT, MUTED, YELLOW, RED, GREEN, ACCENT];
+        for light in [false, true] {
+            let shade = |color| if light { to_light(color, color) } else { color };
+            for bg in backgrounds {
+                for fg in foregrounds {
+                    let ratio = contrast(shade(fg), shade(bg));
+                    // Body text gets WCAG AA; accents and dimmed hints 3:1.
+                    let floor = if fg == TEXT { 4.5 } else { 3.0 };
+                    assert!(
+                        ratio >= floor,
+                        "light={light}: {fg:?} on {bg:?} is {ratio:.2}:1"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn the_light_theme_leaves_no_dark_colour_and_dark_is_untouched() {
+        let draw = |light: bool| {
+            set_light(light);
+            let mut terminal = Terminal::new(TestBackend::new(120, 40)).unwrap();
+            terminal
+                .draw(|frame| {
+                    let form = page_area(frame, Some(2));
+                    section(frame, form, "Section");
+                    finish(frame);
+                })
+                .unwrap();
+            set_light(false);
+            terminal.backend().buffer().clone()
+        };
+        let dark = draw(false);
+        let light = draw(true);
+        let dark_colours: Vec<Color> = LIGHT_PALETTE.iter().map(|(dark, _)| *dark).collect();
+        for cell in light.content() {
+            assert!(
+                !dark_colours.contains(&cell.bg),
+                "dark background {:?} left",
+                cell.bg
+            );
+            assert_ne!(cell.bg, Color::Reset);
+            assert_ne!(cell.fg, Color::Reset);
+        }
+        // The sidebar logo, its grey letters included, and the panel colours.
+        assert!(light
+            .content()
+            .iter()
+            .any(|cell| cell.bg == Color::Rgb(0xf0, 0xef, 0xe8)));
+        assert!(!light
+            .content()
+            .iter()
+            .any(|cell| cell.fg == Color::Rgb(170, 170, 170)));
+        // Dark draws are exactly what the pages painted.
+        assert!(dark.content().iter().any(|cell| cell.bg == PANEL));
+    }
+
     /// Position of the first on-screen cell where `needle` starts.
     pub fn find(buffer: &ratatui::buffer::Buffer, needle: &str) -> (u16, u16) {
         let area = buffer.area;
@@ -621,11 +736,11 @@ pub mod tests {
         assert_eq!(
             PAGES,
             [
-                "Git identity",
+                "Identity",
                 "Tools",
                 "Model provider",
-                "Services",
-                "Skills",
+                "Web search",
+                "Memory",
                 "Appearance",
                 "Dictation"
             ]
@@ -648,7 +763,7 @@ pub mod tests {
             })
             .unwrap();
         let buffer = terminal.backend().buffer().clone();
-        let (x, y) = find(&buffer, "Git identity");
+        let (x, y) = find(&buffer, "Identity");
         assert_eq!(clicked(&click(x, y)), Some(SIDEBAR_BASE));
         let (x, y) = find(&buffer, "Dictation");
         assert_eq!(clicked(&click(x, y)), None);
@@ -667,8 +782,8 @@ pub mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect::<String>();
-        assert!(text.contains("Git identity"));
-        assert!(text.contains("Skills"));
+        assert!(text.contains("Identity"));
+        assert!(text.contains("Memory"));
         assert_eq!(form.x, 31); // flush against the separator column
         assert_eq!((form.y, form.width, form.height), (0, 89, 30));
         // Logo rows 1-10, SETUP 11, blank 12, pages from 13: third page is 15.

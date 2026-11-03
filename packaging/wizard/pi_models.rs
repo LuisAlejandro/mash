@@ -17,6 +17,8 @@ use std::{
 const MAX_OUTPUT: usize = 4 * 1024 * 1024;
 const UNAVAILABLE: &str =
     "Pi model inspection unavailable. Configure the model manually or use Pi /login after setup.";
+const HELPER_UNAVAILABLE: &str =
+    "Setup helper unavailable. Enter the details manually; setup can continue.";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Model {
@@ -115,18 +117,42 @@ pub struct Job {
 
 impl Job {
     pub fn start(resources: &Path, request: Value) -> Result<Self, String> {
-        let input = serde_json::to_vec(&request).map_err(|_| UNAVAILABLE)?;
+        Self::start_helper(
+            resources,
+            "bin/mash-pi-models.mjs",
+            request,
+            Duration::from_secs(10),
+        )
+    }
+
+    /// Any bundled helper, with the budget its own action needs.
+    pub fn start_helper(
+        resources: &Path,
+        helper: &str,
+        request: Value,
+        timeout: Duration,
+    ) -> Result<Self, String> {
+        let input = serde_json::to_vec(&request).map_err(|_| HELPER_UNAVAILABLE)?;
         if input.len() > 64 * 1024 {
-            return Err(UNAVAILABLE.into());
+            return Err(HELPER_UNAVAILABLE.into());
         }
         let mut command = Command::new(resources.join("node/bin/node"));
         command
-            .arg(resources.join("bin/mash-pi-models.mjs"))
+            .arg(resources.join(helper))
             .current_dir(resources)
             .env("PI_OFFLINE", "1")
             .env_remove("NODE_OPTIONS")
             .env_remove("NODE_PATH");
-        Self::spawn(command, input, Duration::from_secs(10))
+        Self::spawn(command, input, timeout)
+    }
+
+    #[cfg(test)]
+    pub fn spawn_for_test(
+        command: Command,
+        input: Vec<u8>,
+        timeout: Duration,
+    ) -> Result<Self, String> {
+        Self::spawn(command, input, timeout)
     }
 
     fn spawn(mut command: Command, input: Vec<u8>, timeout: Duration) -> Result<Self, String> {
@@ -135,10 +161,10 @@ impl Job {
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
-        let mut child = command.spawn().map_err(|_| UNAVAILABLE)?;
-        let mut stdin = child.stdin.take().ok_or(UNAVAILABLE)?;
-        let stdout = child.stdout.take().ok_or(UNAVAILABLE)?;
-        let stderr = child.stderr.take().ok_or(UNAVAILABLE)?;
+        let mut child = command.spawn().map_err(|_| HELPER_UNAVAILABLE)?;
+        let mut stdin = child.stdin.take().ok_or(HELPER_UNAVAILABLE)?;
+        let stdout = child.stdout.take().ok_or(HELPER_UNAVAILABLE)?;
+        let stderr = child.stderr.take().ok_or(HELPER_UNAVAILABLE)?;
         let bytes = Arc::new(AtomicUsize::new(0));
         let (sender, receiver) = mpsc::channel();
         let input_sender = sender.clone();
@@ -171,12 +197,23 @@ impl Job {
     }
 
     pub fn poll(&mut self) -> Option<Result<Report, String>> {
+        Some(self.poll_bytes()?.and_then(|bytes| Report::parse(&bytes)))
+    }
+
+    /// The raw reply, for callers with their own typed contract.
+    pub fn poll_json(&mut self) -> Option<Result<Value, String>> {
+        Some(self.poll_bytes()?.and_then(|bytes| {
+            serde_json::from_slice(&bytes).map_err(|_| String::from(HELPER_UNAVAILABLE))
+        }))
+    }
+
+    fn poll_bytes(&mut self) -> Option<Result<Vec<u8>, String>> {
         if self.done {
             return None;
         }
         if Instant::now() >= self.deadline || self.bytes.load(Ordering::Relaxed) > MAX_OUTPUT {
             self.stop();
-            return Some(Err(UNAVAILABLE.into()));
+            return Some(Err(HELPER_UNAVAILABLE.into()));
         }
         while let Ok(message) = self.receiver.try_recv() {
             self.received += 1;
@@ -185,23 +222,23 @@ impl Job {
                 Message::Input(true) | Message::Stderr(true) => {}
                 _ => {
                     self.stop();
-                    return Some(Err(UNAVAILABLE.into()));
+                    return Some(Err(HELPER_UNAVAILABLE.into()));
                 }
             }
         }
         match self.child.try_wait() {
             Ok(Some(status)) if !status.success() => {
                 self.stop();
-                Some(Err(UNAVAILABLE.into()))
+                Some(Err(HELPER_UNAVAILABLE.into()))
             }
             Ok(Some(_)) if self.received == 3 => {
-                let result = Report::parse(self.stdout.as_deref().unwrap_or_default());
+                let result = self.stdout.take().unwrap_or_default();
                 self.stop();
-                Some(result)
+                Some(Ok(result))
             }
             Err(_) => {
                 self.stop();
-                Some(Err(UNAVAILABLE.into()))
+                Some(Err(HELPER_UNAVAILABLE.into()))
             }
             _ => None,
         }

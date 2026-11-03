@@ -145,23 +145,24 @@ impl ModelPicker {
     }
 
     pub fn draw(&self, frame: &mut Frame) {
+        self.draw_for(
+            frame,
+            "Model provider",
+            2,
+            "Local catalog; credentials are not server-verified",
+        );
+    }
+
+    pub fn draw_for(&self, frame: &mut Frame, title: &str, page: usize, note: &str) {
         let parts = Layout::vertical([
             Constraint::Length(3),
             Constraint::Length(3),
             Constraint::Min(3),
             Constraint::Length(3),
         ])
-        .split(wizard_style::page_area(frame, Some(2)));
-        wizard_style::header(
-            frame,
-            parts[0],
-            &wizard_style::page_title("Model provider", 2),
-        );
-        let filter = wizard_style::section(
-            frame,
-            parts[1],
-            "Local catalog; credentials are not server-verified",
-        );
+        .split(wizard_style::page_area(frame, Some(page)));
+        wizard_style::header(frame, parts[0], &wizard_style::page_title(title, page));
+        let filter = wizard_style::section(frame, parts[1], note);
         wizard_style::render_form(
             frame,
             filter,
