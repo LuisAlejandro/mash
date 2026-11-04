@@ -23,8 +23,11 @@ class LifecycleTests(unittest.TestCase):
         before = user_file.read_bytes()
         previous = self.f.start(self.f.app / "Contents/MacOS/mash-terminal")
         previous_start = self.f.inspector("stamp", previous.pid)
-        self.f.stub("osascript", f'''echo "quit $*" >>"$CALLS"
-"{self.f.bin}/mash-update-processes" term {previous.pid} {previous_start}''')
+        self.f.stub("osascript", f'''echo "osascript $*" >>"$CALLS"
+case "$*" in
+*"tell application"*) "{self.f.bin}/mash-update-processes" term {previous.pid} {previous_start} ;;
+*) : ;;
+esac''')
         prepared = self.f.verify()
         self.assertEqual(prepared.returncode, 0, prepared.stderr)
         self.assertIsNone(previous.poll(), "preparation must leave the current app running")
@@ -58,7 +61,7 @@ class LifecycleTests(unittest.TestCase):
                 time.sleep(0.04)
             self.assertIsNotNone(worker.poll(), "fixture worker did not complete")
             out, err = worker.communicate(timeout=3)
-            self.assertEqual(worker.returncode, 0, out + err)
+            self.assertEqual(worker.returncode, 0, out + err + "\nstate=" + str(self.f.state()) + "\nlog=" + (self.f.data / "local/state/mash-update.log").read_text()[-5000:])
             self.assertTrue(target_started)
             self.assertEqual(self.f.state()["phase"], "confirmed")
             self.assertEqual((self.f.app / "Contents/Resources/VERSION").read_text().strip(), "9.9.9")

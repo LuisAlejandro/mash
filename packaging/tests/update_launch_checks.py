@@ -30,6 +30,8 @@ class LaunchGateTests(unittest.TestCase):
             # A fresh executable generation becomes available after commit.
             target.unlink()
             shutil.copy(self.f.candidate / "Contents/MacOS/mash-terminal", target)
+            for name in ("Contents/Info.plist", "Contents/Resources/VERSION"):
+                shutil.copy(self.f.candidate / name, self.f.app / name)
             self.f.change(phase="awaiting-ready", expected_uuid=self.f.inspector("uuid", target))
             self.assertEqual(waiter.wait(timeout=5), 0)
             self.assertEqual(result_file.read_text(), "target")
@@ -122,7 +124,7 @@ class LaunchGateTests(unittest.TestCase):
         self.f.change(phase="quiescing", owner_pid=os.getpid(), owner_start=self.f.inspector("stamp", os.getpid()))
         resources = self.f.app / "Contents/Resources"
         (resources / "bin").mkdir()
-        for name in ("mash-update-common", "mash-update-processes"):
+        for name in ("mash-update-common", "mash-update-processes", "mash-update-gate", "mash-update-swap"):
             shutil.copy(self.f.bin / name, resources / "bin" / name)
         (self.f.data / "local/state/update-checked").write_text(str(int(time.time())))
         command = ["/bin/bash", str(ROOT / "packaging/helpers/mash-update-notice"), str(resources), str(self.f.data)]
@@ -132,9 +134,11 @@ class LaunchGateTests(unittest.TestCase):
         self.assertEqual(subprocess.run(command, env=self.f.env, timeout=10).returncode, 0)
         self.assertEqual(self.f.state()["phase"], "failed-before-swap")
         self.f.begin()
-        self.f.change(phase="swap-intent", owner_start="dead-fixture-owner")
+        self.f.change(phase="swap-intent", owner_start="dead-fixture-owner",
+                      old_uuid=self.f.inspector("uuid", self.f.app / "Contents/MacOS/mash-terminal"),
+                      expected_uuid=self.f.inspector("uuid", self.f.candidate / "Contents/MacOS/mash-terminal"))
         self.assertEqual(subprocess.run(command, env=self.f.env, timeout=10).returncode, 0)
-        self.assertEqual(self.f.state()["phase"], "recovery-required")
+        self.assertEqual(self.f.state()["phase"], "failed-before-swap")
 
     def test_native_patch_applies_twice_and_typechecks(self):
         src = pathlib.Path(os.environ.get("MASH_GHOSTTY_SRC", ROOT.parent / "ghostty"))
@@ -175,6 +179,7 @@ class NativeEntryTests(unittest.TestCase):
         snippet = added[added.index("import MachO\n"):].split("\nmashUpdateEntry()\n", 1)[0]
         snippet = snippet.replace("FileManager.default.homeDirectoryForCurrentUser", 'URL(fileURLWithPath: ProcessInfo.processInfo.environment["HOME"]!)')
         snippet = snippet.replace("Bundle.main.bundleURL", 'URL(fileURLWithPath: ProcessInfo.processInfo.environment["FIXTURE_APP"]!)')
+        snippet = snippet.replace("Bundle.main.resourceURL", 'Optional(URL(fileURLWithPath: ProcessInfo.processInfo.environment["FIXTURE_APP"]!).appendingPathComponent("Contents/Resources"))')
         snippet = snippet.replace('Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""', '"9.9.9"')
         header = '''import Foundation
 import Darwin
@@ -213,6 +218,10 @@ print("ENTRY_RETURNED")
         self.addCleanup(self.f.close)
         self.target = self.f.app / "Contents/MacOS/mash-terminal"
         shutil.copy(self.binary, self.target)
+        resources = self.f.app / "Contents/Resources/bin"
+        resources.mkdir()
+        for name in ("mash-update-common", "mash-update-gate", "mash-update-processes", "mash-update-swap"):
+            shutil.copy(self.f.bin / name, resources / name)
         self.f.begin()
 
     def enter(self, *args):
@@ -243,9 +252,30 @@ print("ENTRY_RETURNED")
         result = self.enter()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertNotIn("LOOP", result.stdout)
-        self.assertIn("RECOVERY", result.stdout)
+        self.assertIn("bootstrap", self.f.calls.read_text())
         self.assertEqual(self.f.state()["phase"], "recovery-required")
-        self.assertEqual((self.f.data.parent / "entry-count").read_text(), "2")
+        self.assertEqual((self.f.data.parent / "entry-count").read_text(), "1")
+
+    def test_4_lost_work_uses_installed_recovery_without_blocking_launch(self):
+        resources = self.f.app / "Contents/Resources/bin"
+        resources.mkdir(parents=True, exist_ok=True)
+        for name in ("mash-update-common", "mash-update-gate", "mash-update-processes"):
+            shutil.copy(self.f.bin / name, resources / name)
+        self.f.change(phase="quiescing", owner_start="dead-before-reboot")
+        shutil.rmtree(self.f.work)
+        result = self.enter()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn("SETUP_FAILED", result.stdout)
+        self.assertEqual(self.f.state()["phase"], "failed-before-swap")
+
+    def test_2_matching_uuid_with_wrong_version_is_not_admitted(self):
+        for name in ("mash-update-common", "mash-update-gate", "mash-update-processes"):
+            shutil.copy(self.f.bin / name, self.f.work / name)
+        self.f.change(phase="awaiting-ready", owner_start="dead-owner", candidate="9.9.10", expected_uuid=self.f.inspector("uuid", self.target))
+        result = self.enter()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn("ENTRY_RETURNED", result.stdout)
+        self.assertEqual(self.f.state()["phase"], "recovery-required")
 
     def test_readiness_stays_location_bound_and_expected_image_can_enter(self):
         self.f.change(phase="awaiting-ready", expected_uuid=self.f.inspector("uuid", self.target))
