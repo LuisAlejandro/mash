@@ -1,6 +1,62 @@
 # Changelog
 
 
+## 0.3.0 (2026-11-04)
+
+### Added
+
+* Configure providers and models during setup. [Luis Alejandro Martínez Faneyth]
+
+* In-place update lifecycle with readiness gates. [Luis Alejandro Martínez Faneyth]
+
+* Security policy with private reporting contact. [Luis Alejandro Martínez Faneyth]
+
+* Configure more Pi providers during setup. [Luis Alejandro Martínez Faneyth]
+
+* Check for Mash updates on demand. [Luis Alejandro Martínez Faneyth]
+
+* Choose the Pi model from a list during setup. [Luis Alejandro Martínez Faneyth]
+
+* Read Pi's model catalog safely from setup. [Luis Alejandro Martínez Faneyth]
+
+
+### Changed
+
+* Delete wizard test temp directories with a guard. [Luis Alejandro Martínez Faneyth]
+
+
+### Fixed
+
+* Verify payload after staging wizard helpers. [Luis Alejandro Martínez Faneyth]
+
+* Drop superseded updater tests and dead native command. [Luis Alejandro Martínez Faneyth]
+
+* Preserve launch settings and honour setup choices. [Luis Alejandro Martínez Faneyth]
+
+* Harden updater ownership, recovery and readiness. [Luis Alejandro Martínez Faneyth]
+
+* Recover safely from interrupted updates. [Luis Alejandro Martínez Faneyth]
+
+* Migrate Discord invite links to Luis Develops Community. [Luis Alejandro Martínez Faneyth]
+
+* Keep the theme setting when Pi settings change. [Luis Alejandro Martínez Faneyth]
+
+* Teach agents a valid ask_user call shape. [Luis Alejandro Martínez Faneyth]
+
+* Speed up message forks and restore drafts. [Luis Alejandro Martínez Faneyth]
+
+
+### Other
+
+* Test: cache macOS updater fixture binaries for CI. [Cursor Agent]
+
+* Test(update): fetch release tags for legacy helper gate on CI. [Cursor Agent]
+
+* Test(wizard): align Linux tools page legend assertion with UI copy. [Cursor Agent]
+
+* Apply Ghostty menu patch for Check for Updates menu items. [Cursor Agent]
+
+
 ## 0.2.2 (2026-11-02)
 
 ### Fixed
