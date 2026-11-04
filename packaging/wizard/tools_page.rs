@@ -888,7 +888,7 @@ mod tests {
         let page = ToolsPage::new();
         assert!(!page.rows.iter().any(|tool| tool.name == "sourcekit-lsp"));
         let (_, text) = render(&page);
-        assert!(text.contains("installed by apt with Mash"));
+        assert!(text.contains("On your computer: installed system-wide"));
         assert!(!page.chosen().iter().any(|tool| tool.name == "git"));
     }
 }
