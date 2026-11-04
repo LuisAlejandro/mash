@@ -111,6 +111,14 @@ export async function applyCredential(r, options = {}) {
   if (r.scope !== undefined) failure("invalid_request");
   const dir = options.packageDir ?? packageDir;
   const before = await credentialSnapshot(r, options);
+  options.signal?.throwIfAborted();
+  // Reuse is a no-write decision, not a readiness check — but only for entries
+  // Pi still owns: an expired login, or a key supplied by a command. Those
+  // stay untouched and unexecuted; inspect reports their limit. A credential
+  // bound to another endpoint, or one missing required setup, must still
+  // refuse: applying it would save settings the saved key cannot serve.
+  const pi_owned = before.reason === "oauth_expired" || before.reason === "command_secret";
+  if (r.mode === "existing" && pi_owned && ["saved", "models"].includes(before.source)) return { version: 1, status: "ok", wrote: false, source: before.source, revision: before.revision };
   if (!before.ready) failure(before.reason ?? "credentials_not_configured");
   if (r.mode === "none") {
     if (before.saved && (before.saved.type !== "api_key" || before.saved.key !== "mash-local")) failure("stale");
@@ -118,8 +126,8 @@ export async function applyCredential(r, options = {}) {
       || before.config?.models?.some(row => row.id === r.model && row.headers !== undefined)) failure("stale");
   }
   options.signal?.throwIfAborted();
-  // Saved entries and models.json references stay untouched. An accepted
-  // ambient environment key is copied privately so it survives the launcher.
+  // An accepted ambient environment key is copied privately so it survives
+  // the launcher; other unchanged sources do not write.
   if (r.mode === "existing" && before.source !== "environment") return { version: 1, status: "ok", wrote: false, source: before.source, revision: before.revision };
   const path = join(r.agentDir, "auth.json");
   await safePath(path);

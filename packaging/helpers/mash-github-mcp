@@ -1,89 +1,120 @@
 #!/bin/bash
-# Register GitHub's MCP server in Mash's Pi -- only while Mash's own gh is
-# signed in.
-#
-#   mash-github-mcp <data-dir>
-#
-# The first-launch wizard signs `gh` into ~/.mash/config/gh, and the mash-pr
-# skill expects a GitHub MCP. This connects the two without ever writing the
-# token down: the Authorization header is a Pi command value, run each time Pi
-# connects, that asks Mash's isolated gh for its current token. Pi never keeps
-# the token in mcp.json, and a rotated or revoked login is picked up on the next
-# connection.
-#
-# Run by the wizard right after sign-in, and by every launch so existing
-# installs (whose wizard already finished) are brought in too, and a later
-# `gh auth logout` takes the server away again. Only an entry Mash wrote -- it
-# carries a marker -- is ever replaced or removed; a user's own `github` server
-# is left exactly as it is. Every failure is silent.
+# Register GitHub MCP using only Mash's own gh-emitted hosts.yml credential.
+# --header resolves the current bearer privately at connection time; registration
+# never persists it. Even `gh config get oauth_token` can use the personal
+# keychain, so no token-output gh command is an ownership boundary.
 set -u
-
+header=0
+if [ "${1:-}" = --header ]; then header=1; shift; fi
 d="${1:-}"
 [ -n "$d" ] && [ -d "$d" ] || exit 0
-mcp="$d/pi/agent/mcp.json"
-gh_dir="$d/config/gh"
-[ -f "$mcp" ] || exit 0
-
-# Signed in means Mash's own gh can produce a token. Inherited tokens are
-# removed so a token from the surrounding shell can never stand in for one.
-signed_in=0
-if command -v gh >/dev/null 2>&1 &&
-  env -u GH_TOKEN -u GITHUB_TOKEN -u GH_ENTERPRISE_TOKEN -u GH_HOST \
-    GH_CONFIG_DIR="$gh_dir" gh auth token --hostname github.com >/dev/null 2>&1; then
-  signed_in=1
-fi
-
 python=""
 for candidate in "$(dirname "$0")/../python/bin/python3" python3; do
-  if command -v "$candidate" >/dev/null 2>&1; then
-    python="$candidate"
-    break
-  fi
+  if command -v "$candidate" >/dev/null 2>&1; then python="$candidate"; break; fi
 done
 [ -n "$python" ] || exit 0
-
-PYTHONDONTWRITEBYTECODE=1 "$python" - "$mcp" "$gh_dir" "$signed_in" <<'PY' 2>/dev/null || true
+helper="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+PYTHONDONTWRITEBYTECODE=1 "$python" -I -B - "$d" "$helper" "$header" <<'PY' 2>/dev/null || true
 import json
 import os
+import re
 import shlex
+import stat
 import sys
+import tempfile
 
-path, gh_dir, signed_in = sys.argv[1], sys.argv[2], sys.argv[3] == "1"
-MARK = "mash-github"
+root, helper, header = sys.argv[1:]
 
+
+def own_token():
+    """ponytail: gh literal YAML only; extend new pinned schemas with fixtures."""
+    paths = [root, os.path.join(root, "config"), os.path.join(root, "config/gh"),
+             os.path.join(root, "config/gh/hosts.yml")]
+    if not os.path.isabs(root) or any(os.path.islink(path) for path in paths):
+        return None
+    try:
+        info = os.lstat(paths[-1])
+        if not stat.S_ISREG(info.st_mode) or info.st_size > 1024 * 1024:
+            return None
+        with open(paths[-1], encoding="utf-8") as source:
+            info = os.fstat(source.fileno())
+            # A hard link is another name for someone else's file: the personal
+            # hosts.yml linked into place would pass a symlink check alone.
+            if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid():
+                return None
+            if info.st_nlink != 1:
+                return None
+            text = source.read(1024 * 1024 + 1)
+    except (OSError, UnicodeError):
+        return None
+    if len(text) > 1024 * 1024:
+        return None
+    lines = text.splitlines()
+    hosts = [i for i, line in enumerate(lines) if line == "github.com:"]
+    if len(hosts) != 1:
+        return None
+    body = []
+    for line in lines[hosts[0] + 1:]:
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        if not line.startswith(" "):
+            break
+        body.append((len(line) - len(line.lstrip(" ")), line.strip()))
+    if not body:
+        return None
+    level = min(indent for indent, _ in body)
+    direct = [line for indent, line in body if indent == level]
+    if any(not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_-]*:.*", line) for line in direct):
+        return None
+    tokens = [line.partition(":")[2].strip() for line in direct if line.startswith("oauth_token:")]
+    if len(tokens) != 1:
+        return None
+    token = tokens[0]
+    if token.startswith('"'):
+        try:
+            token = json.loads(token)
+        except ValueError:
+            return None
+    elif token.startswith("'") and token.endswith("'"):
+        token = token[1:-1].replace("''", "'")
+    if not isinstance(token, str) or token in ("null", "true", "false"):
+        return None
+    return token if re.fullmatch(r"[A-Za-z0-9_]+", token) else None
+
+
+if header == "1":
+    token = own_token()
+    if token:
+        print("Bearer " + token)
+    sys.exit(0)
+
+path = os.path.join(root, "pi/agent/mcp.json")
+if any(os.path.islink(p) for p in (root, os.path.join(root, "pi"), os.path.join(root, "pi/agent"), path)):
+    sys.exit(0)
 try:
-    with open(path, encoding="utf-8") as fh:
-        config = json.load(fh)
+    if not stat.S_ISREG(os.stat(path).st_mode):
+        sys.exit(0)
+    with open(path, encoding="utf-8") as source:
+        config = json.load(source)
 except (OSError, ValueError):
-    sys.exit(0)  # never rewrite a file we cannot parse
+    sys.exit(0)
 servers = config.get("mcpServers") if isinstance(config, dict) else None
 if not isinstance(servers, dict):
     sys.exit(0)
 
-# The token comes from Mash's own gh at connection time and is never written
-# down. `|| true` keeps a lost sign-in from producing a bare "Bearer " header:
-# with no token, the whole value is empty and Pi reports the server as failing
-# to authenticate rather than sending a malformed credential.
-token = (
-    "env -u GH_TOKEN -u GITHUB_TOKEN -u GH_ENTERPRISE_TOKEN -u GH_HOST "
-    f"GH_CONFIG_DIR={shlex.quote(gh_dir)} gh auth token --hostname github.com"
-)
-wanted = {
-    "type": "http",
-    "url": "https://api.githubcopilot.com/mcp/",
-    "headers": {
-        "Authorization": f'!t="$({token} 2>/dev/null)" && [ -n "$t" ] && printf "Bearer %s" "$t"',
-    },
-    "description": "GitHub: repositories, pull requests, issues and Actions, signed in through Mash's gh login",
-    "x-mash": MARK,
-}
-
+MARK = "mash-github"
 current = servers.get("github")
 ours = isinstance(current, dict) and current.get("x-mash") == MARK
 if current is not None and not ours:
-    sys.exit(0)  # the user's own github server is not ours to manage
-
-if signed_in:
+    sys.exit(0)
+wanted = {
+    "type": "http",
+    "url": "https://api.githubcopilot.com/mcp/",
+    "headers": {"Authorization": f"!/bin/bash {shlex.quote(helper)} --header {shlex.quote(root)}"},
+    "description": "GitHub: repositories, pull requests, issues and Actions, signed in through Mash's gh login",
+    "x-mash": MARK,
+}
+if own_token():
     if current == wanted:
         sys.exit(0)
     servers["github"] = wanted
@@ -92,18 +123,15 @@ elif ours:
 else:
     sys.exit(0)
 
-mode = os.stat(path).st_mode & 0o777
-tmp = f"{path}.mash-github-{os.getpid()}"
+fd, tmp = tempfile.mkstemp(prefix=".mash-github-", dir=os.path.dirname(path))
 try:
-    with open(tmp, "w", encoding="utf-8") as fh:
-        json.dump(config, fh, indent=2)
-        fh.write("\n")
-    os.chmod(tmp, mode)
+    with os.fdopen(fd, "w", encoding="utf-8") as target:
+        os.fchmod(target.fileno(), stat.S_IMODE(os.stat(path).st_mode))
+        json.dump(config, target, indent=2)
+        target.write("\n")
     os.replace(tmp, path)
 finally:
-    try:
+    if os.path.exists(tmp):
         os.unlink(tmp)
-    except FileNotFoundError:
-        pass
 PY
 exit 0

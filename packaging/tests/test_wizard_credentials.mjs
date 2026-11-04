@@ -64,6 +64,38 @@ try {
   assert.equal(kept.status, "ok");
   assert.equal(kept.wrote, false, "reusing a saved credential must not write auth");
   assert.equal(await readFile(join(agentDir, "auth.json"), "utf8"), unchanged);
+  for (const credential of [
+    { type: "oauth", access: "expired-fixture", refresh: "never-refresh", expires: 1 },
+    { type: "api_key", key: "!touch must-not-run" },
+  ]) {
+    const data = JSON.parse(await readFile(join(agentDir, "auth.json"), "utf8"));
+    data.other = credential;
+    await save("auth.json", data);
+    const bytes = await readFile(join(agentDir, "auth.json"), "utf8");
+    const snapshot = await inspectCredential(reuse, options);
+    assert.equal(snapshot.ready, false);
+    const result = await applyCredential({ ...reuse, revision: snapshot.revision }, options);
+    assert.equal(result.wrote, false, "unchanged saved reuse is independent of readiness");
+    assert.equal(await readFile(join(agentDir, "auth.json"), "utf8"), bytes);
+  }
+  await save("auth.json", { other: { type: "api_key", key: "other" } });
+  // A credential bound to another endpoint is not "Pi owns it": applying it
+  // would save a provider whose saved key cannot serve the configured route.
+  const mismatched = { ...request, mode: "existing", baseUrl: `${request.baseUrl}/elsewhere` };
+  await save("models.json", { providers: { custom: { api: "openai-completions", baseUrl: request.baseUrl, apiKey: "fallback" } } });
+  await save("auth.json", { custom: { type: "api_key", key: "endpoint-bound-key" } });
+  const boundBytes = await readFile(join(agentDir, "auth.json"), "utf8");
+  const bound = await inspectCredential(mismatched, options);
+  assert.equal(bound.ready, false);
+  assert.equal(bound.reason, "endpoint_changed");
+  await assert.rejects(
+    applyCredential({ ...mismatched, revision: bound.revision }, options),
+    /endpoint_changed/,
+    "a credential bound to another endpoint must still refuse at apply",
+  );
+  assert.equal(await readFile(join(agentDir, "auth.json"), "utf8"), boundBytes);
+  await save("models.json", { providers: { custom: { api: "openai-completions", baseUrl: request.baseUrl, apiKey: "fallback" } } });
+  await save("auth.json", { other: { type: "api_key", key: "other" } });
   const fresh = { ...request, mode: "new", key: "$literal!value" };
   const applied = await applyCredential({ ...fresh, revision: (await inspectCredential(fresh)).revision }, options);
   assert.equal(applied.wrote, true);
