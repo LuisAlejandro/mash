@@ -18,6 +18,16 @@ up-to-date)
     printf '  (any key closes)'
   fi
   ;;
+restart-required)
+  printf '\n  Mash %s is running; Mash %s is already installed.\n\n' "${installed:-unknown}" "${candidate:-unknown}"
+  printf '  Save work and restart Mash to use the installed version.\n'
+  printf '  No download is needed.   (any key closes)'
+  ;;
+restored-previous)
+  printf '\n  Mash %s is running again.\n\n' "${installed:-unknown}"
+  printf '  The update to %s did not complete. Your workspace files were not rolled back.\n\n' "${candidate:-unknown}"
+  printf '  (any key closes)'
+  ;;
 check-unavailable)
   printf '\n  Could not check for updates right now.\n\n'
   printf '  Check your internet connection and try again.   (any key closes)'

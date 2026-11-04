@@ -114,7 +114,7 @@ mash_read_line() {
 }
 
 mash_macos_candidate() {
-  installed="$(mash_read_line "$res/VERSION")"
+  installed="${runtime_version:-$(mash_read_line "$res/VERSION")}"
   [ -n "$installed" ] || return 1
   # One request a day, whatever the user does with windows. The lock is already
   # held, so two launches cannot both decide the window has expired.
@@ -178,6 +178,12 @@ mash_show_notice() {
     else
       body="No newer Mash version found in the current APT metadata."
     fi
+  elif [ "$manual_status" = restart-required ]; then
+    title="Mash restart required"
+    body="You are running $installed. Mash $candidate is already installed; restart Mash to use it."
+  elif [ "$manual_status" = restored-previous ]; then
+    title="Previous Mash restored"
+    body="Mash $installed is running again. The update to $candidate did not complete."
   elif [ "$manual_status" = check-unavailable ]; then
     title="Couldn't check for Mash updates"
     body="Check your internet connection and try again."
@@ -255,17 +261,20 @@ if [ "$system" = Darwin ] && [ -f "$common" ]; then
     MU_ID="$(mash_update_read id)"
     phase="$(mash_update_read phase)"
     case "$phase" in
-    preparing | ready | quiescing | swap-intent)
+    preparing | ready | handoff | quiescing | swap-intent)
       if mash_update_active; then mash_log "update $MU_ID active: $phase"; exit 0; fi
       ;;
     awaiting-ready | recovery-required)
-      # Background notice waits; the window/server must not wait for this
-      # notice or for the worker to exit, which would deadlock readiness.
-      for _ in $(seq 1 900); do
+      # The real coordinator owns the shared launch deadline. A dead worker
+      # needs an outside-app recovery controller, not another silent 180s wait.
+      while :; do
         [ "$(mash_update_read id)" = "$MU_ID" ] || exit 0
         case "$(mash_update_read phase)" in awaiting-ready | recovery-required) ;; *) break ;; esac
         if ! mash_update_active; then
           if mash_update_confirm; then break; fi
+          mash_update_reconcile || exit 0
+          [ ! -x "$res/bin/mash-update-gate" ] || "$res/bin/mash-update-gate" recover "$(mash_update_read app)" "$d" "$MU_ID" || true
+          exit 0
         fi
         sleep 0.2
       done
@@ -273,13 +282,10 @@ if [ "$system" = Darwin ] && [ -f "$common" ]; then
     esac
     phase="$(mash_update_read phase)"
     case "$phase" in
-    preparing | ready | quiescing | swap-intent)
-      # A dead owner is not a running installer. Before the exchange we can
-      # safely re-offer; ambiguous/committed attempts retain recovery state.
-      if [ "$phase" = preparing ] || [ "$phase" = ready ] || [ "$phase" = quiescing ]; then
-        mash_update_finish failed-before-swap || exit 0
-      else
-        mash_update_finish recovery-required || exit 0
+    preparing | ready | handoff | quiescing | swap-intent)
+      mash_update_reconcile || exit 0
+      if [ "$(mash_update_read phase)" = recovery-required ] && [ -x "$res/bin/mash-update-gate" ]; then
+        "$res/bin/mash-update-gate" recover "$(mash_update_read app)" "$d" "$MU_ID" || true
         exit 0
       fi
       ;;
@@ -292,6 +298,20 @@ else
   # Read-only legacy notice fixtures and Linux do not ship the macOS protocol.
   mash_update_legacy_active() { return 1; }
   mash_update_active() { return 1; }
+fi
+
+# Report a verified restoration distinctly from target-version success.
+if [ "$system" = Darwin ] && [ -f "$state/update-restored" ]; then
+  mash_take_lock || exit 0
+  read -r restored failed <"$state/update-restored" || true
+  if [ -n "${restored:-}" ] && [ "${runtime_version:-$(mash_read_line "$res/VERSION")}" = "$restored" ]; then
+    rm -f "$state/update-restored"
+    rm -rf "$lock"
+    installed="$restored" candidate="${failed:-}" manual_status=restored-previous
+    mash_show_notice
+    exit 0
+  fi
+  rm -rf "$lock"
 fi
 
 # If power was lost after confirmation, compare the version that was about to
@@ -355,7 +375,17 @@ Darwin)
   mash_take_lock || exit 0
   # A failed attempt is eligible again on the next launch, without making a
   # second GitHub request inside the 24-hour check window.
-  installed="$(mash_read_line "$res/VERSION")"
+  installed="${runtime_version:-$(mash_read_line "$res/VERSION")}"
+  on_disk="$(mash_read_line "$res/VERSION")"
+  if [ -n "$on_disk" ] && [ "$installed" != "$on_disk" ]; then
+    rm -rf "$lock"
+    mash_log "running $installed differs from installed $on_disk; restart required"
+    if [ "$manual" = 1 ]; then
+      candidate="$on_disk" manual_status=restart-required entrypoint=notice
+      mash_show_notice
+    fi
+    exit 0
+  fi
   retry="$(mash_read_line "$state/update-retry")"
   rm -f "$state/update-retry"
   if [ -n "$retry" ] && mash_version_gt "$retry" "$installed"; then

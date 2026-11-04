@@ -58,9 +58,9 @@ int main(int argc, char **argv) {
             resources = app / "Contents/Resources"
             resources.mkdir()
             (resources / "VERSION").write_text(version + "\n")
-            (app / "Contents/Info.plist").write_bytes(plistlib.dumps({"CFBundleIdentifier": "app.mash", "CFBundleShortVersionString": version, "CFBundleVersion": version}))
+            (app / "Contents/Info.plist").write_bytes(plistlib.dumps({"CFBundleIdentifier": "app.mash", "CFBundleShortVersionString": version, "CFBundleVersion": version, "MashUpdateDataCompatibility": "fixture-v1"}))
             subprocess.run(["xcrun", "clang", str(source), "-Wl,-random_uuid", "-o", str(macos / "mash-terminal")], check=True)
-        self.env = {"HOME": str(self.data.parent), "PATH": f"{self.fake}:/usr/bin:/bin:/usr/sbin:/sbin", "CALLS": str(self.calls), "FIXTURE_APP": str(self.app), "FIXTURE_CANDIDATE": str(self.candidate), "TMPDIR": str(self.root), "PYTHONDONTWRITEBYTECODE": "1"}
+        self.env = {"HOME": str(self.data.parent), "PATH": f"{self.fake}:/usr/bin:/bin:/usr/sbin:/sbin", "CALLS": str(self.calls), "FIXTURE_APP": str(self.app), "FIXTURE_CANDIDATE": str(self.candidate), "TMPDIR": str(self.root), "PYTHONDONTWRITEBYTECODE": "1", "FIXTURE_WORKER_PID": str(os.getpid()), "FIXTURE_COMMON": str(self.bin / "mash-update-common"), "FIXTURE_PROCESS_TOOL": str(self.bin / "mash-update-processes")}
         self.stub("codesign", '''echo "codesign $*" >>"$CALLS"
 case "$1" in
 -dv) case "$2" in "$FIXTURE_APP") echo TeamIdentifier=TEAM >&2 ;; *) echo "TeamIdentifier=${FAKE_TEAM:-TEAM}" >&2 ;; esac ;;
@@ -80,7 +80,24 @@ esac''')
         self.stub("ditto", 'echo "ditto $*" >>"$CALLS"; [ "${FAKE_COPY_RC:-0}" = 0 ] || exit "$FAKE_COPY_RC"; cp -R "$1" "$2"')
         self.stub("xattr", 'echo xattr >>"$CALLS"')
         self.stub("launchctl", '''echo "launchctl $*" >>"$CALLS"
-case "$1" in print) exit 1 ;; bootstrap) exit "${FAKE_BOOTSTRAP_RC:-0}" ;; esac''')
+case "$1" in
+print) exit 1 ;;
+bootstrap)
+  [ "${FAKE_BOOTSTRAP_RC:-0}" = 0 ] || exit "$FAKE_BOOTSTRAP_RC"
+  program="$(/usr/bin/plutil -extract ProgramArguments.0 raw -o - "$3")"
+  case "$program" in
+  */mash-update-gate)
+    data="$(/usr/bin/plutil -extract ProgramArguments.3 raw -o - "$3")"
+    attempt="$(/usr/bin/plutil -extract ProgramArguments.4 raw -o - "$3")"
+    ;;
+  *)
+    data="$(/usr/bin/plutil -extract ProgramArguments.6 raw -o - "$3")"
+    attempt="$(/usr/bin/plutil -extract ProgramArguments.12 raw -o - "$3")"
+    ;;
+  esac
+  "$FIXTURE_PROCESS_TOOL" locked "$data/local/state/update-mutex" /bin/bash "$FIXTURE_COMMON" "$data" claim "$FIXTURE_WORKER_PID" "$attempt"
+  ;;
+esac''')
         self.stub("osascript", 'echo "quit $*" >>"$CALLS"; exit "${FAKE_QUIT_RC:-0}"')
         self.stub("open", 'echo "open $*" >>"$CALLS"; exit "${FAKE_OPEN_RC:-0}"')
         self.children = []
