@@ -128,6 +128,14 @@ impl Theme {
         }
     }
 
+    /// The Mash Terminal config line that selects this theme.
+    pub fn terminal_line(self) -> &'static str {
+        match self {
+            Theme::Dark => SWAPS[0].1,
+            Theme::Light => SWAPS[0].2,
+        }
+    }
+
     /// The theme the seeded Ghostty config currently names; a retried setup
     /// starts from it.
     pub fn current(root: &Path) -> Self {

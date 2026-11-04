@@ -63,12 +63,18 @@ ship_helpers=(
   hindsight-embed
   mash-voice-model
   mash-pi-models.mjs
+  mash-pi-runtime.mjs
+  mash-pi-credentials.mjs
+  mash-pi-connect.mjs
+  mash-pi-http.mjs
   mash-notify
   mash-seed-sync
   mash-update-notice
   mash-pane-resume
   mash-update-verify
   mash-update-apply
+  mash-update-common
+  mash-update-gate
   mash-github-mcp
 )
 
@@ -342,6 +348,9 @@ done
 xcrun --sdk macosx clang -Wall -Wextra -Werror -O2 -mmacosx-version-min=14.0 \
   -o "$app/Contents/Resources/bin/mash-update-swap" \
   "$root/packaging/helpers/mash-update-swap.c"
+xcrun --sdk macosx clang -Wall -Wextra -Werror -O2 -mmacosx-version-min=14.0 \
+  -o "$app/Contents/Resources/bin/mash-update-processes" \
+  "$root/packaging/helpers/mash-update-processes.c"
 cp "$root/packaging/lib.sh" "$app/Contents/Resources/bin/lib.sh"
 cp "$root/packaging/launch-common.sh" "$app/Contents/Resources/bin/launch-common.sh"
 cp "$root/packaging/herdr-pane" "$app/Contents/Resources/bin/herdr-pane"

@@ -43,7 +43,40 @@ pub struct Provider {
     pub oauth: bool,
 }
 
+/// Per-provider setup facts in one place: the deferred-login note and the form
+/// hint describe the same requirement and must not drift apart.
+const SETUP: [(&str, &str, &str); 5] = [
+    (
+        "azure",
+        " First configure AZURE_OPENAI_BASE_URL or AZURE_OPENAI_RESOURCE_NAME.",
+        "Set AZURE_OPENAI_BASE_URL or AZURE_OPENAI_RESOURCE_NAME, then use /login azure in Pi. Continue keeps your current Pi configuration.",
+    ),
+    (
+        "cloudflare-ai-gateway",
+        " Cloudflare also needs an account ID and gateway ID.",
+        "Requires a token, account ID and gateway ID. Use /login cloudflare-ai-gateway in Pi. Continue keeps your current Pi configuration.",
+    ),
+    (
+        "cloudflare-workers-ai",
+        " Cloudflare also needs an account ID.",
+        "Requires a token and account ID. Use /login cloudflare-workers-ai in Pi. Continue keeps your current Pi configuration.",
+    ),
+    (
+        "amazon-bedrock",
+        " AWS profiles and IAM can instead supply ambient credentials.",
+        "Enter a Bedrock bearer token, not an AWS access-key ID. For AWS profiles or IAM, use /login amazon-bedrock in Pi.",
+    ),
+    (
+        "google-vertex",
+        " ADC or service-account access also needs a project and location.",
+        "Enter a Google Cloud API key. For ADC or a service-account file, use /login google-vertex in Pi.",
+    ),
+];
+
 impl Provider {
+    fn setup_row(&self) -> Option<&'static (&'static str, &'static str, &'static str)> {
+        SETUP.iter().find(|(id, ..)| *id == self.id)
+    }
     pub fn can_configure(&self) -> bool {
         self.api_key
             && !matches!(
@@ -60,18 +93,31 @@ impl Provider {
         }
     }
 
+    pub fn login_guidance(&self) -> String {
+        let setup = self.setup_row().map_or("", |row| row.1);
+        format!(
+            "Authentication deferred. After setup, run /login {} in Pi.{}",
+            self.id, setup
+        )
+    }
+
     pub fn guidance(&self) -> Option<String> {
-        let detail = match self.id.as_str() {
-            "azure" => "Set AZURE_OPENAI_BASE_URL or AZURE_OPENAI_RESOURCE_NAME, then use /login azure in Pi. Continue keeps your current Pi configuration.",
-            "cloudflare-ai-gateway" => "Requires a token, account ID and gateway ID. Use /login cloudflare-ai-gateway in Pi. Continue keeps your current Pi configuration.",
-            "cloudflare-workers-ai" => "Requires a token and account ID. Use /login cloudflare-workers-ai in Pi. Continue keeps your current Pi configuration.",
-            "amazon-bedrock" => "Enter a Bedrock bearer token, not an AWS access-key ID. For AWS profiles or IAM, use /login amazon-bedrock in Pi.",
-            "google-vertex" => "Enter a Google Cloud API key. For ADC or a service-account file, use /login google-vertex in Pi.",
-            _ if !self.api_key => return Some(format!("After setup, use /login {} in Pi. Continue keeps your current Pi configuration.", self.id)),
-            _ if self.oauth => return Some(format!("Use an API key here. For browser/device sign-in, use /login {} in Pi after setup.", self.id)),
-            _ => return None,
-        };
-        Some(detail.into())
+        if let Some(row) = self.setup_row() {
+            return Some(row.2.into());
+        }
+        if !self.api_key {
+            return Some(format!(
+                "After setup, use /login {} in Pi. Continue keeps your current Pi configuration.",
+                self.id
+            ));
+        }
+        if self.oauth {
+            return Some(format!(
+                "Use an API key here. For browser/device sign-in, use /login {} in Pi after setup.",
+                self.id
+            ));
+        }
+        None
     }
 }
 

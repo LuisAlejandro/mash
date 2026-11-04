@@ -9,6 +9,7 @@ node 24.16.0
 python 3.13.16
 rust 1.98.1
 go 1.26.4
+gh 2.103.3
 lazygit 0.65.1
 lazydocker 0.25.2
 pet 1.0.1
@@ -42,7 +43,7 @@ persiyanov.reviewr 0.39.0
 herdr-workspace 0.1.2
 telescope 0.1.2
 ray.plugin-manager 0.5.0
-mash-programming-skills 0.5.16
+mash-programming-skills 0.6.0
 sentrux 0.5.7
 hindsight-embed 0.8.3
 hindsight-api 0.8.3

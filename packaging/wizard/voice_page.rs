@@ -15,10 +15,10 @@ use ratatui::{
 pub enum Decision {
     Back,
     Cancel,
+    /// Download the chosen model, or, with no language checked, leave
+    /// dictation unconfigured: Pi Voice's own onboarding offers the same model
+    /// the first time `/voice` runs.
     Save,
-    /// Leave dictation unconfigured. Pi Voice's own onboarding will offer the
-    /// same model the first time `/voice` runs.
-    Skip,
 }
 
 struct Language {
@@ -29,11 +29,10 @@ struct Language {
 
 pub struct VoicePage {
     languages: Vec<Language>,
-    /// A flat row index: the language rows, then Best, Fast, Back, Skip, Save.
+    /// A flat row index: the language rows, then Best, Fast, Back, Save.
     row: usize,
     role: Role,
     pick: Option<voice::Pick>,
-    skipped: bool,
 }
 
 impl VoicePage {
@@ -53,7 +52,6 @@ impl VoicePage {
             row: 0,
             role: Role::Best,
             pick: None,
-            skipped: false,
         };
         page.recompute();
         page
@@ -75,16 +73,12 @@ impl VoicePage {
         self.language_count() + 2
     }
 
-    fn skip_row(&self) -> usize {
+    fn save_row(&self) -> usize {
         self.language_count() + 3
     }
 
-    fn save_row(&self) -> usize {
-        self.language_count() + 4
-    }
-
     fn row_count(&self) -> usize {
-        self.language_count() + 5
+        self.language_count() + 4
     }
 
     fn language_at(&self, row: usize) -> Option<usize> {
@@ -103,12 +97,9 @@ impl VoicePage {
         self.pick = voice::recommend(&self.selected());
     }
 
-    /// The choice the install plan carries, or `None` when nothing is selected
-    /// or the page was skipped.
+    /// The choice the install plan carries, or `None` when no language is
+    /// selected, which leaves dictation unconfigured.
     pub fn choice(&self) -> Option<voice::VoiceChoice> {
-        if self.skipped {
-            return None;
-        }
         let pick = self.pick.as_ref()?;
         let languages = self.selected();
         if languages.is_empty() {
@@ -122,8 +113,10 @@ impl VoicePage {
         })
     }
 
+    /// No language means no dictation, which is always allowed; languages
+    /// need a model that covers them.
     pub fn validate(&self) -> bool {
-        !self.selected().is_empty() && self.pick.is_some()
+        self.selected().is_empty() || self.pick.is_some()
     }
 
     fn move_row(&mut self, direction: isize) {
@@ -181,9 +174,6 @@ impl VoicePage {
                     None
                 } else if self.row == self.back_row() {
                     Some(Decision::Back)
-                } else if self.row == self.skip_row() {
-                    self.skipped = true;
-                    Some(Decision::Skip)
                 } else {
                     Some(Decision::Save)
                 }
@@ -223,12 +213,14 @@ impl VoicePage {
                 ),
                 (Span::raw("  "), None),
                 (
-                    wizard_style::button(self.row == self.skip_row(), " Skip dictation "),
-                    Some(self.skip_row()),
-                ),
-                (Span::raw("  "), None),
-                (
-                    wizard_style::button(self.row == self.save_row(), " Download and continue "),
+                    wizard_style::button(
+                        self.row == self.save_row(),
+                        if self.selected().is_empty() {
+                            " Continue without dictation "
+                        } else {
+                            " Download and continue "
+                        },
+                    ),
                     Some(self.save_row()),
                 ),
             ],
@@ -286,8 +278,8 @@ impl VoicePage {
         match &self.pick {
             None if self.selected().is_empty() => lines.push((
                 Line::from(Span::styled(
-                    "Pick at least one language.",
-                    Style::default().fg(wizard_style::RED),
+                    "No language selected: dictation will not be set up. Pi can add it later with /voice.",
+                    Style::default().fg(wizard_style::MUTED),
                 )),
                 None,
             )),
@@ -370,7 +362,7 @@ mod tests {
         page.row = 0; // English
         page.on_key(KeyCode::Char(' '), KeyModifiers::NONE);
         assert!(page.selected().is_empty());
-        assert!(!page.validate());
+        assert!(page.choice().is_none());
         page.on_key(KeyCode::Char(' '), KeyModifiers::NONE);
         assert_eq!(page.selected(), vec!["en".to_string()]);
         assert!(page.validate());
@@ -414,16 +406,32 @@ mod tests {
     }
 
     #[test]
-    fn skip_leaves_dictation_unconfigured() {
-        // Without a way out, a user who does not want dictation would have to
-        // abort the whole wizard: Save is gated on a language.
+    fn no_language_continues_without_dictation() {
+        // With no skip button, unchecking every language is the way to finish
+        // setup without dictation; the wizard must never be stuck here.
+        use ratatui::{backend::TestBackend, Terminal};
         let mut page = VoicePage::new();
-        page.row = page.skip_row();
+        page.row = 0; // English
+        page.on_key(KeyCode::Char(' '), KeyModifiers::NONE);
+        assert!(page.selected().is_empty());
+        assert!(page.validate());
+        assert!(page.choice().is_none(), "nothing is downloaded");
+        let mut terminal = Terminal::new(TestBackend::new(100, 30)).unwrap();
+        terminal.draw(|frame| page.draw(frame)).unwrap();
+        let rendered: String = terminal
+            .backend()
+            .buffer()
+            .content()
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect();
+        assert!(rendered.contains("Continue without dictation"));
+        assert!(!rendered.contains("Skip dictation"));
+        page.row = page.save_row();
         assert!(matches!(
             page.on_key(KeyCode::Enter, KeyModifiers::NONE),
-            Some(Decision::Skip)
+            Some(Decision::Save)
         ));
-        assert!(page.choice().is_none());
     }
 
     #[test]
@@ -479,9 +487,8 @@ mod tests {
             Some(Decision::Back)
         ));
         assert!(matches!(
-            page.on_click(at(&page, "Skip dictation")),
-            Some(Decision::Skip)
+            page.on_click(at(&page, "Download and continue")),
+            Some(Decision::Save)
         ));
-        assert!(page.choice().is_none());
     }
 }

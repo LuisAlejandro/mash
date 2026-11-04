@@ -175,6 +175,15 @@ alone, without signing or notarizing.
 Before tagging, test that DMG on a real Mac with
 `packaging/tests/macos-release-checklist.md`.
 
+A macOS release that changes the updater also needs the self-update sign-off in
+`packaging/tests/linux-release-checklist.md`, run in a disposable account with a
+real notarized pair. Automated suites cover ownership, shutdown, launch gating
+and readiness against fixtures; they cannot prove Gatekeeper, real process exit,
+or About Mash. Publishing requires evidence that the target build actually runs
+afterwards, and that the 0.2.1/0.2.2 transition was exercised — those releases
+run their own updater code, so any residual risk there needs release notes and a
+supported manual reinstall rather than a claim that shipping alone fixes it.
+
 ## One-time GitHub setup
 
 - `master` — the git-flow production branch; `release.sh` finishes each release

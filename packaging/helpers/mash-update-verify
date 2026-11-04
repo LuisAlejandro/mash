@@ -1,184 +1,110 @@
 #!/bin/bash
-# Download a Mash release, prove it is ours, and hand it to the swap helper.
-#
-#   mash-update-verify <app-bundle> <candidate> <installed> <data-dir>
-#
-# Run from the update popup, with the user watching. Everything it does is
-# reversible: until the last line it has only written to a temp directory, and
-# Mash is still running. The swap helper it starts is the point of no return,
-# which is why all three checks happen here and not there.
-#
-# The three checks are not interchangeable. codesign proves the bundle is
-# intact and signed; spctl is Gatekeeper's own verdict, which covers
-# notarization; the Team ID is what stops a validly signed, notarized
-# application belonging to somebody else from being installed as Mash.
+# Download and prepare the exact destination-volume candidate while Mash is
+# usable. Only the detached worker may close Mash and exchange the bundles.
 set -u
-
-app="${1:-}"
-candidate="${2:-}"
-installed="${3:-}"
-d="${4:-$HOME/.mash}"
-[ -n "$app" ] && [[ "$candidate" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
-
-repo="LuisAlejandro/mash"
-asset="Mash-$candidate-mac-arm64.dmg"
-url="https://github.com/$repo/releases/download/$candidate/$asset"
-record="$d/local/state/update-notice"
-
-work="$(mktemp -d "${TMPDIR:-/tmp}/mash-update-XXXXXX")" || {
-  printf '  Could not prepare the download. Mash was not changed.\n'
-  if [ "$(cat "$record" 2>/dev/null)" = "$candidate" ]; then
-    rm -f "$record"
-    printf '%s\n' "$candidate" >"$d/local/state/update-retry"
-  fi
-  exit 1
-}
-mnt=""
-dmg="$work/$asset"
-staged="$work/Mash.app"
-
-# A failed attempt must not be the last time the user hears about this version:
-# the record is what suppresses a second announcement, so give it back.
-fail() {
-  printf '  %s\n' "$1"
-  if [ "$(cat "$record" 2>/dev/null)" = "$candidate" ]; then
-    rm -f "$record"
-    # A failed attempt is re-offered on the next launch without making a
-    # second GitHub request inside the 24-hour check window.
-    printf '%s\n' "$candidate" >"$d/local/state/update-retry"
-  fi
-  exit 1
-}
-cancel() {
-  printf '  Cancelled. Mash was not changed.\n'
-  exit 0
-}
-
+[ "$#" -ge 3 ] && [ "$#" -le 4 ] || exit 2
+app="$1" candidate="$2" installed="$3" d="${4:-$HOME/.mash}"
+[[ "$candidate" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 2
+case "$app" in /*.app) ;; *) exit 2 ;; esac
+[ -d "$app/Contents" ] && [ ! -L "$app" ] || exit 2
+parent="$(cd "$(dirname "$app")" && pwd -L)" || exit 2
+[ "$app" = "$parent/$(basename "$app")" ] && [ -w "$parent" ] || exit 2
+bin="$(cd "$(dirname "$0")" && pwd)" || exit 2
+# shellcheck source=mash-update-common
+source "$bin/mash-update-common" || exit 1
+mash_update_init "$d" || exit 1
+for helper in mash-update-processes mash-update-gate mash-update-apply mash-update-swap; do
+  [ -x "$bin/$helper" ] || { printf '  The updater is incomplete. Mash was not changed.\n'; exit 1; }
+done
+if mash_update_legacy_active; then
+  printf '  An update is already running. Mash was not changed.\n'; exit 1
+fi
+work="$(mktemp -d "${TMPDIR:-/tmp}/mash-update-XXXXXX")" || exit 1
+mnt="" sibling="" handed_off=0
 cleanup() {
-  [ -n "$mnt" ] && hdiutil detach "$mnt" -quiet >/dev/null 2>&1
+  local rc=$?
+  [ "$handed_off" = 0 ] || return 0
+  [ -z "$mnt" ] || hdiutil detach "$mnt" -quiet >>"$MU_STATE/mash-update.log" 2>&1 || true
+  if [ -n "${MU_ID:-}" ] && [ "$(mash_update_read id)" = "$MU_ID" ]; then
+    case "$(mash_update_read phase)" in
+    preparing | ready) mash_update_finish cancelled || true ;;
+    esac
+  fi
+  [ -z "$sibling" ] || rm -rf "$sibling"
   rm -rf "$work"
+  return "$rc"
 }
 trap cleanup EXIT
-
-team_of() { # team_of BUNDLE -- the signing Team ID, or nothing
-  codesign -dv "$1" 2>&1 | sed -n 's/^TeamIdentifier=//p' | head -n 1
-}
-
-printf '  Downloading Mash %s...\n' "$candidate"
-curl -fL --retry 2 --max-time 1800 --progress-bar -o "$dmg" "$url" ||
-  fail "Download failed. Mash was not changed."
-
-printf '  Verifying...\n'
-mnt="$work/mount"
-mkdir -p "$mnt"
-hdiutil attach -nobrowse -readonly -mountpoint "$mnt" "$dmg" >/dev/null 2>&1 ||
-  {
-    mnt=""
-    fail "The download could not be opened. Mash was not changed."
-  }
-[ -d "$mnt/Mash.app" ] || fail "The download has no Mash.app. Mash was not changed."
-
-codesign --verify --deep --strict "$mnt/Mash.app" >/dev/null 2>&1 ||
-  fail "The download is not correctly signed. Mash was not changed."
-spctl --assess --type execute "$mnt/Mash.app" >/dev/null 2>&1 ||
-  fail "The download was rejected by Gatekeeper. Mash was not changed."
-
-want="$(team_of "$app")"
-got="$(team_of "$mnt/Mash.app")"
-[ -n "$want" ] && [ -n "$got" ] && [ "$want" = "$got" ] ||
-  fail "The download has a different signing Team ID. Mash was not changed."
-
-# Copied off the image before the confirmation: the swap helper outlives this
-# process, and a mounted image does not survive it.
-ditto "$mnt/Mash.app" "$staged" >/dev/null 2>&1 ||
-  fail "The download could not be prepared. Mash was not changed."
-# A correctly signed old bundle must not be installed as the new release.
-prepared=""
-if [ -f "$staged/Contents/Resources/VERSION" ]; then
-  read -r prepared <"$staged/Contents/Resources/VERSION" || true
+if ! mash_update_begin "$app" "$candidate" "$installed" "$work"; then
+  printf '  Another update is active or needs recovery. Mash was not changed.\n'; exit 1
 fi
-[ "$prepared" = "$candidate" ] || fail "The downloaded app has the wrong version. Mash was not changed."
-# Verify the exact bytes that the swap will install, not only the source on the
-# mounted image. A corrupted or interrupted copy must never pass this gate.
-codesign --verify --deep --strict "$staged" >/dev/null 2>&1 ||
-  fail "The prepared app is not correctly signed. Mash was not changed."
-spctl --assess --type execute "$staged" >/dev/null 2>&1 ||
-  fail "The prepared app was rejected by Gatekeeper. Mash was not changed."
-hdiutil detach "$mnt" -quiet >/dev/null 2>&1 || fail "Could not close the image. Mash was not changed."
+fail() {
+  printf '  %s Mash was not changed.\n' "$1"
+  mash_update_log "failure=$1"
+  if [ "$(mash_update_read id)" = "$MU_ID" ]; then
+    if [ "$(cat "$MU_STATE/update-notice" 2>/dev/null)" = "$candidate" ]; then
+      rm -f "$MU_STATE/update-notice"
+      printf '%s\n' "$candidate" >"$MU_STATE/update-retry"
+    fi
+    mash_update_finish failed-before-swap || true
+  fi
+  exit 1
+}
+team_of() { codesign -dv "$1" 2>&1 | sed -n 's/^TeamIdentifier=//p' | head -n 1; }
+asset="Mash-$candidate-mac-arm64.dmg"
+printf '  Downloading Mash %s...\n' "$candidate"
+curl -fL --retry 2 --max-time 1800 --progress-bar -o "$work/$asset" \
+  "https://github.com/LuisAlejandro/mash/releases/download/$candidate/$asset" || fail 'Download failed.'
+printf '  Verifying the download...\n'
+mnt="$work/mount"
+mkdir -p "$mnt" || fail 'Could not prepare the image.'
+if ! mash_update_run 60 mount hdiutil attach -nobrowse -readonly -mountpoint "$mnt" "$work/$asset"; then
+  mnt=""; fail 'The download could not be opened.'
+fi
+[ -d "$mnt/Mash.app" ] || fail 'The download has no Mash.app.'
+mash_update_run 600 signature codesign --verify --deep --strict "$mnt/Mash.app" || fail 'The download is not correctly signed.'
+mash_update_run 600 gatekeeper spctl --assess --type execute "$mnt/Mash.app" || fail 'The download was rejected by Gatekeeper.'
+want="$(team_of "$app")" got="$(team_of "$mnt/Mash.app")"
+[ -n "$want" ] && [ "$want" != 'not set' ] && [ "$want" = "$got" ] || fail 'The download has a different signing Team ID.'
+printf '  Preparing the final copy. Mash stays open during verification...\n'
+sibling="$(mktemp -d "$parent/.mash-update-XXXXXX")" || fail 'Could not prepare the update beside Mash.'
+printf '%s\n' "$MU_ID" >"$sibling/.mash-update-owner" || fail 'Could not record preparation ownership.'
+mash_update_write sibling "$sibling" || fail 'Could not record the prepared location.'
+staged="$sibling/Mash.app"
+mash_update_run 1800 copy ditto "$mnt/Mash.app" "$staged" || fail 'The download could not be prepared.'
+prepared=""
+[ ! -f "$staged/Contents/Resources/VERSION" ] || read -r prepared <"$staged/Contents/Resources/VERSION" || true
+[ "$prepared" = "$candidate" ] || fail 'The downloaded app has the wrong version.'
+[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$staged/Contents/Info.plist" 2>/dev/null)" = app.mash ] || fail 'The download is not Mash.'
+[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$staged/Contents/Info.plist" 2>/dev/null)" = "$candidate" ] &&
+  [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$staged/Contents/Info.plist" 2>/dev/null)" = "$candidate" ] || fail 'The app version metadata disagrees.'
+uuid="$("$bin/mash-update-processes" uuid "$staged/Contents/MacOS/mash-terminal")" || fail 'The application executable is unsupported.'
+mash_update_run 600 prepared-signature codesign --verify --deep --strict "$staged" || fail 'The prepared app is not correctly signed.'
+mash_update_run 600 prepared-gatekeeper spctl --assess --type execute "$staged" || fail 'The prepared app was rejected by Gatekeeper.'
+[ "$(team_of "$staged")" = "$want" ] || fail 'The prepared app has a different signing Team ID.'
+mash_update_run 60 detach hdiutil detach "$mnt" -quiet || fail 'Could not close the image.'
 mnt=""
-# The stapled app has already passed Gatekeeper above. Remove quarantine only
-# after that verdict to avoid a duplicate first-launch dialog.
-xattr -dr com.apple.quarantine "$staged" >/dev/null 2>&1 || true
-
+# Quarantine is removed only after signature and Gatekeeper acceptance.
+xattr -dr com.apple.quarantine "$staged" >>"$MU_STATE/mash-update.log" 2>&1 || true
+for helper in mash-update-common mash-update-processes mash-update-gate mash-update-apply mash-update-swap; do
+  cp "$bin/$helper" "$work/$helper" || fail 'A detached helper could not be prepared.'
+done
+chmod 700 "$work"/mash-update-*
+"$work/mash-update-processes" now >/dev/null || fail 'The detached worker cannot start.'
+mash_update_write expected_uuid "$uuid" || fail 'Could not record the target build.'
+mash_update_phase ready || fail 'Could not record preparation.'
 printf '\n  Ready to install Mash %s (you have %s).\n' "$candidate" "$installed"
-printf '  This closes Mash now and reopens it when done.\n\n'
+printf '  This closes Mash now and reopens it when done.\n'
 printf '  Type y to install, anything else to cancel: '
 IFS= read -r answer || answer=n
-case "$answer" in
-y | Y | yes | YES) ;;
-*) cancel ;;
-esac
-
-# The swap helper cannot run from inside the bundle it replaces, so it is
-# copied out first. From here the popup is about to disappear with Mash.
-apply="$work/mash-update-apply"
-self="$(cd "$(dirname "$0")" && pwd)"
-cp "$self/mash-update-apply" "$apply" 2>/dev/null ||
-  fail "The update helper is missing. Mash was not changed."
-cp "$self/mash-update-swap" "$work/mash-update-swap" 2>/dev/null ||
-  fail "The atomic swap helper is missing. Mash was not changed."
-chmod 755 "$apply" "$work/mash-update-swap"
-
-printf '\n  Installing. Mash will reopen.\n'
-# If power is lost after confirmation, the next launch can compare this target
-# to the app actually on disk and report success or a recoverable failure.
-printf '%s\n' "$candidate" >"$d/local/state/update-pending"
-# Nothing here may be cleaned up on exit any more: the helper owns the work
-# directory now, and this process is about to be killed with the rest of Mash.
-trap - EXIT
-
-# The helper runs as a launchd job, not as a child of this process. This
-# process runs in a Herdr pane, and the helper's first step is to stop Herdr --
-# which ends every process a pane started, whatever it does about it: nohup,
-# a new session and an ignored SIGHUP all died with the server (Herdr follows
-# the hangup with SIGTERM). So 0.2.0's update closed Mash and then died before
-# swapping anything, and nothing reopened it. A job launchd owns is outside
-# that tree. The helper removes the job when it finishes.
-job="$work/app.mash.update.plist"
-if ! python3 - "$job" "$apply" "$staged" "$app" "$d" "$work" "$candidate" <<'PY' 2>/dev/null; then
-import plistlib
-import sys
-
-job, apply, staged, app, data, work, version = sys.argv[1:]
-plistlib.dump(
-    {
-        "Label": "app.mash.update",
-        "ProgramArguments": [
-            apply, "--app", staged, "--dest", app, "--data", data,
-            "--work", work, "--version", version,
-        ],
-        "RunAtLoad": True,
-        "KeepAlive": False,
-        # The helper stops Herdr and quits Mash; its own children must not be
-        # reaped with the job's process group when it exits.
-        "AbandonProcessGroup": True,
-        "StandardOutPath": f"{data}/local/state/mash-update.log",
-        "StandardErrorPath": f"{data}/local/state/mash-update.log",
-    },
-    open(job, "wb"),
-)
-PY
-  rm -f "$d/local/state/update-pending"
-  trap cleanup EXIT
-  fail "Could not prepare the update helper. Mash was not changed."
+case "$answer" in y | Y | yes | YES) ;; *) printf '  Cancelled. Mash was not changed.\n'; exit 0 ;; esac
+# Transfer cleanup ownership BEFORE bootstrap: the worker may stop this pane
+# immediately. A parent killed after launching it must not delete its inputs.
+handed_off=1
+if ! mash_update_bootstrap "$work/mash-update-apply" --app "$staged" --dest "$app" \
+  --data "$d" --work "$work" --version "$candidate" --attempt "$MU_ID"; then
+  handed_off=0
+  fail 'Could not start the update helper.'
 fi
-uid="$(id -u)"
-# A job left by an attempt that died is removed first: bootstrap refuses a label
-# that is already loaded.
-launchctl bootout "gui/$uid/app.mash.update" >/dev/null 2>&1 || true
-if ! launchctl bootstrap "gui/$uid" "$job" >/dev/null 2>&1; then
-  rm -f "$d/local/state/update-pending"
-  trap cleanup EXIT
-  fail "Could not start the update helper. Mash was not changed."
-fi
+printf '\n  Installing. Mash will reopen after the new build is ready.\n'
 exit 0

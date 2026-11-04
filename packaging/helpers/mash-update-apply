@@ -1,113 +1,140 @@
 #!/bin/bash
-# After the user confirms: stop every process from this Mash bundle, atomically
-# exchange the prepared app with the installed one, and reopen Mash. This file
-# and mash-update-swap run from a temporary directory, outside the bundle they
-# replace. Only call it after mash-update-verify has checked the downloaded app.
+# Detached install transaction. No large copy or security assessment happens
+# after quiescence. The old bundle survives until target-runtime readiness.
 set -u
-
-staged="" dest="" data="" work="" version=""
+staged="" dest="" data="" work="" version="" attempt=""
 while [ "$#" -gt 0 ]; do
+  [ "$#" -ge 2 ] || exit 2
   case "$1" in
-  --app) staged="${2:-}" ;;
-  --dest) dest="${2:-}" ;;
-  --data) data="${2:-}" ;;
-  --work) work="${2:-}" ;;
-  --version) version="${2:-}" ;;
+  --app) staged="$2" ;; --dest) dest="$2" ;; --data) data="$2" ;;
+  --work) work="$2" ;; --version) version="$2" ;; --attempt) attempt="$2" ;;
   *) exit 2 ;;
   esac
   shift 2
 done
-
-# The path checks keep even a bad caller from turning a rm -rf into a broad
-# deletion. The work directory must be distinct from the app and its parent.
-case "$dest" in *.app) ;; *) exit 2 ;; esac
+case "$dest" in /*.app) ;; *) exit 2 ;; esac
 case "$(basename "$work")" in mash-update-??????) ;; *) exit 2 ;; esac
-[ "$staged" = "$work/Mash.app" ] && [ -d "$dest/Contents" ] &&
-  [ ! -L "$dest" ] && [ ! -L "$work" ] && [ -d "$staged/Contents" ] &&
-  [ -d "$work" ] && [ -x "$work/mash-update-swap" ] || exit 2
-# Keep the caller's logical path: on macOS /var is a symlink to /private/var,
-# so pwd -P would reject a legitimate writable bundle under /var.
+[[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 2
+[ -n "$attempt" ] && [ -d "$dest/Contents" ] && [ ! -L "$dest" ] && [ -d "$work" ] && [ ! -L "$work" ] || exit 2
+self="$(cd "$(dirname "$0")" && pwd)" || exit 2
+# shellcheck source=mash-update-common
+source "$self/mash-update-common" || exit 1
+mash_update_init "$data" || exit 1
+MU_ID="$attempt"
+[ "$(mash_update_read id)" = "$MU_ID" ] && [ "$(mash_update_read work)" = "$work" ] &&
+  [ "$(mash_update_read app)" = "$dest" ] && [ "$(mash_update_read candidate)" = "$version" ] &&
+  [ "$(mash_update_read phase)" = ready ] || exit 2
 parent="$(cd "$(dirname "$dest")" && pwd -L)" || exit 2
-[ "$dest" = "$parent/$(basename "$dest")" ] && [ -w "$parent" ] || exit 2
-case "$work/" in "$parent/$(basename "$dest")/"*) exit 2 ;; esac
-
-record="$data/local/state/update-notice"
-sibling=""
+sibling="$(mash_update_read sibling)" || exit 2
+case "$sibling" in "$parent"/.mash-update-??????) ;; *) exit 2 ;; esac
+[ "$dest" = "$parent/$(basename "$dest")" ] && [ "$staged" = "$sibling/Mash.app" ] &&
+  [ ! -L "$sibling" ] && [ -d "$staged/Contents" ] && [ -w "$parent" ] || exit 2
+for helper in mash-update-processes mash-update-swap; do [ -x "$work/$helper" ] || exit 2; done
+[ "$("$self/mash-update-processes" uuid "$staged/Contents/MacOS/mash-terminal")" = "$(mash_update_read expected_uuid)" ] || exit 2
+mash_update_claim || exit 1
+job="$(mash_update_read job)"
+swapped=0 stopped=0
 cleanup() {
-  # On success the sibling contains the old app; on failure it contains a
-  # partially copied new one. The destination is never removed by cleanup.
-  [ -n "$sibling" ] && rm -rf "$sibling"
-  [ -n "$work" ] && rm -rf "$work"
-  # mash-update-verify starts this as a launchd job, so it lives outside the
-  # Herdr pane it was confirmed in. Remove the job, or its label would stay
-  # loaded and refuse the next update. Detached: booting out a job ends its
-  # processes, and this is one of them, so it must be the very last step.
-  [ -n "${XPC_SERVICE_NAME:-}" ] && [ "$XPC_SERVICE_NAME" = app.mash.update ] &&
-    { (sleep 1; launchctl bootout "gui/$(id -u)/app.mash.update") </dev/null >/dev/null 2>&1 & }
+  local phase
+  phase="$(mash_update_read phase || true)"
+  case "$phase" in
+  confirmed | failed-before-swap | cancelled)
+    # A failure after exchange must retain both backup and detached helpers.
+    if [ "$swapped" = 0 ] || [ "$phase" = confirmed ]; then
+      rm -rf "$sibling" "$work"
+    fi
+    ;;
+  esac
+  if [ "${XPC_SERVICE_NAME:-}" = "$job" ]; then
+    (sleep 1; launchctl bootout "gui/$(id -u)/$job") </dev/null >/dev/null 2>&1 &
+  fi
 }
 trap cleanup EXIT
-
 failure() {
-  local reason="$1"
-  if [ "$(cat "$record" 2>/dev/null)" = "$version" ]; then
-    rm -f "$record"
-    printf '%s\n' "$version" >"$data/local/state/update-retry"
+  local reason="$1" title
+  if [ "$(mash_update_read phase)" = confirmed ]; then exit 0; fi
+  mash_update_log "failure=$reason swapped=$swapped"
+  if [ "$swapped" = 0 ]; then
+    mash_update_finish failed-before-swap || true
+    printf '%s\n' "$version" >"$MU_STATE/update-retry"
+    if [ "$(cat "$MU_STATE/update-notice" 2>/dev/null)" = "$version" ]; then rm -f "$MU_STATE/update-notice"; fi
+    title='Mash update did not install'
+    [ "$stopped" = 0 ] || open "$dest" >>"$MU_STATE/mash-update.log" 2>&1 || true
+  else
+    mash_update_finish recovery-required || true
+    title='Mash installed; startup needs recovery'
   fi
-  rm -f "$data/local/state/update-pending"
-  osascript -e "display notification \"$reason\" with title \"Mash update failed\"" >/dev/null 2>&1 || true
+  # argv is data, not interpolated AppleScript source.
+  osascript -e 'on run argv' -e 'display notification (item 2 of argv) with title (item 1 of argv)' -e 'end run' \
+    "$title" "$reason" >>"$MU_STATE/mash-update.log" 2>&1 || true
   exit 1
 }
-
-# Save Herdr's state before stopping panes. `server stop` is cooperative; TERM
-# for any remaining executable under this bundle is also a graceful signal,
-# never SIGKILL. No process from the bundle can remain when the swap begins,
-# including a plugin.
+# Arm the barrier before asking the old app to close. It stays closed to old
+# generations until exchange, but MUST admit the new one while we await ACKs.
+mash_update_phase quiescing || exit 1
+printf '%s\n' "$version" >"$MU_STATE/update-pending"
+proc="$self/mash-update-processes"
+image_app="$(cd "$dest" && pwd -P)" || exit 1
+old="$work/old-processes"
+"$proc" list "$dest" >"$old" || failure 'Could not inventory Mash processes; the old app is intact.'
+start="$("$proc" now)" || exit 1
+remaining() { local now; now="$("$proc" now)" || return 1; echo "$((60 - (now - start)))"; }
+# Request normal termination first. A user cancellation must not be followed
+# by force-killing the GUI or needlessly tearing down its session server.
+if [ -s "$old" ]; then
+  mash_update_run "$(remaining)" quit osascript -e 'on run argv' \
+    -e 'tell application (item 1 of argv) to quit' -e 'end run' "$dest" ||
+    failure 'Mash did not accept the quit request; the old app is intact.'
+  stopped=1
+fi
 herdr="$dest/Contents/Resources/bin/herdr"
 if [ -x "$herdr" ] && [ -S "$data/run/herdr.sock" ]; then
-  HERDR_SOCKET_PATH="$data/run/herdr.sock" "$herdr" server stop >/dev/null 2>&1 || true
+  stopped=1
+  mash_update_run "$(remaining)" herdr-stop env HERDR_SOCKET_PATH="$data/run/herdr.sock" "$herdr" server stop ||
+    failure 'Mash could not save and stop its server; the old app is intact.'
 fi
-osascript -e 'tell application id "app.mash" to quit' >/dev/null 2>&1 || true
-
-# `comm` is the executable path, not argv: matching argv would catch an
-# unrelated editor or terminal whose command mentions Mash.app as a filename.
-processes() {
-  ps -ax -o pid=,comm= 2>/dev/null | while read -r pid exe; do
-    case "$exe" in "$dest/"*) printf '%s\n' "$pid" ;; esac
-  done
-}
-for _ in $(seq 1 60); do
-  active="$(processes)"
-  [ -z "$active" ] && break
-  while read -r pid; do
-    case "$pid" in '' | *[!0-9]*) continue ;; esac
-    kill -TERM "$pid" 2>/dev/null || true
-  done <<<"$active"
-  sleep 1
+while :; do
+  "$proc" list "$dest" >"$work/current-processes" || failure 'Could not recheck process ownership.'
+  sort -u "$old" "$work/current-processes" >"$work/processes-next" || failure 'Could not save process inventory.'
+  mv "$work/processes-next" "$old"
+  alive=0
+  while read -r pid stamp; do
+    [ -n "$pid" ] || continue
+    if "$proc" alive "$pid" "$stamp"; then
+      alive=1
+      image="$("$proc" image "$pid" 2>/dev/null || true)"
+      mash_update_log "waiting_pid=$pid start=$stamp"
+      # Never override an app's cancelled/delayed termination. Herdr owns its
+      # pane shutdown; remaining verified non-GUI helpers get graceful TERM.
+      if [ "$image" != "$image_app/Contents/MacOS/mash-terminal" ]; then "$proc" term "$pid" "$stamp" || true; fi
+    fi
+  done <"$old"
+  [ "$alive" = 1 ] || break
+  [ "$(remaining)" -gt 0 ] || failure 'Mash processes did not exit within 60 seconds; the old app is intact.'
+  sleep 0.2
 done
-[ -z "$(processes)" ] || failure "Mash did not quit; the old app is still in place."
-
-# Copy the already verified app onto the installed app's volume first. The
-# atomic exchange never spans volumes. No installed path is moved or deleted
-# until the copy and its own signature/ Gatekeeper checks succeed.
-sibling="$(mktemp -d "$parent/.mash-update-XXXXXX")" ||
-  failure "Could not prepare the update beside Mash."
-ditto "$staged" "$sibling/Mash.app" >/dev/null 2>&1 ||
-  failure "Could not copy the update beside Mash."
-codesign --verify --deep --strict "$sibling/Mash.app" >/dev/null 2>&1 ||
-  failure "The copied app failed signature verification."
-spctl --assess --type execute "$sibling/Mash.app" >/dev/null 2>&1 ||
-  failure "Gatekeeper rejected the copied app."
-
-# macOS RENAME_SWAP exchanges both complete directories in one filesystem
-# operation. Unsupported filesystems fail without touching either. Never use
-# `mv old aside; mv new into place`: a crash between them loses the app path.
-"$work/mash-update-swap" "$sibling/Mash.app" "$dest" >/dev/null 2>&1 ||
-  failure "This disk cannot atomically update Mash; the old app is intact."
-# The installed path now holds the new app. The sibling holds the old app, so
-# even a crash here leaves a working app at the usual path. A marker consumed
-# on the first new window confirms to the user which version is now running.
-[ -n "$version" ] && printf '%s\n' "$version" >"$data/local/state/update-success"
-rm -f "$data/local/state/update-pending" "$data/local/state/update-retry"
-open "$dest" >/dev/null 2>&1 ||
-  failure "The new Mash is installed, but could not be reopened. Open it manually."
-exit 0
+if [ -S "$data/run/herdr.sock" ] && /usr/sbin/lsof -t "$data/run/herdr.sock" >/dev/null 2>&1; then
+  failure 'The previous Mash socket is still owned; the old app is intact.'
+fi
+# Journal intent before the one atomic operation. No copy, verification, or
+# unrelated work is allowed between this final ownership check and exchange.
+mash_update_phase swap-intent || failure 'Could not record the exchange intent.'
+"$proc" list "$dest" >"$work/final-processes" || failure 'Could not perform the final shutdown check.'
+[ ! -s "$work/final-processes" ] || failure 'Mash reopened before replacement; the old app is intact.'
+"$work/mash-update-swap" "$staged" "$dest" >>"$MU_STATE/mash-update.log" 2>&1 ||
+  failure 'This disk cannot atomically update Mash; the old app is intact.'
+swapped=1
+mash_update_phase awaiting-ready || failure 'Mash was installed but readiness state could not be recorded.'
+rm -f "$MU_STATE/update-pending" "$MU_STATE/update-retry"
+mash_update_run 30 launch open "$dest" || failure 'The target is installed but could not be launched. The recovery copy was retained.'
+start="$("$proc" now)"
+while :; do
+  if mash_update_confirm; then
+    mash_update_log "ready_version=$version"
+    exit 0
+  fi
+  [ "$(mash_update_read phase)" != confirmed ] || exit 0
+  [ "$(( $("$proc" now) - start ))" -lt 180 ] ||
+    failure 'The target is installed but did not confirm a usable window and server. The recovery copy was retained.'
+  sleep 0.2
+done

@@ -41,6 +41,7 @@
     "python",
     "rust",
     "go",
+    "gh",
     "lazygit",
     "lazydocker",
     "pet",
@@ -373,9 +374,29 @@
       "install": "host"
     },
     "gh": {
-      "referenceVersion": "2.95.0",
-      "strategy": "package",
-      "install": "host"
+      "version": "2.103.3",
+      "strategy": "binary",
+      "install": "bundled",
+      "artifacts": {
+        "macos-arm64": {
+          "url": "https://github.com/cli/cli/releases/download/v2.103.3/gh_2.103.3_macOS_arm64.zip",
+          "sha256": "d700207eae9ae98fe2b89535c2c087c07823d4628c56364695a5a07ef311c062",
+          "archive": "zip",
+          "member": "gh_2.103.3_macOS_arm64/bin/gh"
+        },
+        "linux-amd64": {
+          "url": "https://github.com/cli/cli/releases/download/v2.103.3/gh_2.103.3_linux_amd64.tar.gz",
+          "sha256": "4c806978ffce1cec70853302a56d70ac6da4f19bae7adca4e1a8ab00633dd91d",
+          "archive": "tar.gz",
+          "member": "gh_2.103.3_linux_amd64/bin/gh"
+        },
+        "linux-arm64": {
+          "url": "https://github.com/cli/cli/releases/download/v2.103.3/gh_2.103.3_linux_arm64.tar.gz",
+          "sha256": "ee32df2323c8847f5fac6cb6b4b69ca75828e9329a8f22f677021f7b3306ce63",
+          "archive": "tar.gz",
+          "member": "gh_2.103.3_linux_arm64/bin/gh"
+        }
+      }
     },
     "delta": {
       "referenceVersion": "0.19.2",
@@ -642,11 +663,11 @@
       "commit": "e4fef2693728a36cbb389af033a389cad2257869"
     },
     "mash-programming-skills": {
-      "version": "0.5.16",
+      "version": "0.6.0",
       "strategy": "git",
       "install": "bundled",
       "repo": "LuisAlejandro/mash-programming-skills",
-      "ref": "0.5.16"
+      "ref": "0.6.0"
     },
     "sentrux": {
       "version": "0.5.7",

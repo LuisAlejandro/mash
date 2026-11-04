@@ -159,10 +159,12 @@ mash_stage_runtimes() {
   mash_write_runtime_shims "$res"
 
   # The interactive companions the macOS build bundles, plus viu, which the
-  # image-popup plugin execs. All are pinned per architecture in the manifest,
-  # so the same call serves both platforms.
+  # image-popup plugin execs, and gh, which the wizard's GitHub sign-in, the git
+  # credential helper and the GitHub MCP server need before any tool install.
+  # All are pinned per architecture in the manifest, so the same call serves
+  # both platforms.
   local tool
-  for tool in lazygit lazydocker pet atuin starship viu; do
+  for tool in gh lazygit lazydocker pet atuin starship viu; do
     mash_fetch_pinned "$tool" "$target" "$res/bin" || {
       echo "could not stage $tool for $target" >&2
       return 1
@@ -541,7 +543,7 @@ mash_stage_portable_payload() {
     # macOS-only: these use the native desktop update path or notifier app.
     # Linux keeps APT and the read-only notice; no swap or download helper.
     case "$(basename "$helper")" in
-      mash-notify|mash-update-verify|mash-update-apply|mash-update-swap.c) continue ;;
+      mash-notify|mash-update-verify|mash-update-apply|mash-update-common|mash-update-gate|mash-update-processes.c|mash-update-swap.c) continue ;;
     esac
     [ -f "$helper" ] || continue
     case "$helper" in

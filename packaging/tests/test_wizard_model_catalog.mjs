@@ -47,6 +47,46 @@ async function providerScenarios(packageDir) {
   console.log("ok - provider metadata is credential-free, non-secret, validated and pinned");
 }
 
+async function serviceCatalogScenarios(packageDir, real = false) {
+  const agentDir = join(dir, "catalog-must-not-read-auth");
+  mkdirSync(agentDir, { recursive: true });
+  writeFileSync(join(agentDir, "auth.json"), `invalid-json-${secret}`);
+  writeFileSync(join(agentDir, "models.json"), `invalid-json-${secret}`);
+  const before = contents(agentDir);
+  const options = { packageDir };
+  globalThis.forbidProviderAuth = true;
+  try {
+    for (const purpose of [undefined, "hindsight", ...(real ? ["search"] : [])]) {
+      const result = await inspectModels({ version: 1, action: "catalog", agentDir, provider: "openai", purpose }, options);
+      assert.equal(result.status, "ok", JSON.stringify(result));
+      assert.ok(result.models.length > 0, `public ${purpose ?? "chat"} catalog must not require auth`);
+      assert.ok(result.models.every(model => model.provider === "openai"));
+      assert.equal(result.auth.status, "unverified");
+      assert.equal(result.serverVerified, false);
+      assert.equal(JSON.stringify(result).includes(secret), false);
+      assert.deepEqual(contents(agentDir), before);
+    }
+    const invalid = await inspectModels({ version: 1, action: "catalog", agentDir, provider: "openai", purpose: "anything" }, options);
+    assert.equal(invalid.status, "unavailable");
+    if (real) {
+      const sdk = await import(join(packageDir, "dist/index.js"));
+      const ai = await import(join(packageDir, "node_modules/@earendil-works/pi-ai/dist/index.js"));
+      const runtime = await sdk.ModelRuntime.create({ credentials: new ai.InMemoryCredentialStore(), modelsStore: new ai.InMemoryModelsStore(), modelsPath: null, refreshOnCreate: false, allowModelNetwork: false });
+      for (const provider of ["google", "openai", "opencode-go", "github-copilot"]) {
+        const result = await inspectModels({ version: 1, action: "catalog", agentDir, provider, purpose: "search" }, options);
+        assert.equal(result.status, "ok", provider);
+        assert.ok(result.models.length > 0, `${provider} search picker must be populated by the actual extension predicate`);
+        for (const model of result.models) {
+          const actual = runtime.getModel(provider, model.id);
+          assert.ok(["google-generative-ai", "openai-responses", "azure-openai-responses", "openai-codex-responses", "anthropic-messages"].includes(actual.api), actual.api);
+          assert.notEqual(actual.api, "openai-completions");
+        }
+      }
+    }
+  } finally { delete globalThis.forbidProviderAuth; }
+  console.log("ok - deferred and service catalogs are scoped, read no credentials, execute no commands and write nothing");
+}
+
 async function customApiScenarios(packageDir) {
   const agentDir = join(dir, "custom-api-agent");
   mkdirSync(agentDir, { recursive: true });
@@ -201,6 +241,7 @@ try {
     await customApiScenarios(process.argv[3]);
     await providerScenarios(process.argv[3]);
     await nativeKeyScenarios(process.argv[3]);
+    await serviceCatalogScenarios(process.argv[3], true);
     assert.equal(networkAttempts, 0, "inspection must not even attempt a fetch");
     const payload = join(dir, "real payload with spaces");
     const sdkDir = join(payload, "node/lib/node_modules/@earendil-works");
@@ -208,6 +249,7 @@ try {
     mkdirSync(join(payload, "bin"), { recursive: true });
     symlinkSync(resolve(process.argv[3]), join(sdkDir, "pi-coding-agent"));
     copyFileSync(helper, join(payload, "bin/mash-pi-models.mjs"));
+    copyFileSync(new URL("../helpers/mash-pi-runtime.mjs", import.meta.url), join(payload, "bin/mash-pi-runtime.mjs"));
     const guard = join(dir, "no-network.mjs");
     writeFileSync(guard, 'globalThis.fetch = () => { process.stderr.write("unexpected network attempt"); throw new Error("network forbidden"); };\n');
     const agentDir = join(dir, "agent");
@@ -293,7 +335,7 @@ export class ModelRuntime {
   }
   getProvider(id) { return this.getProviders().find(p => p.id === id); }
   getModels(id) {
-    const rows = [{provider:"openai", id:"gpt-4", name:"GPT-4"}, {provider:"openai-codex", id:"codex", name:"Codex"}, ...Object.entries(this.config).flatMap(([provider,c]) => (c.models ?? []).map(m => ({...m,provider,api:m.api ?? c.api,baseUrl:m.baseUrl ?? c.baseUrl})))];
+    const rows = [{provider:"openai", id:"gpt-4", name:"GPT-4", api:"openai-responses"}, {provider:"openai-codex", id:"codex", name:"Codex"}, ...Object.entries(this.config).flatMap(([provider,c]) => (c.models ?? []).map(m => ({...m,provider,api:m.api ?? c.api,baseUrl:m.baseUrl ?? c.baseUrl})))];
     return id ? rows.filter(m => m.provider === id) : rows;
   }
   getProviderAuthStatus(id) { return {source: this.config[id]?.apiKey?.startsWith("!") ? "models_json_command" : "models_json"}; }
@@ -313,6 +355,7 @@ export class ModelRuntime {
     await scenarios(pkg);
     await customApiScenarios(pkg);
     await providerScenarios(pkg);
+    await serviceCatalogScenarios(pkg);
     const invalid = await inspectModels(request("relative/path"), { packageDir: pkg });
     assert.equal(invalid.status, "unavailable");
     assert.equal(invalid.reason, "invalid_request");
@@ -326,6 +369,7 @@ export class ModelRuntime {
     const fixture = join(dir, "staging source");
     mkdirSync(join(fixture, "packaging/helpers"), { recursive: true });
     copyFileSync(helper, join(fixture, "packaging/helpers/mash-pi-models.mjs"));
+    copyFileSync(new URL("../helpers/mash-pi-runtime.mjs", import.meta.url), join(fixture, "packaging/helpers/mash-pi-runtime.mjs"));
     writeFileSync(join(fixture, "VERSION"), "0.0.0\n");
     for (const file of ["assets.json", "assets.py"]) writeFileSync(join(fixture, "packaging", file), "unused fixture\n");
     const stage = spawnSync("/bin/bash", ["-c", 'set -e; source "$1"; root="$2"; mash_portable_scripts() { :; }; mash_stage_portable_payload "$3" linux-amd64', "stage", fileURLToPath(new URL("../build-common.sh", import.meta.url)), fixture, root], { encoding: "utf8" });
@@ -359,7 +403,7 @@ export class ModelRuntime {
     if (process.argv[2]) {
       const smoke = spawnSync(process.execPath, [fileURLToPath(import.meta.url), "--real", process.argv[2]], {
         env: { HOME: dir, PATH: "/usr/bin:/bin", PI_OFFLINE: "1" },
-        encoding: "utf8", timeout: 20000,
+        encoding: "utf8", timeout: 60000,
       });
       assert.equal(smoke.status, 0, smoke.stdout + smoke.stderr);
       process.stdout.write(smoke.stdout);

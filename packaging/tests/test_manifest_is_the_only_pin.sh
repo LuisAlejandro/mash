@@ -106,7 +106,7 @@ check_absent "mash-programming-skills ($skills_version)" "!= \"${skills_version}
 check_absent "plugin clone refs" '--branch v[0-9]+\.[0-9]+\.[0-9]+'
 
 # Pinned release binaries the macOS adapter used to fetch by literal URL.
-for component in lazygit lazydocker pet atuin starship; do
+for component in gh lazygit lazydocker pet atuin starship; do
   version="$(manifest_version "$component")"
   check_absent "$component ($version)" "releases/download/v?${version}/"
 done

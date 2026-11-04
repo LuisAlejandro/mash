@@ -10,7 +10,13 @@ use ratatui::{
     widgets::Paragraph,
     Frame,
 };
-use std::{fs, path::Path, process::Command};
+use std::{
+    cell::Cell,
+    fs,
+    path::{Path, PathBuf},
+    process::{Command, Stdio},
+    time::{Duration, Instant},
+};
 
 use crate::theme::Theme;
 
@@ -24,6 +30,42 @@ const SIZE: u8 = 3;
 const BACK: u8 = 4;
 const NEXT: u8 = 5;
 const FOCUS_COUNT: u8 = 6;
+/// Holding an arrow key would otherwise reload the terminal on every repeat.
+const PREVIEW_DELAY: Duration = Duration::from_millis(150);
+
+/// Shows the chosen font and theme in the wizard's own window while the page
+/// is open.
+///
+/// The wizard runs straight inside Mash's terminal, which names itself in
+/// MASH_TERMINAL_PID and reloads its config on SIGUSR2; a reload applies a new
+/// font-size to open windows unless that window was zoomed by hand, and always
+/// applies a new theme. Each preview rewrites only the font lines and a shipped
+/// `theme =` line of the original file. Unless setup
+/// saves the choice, the original is put back when the page goes away, so a
+/// quit or failed setup leaves the config exactly as it was.
+struct LivePreview {
+    config: PathBuf,
+    original: String,
+    terminal: u32,
+    /// The (family, size, theme) the terminal is showing now.
+    applied: (usize, u8, Theme),
+    initial: (usize, u8, Theme),
+    changed_at: Option<Instant>,
+    delay: Duration,
+    committed: Cell<bool>,
+}
+
+impl LivePreview {
+    fn reload(&self) {
+        // Ask exactly the terminal that owns this window; nothing else reloads.
+        let _ = Command::new("kill")
+            .arg("-USR2")
+            .arg(self.terminal.to_string())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status();
+    }
+}
 
 /// The first-launch shortcut preset. Cursor-style is Mash's own keymap across
 /// Herdr, Mash Terminal, Fresh and Pi. Native leaves every one of them on its own
@@ -82,6 +124,18 @@ pub struct FontPage {
     warning: Option<String>,
     pub theme: Theme,
     pub keybindings: Keybindings,
+    live: Option<LivePreview>,
+}
+
+impl Drop for FontPage {
+    fn drop(&mut self) {
+        if let Some(live) = &self.live {
+            if !live.committed.get() && live.applied != live.initial {
+                let _ = write_config(&live.config, &live.original);
+                live.reload();
+            }
+        }
+    }
 }
 
 impl FontPage {
@@ -155,6 +209,77 @@ impl FontPage {
             warning,
             theme: Theme::Dark,
             keybindings: Keybindings::Mash,
+            live: None,
+        }
+    }
+
+    /// Preview font changes in the window whose terminal is `terminal`. Off
+    /// in `--preview`, which must not write anything, and when there is no
+    /// config to preview through.
+    pub fn start_live_preview(&mut self, config: &Path, terminal: u32) {
+        let Ok(config) = fs::canonicalize(config) else {
+            return;
+        };
+        let Ok(original) = fs::read_to_string(&config) else {
+            return;
+        };
+        if terminal <= 1 {
+            return;
+        }
+        let current = self.choice();
+        self.live = Some(LivePreview {
+            config,
+            original,
+            terminal,
+            applied: current,
+            initial: current,
+            changed_at: None,
+            delay: PREVIEW_DELAY,
+            committed: Cell::new(false),
+        });
+    }
+
+    fn choice(&self) -> (usize, u8, Theme) {
+        (self.selected, self.size, self.theme)
+    }
+
+    /// True while a change waits out the delay, so the caller keeps polling.
+    pub fn live_preview_pending(&self) -> bool {
+        self.live
+            .as_ref()
+            .is_some_and(|live| live.changed_at.is_some())
+    }
+
+    /// Apply a change once it has settled.
+    pub fn poll_live_preview(&mut self) {
+        let choice = self.choice();
+        let Some(live) = &self.live else {
+            return;
+        };
+        let Some(changed_at) = live.changed_at else {
+            return;
+        };
+        if changed_at.elapsed() < live.delay {
+            return;
+        }
+        let content = self.render(&live.original);
+        let config = live.config.clone();
+        let live = self.live.as_mut().expect("checked above");
+        live.changed_at = None;
+        if choice == live.applied {
+            return;
+        }
+        if write_config(&config, &content).is_ok() {
+            live.applied = choice;
+            live.reload();
+        }
+    }
+
+    fn touched(&mut self, before: (usize, u8, Theme)) {
+        if self.choice() != before {
+            if let Some(live) = &mut self.live {
+                live.changed_at = Some(Instant::now());
+            }
         }
     }
 
@@ -194,6 +319,13 @@ impl FontPage {
     }
 
     pub fn on_click(&mut self, id: usize) -> Option<Decision> {
+        let before = self.choice();
+        let decision = self.click(id);
+        self.touched(before);
+        decision
+    }
+
+    fn click(&mut self, id: usize) -> Option<Decision> {
         if id < self.fonts.len() {
             self.selected = id;
             self.focus = LIST;
@@ -229,6 +361,13 @@ impl FontPage {
     }
 
     pub fn on_key(&mut self, code: KeyCode, modifiers: KeyModifiers) -> Option<Decision> {
+        let before = self.choice();
+        let decision = self.key(code, modifiers);
+        self.touched(before);
+        decision
+    }
+
+    fn key(&mut self, code: KeyCode, modifiers: KeyModifiers) -> Option<Decision> {
         if modifiers.contains(KeyModifiers::CONTROL) && code == KeyCode::Char('c') {
             return Some(Decision::Cancel);
         }
@@ -327,6 +466,16 @@ impl FontPage {
         // Follow a user-provided symlink instead of replacing it with a file.
         let config = fs::canonicalize(config).map_err(|e| format!("{}: {e}", config.display()))?;
         let old = fs::read_to_string(&config).map_err(|e| e.to_string())?;
+        write_config(&config, &self.render(&old))?;
+        // The choice is now the user's setting; the preview must not undo it.
+        if let Some(live) = &self.live {
+            live.committed.set(true);
+        }
+        Ok(())
+    }
+
+    /// `old` with its font lines set to this page's choice; the rest untouched.
+    fn render(&self, old: &str) -> String {
         let family = format!(
             "font-family = \"{}\"",
             self.fonts[self.selected]
@@ -334,9 +483,17 @@ impl FontPage {
                 .replace('"', "\\\"")
         );
         let size = format!("font-size = {}", self.size);
+        let theme = self.theme.terminal_line();
         let mut found = [false; 2];
         let mut updated = String::with_capacity(old.len());
         for line in old.lines() {
+            // Only Mash's own shipped theme lines switch; a theme the user
+            // chose by hand is theirs to keep.
+            if line == Theme::Dark.terminal_line() || line == Theme::Light.terminal_line() {
+                updated.push_str(theme);
+                updated.push('\n');
+                continue;
+            }
             let replacement = match line.split_once('=').map(|(key, _)| key.trim()) {
                 Some("font-family") if !found[0] => {
                     found[0] = true;
@@ -359,18 +516,7 @@ impl FontPage {
             updated.push_str(&size);
             updated.push('\n');
         }
-        // Write beside the config, then rename; failed writes must not truncate
-        // a user's existing Ghostty settings.
-        let temp = config.with_extension(format!("tmp-{}", std::process::id()));
-        fs::write(&temp, updated).map_err(|e| e.to_string())?;
-        fs::set_permissions(
-            &temp,
-            fs::metadata(&config)
-                .map_err(|e| e.to_string())?
-                .permissions(),
-        )
-        .map_err(|e| e.to_string())?;
-        fs::rename(&temp, config).map_err(|e| e.to_string())
+        updated
     }
 
     pub fn draw(&self, frame: &mut Frame) {
@@ -540,7 +686,15 @@ impl FontPage {
 
     fn draw_size(&self, frame: &mut Frame, area: Rect) {
         let body = wizard_style::section(frame, area, "Font size (points)");
-        let controls = format!("  [-]  {:>2}  [+]   ←/→ adjust (6–72)", self.size);
+        let controls = format!(
+            "  [-]  {:>2}  [+]   ←/→ adjust (6–72){}",
+            self.size,
+            if self.live.is_some() {
+                " · previews in this window"
+            } else {
+                ""
+            }
+        );
         wizard_style::target(Rect::new(body.x + 2, body.y, 3, 1), self.fonts.len());
         wizard_style::target(
             Rect::new(body.x + controls.find("[+]").unwrap() as u16, body.y, 3, 1),
@@ -557,10 +711,167 @@ impl FontPage {
     }
 }
 
+/// Write beside the config, then rename; a failed write must not truncate the
+/// user's Ghostty settings, and the file keeps its permissions.
+fn write_config(config: &Path, content: &str) -> Result<(), String> {
+    let temp = config.with_extension(format!("tmp-{}", std::process::id()));
+    fs::write(&temp, content).map_err(|e| e.to_string())?;
+    fs::set_permissions(
+        &temp,
+        fs::metadata(config)
+            .map_err(|e| e.to_string())?
+            .permissions(),
+    )
+    .map_err(|e| e.to_string())?;
+    fs::rename(&temp, config).map_err(|e| e.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use ratatui::{backend::TestBackend, Terminal};
+    use std::os::unix::process::ExitStatusExt;
+
+    const ORIGINAL: &str = "command = /opt/letsmash/bin/herdr-pane\nfont-family = \"MesloLGS NF\"\nfont-size = 13\ntheme = Monokai Cursor\n";
+
+    /// A config, a page previewing through it, and a stand-in terminal: a
+    /// sleeping child, which SIGUSR2 terminates, so a test sees exactly which
+    /// process was asked to reload.
+    fn live_fixture(name: &str) -> (PathBuf, FontPage, std::process::Child) {
+        let dir =
+            std::env::temp_dir().join(format!("mash-live-font-{name}-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        let config = dir.join("config");
+        fs::write(&config, ORIGINAL).unwrap();
+        let terminal = Command::new("sleep").arg("30").spawn().unwrap();
+        let mut page =
+            FontPage::with_fonts(vec!["JetBrains Mono".into(), DEFAULT_FONT.into()], None);
+        page.use_current(ORIGINAL);
+        page.start_live_preview(&config, terminal.id());
+        page.live.as_mut().unwrap().delay = Duration::ZERO;
+        (dir, page, terminal)
+    }
+
+    fn reloaded(terminal: &mut std::process::Child) -> bool {
+        let deadline = Instant::now() + Duration::from_secs(5);
+        loop {
+            if let Some(status) = terminal.try_wait().unwrap() {
+                return status.signal().is_some_and(|signal| signal != 9);
+            }
+            if Instant::now() > deadline {
+                let _ = terminal.kill();
+                let _ = terminal.wait();
+                return false;
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        }
+    }
+
+    #[test]
+    fn size_and_family_changes_preview_in_the_owning_terminal() {
+        let (dir, mut page, mut terminal) = live_fixture("apply");
+        page.focus = SIZE;
+        page.on_key(KeyCode::Char('+'), KeyModifiers::NONE);
+        page.focus = LIST;
+        page.on_key(KeyCode::Up, KeyModifiers::NONE);
+        assert!(page.live_preview_pending());
+        page.poll_live_preview();
+        assert!(!page.live_preview_pending());
+        let preview = fs::read_to_string(dir.join("config")).unwrap();
+        assert_eq!(
+            preview,
+            "command = /opt/letsmash/bin/herdr-pane\nfont-family = \"JetBrains Mono\"\nfont-size = 14\ntheme = Monokai Cursor\n"
+        );
+        assert!(reloaded(&mut terminal), "the terminal was asked to reload");
+        drop(page);
+        // Not saved, so leaving restores the user's file.
+        assert_eq!(fs::read_to_string(dir.join("config")).unwrap(), ORIGINAL);
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn the_theme_previews_in_the_terminal_and_a_custom_theme_is_kept() {
+        let (dir, mut page, mut terminal) = live_fixture("theme");
+        page.focus = THEME;
+        page.on_key(KeyCode::Right, KeyModifiers::NONE);
+        assert_eq!(page.theme, Theme::Light);
+        page.poll_live_preview();
+        let preview = fs::read_to_string(dir.join("config")).unwrap();
+        assert!(
+            preview.ends_with("theme = Monokai Cursor Light\n"),
+            "{preview}"
+        );
+        assert!(preview.contains("font-size = 13\n"));
+        assert!(reloaded(&mut terminal));
+        drop(page);
+        assert_eq!(fs::read_to_string(dir.join("config")).unwrap(), ORIGINAL);
+
+        let custom = "font-size = 13\ntheme = Dracula\n";
+        let mut page = FontPage::with_fonts(vec![DEFAULT_FONT.into()], None);
+        page.theme = Theme::Light;
+        assert!(page.render(custom).contains("theme = Dracula\n"));
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn a_change_waits_for_the_key_repeat_to_settle() {
+        let (dir, mut page, mut terminal) = live_fixture("settle");
+        page.live.as_mut().unwrap().delay = Duration::from_secs(60);
+        page.focus = SIZE;
+        for _ in 0..5 {
+            page.on_key(KeyCode::Right, KeyModifiers::NONE);
+        }
+        page.poll_live_preview();
+        assert!(page.live_preview_pending());
+        assert_eq!(fs::read_to_string(dir.join("config")).unwrap(), ORIGINAL);
+        assert!(terminal.try_wait().unwrap().is_none(), "no reload yet");
+        // Nothing was previewed, so leaving has nothing to restore or signal.
+        drop(page);
+        assert!(terminal.try_wait().unwrap().is_none());
+        let _ = terminal.kill();
+        let _ = terminal.wait();
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn a_saved_choice_survives_the_page_and_moves_that_end_where_they_began_do_nothing() {
+        let (dir, mut page, mut terminal) = live_fixture("save");
+        page.focus = SIZE;
+        page.on_key(KeyCode::Right, KeyModifiers::NONE);
+        page.on_key(KeyCode::Left, KeyModifiers::NONE);
+        page.poll_live_preview();
+        assert_eq!(fs::read_to_string(dir.join("config")).unwrap(), ORIGINAL);
+        assert!(
+            terminal.try_wait().unwrap().is_none(),
+            "back where it began"
+        );
+        page.on_key(KeyCode::Right, KeyModifiers::NONE);
+        page.poll_live_preview();
+        assert!(reloaded(&mut terminal));
+        page.save(&dir.join("config")).unwrap();
+        drop(page);
+        assert!(fs::read_to_string(dir.join("config"))
+            .unwrap()
+            .contains("font-size = 14"));
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn without_a_terminal_or_config_there_is_no_preview() {
+        let mut page = FontPage::with_fonts(vec![DEFAULT_FONT.into()], None);
+        page.start_live_preview(Path::new("/nonexistent/mash/ghostty/config"), 4242);
+        assert!(page.live.is_none());
+        let dir = std::env::temp_dir().join(format!("mash-live-font-none-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("config"), ORIGINAL).unwrap();
+        page.start_live_preview(&dir.join("config"), 1);
+        assert!(page.live.is_none(), "pid 1 is never this window's terminal");
+        page.focus = SIZE;
+        page.on_key(KeyCode::Right, KeyModifiers::NONE);
+        assert!(!page.live_preview_pending());
+        fs::remove_dir_all(dir).unwrap();
+    }
 
     #[test]
     fn lists_only_font_families_and_selects_meslo_at_platform_default_size() {

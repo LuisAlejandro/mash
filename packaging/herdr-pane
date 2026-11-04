@@ -43,6 +43,12 @@ if [ -x "$bin_dir/mash-github-mcp" ]; then
   nohup "$bin_dir/mash-github-mcp" "$home/.mash" </dev/null >/dev/null 2>&1 &
 fi
 
+# Readiness belongs to the target GUI and its new server, not the installed
+# VERSION file. This helper does not delay starting Herdr and has a deadline.
+if [ "$(uname -s)" = Darwin ] && [ -x "$bin_dir/mash-update-gate" ] && [ -n "${MASH_TERMINAL_PID:-}" ]; then
+  "$bin_dir/mash-update-gate" server-ready "$(cd "$res/../.." && pwd)" "$home/.mash" "$MASH_TERMINAL_PID" </dev/null >/dev/null 2>&1 &
+fi
+
 # A newer version is announced once per release: the local APT cache on Linux,
 # the rate-limited GitHub release check on macOS. The helper waits for this
 # window's server itself, so it never delays the window.

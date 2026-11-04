@@ -1,10 +1,12 @@
 mod font_page;
+mod github_login;
 mod model_picker;
+mod pi_connection;
 mod pi_models;
 mod pi_providers;
 mod provider_page;
-mod skills_page;
 mod theme;
+mod tools_page;
 mod voice;
 mod voice_page;
 mod welcome_page;
@@ -31,121 +33,29 @@ use std::{
     ffi::OsString,
     fs,
     io::{self, Write},
-    os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
     process::{Command, Stdio},
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-const UTILITIES: &[(&str, &str)] = &[
-    ("git", "Git source control"),
-    ("gh", "GitHub CLI and credential helper"),
-    ("zoxide", "Smarter directory ranking"),
-    ("eza", "File listings"),
-    ("fzf", "Interactive fuzzy picker"),
-    ("fd", "File discovery"),
-    ("bat", "Highlighted file preview"),
-    ("rg", "Content search"),
-    ("jq", "JSON utility"),
-    ("delta", "Git diff and pager"),
-    ("sentrux", "Structural analysis for plan, work and qa"),
-    ("agent-browser", "Browser automation for page work"),
-    ("cua-driver", "Native desktop control for app surfaces"),
-];
-
-// CUA Driver ships through its own installer; the remaining Homebrew utilities
-// are plain formulae. Every other group carries manifest component names, not
-// package specs: the pinned version is resolved from packaging/assets.json at
-// install time, so no version is written here.
+// CUA Driver's installer takes its version from the environment; every other
+// tool names manifest components resolved by packaging/assets.json.
 const CUA_DRIVER_PIN: &str = "0.33.3";
-
-const FORMATTERS: &[(&str, &str)] = &[
-    ("prettier", "JavaScript, JSON, Markdown, CSS, Svelte"),
-    ("shfmt", "Shell formatting"),
-    ("latexindent", "LaTeX formatting"),
-    ("gopls", "Go language server"),
-    ("rust-analyzer", "Rust language server"),
-    ("marksman", "Markdown language server"),
-    ("texlab", "LaTeX language server"),
-    ("pylsp", "Python language server"),
-    (
-        "bash-language-server",
-        "Bash, TypeScript, YAML, CSS, JSON, Svelte, Tailwind, HTML servers",
-    ),
-];
-
-// The formatter group covers more servers than the rows above name
-// individually. Both platforms resolve these pinned components into Mash's
-// data folder. Each entry is the manifest component and the binaries a pane or
-// Fresh looks for.
-const EXTRA_FORMATTERS: &[(&str, &[&str])] = &[
-    // No binary of its own: the plugin has to sit in the same npm prefix as
-    // prettier or `prettier --stdin-filepath x.svelte` cannot load it, and
-    // defaults/fresh/config.json formats svelte on save with exactly that.
-    ("prettier-plugin-svelte", &[]),
-    (
-        "typescript-language-server",
-        &["typescript-language-server"],
-    ),
-    ("yaml-language-server", &["yaml-language-server"]),
-    ("svelte-language-server", &["svelteserver"]),
-    (
-        "vscode-langservers-extracted",
-        &[
-            "vscode-css-language-server",
-            "vscode-json-language-server",
-            "vscode-html-language-server",
-        ],
-    ),
-    (
-        "tailwindcss-language-server",
-        &["tailwindcss-language-server"],
-    ),
-];
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum Group {
-    Utilities,
-    Formatters,
-}
-
-impl Group {
-    const ALL: [Group; 2] = [Group::Utilities, Group::Formatters];
-
-    fn title(self) -> &'static str {
-        match self {
-            Group::Utilities => "Mash utilities",
-            Group::Formatters => "Formatters & language servers",
-        }
-    }
-
-    fn summary(self) -> &'static str {
-        match self {
-            Group::Utilities => "Git workflows, search, previews, pickers, and GitHub features.",
-            Group::Formatters => "Formatting and language intelligence in the editor.",
-        }
-    }
-
-    fn tools(self) -> &'static [(&'static str, &'static str)] {
-        match self {
-            Group::Utilities => UTILITIES,
-            Group::Formatters => FORMATTERS,
-        }
-    }
-}
 
 struct IdentityPage {
     name: String,
     email: String,
     signing_key: String,
+    github: github_login::GithubLogin,
     focus: usize,
 }
 
 const FOCUS_NAME: usize = 0;
 const FOCUS_EMAIL: usize = 1;
 const FOCUS_SIGNING_KEY: usize = 2;
-const FOCUS_IDENTITY_NEXT: usize = 3;
-const IDENTITY_FOCUS_COUNT: usize = 4;
+const FOCUS_GITHUB: usize = 3;
+const FOCUS_IDENTITY_NEXT: usize = 4;
+const IDENTITY_FOCUS_COUNT: usize = 5;
 
 #[derive(Default, Clone)]
 struct Identity {
@@ -155,11 +65,12 @@ struct Identity {
 }
 
 impl IdentityPage {
-    fn new() -> Self {
+    fn new(github: github_login::GithubLogin) -> Self {
         Self {
             name: git_config_value("user.name"),
             email: git_config_value("user.email"),
             signing_key: git_config_value("user.signingkey"),
+            github,
             focus: FOCUS_NAME,
         }
     }
@@ -172,9 +83,12 @@ impl IdentityPage {
         }
     }
 
-    /// A click focuses the row; the button advances.
+    /// A click focuses the row; the GitHub button acts and Next advances.
     fn on_click(&mut self, focus: usize) -> Option<Outcome> {
         self.focus = focus;
+        if focus == FOCUS_GITHUB {
+            self.github.activate();
+        }
         (focus == FOCUS_IDENTITY_NEXT).then_some(Outcome::Next)
     }
 
@@ -188,7 +102,7 @@ impl IdentityPage {
         // A focused text field takes every character. `q`, `j` and `k` are
         // letters in a name, so they cannot double as cancel and navigation
         // while one is focused; Esc still cancels and Enter still continues.
-        if self.focus != FOCUS_IDENTITY_NEXT {
+        if self.focus <= FOCUS_SIGNING_KEY {
             let text = match self.focus {
                 FOCUS_NAME => &mut self.name,
                 FOCUS_EMAIL => &mut self.email,
@@ -236,107 +150,43 @@ impl IdentityPage {
                 self.focus = step(self.focus, -1, true);
                 None
             }
+            KeyCode::Enter | KeyCode::Char(' ') if self.focus == FOCUS_GITHUB => {
+                self.github.activate();
+                None
+            }
             KeyCode::Enter => Some(Outcome::Next),
             _ => None,
         }
     }
 }
 
-struct ToolsPage {
-    selections: [bool; 2],
-    focus: usize,
+// Mash's pinned gh, from the bundle. A development build without one falls
+// back to the host's, and the page reports when there is none at all.
+fn github_login(preview: bool) -> github_login::GithubLogin {
+    let bundled = mash_resources().join("bin/gh");
+    let gh = if bundled.is_file() {
+        bundled
+    } else {
+        PathBuf::from("gh")
+    };
+    let path = if env::var_os("MASH_GH_CONFIG_DIR").is_some() {
+        // Sign-in is managed outside the wizard; an empty PATH reports it.
+        OsString::new()
+    } else {
+        bundled_path()
+    };
+    github_login::GithubLogin::new(gh, data_dir().join("config/gh"), path, preview)
 }
 
-// Rows 0 and 1 are the groups, in `Group::ALL` order.
-const FOCUS_GROUP_UTILITIES: usize = 0;
-const FOCUS_GROUP_FORMATTERS: usize = 1;
-const FOCUS_TOOLS_BACK: usize = 2;
-const FOCUS_TOOLS_NEXT: usize = 3;
-const TOOLS_FOCUS_COUNT: usize = 4;
-
-impl ToolsPage {
-    fn new() -> Self {
-        Self {
-            selections: [true, true],
-            focus: FOCUS_GROUP_UTILITIES,
-        }
-    }
-
-    // Which checkbox the focus is on, if any.
-    fn selection(&self) -> Option<usize> {
-        (self.focus < Group::ALL.len()).then_some(self.focus)
-    }
-
-    fn toggle(&mut self, index: usize) {
-        self.selections[index] = !self.selections[index];
-    }
-
-    /// A click focuses the row; a checkbox toggles too, and the buttons act.
-    fn on_click(&mut self, focus: usize) -> Option<Outcome> {
-        self.focus = focus;
-        if let Some(index) = self.selection() {
-            self.toggle(index);
-        }
-        match focus {
-            FOCUS_TOOLS_BACK => Some(Outcome::Back),
-            FOCUS_TOOLS_NEXT => Some(Outcome::Next),
-            _ => None,
-        }
-    }
-
-    fn on_key(&mut self, code: KeyCode, modifiers: KeyModifiers) -> Option<Outcome> {
-        if modifiers.contains(KeyModifiers::CONTROL) && code == KeyCode::Char('c') {
-            return Some(Outcome::Cancel);
-        }
-        let step = |focus, direction, wrap| {
-            wizard_style::focus_step(focus, TOOLS_FOCUS_COUNT, direction, wrap)
-        };
-        match code {
-            KeyCode::Esc | KeyCode::Char('q') => Some(Outcome::Cancel),
-            KeyCode::Down | KeyCode::Char('j') => {
-                self.focus = step(self.focus, 1, false);
-                None
-            }
-            KeyCode::Up | KeyCode::Char('k') => {
-                self.focus = step(self.focus, -1, false);
-                None
-            }
-            KeyCode::Tab => {
-                self.focus = step(self.focus, 1, true);
-                None
-            }
-            KeyCode::BackTab => {
-                self.focus = step(self.focus, -1, true);
-                None
-            }
-            KeyCode::Char(' ') => {
-                if let Some(index) = self.selection() {
-                    self.toggle(index);
-                }
-                None
-            }
-            KeyCode::Char(digit @ ('1' | '2')) => {
-                self.focus = if digit == '1' {
-                    FOCUS_GROUP_UTILITIES
-                } else {
-                    FOCUS_GROUP_FORMATTERS
-                };
-                self.toggle(self.focus);
-                None
-            }
-            KeyCode::Enter => match self.focus {
-                FOCUS_TOOLS_BACK => Some(Outcome::Back),
-                FOCUS_TOOLS_NEXT => Some(Outcome::Next),
-                _ => None,
-            },
-            _ => None,
-        }
-    }
+/// Host PATH with the bundle's own bin first, so the pinned gh resolves.
+fn bundled_path() -> OsString {
+    let mut dirs = vec![mash_resources().join("bin")];
+    dirs.extend(env::split_paths(&host_path()));
+    env::join_paths(dirs).unwrap_or_else(|_| host_path())
 }
 
 enum Outcome {
     Next,
-    Back,
     Cancel,
 }
 
@@ -400,32 +250,53 @@ fn run() -> Result<i32, String> {
 }
 
 fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<i32, String> {
-    let mut identity = IdentityPage::new();
-    let mut tools = ToolsPage::new();
+    let mut identity = IdentityPage::new(github_login(preview));
+    let mut tools = tools_page::ToolsPage::new();
     let mut providers = provider_page::ProviderPage::new();
-    providers.load_existing_auth(&data_dir().join("pi/agent"));
-    let mut skills = skills_page::SkillsPage::new();
+    if preview {
+        providers.load_preview_defaults();
+    } else {
+        providers.load_existing_auth(&data_dir().join("pi/agent"));
+    }
     let mut fonts =
         font_page::FontPage::new(&mash_resources(), &data_dir().join("config/ghostty/config"));
     fonts.theme = theme::Theme::current(&data_dir());
     fonts.keybindings = font_page::Keybindings::current(&data_dir());
+    // The wizard runs directly in Mash's terminal, which names itself here, so
+    // font choices can be shown in this window. A preview writes nothing.
+    if let Some(terminal) = (!preview)
+        .then(|| env::var("MASH_TERMINAL_PID").ok()?.parse::<u32>().ok())
+        .flatten()
+    {
+        fonts.start_live_preview(&data_dir().join("config/ghostty/config"), terminal);
+    }
     let mut voice = voice_page::VoicePage::new();
     let mut page = 0;
     let mut started = false;
     let mut start_button = Rect::default();
     loop {
-        providers.set_services(page == 3);
-        if !preview && page == 2 {
-            providers.poll_models();
+        identity.github.poll();
+        fonts.poll_live_preview();
+        // The Appearance page's theme choice recolours the wizard at once.
+        wizard_style::set_light(fonts.theme == theme::Theme::Light);
+        providers.set_page(match page {
+            3 => provider_page::Page::WebSearch,
+            4 => provider_page::Page::Hindsight,
+            _ => provider_page::Page::Model,
+        });
+        if matches!(page, 2..=4) {
+            providers.service_connection(&mash_resources(), &data_dir().join("pi/agent"), preview);
+            if !preview {
+                providers.poll_models();
+            }
         }
         terminal
             .draw(|frame| {
                 if started {
                     match page {
                         0 => draw_identity(frame, &identity),
-                        1 => draw_tools(frame, &tools),
-                        2 | 3 => providers.draw(frame),
-                        4 => skills.draw(frame),
+                        1 => tools.draw(frame),
+                        2..=4 => providers.draw(frame),
                         5 => fonts.draw(frame),
                         _ => voice.draw(frame),
                     }
@@ -435,9 +306,13 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                 if preview && started {
                     wizard_style::preview_hint(frame);
                 }
+                wizard_style::finish(frame);
             })
             .map_err(|e| e.to_string())?;
-        if providers.is_loading()
+        if (providers.is_loading()
+            || providers.connection_busy()
+            || identity.github.busy()
+            || fonts.live_preview_pending())
             && !event::poll(Duration::from_millis(50)).map_err(|e| e.to_string())?
         {
             continue;
@@ -465,7 +340,7 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
             page = id - wizard_style::SIDEBAR_BASE;
             continue;
         }
-        if matches!(page, 2 | 3)
+        if matches!(page, 2..=4)
             && providers.menu_open()
             && click.is_none()
             && matches!(&event, Event::Mouse(mouse) if mouse.kind == MouseEventKind::Down(MouseButton::Left))
@@ -479,10 +354,14 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                 // the page: nothing is validated or saved in a preview.
                 let step = match page {
                     0 => identity.on_click(id).map(|_| 1),
-                    1 => tools
-                        .on_click(id)
-                        .map(|o| if matches!(o, Outcome::Back) { -1 } else { 1 }),
-                    2 | 3 => providers.on_click(id).map(|d| {
+                    1 => tools.on_click(id).map(|d| {
+                        if matches!(d, tools_page::Decision::Back) {
+                            -1
+                        } else {
+                            1
+                        }
+                    }),
+                    2..=4 => providers.on_click(id).map(|d| {
                         if matches!(d, provider_page::Decision::Back) {
                             -1
                         } else if matches!(d, provider_page::Decision::Save)
@@ -494,13 +373,6 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                             )
                         {
                             0
-                        } else {
-                            1
-                        }
-                    }),
-                    4 => skills.on_click(id).map(|d| {
-                        if matches!(d, skills_page::Decision::Back) {
-                            -1
                         } else {
                             1
                         }
@@ -521,8 +393,15 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                 page = (page as isize + step.unwrap_or(0))
                     .clamp(0, wizard_style::PAGE_COUNT as isize - 1)
                     as usize;
-            } else if matches!(page, 2 | 3)
-                && providers.menu_open()
+            } else if page == 1 && wizard_style::wheel(&event).is_some() {
+                let code = if wizard_style::wheel(&event) == Some(-1) {
+                    KeyCode::Up
+                } else {
+                    KeyCode::Down
+                };
+                let _ = tools.on_key(code, KeyModifiers::NONE);
+            } else if matches!(page, 2..=4)
+                && (providers.menu_open() || providers.browsing_providers())
                 && wizard_style::wheel(&event).is_some()
             {
                 let code = if wizard_style::wheel(&event) == Some(-1) {
@@ -533,8 +412,35 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                 let _ = providers.on_key(code, KeyModifiers::NONE);
             } else if let Event::Key(key) = event {
                 if key.kind == KeyEventKind::Press {
-                    if matches!(page, 2 | 3)
+                    if page == 1
+                        && matches!(
+                            key.code,
+                            KeyCode::Up
+                                | KeyCode::Down
+                                | KeyCode::Tab
+                                | KeyCode::BackTab
+                                | KeyCode::Enter
+                                | KeyCode::Char(' ')
+                                | KeyCode::Char('j' | 'k')
+                        )
+                    {
+                        match tools.on_key(key.code, key.modifiers) {
+                            Some(tools_page::Decision::Back) => page = 0,
+                            Some(tools_page::Decision::Next) => page = 2,
+                            _ => {}
+                        }
+                    } else if matches!(page, 2..=4)
                         && (providers.menu_open()
+                            || providers.browsing_providers()
+                                && matches!(
+                                    key.code,
+                                    KeyCode::Up
+                                        | KeyCode::Down
+                                        | KeyCode::Home
+                                        | KeyCode::End
+                                        | KeyCode::PageUp
+                                        | KeyCode::PageDown
+                                )
                             || providers.has_model_step()
                             || matches!(
                                 key.code,
@@ -581,27 +487,34 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
         }
         let (code, modifiers) = key.unwrap_or((KeyCode::Null, KeyModifiers::NONE));
         match page {
-            0 | 1 => match if let Some(id) = click {
-                if page == 0 {
-                    identity.on_click(id)
-                } else {
-                    tools.on_click(id)
-                }
-            } else if page == 0 {
-                identity.on_key(code, modifiers)
+            0 => match if let Some(id) = click {
+                identity.on_click(id)
             } else {
-                tools.on_key(code, modifiers)
+                identity.on_key(code, modifiers)
             } {
                 Some(Outcome::Cancel) => {
                     if confirm_quit(terminal)? {
                         return Ok(EXIT_NOT_DONE);
                     }
                 }
-                Some(Outcome::Next) => page += 1,
-                Some(Outcome::Back) => page -= 1,
+                Some(Outcome::Next) => page = 1,
                 None => {}
             },
-            2 | 3 => match if let Some(id) = click {
+            1 => match if let Some(id) = click {
+                tools.on_click(id)
+            } else {
+                tools.on_key(code, modifiers)
+            } {
+                Some(tools_page::Decision::Cancel) => {
+                    if confirm_quit(terminal)? {
+                        return Ok(EXIT_NOT_DONE);
+                    }
+                }
+                Some(tools_page::Decision::Back) => page = 0,
+                Some(tools_page::Decision::Next) => page = 2,
+                None => {}
+            },
+            2..=4 => match if let Some(id) = click {
                 providers.on_click(id)
             } else {
                 providers.on_key(code, modifiers)
@@ -621,20 +534,6 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                 {
                     page += 1
                 }
-                _ => {}
-            },
-            4 => match if let Some(id) = click {
-                skills.on_click(id)
-            } else {
-                skills.on_key(code, modifiers)
-            } {
-                Some(skills_page::Decision::Cancel) => {
-                    if confirm_quit(terminal)? {
-                        return Ok(EXIT_NOT_DONE);
-                    }
-                }
-                Some(skills_page::Decision::Back) => page = 3,
-                Some(skills_page::Decision::Save) => page = 5,
                 _ => {}
             },
             5 => match if let Some(id) = click {
@@ -662,28 +561,29 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
                     }
                 }
                 Some(voice_page::Decision::Back) => page = 5,
-                Some(voice_page::Decision::Skip) => break,
                 Some(voice_page::Decision::Save) if voice.validate() => break,
                 _ => {}
             },
         }
     }
 
-    let mut plan = install_plan(tools.selections);
+    let mut plan = install_plan(&tools.chosen());
     plan.voice = voice.choice();
-    plan.programming = skills.programming();
-    let identity = identity.identity();
+    plan.programming = tools.programming();
+    let git_identity = identity.identity();
     match review_and_apply(
         terminal,
         &plan,
-        &identity,
+        &git_identity,
         &fonts,
-        &mut skills,
+        &tools,
         &mut providers,
     ) {
         Ok(()) => {
-            if tools.selections[0] {
-                offer_github_login(terminal)?;
+            // Pi's MCP config is only written once setup has been applied.
+            identity.github.poll();
+            if identity.github.signed_in() {
+                connect_github_mcp();
             }
             Ok(0)
         }
@@ -730,7 +630,10 @@ fn preview_key(
 fn confirm_quit<B: Backend>(terminal: &mut Terminal<B>) -> Result<bool, String> {
     loop {
         terminal
-            .draw(draw_confirm_quit)
+            .draw(|frame| {
+                draw_confirm_quit(frame);
+                wizard_style::finish(frame);
+            })
             .map_err(|e| e.to_string())?;
         let Event::Key(key) = event::read().map_err(|e| e.to_string())? else {
             continue;
@@ -804,7 +707,7 @@ fn review_and_apply<B: Backend>(
     plan: &Plan,
     identity: &Identity,
     fonts: &font_page::FontPage,
-    skills: &mut skills_page::SkillsPage,
+    tools: &tools_page::ToolsPage,
     providers: &mut provider_page::ProviderPage,
 ) -> Result<(), ApplyError> {
     let state_dir = state_dir();
@@ -813,9 +716,9 @@ fn review_and_apply<B: Backend>(
         // The keybinding mode comes first: the seed sync below renders Fresh's
         // map for it, and the launcher opens Mash right after this returns.
         fonts.save_mode(&data_dir())?;
-        skills.save_selection(&data_dir())?;
+        tools.save_selection(&data_dir())?;
         seed_selected_skills()?;
-        providers.save(&data_dir())?;
+        providers.save_with_runtime(&data_dir(), &mash_resources())?;
         Ok(())
     })();
     if let Err(error) = prepare {
@@ -823,7 +726,7 @@ fn review_and_apply<B: Backend>(
         save_state(&state_dir, &state);
         return Err(ApplyError::Failed(state.error));
     }
-    check_saved_model(terminal);
+    check_saved_model(terminal, providers.login_later_hint());
     let missing: Vec<&str> = plan
         .tools
         .iter()
@@ -867,7 +770,8 @@ fn review_and_apply<B: Backend>(
 }
 
 /// Diagnostic failures are notes, never setup failures or early completion.
-fn check_saved_model<B: Backend>(terminal: &mut Terminal<B>) {
+/// Deferred sign-in skips credential inspection and shows the chosen next step.
+fn check_saved_model<B: Backend>(terminal: &mut Terminal<B>, deferred_login: Option<String>) {
     let agent = data_dir().join("pi/agent");
     let selected = fs::read_to_string(agent.join("settings.json"))
         .ok()
@@ -883,15 +787,27 @@ fn check_saved_model<B: Backend>(terminal: &mut Terminal<B>) {
     if !selected {
         return;
     }
-    let request = serde_json::json!({"version":1,"action":"verify","agentDir":agent});
-    let mut job = pi_models::Job::start(&mash_resources(), request).ok();
-    let notes = if let Some(job) = job.as_mut() {
+    let mut job = if deferred_login.is_none() {
+        let request = serde_json::json!({"version":1,"action":"verify","agentDir":agent});
+        pi_models::Job::start(&mash_resources(), request).ok()
+    } else {
+        None
+    };
+    let notes = if let Some(hint) = deferred_login {
+        vec![
+            "Model configured; authentication was not attempted.".into(),
+            hint,
+        ]
+    } else if let Some(job) = job.as_mut() {
         loop {
             if let Some(result) = job.poll() {
                 break result.map(|report| report.warnings()).unwrap_or_else(|_| vec!["Pi model check unavailable. Your configuration was kept; use Pi /model and /login after setup.".into()]);
             }
             if terminal
-                .draw(|frame| draw_model_check(frame, &[], true))
+                .draw(|frame| {
+                    draw_model_check(frame, &[], true);
+                    wizard_style::finish(frame);
+                })
                 .is_err()
             {
                 return;
@@ -913,7 +829,10 @@ fn check_saved_model<B: Backend>(terminal: &mut Terminal<B>) {
     }
     loop {
         if terminal
-            .draw(|frame| draw_model_check(frame, &notes, false))
+            .draw(|frame| {
+                draw_model_check(frame, &notes, false);
+                wizard_style::finish(frame);
+            })
             .is_err()
         {
             return;
@@ -1104,8 +1023,8 @@ fn seed_selected_skills() -> Result<(), String> {
 // Host installers run only when a selected tool is missing. Mash-owned tools
 // install even when the host has a copy: a host binary cannot satisfy Mash's
 // pinned, isolated install. Environment steps always run.
-const STEP_HINDSIGHT: &str = "Install the Hindsight environment";
-const STEP_HINDSIGHT_DAEMON: &str = "Start Hindsight and fetch its models";
+const STEP_HINDSIGHT: &str = "Install the memory environment";
+const STEP_HINDSIGHT_DAEMON: &str = "Start memory and fetch its models";
 const STEP_VOICE: &str = "Install the dictation model";
 
 fn install_steps(plan: &Plan, missing: &[&str]) -> Vec<String> {
@@ -1160,7 +1079,7 @@ fn start_hindsight_daemon<B: Backend>(
     let warm_start = mash_resources().join("defaults/pi/scripts/ensure-hindsight-daemon.sh");
     let warm_start = warm_start
         .canonicalize()
-        .map_err(|e| format!("the Hindsight warm-start script is missing: {e}"))?;
+        .map_err(|e| format!("the memory warm-start script is missing: {e}"))?;
     let data = data_dir();
     let mut command = Command::new(&warm_start);
     command
@@ -1193,10 +1112,7 @@ fn start_hindsight_daemon<B: Backend>(
         draw_apply(terminal, completed, total, step, &shown);
         std::thread::sleep(Duration::from_secs(10));
     }
-    Err(
-        "the Hindsight daemon did not come up; see ~/.mash/.hindsight/hook-last-run.log"
-            .to_string(),
-    )
+    Err("the memory service did not start; see ~/.mash/.hindsight/hook-last-run.log".to_string())
 }
 
 // The daemon answers /health for any squatter, so ask for /version.
@@ -1595,75 +1511,6 @@ fn install_cua_driver() -> Result<String, String> {
 // is cleared first: a Mash launched from inside another Mash would otherwise
 // report Mash's config instead of the machine's, and Mash's is the one being
 // filled in.
-fn offer_github_login<B: Backend>(terminal: &mut Terminal<B>) -> Result<(), String> {
-    if !is_available("gh") || env::var_os("MASH_GH_CONFIG_DIR").is_some() {
-        return Ok(());
-    }
-    let config = data_dir().join("config/gh");
-    if config.is_symlink() || config.join("hosts.yml").is_symlink() {
-        return Err("GitHub config must stay inside Mash".into());
-    }
-    fs::create_dir_all(&config).map_err(|e| e.to_string())?;
-    fs::set_permissions(&config, fs::Permissions::from_mode(0o700)).map_err(|e| e.to_string())?;
-    let already_signed_in = github_command(&config)
-        .args(["auth", "status"])
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()
-        .is_ok_and(|status| status.success());
-    if already_signed_in || github_token(&config).is_some() {
-        connect_github_mcp();
-        return Ok(());
-    }
-    let mut note = String::new();
-    loop {
-        terminal
-            .draw(|frame| {
-                let body = wizard_style::section(frame, frame.area(), "GitHub (optional)");
-                frame.render_widget(
-                    Paragraph::new(format!(
-                        "Sign into GitHub for Mash?\n\nPress y to open browser sign-in, or Enter / n / Esc to skip.\n\n{note}"
-                    ))
-                    .alignment(Alignment::Center),
-                    body,
-                );
-            })
-            .map_err(|e| e.to_string())?;
-        let Event::Key(key) = event::read().map_err(|e| e.to_string())? else {
-            continue;
-        };
-        if key.kind != KeyEventKind::Press {
-            continue;
-        }
-        match key.code {
-            KeyCode::Enter | KeyCode::Esc | KeyCode::Char('n') => return Ok(()),
-            KeyCode::Char('y') => {
-                disable_raw_mode().map_err(|e| e.to_string())?;
-                execute!(io::stdout(), LeaveAlternateScreen).map_err(|e| e.to_string())?;
-                let result = github_command(&config)
-                    .args([
-                        "auth",
-                        "login",
-                        "--web",
-                        "--git-protocol",
-                        "https",
-                        "--insecure-storage",
-                    ])
-                    .status();
-                let _ = execute!(io::stdout(), EnterAlternateScreen);
-                enable_raw_mode().map_err(|e| e.to_string())?;
-                terminal.clear().map_err(|e| e.to_string())?;
-                if result.is_ok_and(|status| status.success()) {
-                    connect_github_mcp();
-                    return Ok(());
-                }
-                note = "GitHub sign-in did not complete. Press y to retry or Enter to skip.".into();
-            }
-            _ => {}
-        }
-    }
-}
-
 // Register GitHub's MCP server now that Mash's gh is signed in, so the first
 // session already has it. The helper decides from the sign-in itself and never
 // writes the token; every launch runs it too, so a failure here only delays the
@@ -1672,36 +1519,12 @@ fn connect_github_mcp() {
     let helper = mash_resources().join("bin/mash-github-mcp");
     if helper.is_file() {
         let _ = Command::new(&helper)
-            .env("PATH", host_path())
+            .env("PATH", bundled_path())
             .arg(data_dir())
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .status();
     }
-}
-
-fn github_token(config: &Path) -> Option<String> {
-    let text = fs::read_to_string(config.join("hosts.yml")).ok()?;
-    for line in text.lines() {
-        if let Some(value) = line.trim().strip_prefix("oauth_token:") {
-            return Some(value.trim().to_string());
-        }
-    }
-    None
-}
-
-fn github_command(config: &Path) -> Command {
-    let mut command = Command::new("gh");
-    // The wizard runs before mash_isolate. Inherited tokens must not make the
-    // Mash account look signed in or leak into the new login flow.
-    command
-        .env("PATH", host_path())
-        .env("GH_CONFIG_DIR", config)
-        .env_remove("GH_TOKEN")
-        .env_remove("GITHUB_TOKEN")
-        .env_remove("GH_ENTERPRISE_TOKEN")
-        .env_remove("GH_HOST");
-    command
 }
 
 fn git_config_value(key: &str) -> String {
@@ -1775,40 +1598,112 @@ fn draw_identity(frame: &mut Frame, page: &IdentityPage) {
         Constraint::Length(3),
     ])
     .split(area);
-    wizard_style::header(
-        frame,
-        chunks[0],
-        &wizard_style::page_title("Git identity", 0),
-    );
-
-    let mut lines: Vec<(Line<'static>, Option<usize>)> = vec![
-        (Line::from("Git identity for commits made in Mash."), None),
-        (Line::from(""), None),
-    ];
-    for (focus, label, value) in [
-        (FOCUS_NAME, "Name       ", &page.name),
-        (FOCUS_EMAIL, "Email      ", &page.email),
-        (FOCUS_SIGNING_KEY, "Signing key", &page.signing_key),
-    ] {
-        let focused = page.focus == focus;
-        lines.push((
-            wizard_style::text_field(focused, label, value.clone()),
-            Some(focus),
-        ));
-        if focused {
-            lines.push((
-                Line::from(if focus == FOCUS_SIGNING_KEY {
-                    "      empty disables commit signing; a key enables it"
-                } else {
-                    "      type to edit, Backspace to delete, empty to leave commits unattributed"
-                }),
-                None,
-            ));
-        }
-    }
+    wizard_style::header(frame, chunks[0], &wizard_style::page_title("Identity", 0));
 
     let body = wizard_style::section(frame, chunks[1], "Identity");
-    wizard_style::render_form(frame, body, lines, true);
+    let fields = [
+        (FOCUS_NAME, "Name:", &page.name, "Name on commits"),
+        (FOCUS_EMAIL, "Email:", &page.email, "Email on commits"),
+        (
+            FOCUS_SIGNING_KEY,
+            "Signing key:",
+            &page.signing_key,
+            "Empty disables signing",
+        ),
+    ];
+    let label_width = 13.min(body.width);
+    let input_width = fields
+        .iter()
+        .map(|(_, _, value, _)| Line::from((*value).clone()).width() + 3)
+        .max()
+        .unwrap_or(0)
+        .max(32)
+        .min(body.width.saturating_sub(label_width + 11) as usize) as u16;
+    let help_x = body.x + label_width + input_width + 3;
+    let help_width = body.right().saturating_sub(help_x);
+    let mut row = 0;
+    let rows: Vec<_> = fields
+        .iter()
+        .map(|(_, _, _, hint)| {
+            let height = Paragraph::new(*hint)
+                .wrap(Wrap { trim: true })
+                .line_count(help_width.max(1)) as u16;
+            let start = row;
+            row += height + 1;
+            (start, height)
+        })
+        .collect();
+    let github_row = row;
+    let (focus_row, focus_end) = if page.focus <= FOCUS_SIGNING_KEY {
+        let (row, height) = rows[page.focus];
+        (row, row + height)
+    } else {
+        (github_row, github_row + 6)
+    };
+    // Scroll whole fields on short terminals, keeping the focused control visible.
+    let scroll = rows
+        .iter()
+        .map(|(row, _)| *row)
+        .chain(std::iter::once(github_row))
+        .find(|row| *row <= focus_row && focus_end.saturating_sub(*row) <= body.height)
+        .unwrap_or(focus_row);
+    for ((focus, label, value, hint), (row, height)) in fields.iter().zip(rows) {
+        if row < scroll || row - scroll >= body.height {
+            continue;
+        }
+        let y = body.y + row - scroll;
+        let focused = page.focus == *focus;
+        let input = Rect::new(body.x + label_width, y, input_width, 1);
+        frame.render_widget(
+            Paragraph::new(*label).style(Style::default().add_modifier(Modifier::BOLD)),
+            Rect::new(body.x, y, label_width, 1),
+        );
+        let text = Line::from(vec![
+            Span::raw(" "),
+            Span::raw((*value).clone()),
+            Span::styled(
+                if focused { "_" } else { " " },
+                Style::default().fg(wizard_style::YELLOW),
+            ),
+            Span::raw(" "),
+        ]);
+        let horizontal_scroll = if focused {
+            text.width().saturating_sub(input_width as usize)
+        } else {
+            0
+        };
+        frame.render_widget(
+            Paragraph::new(text)
+                .style(if focused {
+                    wizard_style::selected()
+                } else {
+                    Style::default()
+                        .fg(wizard_style::TEXT)
+                        .bg(wizard_style::SURFACE)
+                })
+                .scroll((0, horizontal_scroll.min(u16::MAX as usize) as u16)),
+            input,
+        );
+        wizard_style::target(Rect::new(body.x, y, label_width + input_width, 1), *focus);
+        frame.render_widget(
+            Paragraph::new(*hint)
+                .wrap(Wrap { trim: true })
+                .style(Style::default().fg(wizard_style::MUTED)),
+            Rect::new(help_x, y, help_width, height.min(body.bottom() - y)),
+        );
+    }
+    let github_y = body.y + github_row.saturating_sub(scroll);
+    draw_github(
+        frame,
+        Rect::new(
+            body.x,
+            github_y.min(body.bottom()),
+            body.width,
+            body.bottom().saturating_sub(github_y),
+        ),
+        &page.github,
+        page.focus == FOCUS_GITHUB,
+    );
     wizard_style::render_buttons(
         frame,
         chunks[2],
@@ -1819,56 +1714,98 @@ fn draw_identity(frame: &mut Frame, page: &IdentityPage) {
     );
 }
 
-fn draw_tools(frame: &mut Frame, page: &ToolsPage) {
-    let area = wizard_style::page_area(frame, Some(1));
-    let chunks = Layout::vertical([
-        Constraint::Length(3),
-        Constraint::Min(8),
-        Constraint::Length(3),
-    ])
-    .split(area);
-    wizard_style::header(frame, chunks[0], &wizard_style::page_title("Tools", 1));
-
-    let mut lines: Vec<(Line<'static>, Option<usize>)> = vec![
-        (
-            Line::from(
-                "Choose tools to install. GitHub sign-in is offered after installation when utilities are selected.",
-            ),
-            None,
-        ),
-        (Line::from(""), None),
-    ];
-    for (index, group) in Group::ALL.iter().enumerate() {
-        let focused = page.focus == index;
-        let mut line = wizard_style::checkbox(focused, group.title(), page.selections[index]);
-        line.spans
-            .push(Span::raw(format!(" — {}", group.summary())));
-        lines.push((line, Some(index)));
-        for (tool, description) in group.tools() {
-            lines.push((Line::from(format!("      {tool:<24} {description}")), None));
-        }
-        lines.push((Line::from(""), None));
+/// A filled GitHub action like the welcome button, with status outside its hit area.
+fn draw_github(frame: &mut Frame, area: Rect, github: &github_login::GithubLogin, focused: bool) {
+    use github_login::Status;
+    if area.height == 0 {
+        return;
     }
-
-    let body = wizard_style::section(frame, chunks[1], "Install choices");
-    wizard_style::render_form(frame, body, lines, true);
-    wizard_style::render_buttons(
-        frame,
-        chunks[2],
-        &[
-            (
-                wizard_style::button(page.focus == FOCUS_TOOLS_BACK, " Back "),
-                Some(FOCUS_TOOLS_BACK),
+    frame.render_widget(
+        Paragraph::new("GitHub (optional)").style(Style::default().add_modifier(Modifier::BOLD)),
+        Rect::new(area.x, area.y, area.width, 1),
+    );
+    if area.height <= 2 {
+        return;
+    }
+    let (note, color) = match github.status() {
+        Status::Unavailable(reason) => (reason.clone(), wizard_style::MUTED),
+        Status::SignedOut => ("Not signed in".to_string(), wizard_style::MUTED),
+        Status::Starting => ("Contacting GitHub…".to_string(), wizard_style::MUTED),
+        Status::Waiting { .. } => (
+            "Waiting for approval in your browser".to_string(),
+            wizard_style::YELLOW,
+        ),
+        Status::SignedIn(Some(user)) => (format!("✓ Signed in as {user}"), wizard_style::GREEN),
+        Status::SignedIn(None) => ("✓ Signed in".to_string(), wizard_style::GREEN),
+        Status::Failed(reason) => (reason.clone(), wizard_style::RED),
+    };
+    if matches!(github.status(), Status::Unavailable(_)) {
+        frame.render_widget(
+            Paragraph::new(note)
+                .wrap(Wrap { trim: true })
+                .style(Style::default().fg(color)),
+            Rect::new(area.x, area.y + 2, area.width, area.height - 2),
+        );
+        return;
+    }
+    // Same 23-column, centred, filled treatment as Start config wizard.
+    let button = Rect::new(area.x, area.y + 2, 23.min(area.width), 1);
+    frame.render_widget(
+        Paragraph::new(github.button_label())
+            .alignment(Alignment::Center)
+            .style(if focused {
+                wizard_style::selected().add_modifier(Modifier::BOLD)
+            } else {
+                wizard_style::selected()
+            }),
+        button,
+    );
+    wizard_style::target(button, FOCUS_GITHUB);
+    let note_x = button.right() + 3;
+    let note_width = area.right().saturating_sub(note_x);
+    let note_height = (Paragraph::new(note.as_str())
+        .wrap(Wrap { trim: true })
+        .line_count(note_width.max(1)) as u16)
+        .min(area.height - 2);
+    frame.render_widget(
+        Paragraph::new(note)
+            .wrap(Wrap { trim: true })
+            .style(Style::default().fg(color)),
+        Rect::new(note_x, button.y, note_width, note_height),
+    );
+    let mut details = Vec::new();
+    if let Status::Waiting { code, url, copied } = github.status() {
+        details.push(Line::from(vec![
+            Span::raw("Your code   "),
+            Span::styled(
+                code.clone(),
+                Style::default()
+                    .fg(wizard_style::YELLOW)
+                    .add_modifier(Modifier::BOLD),
             ),
-            (Span::raw("    "), None),
-            (
-                wizard_style::button(
-                    page.focus == FOCUS_TOOLS_NEXT,
-                    " Next — configure providers ",
-                ),
-                Some(FOCUS_TOOLS_NEXT),
-            ),
-        ],
+            Span::raw(if *copied {
+                "   copied to clipboard"
+            } else {
+                ""
+            }),
+        ]));
+        details.push(Line::from(format!("Enter it at {url} to approve Mash.")));
+    } else if matches!(github.status(), Status::SignedOut | Status::Failed(_)) {
+        details.push(Line::from(
+            "Used by Git over HTTPS, pull requests and the agents' GitHub tools.",
+        ));
+    }
+    let details_y = button.y + note_height + 1;
+    frame.render_widget(
+        Paragraph::new(details)
+            .wrap(Wrap { trim: true })
+            .style(Style::default().fg(wizard_style::MUTED)),
+        Rect::new(
+            area.x,
+            details_y.min(area.bottom()),
+            area.width,
+            area.bottom().saturating_sub(details_y),
+        ),
     );
 }
 
@@ -1905,6 +1842,7 @@ fn draw_apply<B: Backend>(
             Paragraph::new(messages.join("\n")).wrap(Wrap { trim: true }),
             log,
         );
+        wizard_style::finish(frame);
     });
 }
 
@@ -1936,94 +1874,37 @@ struct Plan {
     programming: bool,
 }
 
-fn install_plan(selections: [bool; 2]) -> Plan {
+/// The install steps for the tools chosen on the Tools page. Bundled tools and
+/// apt dependencies are never chosen, so they never reach an installer.
+fn install_plan(chosen: &[&tools_page::Tool]) -> Plan {
+    use tools_page::{How, Route};
     let mut plan = Plan {
         programming: true,
         ..Plan::default()
     };
-    if is_linux() {
-        // The same capability groups, installed without elevation. Every
-        // component named here is pinned in packaging/assets.json; the helper
-        // installs Linux binaries where pinned and reports host-package tools
-        // that Mash does not install.
-        if selections[0] {
-            for &(name, _) in UTILITIES {
-                plan.tools.push(name);
-                plan.linux.push(name);
-            }
+    for tool in chosen {
+        let Some(route) = tool.route() else {
+            continue;
+        };
+        match route {
+            Route::Bundled | Route::Apt => continue,
+            Route::Brew(formula) => plan.brew.push(formula),
+            // Linux installs every Mash component through one helper call,
+            // without elevation; macOS splits them by kind.
+            Route::Mash(_, components) if is_linux() => plan.linux.extend(components),
+            Route::Mash(How::Download, components) => plan.pinned.extend(components),
+            Route::Mash(How::Npm, components) => plan.npm.extend(components),
+            Route::Mash(How::Pip, components) => plan.python.extend(components),
+            Route::Installer => plan.installer.push(tool.name),
+            Route::Apple => plan.apple.push(tool.name),
         }
-        if selections[1] {
-            for &(name, _) in FORMATTERS {
-                plan.tools.push(name);
-                match name {
-                    // The manifest names the package, the binary is pylsp.
-                    "pylsp" => plan.linux.push("python-lsp-server"),
-                    other => plan.linux.push(other),
-                }
-            }
-            for &(component, tools) in EXTRA_FORMATTERS {
-                plan.linux.push(component);
-                plan.tools.extend(tools.iter().copied());
-            }
-        }
-        return plan;
+        plan.tools.extend(tool.binaries());
     }
-    if selections[0] {
-        // Every utility lands in `tools`, which drives the availability check
-        // and the "already installed" report. Only the installer differs.
-        for &(name, _) in UTILITIES {
-            plan.tools.push(name);
-            match name {
-                // Pinned release binaries, like Linux: an unversioned formula
-                // cannot honour the manifest, and Sentrux's grammars are
-                // checksummed beside the binary.
-                "sentrux" => plan.pinned.push("sentrux"),
-                "agent-browser" => plan.npm.push("agent-browser"),
-                "cua-driver" => plan.installer.push(name),
-                other => plan.brew.push(other),
-            }
-        }
-    }
-    if selections[1] {
-        // Only the tools with no pinned macOS artifact stay on Homebrew.
-        // prettier is absent for the same reason: the npm step installs it at
-        // its pinned version, and a formula alongside it would shadow that.
-        plan.brew.extend(["gopls", "shfmt"]);
-        plan.pinned
-            .extend(["marksman", "texlab", "latexindent", "rust-analyzer"]);
-        plan.npm.extend([
-            "prettier",
-            "prettier-plugin-svelte",
-            "bash-language-server",
-            "typescript-language-server",
-            "yaml-language-server",
-            "svelte-language-server",
-            "vscode-langservers-extracted",
-            "tailwindcss-language-server",
-        ]);
-        plan.python.push("python-lsp-server");
-        plan.apple.extend(["clangd", "sourcekit-lsp"]);
-        plan.tools.extend([
-            "prettier",
-            "shfmt",
-            "latexindent",
-            "gopls",
-            "rust-analyzer",
-            "marksman",
-            "texlab",
-            "pylsp",
-            "bash-language-server",
-            "typescript-language-server",
-            "yaml-language-server",
-            "svelteserver",
-            "vscode-css-language-server",
-            "vscode-json-language-server",
-            "vscode-html-language-server",
-            "tailwindcss-language-server",
-            "clangd",
-            "sourcekit-lsp",
-        ]);
-    }
+    // Separate LSP choices may be supplied by the same package.
+    plan.linux.sort_unstable();
+    plan.linux.dedup();
+    plan.npm.sort_unstable();
+    plan.npm.dedup();
     plan
 }
 
@@ -2031,24 +1912,26 @@ fn install_plan(selections: [bool; 2]) -> Plan {
 mod tests {
     use super::*;
 
-    #[test]
-    fn github_login_uses_only_mash_config_not_inherited_tokens() {
-        let command = github_command(Path::new("/tmp/mash/config/gh"));
-        let envs: Vec<_> = command.get_envs().collect();
-        assert!(envs.iter().any(|(key, value)| *key == "GH_CONFIG_DIR"
-            && value.is_some_and(|v| v == "/tmp/mash/config/gh")));
-        for key in ["GH_TOKEN", "GITHUB_TOKEN", "GH_ENTERPRISE_TOKEN", "GH_HOST"] {
-            assert!(envs
-                .iter()
-                .any(|(name, value)| *name == key && value.is_none()));
-        }
+    /// Every tool this platform lets the Tools page choose, all checked.
+    fn every_tool() -> Vec<&'static tools_page::Tool> {
+        tools_page::ToolsPage::new().chosen()
+    }
+
+    /// The identity page with a preview sign-in, so no test runs gh.
+    fn identity_page() -> IdentityPage {
+        IdentityPage::new(github_login::GithubLogin::new(
+            PathBuf::from("/nonexistent/gh"),
+            env::temp_dir().join("mash-wizard-test-gh"),
+            OsString::new(),
+            true,
+        ))
     }
 
     #[test]
     fn identity_fields_take_letters_that_otherwise_navigate() {
         // q cancels and j/k navigate on the checkbox rows, but all three are
         // valid letters in a name, so a focused field has to take them.
-        let mut app = IdentityPage::new();
+        let mut app = identity_page();
         app.focus = FOCUS_NAME;
         // Prefilled from the machine, so start from empty to isolate typing.
         app.name.clear();
@@ -2061,7 +1944,7 @@ mod tests {
 
     #[test]
     fn identity_is_prefilled_from_the_machines_git_config() {
-        let app = IdentityPage::new();
+        let app = identity_page();
         assert_eq!(app.name, git_config_value("user.name"));
         assert_eq!(app.email, git_config_value("user.email"));
         assert_eq!(app.signing_key, git_config_value("user.signingkey"));
@@ -2105,12 +1988,12 @@ mod tests {
 
     #[test]
     fn backspace_edits_only_the_focused_field() {
-        let mut app = IdentityPage::new();
+        let mut app = identity_page();
         app.focus = FOCUS_EMAIL;
         app.email = "abc".into();
         app.on_key(KeyCode::Backspace, KeyModifiers::NONE);
         assert_eq!(app.email, "ab");
-        assert_eq!(app.name, IdentityPage::new().name);
+        assert_eq!(app.name, identity_page().name);
         app.focus = FOCUS_SIGNING_KEY;
         app.signing_key = "ABC".into();
         app.on_key(KeyCode::Backspace, KeyModifiers::NONE);
@@ -2119,42 +2002,143 @@ mod tests {
     }
 
     #[test]
-    fn tab_visits_every_row_on_each_page_and_wraps() {
-        let mut identity = IdentityPage::new();
+    fn tab_visits_every_identity_row_and_wraps() {
+        let mut identity = identity_page();
         let mut seen = vec![identity.focus];
         for _ in 0..IDENTITY_FOCUS_COUNT {
             identity.on_key(KeyCode::Tab, KeyModifiers::NONE);
             seen.push(identity.focus);
         }
-        assert_eq!(seen, vec![0, 1, 2, 3, 0]);
-        let mut tools = ToolsPage::new();
-        let mut seen = vec![tools.focus];
-        for _ in 0..TOOLS_FOCUS_COUNT {
-            tools.on_key(KeyCode::Tab, KeyModifiers::NONE);
-            seen.push(tools.focus);
+        assert_eq!(seen, vec![0, 1, 2, 3, 4, 0]);
+    }
+
+    #[test]
+    fn identity_fields_fit_values_and_keep_help_in_a_separate_column() {
+        use wizard_style::tests::find;
+        for (width, height) in [(80, 24), (100, 30), (140, 40)] {
+            let page = IdentityPage {
+                name: "Alexandria Example".into(),
+                email: "alexandria.example@example.org".into(),
+                signing_key: "0123456789ABCDEF0123456789ABCDEF01234567".into(),
+                ..identity_page()
+            };
+            let mut terminal =
+                Terminal::new(ratatui::backend::TestBackend::new(width, height)).unwrap();
+            terminal.draw(|frame| draw_identity(frame, &page)).unwrap();
+            let buffer = terminal.backend().buffer();
+            let (_, name_y) = find(buffer, &page.name);
+            let (_, email_y) = find(buffer, &page.email);
+            let (key_x, key_y) = find(buffer, &page.signing_key);
+            assert!(email_y >= name_y + 2, "blank line between name and email");
+            assert!(key_y >= email_y + 2, "blank line between email and key");
+            for (hint, row) in [("Name on", name_y), ("Email on", email_y), ("Empty", key_y)] {
+                let (x, y) = find(buffer, hint);
+                assert_eq!(y, row, "help begins alongside its input");
+                assert!(x > key_x + page.signing_key.len() as u16);
+                assert_eq!(buffer[(x, y)].fg, wizard_style::MUTED);
+            }
+            assert_eq!(buffer[(key_x, name_y + 1)].symbol(), " ");
+            assert_eq!(buffer[(key_x, email_y + 1)].symbol(), " ");
+            find(buffer, "Sign in to GitHub");
         }
-        assert_eq!(seen, vec![0, 1, 2, 3, 0]);
-        tools.on_key(KeyCode::BackTab, KeyModifiers::NONE);
-        assert_eq!(tools.focus, FOCUS_TOOLS_NEXT);
     }
 
     #[test]
-    fn space_toggles_only_on_checkbox_rows() {
-        let mut app = ToolsPage::new();
-        app.focus = FOCUS_GROUP_UTILITIES;
-        app.on_key(KeyCode::Char(' '), KeyModifiers::NONE);
-        assert!(!app.selections[0]);
-        app.focus = FOCUS_TOOLS_NEXT;
-        app.on_key(KeyCode::Char(' '), KeyModifiers::NONE);
-        assert!(!app.selections[0] && app.selections[1]);
-        app.on_key(KeyCode::Char('2'), KeyModifiers::NONE);
-        assert!(!app.selections[1]);
-        assert_eq!(app.focus, FOCUS_GROUP_FORMATTERS);
+    fn long_identity_values_scroll_inside_the_input_without_moving_help() {
+        let mut page = identity_page();
+        page.focus = FOCUS_EMAIL;
+        page.email = format!("{}@example.org", "a".repeat(160));
+        let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(80, 24)).unwrap();
+        terminal.draw(|frame| draw_identity(frame, &page)).unwrap();
+        let buffer = terminal.backend().buffer();
+        let (_, value_y) = wizard_style::tests::find(buffer, "@example.org_");
+        let (_, hint_y) = wizard_style::tests::find(buffer, "Email on");
+        assert_eq!(value_y, hint_y);
+        assert_eq!(
+            page.email.len(),
+            172,
+            "rendering never truncates the stored value"
+        );
     }
 
     #[test]
-    fn enter_moves_between_identity_tools_and_providers() {
-        let mut identity = IdentityPage::new();
+    fn github_action_has_the_welcome_buttons_filled_background_without_focus() {
+        use wizard_style::tests::{click, find};
+        let mut page = identity_page();
+        let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(80, 24)).unwrap();
+        terminal.draw(|frame| draw_identity(frame, &page)).unwrap();
+        let buffer = terminal.backend().buffer();
+        let (x, y) = find(buffer, "Sign in to GitHub");
+        let background = wizard_style::selected().bg.unwrap();
+        assert_eq!(buffer[(x, y)].bg, background);
+        assert_eq!(buffer[(x - 1, y)].bg, background, "button includes padding");
+        let mut end = x;
+        while end < buffer.area.right() && buffer[(end, y)].bg == background {
+            end += 1;
+        }
+        assert_eq!(
+            wizard_style::clicked(&click(end - 1, y)),
+            Some(FOCUS_GITHUB)
+        );
+        assert_eq!(
+            wizard_style::clicked(&click(end, y)),
+            None,
+            "status is not clickable"
+        );
+        page.focus = FOCUS_GITHUB;
+        page.github.activate();
+        terminal.draw(|frame| draw_identity(frame, &page)).unwrap();
+        let buffer = terminal.backend().buffer();
+        let (x, y) = find(buffer, "Cancel");
+        assert_eq!(buffer[(x, y)].bg, background);
+        find(buffer, "ABCD-1234");
+    }
+
+    #[test]
+    fn the_github_button_signs_in_from_the_identity_page_without_leaving_it() {
+        use wizard_style::tests::{click, find};
+        let text = |page: &IdentityPage| {
+            let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(140, 60)).unwrap();
+            terminal.draw(|frame| draw_identity(frame, page)).unwrap();
+            let buffer = terminal.backend().buffer().clone();
+            let text = buffer
+                .content()
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect::<String>();
+            (buffer, text)
+        };
+        let mut page = identity_page();
+        let (buffer, rendered) = text(&page);
+        assert!(rendered.contains("GitHub (optional)"));
+        assert!(rendered.contains("Not signed in"));
+        let (x, y) = find(&buffer, "Sign in to GitHub");
+        let id = wizard_style::clicked(&click(x, y)).expect("the button is clickable");
+        assert_eq!(id, FOCUS_GITHUB);
+        assert!(page.on_click(id).is_none(), "signing in stays on the page");
+        let (_, rendered) = text(&page);
+        assert!(rendered.contains("ABCD-1234"));
+        assert!(rendered.contains("Waiting for approval"));
+        assert!(rendered.contains("Cancel"));
+        // Enter and Space act on the button; neither advances nor types.
+        page.focus = FOCUS_GITHUB;
+        assert!(page.on_key(KeyCode::Enter, KeyModifiers::NONE).is_none());
+        assert!(!text(&page).1.contains("ABCD-1234"));
+        assert!(page
+            .on_key(KeyCode::Char(' '), KeyModifiers::NONE)
+            .is_none());
+        assert!(text(&page).1.contains("ABCD-1234"));
+        page.on_key(KeyCode::Tab, KeyModifiers::NONE);
+        assert_eq!(page.focus, FOCUS_IDENTITY_NEXT);
+        assert!(matches!(
+            page.on_key(KeyCode::Enter, KeyModifiers::NONE),
+            Some(Outcome::Next)
+        ));
+    }
+
+    #[test]
+    fn enter_advances_from_a_field_and_from_next() {
+        let mut identity = identity_page();
         identity.focus = FOCUS_EMAIL;
         assert!(matches!(
             identity.on_key(KeyCode::Enter, KeyModifiers::NONE),
@@ -2165,31 +2149,14 @@ mod tests {
             identity.on_key(KeyCode::Enter, KeyModifiers::NONE),
             Some(Outcome::Next)
         ));
-        let mut tools = ToolsPage::new();
-        assert!(tools.on_key(KeyCode::Enter, KeyModifiers::NONE).is_none());
-        tools.focus = FOCUS_TOOLS_BACK;
-        assert!(matches!(
-            tools.on_key(KeyCode::Enter, KeyModifiers::NONE),
-            Some(Outcome::Back)
-        ));
-        tools.focus = FOCUS_TOOLS_NEXT;
-        assert!(matches!(
-            tools.on_key(KeyCode::Enter, KeyModifiers::NONE),
-            Some(Outcome::Next)
-        ));
     }
 
     #[test]
-    fn esc_cancels_from_both_pages() {
-        let mut identity = IdentityPage::new();
+    fn esc_cancels_from_a_field() {
+        let mut identity = identity_page();
         identity.focus = FOCUS_NAME;
         assert!(matches!(
             identity.on_key(KeyCode::Esc, KeyModifiers::NONE),
-            Some(Outcome::Cancel)
-        ));
-        let mut tools = ToolsPage::new();
-        assert!(matches!(
-            tools.on_key(KeyCode::Esc, KeyModifiers::NONE),
             Some(Outcome::Cancel)
         ));
     }
@@ -2238,7 +2205,7 @@ mod tests {
     }
 
     #[test]
-    fn clicking_identity_and_tools_pages_focuses_toggles_and_navigates() {
+    fn clicking_the_identity_page_focuses_fields_and_advances() {
         use wizard_style::tests::{click, find};
         let text = |buffer: &ratatui::buffer::Buffer| {
             buffer
@@ -2251,37 +2218,18 @@ mod tests {
             let (x, y) = find(buffer, label);
             wizard_style::clicked(&click(x, y)).expect("label is clickable")
         };
-        let mut identity = IdentityPage::new();
+        let mut identity = identity_page();
         let render_identity = |page: &IdentityPage| {
             let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(140, 60)).unwrap();
             terminal.draw(|frame| draw_identity(frame, page)).unwrap();
             terminal.backend().buffer().clone()
         };
         let buffer = render_identity(&identity);
-        assert!(!text(&buffer).contains("Mash utilities"));
+        assert!(!text(&buffer).contains("sentrux"));
         assert!(identity.on_click(target(&buffer, "Email")).is_none());
         assert_eq!(identity.focus, FOCUS_EMAIL);
         assert!(matches!(
             identity.on_click(target(&render_identity(&identity), "Next — choose tools")),
-            Some(Outcome::Next)
-        ));
-
-        let mut tools = ToolsPage::new();
-        let render_tools = |page: &ToolsPage| {
-            let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(140, 60)).unwrap();
-            terminal.draw(|frame| draw_tools(frame, page)).unwrap();
-            terminal.backend().buffer().clone()
-        };
-        let buffer = render_tools(&tools);
-        assert!(!text(&buffer).contains("Signing key"));
-        assert!(tools.on_click(target(&buffer, "Mash utilities")).is_none());
-        assert!(!tools.selections[0]);
-        assert!(matches!(
-            tools.on_click(target(&render_tools(&tools), "Back")),
-            Some(Outcome::Back)
-        ));
-        assert!(matches!(
-            tools.on_click(target(&render_tools(&tools), "Next — configure")),
             Some(Outcome::Next)
         ));
     }
@@ -2363,7 +2311,7 @@ mod tests {
 
     #[test]
     fn an_unchecked_suite_adds_no_hindsight_install_steps() {
-        let mut plan = install_plan([false, false]);
+        let mut plan = install_plan(&[]);
         plan.programming = false;
         let steps = install_steps(&plan, &[]);
         assert!(!steps
@@ -2380,6 +2328,7 @@ mod tests {
             email: "ada@example.org".into(),
             signing_key: String::new(),
             focus: FOCUS_NAME,
+            ..identity_page()
         };
         let mut terminal =
             ratatui::Terminal::new(ratatui::backend::TestBackend::new(120, 40)).unwrap();
@@ -2390,7 +2339,7 @@ mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect::<String>();
-        assert!(rendered.contains("Git identity — page 1/7"));
+        assert!(rendered.contains("Identity — page 1/7"));
         assert!(rendered.contains("Tools"));
         assert!(rendered.contains("Model provider"));
         assert!(rendered.contains("ada@example.org"));
@@ -2398,34 +2347,6 @@ mod tests {
         assert_eq!(buffer[(0, 13)].bg, wizard_style::PANEL);
         assert_eq!(buffer[(3, 13)].bg, wizard_style::selected().bg.unwrap());
         assert_eq!(buffer[(40, 5)].bg, wizard_style::PANEL);
-    }
-
-    #[test]
-    fn selection_maps_only_the_checkbox_rows() {
-        let mut app = ToolsPage::new();
-        app.focus = FOCUS_GROUP_UTILITIES;
-        assert_eq!(app.selection(), Some(0));
-        app.focus = FOCUS_GROUP_FORMATTERS;
-        assert_eq!(app.selection(), Some(1));
-        app.focus = FOCUS_TOOLS_BACK;
-        assert_eq!(app.selection(), None);
-        app.focus = FOCUS_TOOLS_NEXT;
-        assert_eq!(app.selection(), None);
-    }
-
-    #[test]
-    fn github_existing_token_skips_login() {
-        let root = env::temp_dir().join(format!("mash-github-test-{}", std::process::id()));
-        let config = root.join("config/gh");
-        let _ = fs::remove_dir_all(&root);
-        fs::create_dir_all(&config).unwrap();
-        fs::write(
-            config.join("hosts.yml"),
-            "github.com:\n  oauth_token: fake-token\n",
-        )
-        .unwrap();
-        assert!(github_token(&config).as_deref() == Some("fake-token"));
-        let _ = fs::remove_dir_all(root);
     }
 
     #[test]
@@ -2443,13 +2364,13 @@ mod tests {
     fn environment_steps_always_run() {
         // Not optional, and not gated on the tool selections: no one opts into
         // having memory available.
-        let plan = install_plan([false, false]);
+        let plan = install_plan(&[]);
         let steps = install_steps(&plan, &[]);
         assert!(steps.contains(&STEP_HINDSIGHT.to_string()));
         assert_eq!(steps.last().unwrap(), STEP_HINDSIGHT_DAEMON);
         // Tools install before the environment steps that may use them. The
         // step is Homebrew on macOS and Mash's own installer on Linux.
-        let full = install_steps(&install_plan([true, true]), &["gopls"]);
+        let full = install_steps(&install_plan(&every_tool()), &["gopls"]);
         let hindsight = full.iter().position(|s| s == STEP_HINDSIGHT).unwrap();
         let tool_step = if is_linux() {
             STEP_LINUX_TOOLS
@@ -2514,12 +2435,73 @@ mod tests {
         }
     }
 
+    #[test]
+    fn one_checkbox_installs_only_that_tool_and_its_required_components() {
+        let chosen = tools_page::TOOLS
+            .iter()
+            .find(|tool| tool.name == "prettier")
+            .unwrap();
+        let plan = install_plan(&[chosen]);
+        assert_eq!(plan.tools, vec!["prettier"]);
+        let components = if is_linux() { &plan.linux } else { &plan.npm };
+        assert_eq!(components, &["prettier", "prettier-plugin-svelte"]);
+        assert!(plan.brew.is_empty());
+        assert!(plan.pinned.is_empty());
+        assert!(plan.python.is_empty());
+        assert!(plan.installer.is_empty());
+        assert!(plan.apple.is_empty());
+    }
+
+    #[test]
+    fn individually_selected_servers_share_one_package_install() {
+        let servers: Vec<_> = tools_page::TOOLS
+            .iter()
+            .filter(|tool| {
+                matches!(
+                    tool.name,
+                    "vscode-css-language-server" | "vscode-json-language-server"
+                )
+            })
+            .collect();
+        assert_eq!(servers.len(), 2);
+        let plan = install_plan(&servers);
+        assert_eq!(
+            plan.tools,
+            vec!["vscode-css-language-server", "vscode-json-language-server"]
+        );
+        let packages = if is_linux() { &plan.linux } else { &plan.npm };
+        assert_eq!(packages, &["vscode-langservers-extracted"]);
+    }
+
+    #[test]
+    fn fixed_tools_never_reach_installers() {
+        use tools_page::Route;
+        for tool in tools_page::TOOLS
+            .iter()
+            .filter(|tool| tool.route().is_some_and(Route::locked))
+        {
+            let plan = install_plan(&[tool]);
+            assert!(
+                plan.tools.is_empty(),
+                "{} is not an optional install",
+                tool.name
+            );
+            assert!(plan.linux.is_empty());
+            assert!(plan.brew.is_empty());
+            assert!(plan.npm.is_empty());
+            assert!(plan.pinned.is_empty());
+            assert!(plan.python.is_empty());
+            assert!(plan.apple.is_empty());
+            assert!(plan.installer.is_empty());
+        }
+    }
+
     // macOS installer routing: Linux installs every tool through plan.linux,
     // which the_plan_matches_the_platform asserts.
     #[cfg(target_os = "macos")]
     #[test]
     fn default_plan_covers_requested_tools() {
-        let plan = install_plan([true, true]);
+        let plan = install_plan(&every_tool());
         assert!(plan.tools.contains(&"git"));
         assert!(plan.tools.contains(&"prettier"));
         assert!(plan.tools.contains(&"clangd"));
@@ -2531,7 +2513,7 @@ mod tests {
         // its own helper, macOS uses the package manager. A laptop running the
         // macOS suite asserts the macOS side, and the Linux lane in CI asserts
         // the other, so neither can quietly take the wrong branch.
-        let plan = install_plan([true, true]);
+        let plan = install_plan(&every_tool());
         if is_linux() {
             assert!(!plan.linux.is_empty(), "linux plan has no components");
             assert!(plan.brew.is_empty(), "linux plan reached for brew");
@@ -2549,7 +2531,7 @@ mod tests {
 
     #[test]
     fn no_selection_creates_empty_plan() {
-        let plan = install_plan([false, false]);
+        let plan = install_plan(&[]);
         assert!(plan.brew.is_empty());
         assert!(plan.npm.is_empty());
         assert!(plan.python.is_empty());
@@ -2557,16 +2539,16 @@ mod tests {
 
     #[cfg(target_os = "linux")]
     #[test]
-    fn linux_utilities_install_sentrux_without_swift() {
-        let plan = install_plan([true, false]);
+    fn linux_tools_install_sentrux_without_swift() {
+        let plan = install_plan(&every_tool());
         assert!(plan.linux.contains(&"sentrux"));
         assert!(!plan.linux.contains(&"sourcekit-lsp"));
     }
 
     #[cfg(target_os = "linux")]
     #[test]
-    fn linux_formatters_use_pinned_components_and_keep_binary_names() {
-        let plan = install_plan([false, true]);
+    fn linux_tools_use_pinned_components_and_keep_binary_names() {
+        let plan = install_plan(&every_tool());
 
         // Every name handed to mash-tool-install must resolve in assets.py.
         // pylsp's component is named after the Python package.
@@ -2613,7 +2595,7 @@ mod tests {
     fn automation_tools_route_to_their_own_installers() {
         // Sentrux is a tapped formula, agent-browser is npm, CUA Driver has a
         // vendor installer. Feeding all three to `brew install` would fail.
-        let plan = install_plan([true, true]);
+        let plan = install_plan(&every_tool());
         for tool in ["sentrux", "agent-browser", "cua-driver"] {
             assert!(
                 plan.tools.contains(&tool),
@@ -2628,10 +2610,10 @@ mod tests {
 
     #[cfg(target_os = "macos")]
     #[test]
-    fn package_groups_name_manifest_components_not_specs() {
+    fn selected_tools_name_manifest_components_not_specs() {
         // The Mash helper takes component names; a version here would fail
         // to resolve against the bundled manifest.
-        let plan = install_plan([true, true]);
+        let plan = install_plan(&every_tool());
         for component in &plan.npm {
             assert!(
                 !component.contains('@'),
@@ -2655,7 +2637,7 @@ mod tests {
     #[cfg(target_os = "macos")]
     #[test]
     fn tools_with_a_macos_artifact_are_not_brewed() {
-        let plan = install_plan([true, true]);
+        let plan = install_plan(&every_tool());
         for component in [
             "sentrux",
             "marksman",
@@ -2686,7 +2668,7 @@ mod tests {
     #[cfg(target_os = "macos")]
     #[test]
     fn cua_driver_installs_only_when_missing() {
-        let plan = install_plan([true, true]);
+        let plan = install_plan(&every_tool());
         assert!(!install_steps(&plan, &[])
             .iter()
             .any(|s| s == "Install CUA Driver"));
@@ -2712,7 +2694,7 @@ mod tests {
     fn nothing_missing_skips_host_installers() {
         // Host-installed tools need no retry. Host binaries cannot satisfy
         // Mash-owned npm or Python components on macOS.
-        let plan = install_plan([true, true]);
+        let plan = install_plan(&every_tool());
         let steps = install_steps(&plan, &[]);
         assert!(!steps.iter().any(|s| s == "Install Homebrew packages"));
         assert!(!steps.iter().any(|s| s == "Install CUA Driver"));
@@ -2739,7 +2721,7 @@ mod tests {
     #[cfg(target_os = "macos")]
     #[test]
     fn missing_tools_add_installers() {
-        let plan = install_plan([true, true]);
+        let plan = install_plan(&every_tool());
         let steps = install_steps(&plan, &["gopls"]);
         assert!(steps.iter().any(|step| step == "Install npm packages"));
         assert!(steps.iter().any(|step| step == "Install Homebrew packages"));
@@ -2748,7 +2730,7 @@ mod tests {
     #[test]
     fn a_chosen_dictation_model_reaches_installation() {
         // The choice was collected for this long before it installed anything.
-        let mut plan = install_plan([false, false]);
+        let mut plan = install_plan(&[]);
         assert!(!install_steps(&plan, &[]).iter().any(|s| s == STEP_VOICE));
         plan.voice = Some(voice::VoiceChoice {
             model_id: "parakeet-unified-en-0.6b".into(),
