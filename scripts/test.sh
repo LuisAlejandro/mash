@@ -8,18 +8,32 @@ set -uo pipefail
 cd "$(cd "$(dirname "$0")/.." && pwd)"
 
 if [ -n "${MASH_GHOSTTY_SRC:-}" ] && [ -d "$MASH_GHOSTTY_SRC" ]; then
-  ./packaging/helpers/mash-ghostty-patch-menu "$MASH_GHOSTTY_SRC"
+  if ! ./packaging/helpers/mash-ghostty-patch-menu "$MASH_GHOSTTY_SRC"; then
+    printf 'FAIL  Ghostty source patches\n' >&2
+    exit 1
+  fi
 fi
 
 failed=0
 ran=0
 skipped=()
 
+skip() {
+  skipped+=("$1")
+  printf 'SKIP  %s\n' "$1"
+}
+
 run() {
-  local label="$1"
+  local label="$1" status=0
   shift
+  "$@" || status=$?
+  # 77 means the entire suite is unavailable, not a partial check's skip.
+  if [ "$status" -eq 77 ]; then
+    skip "$label"
+    return
+  fi
   ran=$((ran + 1))
-  if "$@"; then
+  if [ "$status" -eq 0 ]; then
     printf 'PASS  %s\n' "$label"
   else
     printf 'FAIL  %s\n' "$label"
@@ -38,7 +52,10 @@ if command -v cargo >/dev/null 2>&1; then
       cargo test --locked --manifest-path "packaging/plugins/$crate/Cargo.toml" --quiet
   done
 else
-  skipped+=("rust suites: cargo not installed")
+  skip "wizard (cargo test): cargo not installed"
+  for crate in herdr-workspace telescope; do
+    skip "$crate plugin (cargo test): cargo not installed"
+  done
 fi
 
 # Python: packaging contracts, templates and helper behaviour.
@@ -68,7 +85,11 @@ if command -v node >/dev/null 2>&1; then
   run "fork-from-message session helper" \
     node packaging/plugins/fork-from-message/tests/test_pi_session.mjs
 else
-  skipped+=("extension tests: node not installed")
+  for extension_test in packaging/tests/test_*.mjs; do
+    [ -f "$extension_test" ] || continue
+    skip "$extension_test: node not installed"
+  done
+  skip "fork-from-message session helper: node not installed"
 fi
 
 # Mash's own plugin: Herdr's `pane run` prints nothing on success, and the
@@ -90,7 +111,7 @@ if [ "${#skipped[@]}" -gt 0 ]; then
   printf 'skipped: %s\n' "$(IFS='; '; echo "${skipped[*]}")"
 fi
 if [ "$failed" -ne 0 ]; then
-  printf 'test: FAILED (%d suite(s) ran)\n' "$ran"
+  printf 'test: FAILED (%d suite(s) ran, %d skipped)\n' "$ran" "${#skipped[@]}"
   exit 1
 fi
-printf 'test: PASSED (%d suite(s) ran)\n' "$ran"
+printf 'test: PASSED (%d suite(s) ran, %d skipped)\n' "$ran" "${#skipped[@]}"
