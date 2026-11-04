@@ -3,7 +3,7 @@
 # Every cleanup target is this test's own; no production job/app/home is used.
 set -euo pipefail
 if [ "$(uname -s)" != Darwin ] || ! command -v herdr >/dev/null 2>&1; then
-  echo 'SKIP: needs macOS and herdr on PATH'; exit 0
+  echo 'SKIP: needs macOS and herdr on PATH'; exit 77
 fi
 repo="$(cd "$(dirname "$0")/../.." && pwd)"
 root="$(mktemp -d /tmp/mash-handoff.XXXXXX)"

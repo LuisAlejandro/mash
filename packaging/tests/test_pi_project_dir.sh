@@ -43,7 +43,7 @@ pi_rel="node/lib/node_modules/@earendil-works/pi-coding-agent"
 # as the missing tool it is. Run it.
 if ! node --version >/dev/null 2>&1; then
 	printf 'skip - no working node; the project-dir contract is unverified here\n'
-	exit 0
+	exit 77
 fi
 
 # --- the staging function writes the key and keeps the rest of the manifest --

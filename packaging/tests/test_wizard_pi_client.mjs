@@ -15,7 +15,7 @@ import { loadRuntime } from "../helpers/mash-pi-runtime.mjs";
 const pin = process.argv[2];
 if (!pin) {
   console.log("skip - Pi client conformance needs a staged pin: test_pi_runtime.sh <resource-root>");
-  process.exit(0);
+  process.exit(77);
 }
 
 const root = await mkdtemp(join(tmpdir(), "mash-pi-client-"));

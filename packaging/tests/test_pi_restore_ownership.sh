@@ -34,7 +34,7 @@ helper="$here/../helpers/mash-pane-resume"
 
 if ! command -v herdr >/dev/null 2>&1; then
 	printf 'SKIP: herdr is not installed\n'
-	exit 0
+	exit 77
 fi
 
 root="$(mktemp -d)"
