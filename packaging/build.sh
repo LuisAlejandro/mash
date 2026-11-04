@@ -436,6 +436,13 @@ printf '%s\n' "$version" >"$app/Contents/Resources/VERSION"
 "$app/Contents/Resources/python/bin/python3" "$root/packaging/check-nib-branding.py" "$app"
 mash_install_fonts
 
+# Verify only after runtimes, helpers, defaults and VERSION are staged, and
+# before signing. Both platform adapters run this same payload/runtime gate.
+mash_verify_portable_payload "$app/Contents/Resources" || {
+  echo "the macOS payload is incomplete" >&2
+  exit 1
+}
+
 # Nothing anywhere in the bundle may still reference Homebrew. Scan every
 # Mach-O we ship — tools, dylibs, nested bundles — not just the named few.
 # Deliberately the last thing before signing, and after Fresh and the plugins

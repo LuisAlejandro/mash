@@ -38,19 +38,16 @@ class MacOSUpdatePackageTest(unittest.TestCase):
 
         The macOS adapter used to install Pi itself and skipped
         mash_set_pi_project_dir, so the Mac app silently kept reading .pi/. It
-        now goes through the shared runtime stager, which installs Pi, sets the
-        key, and then proves the installed Pi honours it. Assert the ordering
-        inside that one stager, since both platforms depend on it.
+        now goes through the shared runtime stager, which installs Pi and sets
+        the key. The final payload gate proves the installed Pi honours it.
+        Both platforms must set the key after installing the pinned packages.
         """
         build = (ROOT / "packaging/build.sh").read_text()
         self.assertIn('mash_stage_runtimes "$app/Contents/Resources" "$target"', build)
 
         common = (ROOT / "packaging/build-common.sh").read_text()
-        install = common.index("$pi_packages")
-        set_dir = common.index('mash_set_pi_project_dir "$res"')
-        runtime = common.index('"$root/packaging/tests/test_pi_runtime.sh" "$res"')
-        self.assertLess(install, set_dir)
-        self.assertLess(set_dir, runtime)
+        stager = common.split("mash_stage_runtimes() {", 1)[1].split("\n}\n", 1)[0]
+        self.assertLess(stager.index("$pi_packages"), stager.index('mash_set_pi_project_dir "$res"'))
 
     def test_defaults_merge_with_already_staged_runtime_files(self):
         """Shared staging creates defaults/pi for typebox and the voice catalog.
@@ -191,6 +188,39 @@ class MacOSUpdatePackageTest(unittest.TestCase):
             self.assertIn(f"packaging/helpers/{source}.c", build)
             self.assertIn(f'"$app/Contents/Resources/bin/{source}"', build)
         self.assertIn("-mmacosx-version-min=14.0", build)
+
+    def test_both_adapters_verify_the_payload_after_staging_helpers(self):
+        """The wizard-helper check must not run before helpers are copied.
+
+        It used to live in test_pi_runtime.sh, which runs inside
+        mash_stage_runtimes; macOS copies helpers afterwards, so a real DMG
+        build failed while every Linux leg and PR check passed.
+        """
+        common = (ROOT / "packaging/build-common.sh").read_text()
+        verify = common.split("mash_verify_portable_payload() {", 1)[1].split("\n}\n", 1)[0]
+        self.assertIn("mash-pi-runtime.mjs", verify)
+        self.assertIn("test_pi_runtime.sh", verify)
+        # The runtime test imports helpers from the staged tree, so staging it
+        # inside mash_stage_runtimes failed on macOS (helpers arrive later).
+        stager = common.split("mash_stage_runtimes() {", 1)[1].split("\n}\n", 1)[0]
+        self.assertNotIn("test_pi_runtime.sh", stager)
+        macos = (ROOT / "packaging/build.sh").read_text()
+        gate = macos.index('mash_verify_portable_payload "$app/Contents/Resources"')
+        for staged in (
+            'mash_stage_runtimes "$app/Contents/Resources"',
+            'cp "$root/packaging/helpers/$name"',
+            'cp -R "$root/packaging/defaults/."',
+            'printf \'%s\\n\' "$version" >"$app/Contents/Resources/VERSION"',
+        ):
+            with self.subTest(staged=staged):
+                self.assertLess(macos.index(staged), gate)
+        self.assertLess(gate, macos.index('codesign --force --sign - "$macho"'))
+
+        linux = (ROOT / "packaging/build-linux.sh").read_text()
+        gate = linux.index('mash_verify_portable_payload "$product"')
+        for staged in ('mash_stage_portable_payload "$product"', 'mash_stage_runtimes "$product"'):
+            with self.subTest(staged=staged):
+                self.assertLess(linux.index(staged), gate)
 
     def test_detached_worker_dependencies_are_copied_out_of_the_bundle(self):
         verify = (ROOT / "packaging/helpers/mash-update-verify").read_text()

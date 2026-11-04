@@ -152,7 +152,6 @@ mash_stage_runtimes() {
   }
 
   mash_set_pi_project_dir "$res" || return 1
-  "$root/packaging/tests/test_pi_runtime.sh" "$res" || return 1
 
   mash_stage_pi_voice_catalog "$res" || return 1
 
@@ -592,9 +591,23 @@ mash_verify_portable_payload() {
     echo "payload is missing VERSION" >&2
     missing=1
   }
+
+  # Every helper the wizard entrypoints import must ship, not only the one it
+  # calls. Checked here, after staging, so the order of the adapters' steps
+  # cannot make a complete payload look incomplete.
+  for name in mash-pi-runtime.mjs mash-pi-credentials.mjs mash-pi-connect.mjs mash-pi-http.mjs; do
+    [ -f "$res/bin/$name" ] || {
+      echo "payload is missing bin/$name" >&2
+      missing=1
+    }
+  done
+
   [ -f "$res/defaults/pi/catalog/catalog.json" ] || {
     echo "payload is missing defaults/pi/catalog/catalog.json" >&2
     missing=1
   }
   [ "$missing" -eq 0 ] || return 1
+
+  # Runtime tests import helpers from the staged tree, so both must exist.
+  "$root/packaging/tests/test_pi_runtime.sh" "$res"
 }

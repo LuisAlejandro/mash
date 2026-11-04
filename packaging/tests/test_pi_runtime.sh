@@ -49,13 +49,6 @@ root="$(cd "$(dirname "$0")/../.." && pwd)"
 # client, not merely store a plausible API string.
 "$node" "$root/packaging/tests/test_wizard_pi_client.mjs" "$pi"
 
-# Every helper both entrypoints import must ship, not only the one called.
-for helper in mash-pi-runtime.mjs mash-pi-credentials.mjs mash-pi-connect.mjs mash-pi-http.mjs; do
-  [ -f "$res/bin/$helper" ] || {
-    echo "Wizard helper $helper is missing from $res/bin" >&2
-    exit 1
-  }
-done
 # Imported with no script argument, so the entrypoint guard stays inert.
 (cd / && MASH_CREDENTIALS="$res/bin/mash-pi-credentials.mjs" MASH_CONNECT="$res/bin/mash-pi-connect.mjs" \
   "$node" --input-type=module -e 'await import(process.env.MASH_CREDENTIALS); await import(process.env.MASH_CONNECT)')
