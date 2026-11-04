@@ -24,7 +24,16 @@ mnt="" sibling="" handed_off=0
 cleanup() {
   local rc=$?
   [ "$handed_off" = 0 ] || return 0
-  [ -z "$mnt" ] || hdiutil detach "$mnt" -quiet >>"$MU_STATE/mash-update.log" 2>&1 || true
+  # ponytail: unfinished preparation is retained for manual cleanup; add an
+  # owner-verified reaper only if retained attempts become a storage problem.
+  if [ -n "${MU_COMMAND_BUSY:-}" ] && kill -0 "$MU_COMMAND_BUSY" 2>/dev/null; then
+    mash_update_log "retained preparation: command=$MU_COMMAND_BUSY work=$work sibling=$sibling mount=$mnt" || true
+    return "$rc"
+  fi
+  if [ -n "$mnt" ] && ! mash_update_run 60 cleanup-detach hdiutil detach "$mnt" -quiet; then
+    mash_update_log "retained preparation: cleanup-detach incomplete work=$work sibling=$sibling mount=$mnt" || true
+    return "$rc"
+  fi
   if [ -n "${MU_ID:-}" ] && [ "$(mash_update_read id)" = "$MU_ID" ]; then
     case "$(mash_update_read phase)" in
     preparing | ready) mash_update_finish cancelled || true ;;
@@ -59,7 +68,7 @@ printf '  Verifying the download...\n'
 mnt="$work/mount"
 mkdir -p "$mnt" || fail 'Could not prepare the image.'
 if ! mash_update_run 60 mount hdiutil attach -nobrowse -readonly -mountpoint "$mnt" "$work/$asset"; then
-  mnt=""; fail 'The download could not be opened.'
+  fail 'The download could not be opened.'
 fi
 [ -d "$mnt/Mash.app" ] || fail 'The download has no Mash.app.'
 mash_update_run 600 signature codesign --verify --deep --strict "$mnt/Mash.app" || fail 'The download is not correctly signed.'
