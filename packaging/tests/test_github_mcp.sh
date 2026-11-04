@@ -1,103 +1,145 @@
 #!/bin/bash
-# GitHub MCP is registered only for a Mash whose isolated gh sign-in works, and
-# never with a token written into mcp.json.
+# Registration and deferred authorization must use Mash's own stored login.
 set -u
 
 root="$(cd "$(dirname "$0")/../.." && pwd)"
-# shellcheck source=../../packaging/launch-common.sh
 . "$root/packaging/launch-common.sh"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
-
 pass=0 fail=0
-check() { # check MSG CMD... -- record a pass when CMD succeeds
+check() {
   local msg="$1"
   shift
-  if "$@"; then
-    printf 'ok   - %s\n' "$msg"
-    pass=$((pass + 1))
-  else
-    printf 'FAIL - %s\n' "$msg"
-    fail=$((fail + 1))
-  fi
+  if "$@"; then printf 'ok   - %s\n' "$msg"; pass=$((pass + 1));
+  else printf 'FAIL - %s\n' "$msg"; fail=$((fail + 1)); fi
 }
 
 helper="$root/packaging/helpers/mash-github-mcp"
-d="$tmp/data"
+d="$tmp/Mash data's folder"
 mcp="$d/pi/agent/mcp.json"
+hosts="$d/config/gh/hosts.yml"
 fake="$tmp/fake"
 mkdir -p "$fake" "$d/pi/agent" "$d/config/gh"
-# A gh that answers only for Mash's own config dir, so a test also proves the
-# helper asks the isolated sign-in rather than an inherited one.
 cat >"$fake/gh" <<'FAKE'
-#!/bin/bash
-[ "${FAKE_SIGNED_IN:-1}" = 1 ] && [ "$GH_CONFIG_DIR" = "$EXPECT_GH_DIR" ] || exit 1
-[ "$1 $2" = "auth token" ] && echo gho_faketoken
+#!/bin/sh
+printf called >>"$GH_CALL_RECORD"
+printf 'gho_personal_keychain_fixture\n'
 FAKE
 chmod +x "$fake/gh"
-
-run() { # run [VAR=value...]
-  env -i HOME="$tmp" PATH="$fake:/usr/bin:/bin" EXPECT_GH_DIR="$d/config/gh" \
-    GH_TOKEN=inherited-should-not-matter "$@" bash "$helper" "$d"
+run() {
+  env -i HOME="$tmp" PATH="$fake:/usr/bin:/bin" GH_CALL_RECORD="$tmp/gh-calls" \
+    GH_TOKEN=gho_inherited_fixture GITHUB_TOKEN=gho_other_inherited_fixture bash "$helper" "$d"
+}
+resolve() {
+  env -i HOME="$tmp" PATH="$fake:/usr/bin:/bin" GH_CALL_RECORD="$tmp/gh-calls" \
+    GH_TOKEN=gho_inherited_fixture sh -c "${header#!}"
 }
 servers() { python3 -c 'import json,sys; print(" ".join(sorted(json.load(open(sys.argv[1]))["mcpServers"])))' "$mcp"; }
 github() { python3 -c 'import json,sys; print(json.dumps(json.load(open(sys.argv[1]))["mcpServers"].get("github")))' "$mcp"; }
+own_login() { printf 'github.com:\n    users:\n        fixture:\n            oauth_token: %s\n    oauth_token: %s\n    user: fixture\n' "$1" "$1" >"$hosts"; }
 
-printf '{\n  "mcpServers": {\n    "context7": {"type": "http", "url": "https://mcp.context7.com/mcp"}\n  }\n}\n' >"$mcp"
+printf '{"mcpServers":{"context7":{"type":"http","url":"https://mcp.context7.com/mcp"}}}\n' >"$mcp"
 chmod 600 "$mcp"
-
-# --- not signed in: nothing is added -------------------------------------------
-run FAKE_SIGNED_IN=0
-check "no sign-in adds no GitHub server" test "$(servers)" = "context7"
-
-# --- signed in: added, token-free, other servers kept ---------------------------
 run
-check "sign-in adds the GitHub server" test "$(servers)" = "context7 github"
-check "the server is GitHub's remote MCP" grep -q 'api.githubcopilot.com/mcp' "$mcp"
-check "no token is written to mcp.json" bash -c "! grep -q gho_faketoken '$mcp'"
-check "the header asks Mash's own gh config" grep -q "GH_CONFIG_DIR=$d/config/gh" "$mcp"
-check "inherited GitHub tokens are ignored" grep -q 'env -u GH_TOKEN -u GITHUB_TOKEN' "$mcp"
-# mash_file_mode, not an inline stat fallback: GNU stat reads -f as
-# --file-system and prints a report on stdout before failing, so the fallback
-# value lands after it and the comparison can never match on Linux.
-check "file permissions are kept private" test "$(mash_file_mode "$mcp")" = 600
+check "personal keychain fallback without Mash login adds no server" test "$(servers)" = context7
+check "registration never asks gh for a fallback token" test ! -e "$tmp/gh-calls"
 
-# --- the generated header resolves to a bearer token ---------------------------
+own_login gho_owned_fixture
+run
+check "Mash-owned sign-in adds the GitHub server" test "$(servers)" = "context7 github"
+check "GitHub remote endpoint is preserved" grep -q 'api.githubcopilot.com/mcp' "$mcp"
+check "no credential is persisted in MCP JSON" python3 - "$mcp" <<'PY'
+from pathlib import Path
+import sys
+text=Path(sys.argv[1]).read_text()
+assert all(secret not in text for secret in ('gho_owned_fixture','gho_personal_keychain_fixture','gho_inherited_fixture'))
+PY
+check "MCP file stays private" test "$(mash_file_mode "$mcp")" = 600
 header="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["mcpServers"]["github"]["headers"]["Authorization"])' "$mcp")"
-resolved="$(env -i HOME="$tmp" PATH="$fake:/usr/bin:/bin" EXPECT_GH_DIR="$d/config/gh" GH_TOKEN=x \
-  sh -c "${header#!}")"
-check "the header resolves to the Mash sign-in token" test "$resolved" = "Bearer gho_faketoken"
-signed_out="$(env -i HOME="$tmp" PATH="$fake:/usr/bin:/bin" FAKE_SIGNED_IN=0 sh -c "${header#!}")"
-check "a lost sign-in resolves to nothing, not a bare Bearer" test -z "$signed_out"
-
-# --- idempotent ------------------------------------------------------------------
+check "deferred header uses the current owned token with quoted paths" test "$(resolve)" = "Bearer gho_owned_fixture"
+own_login gho_rotated_fixture
+check "the existing header observes token rotation" test "$(resolve)" = "Bearer gho_rotated_fixture"
 before="$(cat "$mcp")"
 run
-check "a second launch changes nothing" test "$(cat "$mcp")" = "$before"
+check "registration remains idempotent after rotation" test "$(cat "$mcp")" = "$before"
+rm "$hosts"
+check "old header resolves empty after sign-out, without keychain fallback" test -z "$(resolve)"
+run
+check "sign-out removes only Mash's GitHub entry" test "$(servers)" = context7
 
-# --- signing out removes only Mash's own entry -----------------------------------
-run FAKE_SIGNED_IN=0
-check "sign-out removes Mash's GitHub server" test "$(servers)" = "context7"
+# Unsupported, ambiguous or foreign state never counts as a Mash github.com token.
+for kind in tokenless foreign nested duplicate duplicate-host malformed fifo; do
+  case "$kind" in
+    tokenless) printf 'github.com:\n    user: fixture\n' >"$hosts" ;;
+    foreign) printf 'example.org:\n    oauth_token: gho_foreign_fixture\n' >"$hosts" ;;
+    nested) printf 'github.com:\n    users:\n        another:\n            oauth_token: gho_nested_fixture\n    user: fixture\n' >"$hosts" ;;
+    duplicate) printf 'github.com:\n    oauth_token: gho_first_fixture\n    oauth_token: gho_second_fixture\n' >"$hosts" ;;
+    duplicate-host) printf 'github.com:\n    oauth_token: gho_first_fixture\ngithub.com:\n    oauth_token: gho_second_fixture\n' >"$hosts" ;;
+    fifo) rm -f "$hosts"; mkfifo "$hosts" ;;
+    malformed) printf 'github.com: [not a host mapping]\n    oauth_token: gho_malformed_fixture\n' >"$hosts" ;;
+  esac
+  run
+  check "$kind hosts state adds no GitHub entry" test "$(servers)" = context7
+  check "$kind hosts state resolves no bearer" test -z "$(resolve)"
+  rm -f "$hosts"
+done
 
-# --- a user's own github entry is never touched -----------------------------------
+# gh emits literal scalars; select only the github.com top-level value.
+printf 'example.org:\n    oauth_token: gho_foreign_fixture\ngithub.com:\n    oauth_token: "gho_quoted_fixture"\n    user: fixture\n' >"$hosts"
+run
+check "quoted owned token is selected instead of another host" test "$(resolve)" = "Bearer gho_quoted_fixture"
+printf "github.com:\n    oauth_token: 'gho_single_quoted_fixture'\n" >"$hosts"
+check "single-quoted literal is supported" test "$(resolve)" = "Bearer gho_single_quoted_fixture"
+rm "$hosts"
+printf 'github.com:\n    oauth_token: gho_symlink_fixture\n' >"$tmp/outside-hosts"
+ln -s "$tmp/outside-hosts" "$hosts"
+run
+check "symlinked hosts are not a Mash login" test "$(servers)" = context7
+check "symlinked hosts resolve no bearer" test -z "$(resolve)"
+rm "$hosts"
+own_login gho_owned_fixture
+mv "$d/config/gh" "$tmp/own-gh"
+ln -s "$tmp/own-gh" "$d/config/gh"
+run
+check "symlinked gh directory is not a Mash login" test "$(servers)" = context7
+check "symlinked gh directory resolves no bearer" test -z "$(resolve)"
+rm "$d/config/gh"
+mv "$tmp/own-gh" "$d/config/gh"
+check "no token-output gh command was invoked" test ! -e "$tmp/gh-calls"
+
+# A hard link is another name for the same inode: the personal hosts.yml linked
+# into Mash's tree would pass a symlink check alone.
+rm -f "$hosts"
+printf 'github.com:\n    oauth_token: gho_hardlinked_fixture\n' >"$tmp/personal-hosts.yml"
+ln "$tmp/personal-hosts.yml" "$hosts"
+run
+check "hard-linked personal hosts adds no GitHub entry" test "$(servers)" = context7
+check "hard-linked personal hosts resolves no bearer" test -z "$(resolve)"
+rm -f "$hosts"
+own_login gho_owned_fixture
+
 python3 - "$mcp" <<'PY'
-import json, sys
-p = sys.argv[1]; d = json.load(open(p))
-d["mcpServers"]["github"] = {"command": "my-github-mcp"}
-json.dump(d, open(p, "w"), indent=2)
+import json,sys
+p=sys.argv[1]; config=json.load(open(p)); config['mcpServers']['github']={'command':'my-github-mcp'}
+json.dump(config,open(p,'w'),indent=2)
 PY
 run
-check "a user-defined github server is kept when signed in" test "$(github)" = '{"command": "my-github-mcp"}'
-run FAKE_SIGNED_IN=0
-check "a user-defined github server is kept when signed out" test "$(github)" = '{"command": "my-github-mcp"}'
-
-# --- broken or missing files are left alone ---------------------------------------
+check "user-defined server stays untouched while signed in" test "$(github)" = '{"command": "my-github-mcp"}'
+rm "$hosts"
+run
+check "user-defined server stays untouched while signed out" test "$(github)" = '{"command": "my-github-mcp"}'
 printf '{ not json' >"$mcp"
 run
-check "an unreadable mcp.json is not rewritten" test "$(cat "$mcp")" = '{ not json'
-rm -f "$mcp"
+check "invalid MCP JSON stays unchanged" test "$(cat "$mcp")" = '{ not json'
+rm "$mcp"
 run
-check "a missing mcp.json is not created" test ! -e "$mcp"
+check "missing MCP JSON is not created" test ! -e "$mcp"
+check "header-only mode stays empty without its credential" test -z "$(resolve)"
+own_login gho_owned_fixture
+check "header resolution does not depend on an MCP JSON file" test "$(resolve)" = "Bearer gho_owned_fixture"
+mkfifo "$mcp"
+run
+check "nonregular MCP configuration is refused without opening it" test -p "$mcp"
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

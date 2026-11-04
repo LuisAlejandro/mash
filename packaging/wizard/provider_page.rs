@@ -382,9 +382,12 @@ pub struct ProviderPage {
     probe_revision: Option<String>,
     source_revision: Option<String>,
     local_models: Vec<String>,
+    local_models_complete: bool,
     nonce: String,
     test_requested: bool,
     inspected: Option<u64>,
+    /// Memory is part of Programming Skills; unchecked, nothing here is saved.
+    memory_enabled: bool,
 }
 
 impl ProviderPage {
@@ -420,10 +423,37 @@ impl ProviderPage {
             probe_revision: None,
             source_revision: None,
             local_models: Vec::new(),
+            local_models_complete: false,
             nonce: session_nonce(),
             test_requested: false,
             inspected: None,
+            memory_enabled: true,
         }
+    }
+
+    pub fn set_memory_enabled(&mut self, enabled: bool) {
+        if self.memory_enabled && !enabled && self.page == Page::Hindsight {
+            self.reset_picker();
+            self.connection.cancel();
+            self.error = None;
+        }
+        self.memory_enabled = enabled;
+    }
+
+    fn memory_ignored(&self) -> bool {
+        self.page == Page::Hindsight && !self.memory_enabled
+    }
+
+    /// The Model page's footer reads "Choose model": from the credentials step
+    /// it reopens selection even when a model was chosen before Back.
+    fn press_save(&mut self) -> Option<Decision> {
+        if self.page == Page::Model
+            && self.model_step == ModelStep::Credentials
+            && self.pi.choice().configured()
+        {
+            self.selected_model = None;
+        }
+        Some(Decision::Save)
     }
 
     /// All three pages share drafts so Pi credential reuse stays consistent.
@@ -609,7 +639,8 @@ impl ProviderPage {
         self.generation = self.generation.wrapping_add(1);
         self.model_job = None;
         self.picker = None;
-        self.models_cached = false;
+        // The fetched catalog outlives a page change: reopening selection must
+        // not need the server to answer again. A draft change invalidates it.
         self.model_step = ModelStep::Credentials;
         self.choose_service_model = false;
     }
@@ -622,6 +653,8 @@ impl ProviderPage {
         self.probe_revision = None;
         self.source_revision = None;
         self.local_models.clear();
+        self.local_models_complete = false;
+        self.models_cached = false;
         self.selected_model = None;
     }
 
@@ -662,7 +695,8 @@ impl ProviderPage {
             Some(preset)
                 if model.is_empty()
                     || preset.requires_model
-                        && !self.local_models.iter().any(|id| id == &model) =>
+                        && !self.local_models.iter().any(|id| id == &model)
+                        && (self.local_models.is_empty() || self.local_models_complete) =>
             {
                 self.connection
                     .discover(resources, agent, self.generation, &target, preset.id)
@@ -703,9 +737,14 @@ impl ProviderPage {
                 self.accepted_api = Some(api);
                 format!("Connected: the endpoint answered on {label}.")
             }
-            Ok(Outcome::Models { ids, revision }) if !ids.is_empty() => {
+            Ok(Outcome::Models {
+                ids,
+                revision,
+                complete,
+            }) if !ids.is_empty() => {
                 self.source_revision = revision;
                 self.local_models = ids;
+                self.local_models_complete = complete;
                 self.model_step = ModelStep::Picker;
                 self.picker = Some(ModelPicker::new(
                     self.local_models
@@ -720,8 +759,13 @@ impl ProviderPage {
                     self.current.as_ref(),
                 ));
                 format!(
-                    "{} models reported by this server.",
-                    self.local_models.len()
+                    "{} models reported by this server.{}",
+                    self.local_models.len(),
+                    if complete {
+                        ""
+                    } else {
+                        " The list is incomplete; enter an omitted ID manually and test it."
+                    }
                 )
             }
             Ok(Outcome::Models { .. }) => "The server answered but reported no chat model.".into(),
@@ -878,12 +922,12 @@ impl ProviderPage {
                 .choice()
                 .preset()
                 .is_some_and(|preset| preset.requires_model)
-            && !self
-                .local_models
-                .iter()
-                .any(|model| model == self.pi.model.trim())
+            && !self.local_model_allowed()
         {
-            self.error = Some("Fetch the server's model list before choosing its model.".into());
+            self.error = Some(
+                "Fetch the server's model list, or test an omitted ID from an incomplete list."
+                    .into(),
+            );
             return false;
         }
         if self.model_step != ModelStep::Credentials {
@@ -896,6 +940,11 @@ impl ProviderPage {
             }
         }
         if self.models_cached {
+            // Reopen selection from the catalog already fetched, so a server
+            // that is down does not block a choice the person already made.
+            if self.picker.is_none() && !self.local_models.is_empty() {
+                self.open_cached_picker();
+            }
             self.model_step = if self.picker.is_some() {
                 ModelStep::Picker
             } else {
@@ -946,6 +995,31 @@ impl ProviderPage {
         false
     }
 
+    /// Rebuild the picker from the catalog this draft already fetched.
+    fn open_cached_picker(&mut self) {
+        let provider = self.configured_provider();
+        let models = self
+            .local_models
+            .iter()
+            .map(|id| Model {
+                provider: provider.clone(),
+                id: id.clone(),
+                name: id.clone(),
+            })
+            .collect();
+        self.picker = Some(ModelPicker::new(models, &provider, self.current.as_ref()));
+    }
+
+    fn local_model_allowed(&self) -> bool {
+        self.local_models
+            .iter()
+            .any(|model| model == self.pi.model.trim())
+            || !self.local_models.is_empty()
+                && !self.local_models_complete
+                && self.accepted_api.as_deref() == Some(pi_providers::Api::Chat.id())
+                && self.probe_revision.is_some()
+    }
+
     fn validate_pi(&self) -> Result<(), String> {
         let result = if self.selected_model.is_some() {
             validate_credentials(&self.pi, true, self.source() == Mode::New)
@@ -959,13 +1033,9 @@ impl ProviderPage {
             .preset()
             .filter(|preset| preset.requires_model)
         {
-            if !self
-                .local_models
-                .iter()
-                .any(|model| model == self.pi.model.trim())
-            {
+            if !self.local_model_allowed() {
                 return Err(format!(
-                    "{}: fetch the server's models and choose one it actually reported.",
+                    "{}: choose a reported model, or test an omitted ID from an incomplete list.",
                     preset.name
                 ));
             }
@@ -1073,7 +1143,14 @@ impl ProviderPage {
         let mut fields = Vec::new();
         if self.page == Page::Model {
             if self.model_step == ModelStep::Manual {
-                return vec![Field::PiModel, Field::Back, Field::Save];
+                // The manual step is where an omitted ID gets verified, so it
+                // needs the Test control that produces the receipt.
+                let mut manual = vec![Field::PiModel];
+                if self.pi.choice().endpoint() {
+                    manual.push(Field::PiTest);
+                }
+                manual.extend([Field::Back, Field::Save]);
+                return manual;
             }
             fields.push(Field::PiProvider);
             if self.pi.choice() == Choice::Compatible {
@@ -1535,7 +1612,7 @@ impl ProviderPage {
         self.focus = field;
         match field {
             Field::Back => Some(Decision::Back),
-            Field::Save => Some(Decision::Save),
+            Field::Save => self.press_save(),
             Field::PiTest => {
                 self.test_requested = true;
                 None
@@ -1678,7 +1755,7 @@ impl ProviderPage {
             }
             KeyCode::Enter => match self.focus {
                 Field::Back => Some(Decision::Back),
-                Field::Save => Some(Decision::Save),
+                Field::Save => self.press_save(),
                 Field::PiTest => {
                     self.test_requested = true;
                     None
@@ -1729,7 +1806,7 @@ impl ProviderPage {
     }
 
     fn start_service_models(&mut self, resources: &Path, agent: &Path, preview: bool) {
-        if self.page == Page::Model {
+        if self.page == Page::Model || self.memory_ignored() {
             return;
         }
         let provider = self.picker_provider();
@@ -1870,6 +1947,7 @@ impl ProviderPage {
         let result = match self.page {
             Page::Model => self.validate_pi(),
             Page::WebSearch => self.validate_search_draft(),
+            Page::Hindsight if !self.memory_enabled => Ok(()),
             Page::Hindsight => self.validate_hindsight_draft(),
         };
         self.error = result.err();
@@ -1965,27 +2043,33 @@ impl ProviderPage {
 
     /// The shipped apply path always uses Pi's shared lock and private writer.
     pub fn save_with_runtime(&self, root: &Path, resources: &Path) -> Result<(), String> {
-        self.validate_pi()?;
-        self.validate_search_draft()?;
-        if programming_enabled(root) {
-            self.validate_hindsight_draft()?;
-        }
+        self.preflight_targets(root)?;
         let agent = root.join("pi/agent");
-        self.refuse_shared_credential()?;
-        self.refuse_oauth_replacement(&agent)?;
-        read_json_object(&agent.join("settings.json"))?;
-        if self.pi.choice().endpoint() {
-            read_json_object(&agent.join("models.json"))?;
-        }
         fs::create_dir_all(&agent).map_err(|_| "Pi credential directory unavailable")?;
         let requests = [
             self.pi_credential_request(&agent)?,
             self.search_credential_request(&agent)?,
         ];
-        for request in requests.into_iter().flatten() {
-            apply_credential_request(resources, request)?;
-        }
-        self.save_files(root, true)
+        let mut wrote_credentials = false;
+        let mut saving_files = false;
+        let result = (|| {
+            for request in requests.into_iter().flatten() {
+                wrote_credentials |= apply_credential_request(resources, request)?;
+            }
+            saving_files = true;
+            self.save_files(root, true)
+        })();
+        // Preflight catches known-invalid targets; an I/O failure after this
+        // point says what already changed rather than rolling back Pi's file.
+        result.map_err(|error| {
+            if wrote_credentials {
+                format!("{error} (some credentials were already saved in Pi; settings may be partly applied)")
+            } else if saving_files {
+                format!("{error} (settings may be partly applied; review them before retrying setup)")
+            } else {
+                error
+            }
+        })
     }
 
     fn pi_credential_request(&self, agent: &Path) -> Result<Option<Value>, String> {
@@ -2043,17 +2127,99 @@ impl ProviderPage {
         self.save_files(root, false)
     }
 
-    fn save_files(&self, root: &Path, auth_prepared: bool) -> Result<(), String> {
-        // The final skills choice also governs seeding: an opt-out (or no
-        // choice yet) must neither require nor modify Hindsight's config.
-        let programming = programming_enabled(root);
+    /// Validate known input and merge failures before the first credential
+    /// write, so a known-invalid target refuses without touching credentials
+    /// or Pi's settings. Earlier setup steps (keybinding mode, skills choice,
+    /// seeded files) have already run by this point.
+    fn preflight_targets(&self, root: &Path) -> Result<(), String> {
+        let agent = root.join("pi/agent");
         self.validate_pi()?;
-        if programming {
-            self.validate_hindsight_draft()?;
-        }
         self.validate_search_draft()?;
+        if self.writes_hindsight(root) {
+            self.validate_hindsight_draft()?;
+            let path = root.join(".hindsight/embed");
+            read_hindsight_values(&path)?;
+            if !path.is_file() {
+                return Err("Memory configuration is missing; reopen Mash to restore it".into());
+            }
+            self.check_saved_hindsight(root)?;
+        }
         self.refuse_shared_credential()?;
-        self.refuse_oauth_replacement(&root.join("pi/agent"))?;
+        self.refuse_oauth_replacement(&agent)?;
+        if self.pi.choice().configured() {
+            read_json_object(&agent.join("settings.json"))?;
+            if self.pi.choice().endpoint() {
+                let models = read_json_object(&agent.join("models.json"))?;
+                if let Some(providers) = models.get("providers") {
+                    let providers = providers
+                        .as_object()
+                        .ok_or("Pi models.json has an invalid providers object")?;
+                    if let Some(definition) = providers.get(&self.configured_provider()) {
+                        let definition = definition
+                            .as_object()
+                            .ok_or("Pi models.json has an invalid provider definition")?;
+                        if definition
+                            .get("models")
+                            .is_some_and(|value| !value.is_array())
+                        {
+                            return Err("Pi models.json has an invalid model list".into());
+                        }
+                    }
+                }
+            }
+        }
+        let search = agent.join("web-search.json");
+        if self.search.choice() == SearchChoice::Chat {
+            if search.is_symlink() {
+                return Err("Web search: refusing a symlinked configuration".into());
+            }
+            if search.exists() && !search.is_file() {
+                return Err("Web search: expected a regular configuration file".into());
+            }
+        }
+        if self.search.choice().configured() {
+            read_json_object(&search)?;
+        }
+        Ok(())
+    }
+
+    // The final skills choice also governs seeding: an opt-out (or no choice
+    // yet) must neither require nor modify Hindsight's config.
+    fn writes_hindsight(&self, root: &Path) -> bool {
+        programming_enabled(root)
+            && self.hindsight.choice() != Choice::Keep
+            && self.service_source_for(Page::Hindsight) != ServiceSource::Later
+    }
+
+    fn check_saved_hindsight(&self, root: &Path) -> Result<(), String> {
+        if self.service_source_for(Page::Hindsight) != ServiceSource::Saved {
+            return Ok(());
+        }
+        let values = read_hindsight_values(&root.join(".hindsight/embed"))?;
+        let provider = values
+            .get("HINDSIGHT_API_LLM_PROVIDER")
+            .and_then(Value::as_str);
+        let base = values
+            .get("HINDSIGHT_API_LLM_BASE_URL")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
+        if provider != Some(self.hindsight.choice().provider_id())
+            || base.trim_end_matches('/') != self.hindsight.url.trim_end_matches('/')
+        {
+            return Err("Memory: the saved credential's provider or endpoint changed; choose its source again".into());
+        }
+        let key = values
+            .get("HINDSIGHT_API_LLM_API_KEY")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
+        if key.is_empty() || key == "unused" {
+            return Err("Memory: the saved key is unavailable; choose its source again".into());
+        }
+        Ok(())
+    }
+
+    fn save_files(&self, root: &Path, auth_prepared: bool) -> Result<(), String> {
+        self.preflight_targets(root)?;
         if self.pi.choice().configured() {
             let id = self.configured_provider();
             let agent = root.join("pi/agent");
@@ -2153,10 +2319,8 @@ impl ProviderPage {
         if self.search.choice() == SearchChoice::Chat {
             // The extension uses the conversation model only when the override
             // file is absent. Choosing this is distinct from keeping that file.
+            // preflight_targets already refused a symlinked or non-regular file.
             let path = root.join("pi/agent/web-search.json");
-            if path.is_symlink() {
-                return Err("Web search: refusing a symlinked configuration".into());
-            }
             match fs::remove_file(&path) {
                 Ok(()) => {}
                 Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
@@ -2186,35 +2350,8 @@ impl ProviderPage {
             save_json(&path, &config)?;
         }
 
-        if programming
-            && self.hindsight.choice() != Choice::Keep
-            && self.service_source_for(Page::Hindsight) != ServiceSource::Later
-        {
+        if self.writes_hindsight(root) {
             let choice = self.hindsight.choice();
-            if self.service_source_for(Page::Hindsight) == ServiceSource::Saved {
-                let values = read_hindsight_values(&root.join(".hindsight/embed"))?;
-                let provider = values
-                    .get("HINDSIGHT_API_LLM_PROVIDER")
-                    .and_then(Value::as_str);
-                let base = values
-                    .get("HINDSIGHT_API_LLM_BASE_URL")
-                    .and_then(Value::as_str)
-                    .unwrap_or_default();
-                if provider != Some(choice.provider_id())
-                    || base.trim_end_matches('/') != self.hindsight.url.trim_end_matches('/')
-                {
-                    return Err("Memory: the saved credential's provider or endpoint changed; choose its source again".into());
-                }
-                let key = values
-                    .get("HINDSIGHT_API_LLM_API_KEY")
-                    .and_then(Value::as_str)
-                    .unwrap_or_default();
-                if key.is_empty() || key == "unused" {
-                    return Err(
-                        "Memory: the saved key is unavailable; choose its source again".into(),
-                    );
-                }
-            }
             let model = choice.configured().then_some(self.hindsight.model.trim());
             let url = (choice == Choice::Compatible).then_some(self.hindsight.url.trim());
             let key = if choice == Choice::None {
@@ -2368,6 +2505,7 @@ impl ProviderPage {
                         if choice == SearchChoice::Azure { " Azure also needs its endpoint configured." } else { "" }),
                 })
             }
+            Page::Hindsight if !self.memory_enabled => Some("Memory is part of Programming Skills, which is unchecked on Tools: nothing on this page will be saved.".into()),
             Page::Hindsight => Some(match self.hindsight.choice() {
                 Choice::Keep => "Existing memory configuration stays unchanged.",
                 Choice::None => "Memory will not use an LLM.",
@@ -2733,7 +2871,18 @@ impl ProviderPage {
         if self.model_step == ModelStep::Picker {
             if let Some(picker) = &self.picker {
                 if self.page == Page::Model {
-                    picker.draw(frame);
+                    // A truncated catalog must say so on the screen that shows
+                    // it, not only in a status line the picker covers.
+                    if self.local_models_complete {
+                        picker.draw(frame);
+                    } else {
+                        picker.draw_for(
+                            frame,
+                            "Model provider",
+                            2,
+                            "Catalog truncated; enter an omitted ID on the manual step",
+                        );
+                    }
                 } else {
                     picker.draw_for(
                         frame,
@@ -2848,7 +2997,7 @@ fn programming_enabled(root: &Path) -> bool {
         .any(|line| line == "programming=true")
 }
 
-fn apply_credential_request(resources: &Path, request: Value) -> Result<(), String> {
+fn apply_credential_request(resources: &Path, request: Value) -> Result<bool, String> {
     let mut job = Job::start_helper(
         resources,
         "bin/mash-pi-credentials.mjs",
@@ -2864,7 +3013,7 @@ fn apply_credential_request(resources: &Path, request: Value) -> Result<(), Stri
             {
                 return Err("Pi credentials changed or could not be saved. Review the selected source and test custom connections again.".into());
             }
-            return Ok(());
+            return Ok(value["wrote"].as_bool().expect("checked above"));
         }
         std::thread::sleep(std::time::Duration::from_millis(10));
     }
@@ -3644,6 +3793,64 @@ mod tests {
     }
 
     #[test]
+    fn truncated_required_catalog_allows_an_omitted_model_only_after_its_own_probe() {
+        let root = root();
+        let agent = root.join("pi/agent");
+        let resources = root.join("resources");
+        let mut page = ProviderPage::new();
+        page.pi.choice = Some(Choice::Local(&pi_connection::PRESETS[0]));
+        node_fixture(
+            &resources,
+            r#"{"version":1,"status":"ok","accepted":true,"models":["listed"],"truncated":true,"revision":"catalog-revision"}"#,
+        );
+        page.start_connection(&resources, &agent, false);
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+        while page.connection.busy() {
+            page.poll_connection();
+            assert!(
+                std::time::Instant::now() < deadline,
+                "catalog never returned"
+            );
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
+        assert!(!page.local_models_complete);
+        assert!(page
+            .connection_status
+            .as_ref()
+            .unwrap()
+            .contains("incomplete"));
+        // Manual entry of an omitted model must not treat that subset as an allowlist.
+        page.picker_action(Some(Action::Manual));
+        page.pi.model = "model-0500".into();
+        assert!(!page.validate());
+        node_fixture(
+            &resources,
+            r#"{"version":1,"status":"ok","accepted":true,"api":"openai-completions","revision":"current-revision"}"#,
+        );
+        page.start_connection(&resources, &agent, false);
+        wait_for_probe(&mut page);
+        let request: Value =
+            serde_json::from_slice(&fs::read(resources.join("request.json")).unwrap()).unwrap();
+        assert_eq!(request["action"], "probe");
+        assert_eq!(request["model"], "model-0500");
+        assert_eq!(request["api"], "openai-completions");
+        assert!(page.validate(), "{:?}", page.error);
+        let apply = page.pi_credential_request(&agent).unwrap().unwrap();
+        assert_eq!(apply["revision"], "current-revision");
+        // A complete list still refuses absent IDs, even with an old receipt.
+        page.local_models_complete = true;
+        assert!(!page.validate());
+        page.local_models_complete = false;
+        page.focus = Field::PiModel;
+        page.on_key(KeyCode::Char('x'), KeyModifiers::NONE);
+        assert!(
+            !page.validate(),
+            "changing the candidate invalidates its probe"
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn a_local_preset_saves_its_own_endpoint_without_a_key_or_an_old_token() {
         let root = root();
         let agent = root.join("pi/agent");
@@ -3854,6 +4061,74 @@ mod tests {
         assert_eq!(request["key"], "hindsight-fixture-key");
         assert_eq!(request["asCatalog"], true);
         assert!(page.model_step == ModelStep::Picker);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn back_then_choose_model_reopens_the_picker_without_losing_credentials() {
+        let root = root();
+        let agent = root.join("pi/agent");
+        let mut page = ProviderPage::new();
+        page.pi.choice = Some(Choice::OpenAi);
+        page.pi.key = "typed-fixture-key".into();
+        page.selected_model = Some(("openai".into(), "first-model".into()));
+        // Web search, then Back: the page change resets the picker only.
+        page.set_page(Page::WebSearch);
+        page.set_page(Page::Model);
+        page.focus = Field::Save;
+        assert!(matches!(
+            page.on_key(KeyCode::Enter, KeyModifiers::NONE),
+            Some(Decision::Save)
+        ));
+        // Preview stands in for discovery so no helper runs.
+        assert!(!page.advance(&root.join("missing"), &agent, true));
+        assert!(
+            page.model_step == ModelStep::Picker,
+            "Choose model reopened"
+        );
+        assert_eq!(page.pi.key, "typed-fixture-key");
+        assert!(matches!(
+            page.on_key(KeyCode::Enter, KeyModifiers::NONE),
+            Some(Decision::Save)
+        ));
+        assert!(page.advance(&root.join("missing"), &agent, true));
+        assert_eq!(
+            page.selected_model,
+            Some(("openai".into(), "preview-model".into()))
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn memory_without_programming_skills_is_annotated_and_never_validated_or_fetched() {
+        let root = root();
+        let resources = root.join("resource root");
+        node_fixture(
+            &resources,
+            "{\"version\":1,\"status\":\"ok\",\"models\":[]}",
+        );
+        let mut page = ProviderPage::new();
+        page.set_page(Page::Hindsight);
+        page.hindsight.choice = Some(Choice::Compatible);
+        page.hindsight.url = "not a url".into();
+        page.hindsight_source = Some(ServiceSource::New);
+        assert!(
+            !page.validate(),
+            "an enabled memory page validates its draft"
+        );
+        page.set_memory_enabled(false);
+        assert!(page.validate());
+        assert!(page.details_hint().unwrap().contains("Programming Skills"));
+        let mut terminal =
+            ratatui::Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+        terminal.draw(|frame| page.draw(frame)).unwrap();
+        wizard_style::tests::find(terminal.backend().buffer(), "Programming Skills");
+        page.choose_service_model = true;
+        page.service_connection(&resources, &root.join("pi/agent"), false);
+        assert!(page.model_job.is_none());
+        assert!(!resources.join("request.json").exists());
+        page.set_memory_enabled(true);
+        assert!(!page.validate());
         fs::remove_dir_all(root).unwrap();
     }
 
@@ -4386,6 +4661,136 @@ mod tests {
                 0o600
             );
         }
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn known_invalid_later_targets_refuse_before_any_credential_write() {
+        let cases = [
+            (
+                "web search JSON",
+                "pi/agent/web-search.json",
+                Some("{ broken"),
+            ),
+            (
+                "models providers",
+                "pi/agent/models.json",
+                Some(r#"{"providers":[]}"#),
+            ),
+            (
+                "models provider definition",
+                "pi/agent/models.json",
+                Some(r#"{"providers":{"ollama":[]}}"#),
+            ),
+            (
+                "models list",
+                "pi/agent/models.json",
+                Some(r#"{"providers":{"ollama":{"models":{}}}}"#),
+            ),
+            ("memory config", ".hindsight/embed", None),
+            ("memory binding", ".hindsight/embed", Some("HINDSIGHT_API_LLM_PROVIDER=anthropic\nHINDSIGHT_API_LLM_API_KEY=changed-fixture\n")),
+            ("web search removal", "pi/agent/web-search.json", None),
+        ];
+        for (name, path, contents) in cases {
+            let root = root();
+            let resources = root.join("resources");
+            node_fixture(&resources, r#"{"version":1,"status":"ok","wrote":true}"#);
+            fs::write(
+                root.join(".hindsight/embed"),
+                "HINDSIGHT_API_LLM_PROVIDER=none\n",
+            )
+            .unwrap();
+            if name == "memory binding" {
+                fs::write(root.join(".hindsight/embed"), "HINDSIGHT_API_LLM_PROVIDER=openai\nHINDSIGHT_API_LLM_MODEL=memory-model\nHINDSIGHT_API_LLM_API_KEY=memory-fixture\n").unwrap();
+            }
+            let mut page = ProviderPage::new();
+            page.load_existing_auth(&root.join("pi/agent"));
+            if name.starts_with("models ") {
+                page.pi.choice = Some(Choice::Local(&pi_connection::PRESETS[0]));
+                page.pi.model = "llama".into();
+                page.local_models = vec!["llama".into()];
+            } else {
+                page.pi.choice = Some(Choice::OpenAi);
+                page.pi.key = "fixture-chat-key".into();
+                page.pi_source = Some(Mode::New);
+                page.pi.model = "gpt-fixture".into();
+                page.selected_model = Some(("openai".into(), "gpt-fixture".into()));
+            }
+            page.search.choice = Some(SearchChoice::OpenAiCodex);
+            page.search.model = "gpt-5.6-sol".into();
+            page.hindsight.choice = Some(if name == "memory binding" {
+                Choice::OpenAi
+            } else {
+                Choice::None
+            });
+            if name == "memory binding" {
+                page.hindsight.model = "memory-model".into();
+                page.hindsight_source = Some(ServiceSource::Saved);
+            }
+            if let Some(contents) = contents {
+                fs::write(root.join(path), contents).unwrap();
+            } else if name == "web search removal" {
+                page.search.choice = Some(SearchChoice::Chat);
+                fs::create_dir(root.join(path)).unwrap();
+            } else {
+                fs::remove_file(root.join(path)).unwrap();
+            }
+            let settings = root.join("pi/agent/settings.json");
+            assert!(page.save_with_runtime(&root, &resources).is_err(), "{name}");
+            assert!(
+                !resources.join("request.json").exists(),
+                "{name}: helper ran"
+            );
+            assert!(!settings.exists(), "{name}: settings written");
+            fs::remove_dir_all(root).unwrap();
+        }
+    }
+
+    #[test]
+    fn a_late_failure_reports_prior_credential_writes_without_rolling_them_back() {
+        let root = root();
+        let agent = root.join("pi/agent");
+        let resources = root.join("resources");
+        node_fixture(&resources, r#"{"version":1,"status":"ok","wrote":true}"#);
+        let node = resources.join("node/bin/node");
+        // Simulate an I/O/concurrent-target failure after preflight. The helper's
+        // successful credential write must not be silently rolled back.
+        fs::write(&node, format!(
+            "#!/bin/sh\n/bin/cat > request.json\nprintf '%s' '{{\"other\":{{\"type\":\"api_key\",\"key\":\"concurrent-fixture\"}}}}' > '{}/auth.json'\nprintf broken > '{}/web-search.json'\nprintf '%s\\n' '{{\"version\":1,\"status\":\"ok\",\"wrote\":true}}'\n",
+            agent.display(), agent.display()
+        )).unwrap();
+        let mut page = ProviderPage::new();
+        page.pi.choice = Some(Choice::OpenAi);
+        page.pi.key = "fixture-key".into();
+        page.pi.model = "fixture-model".into();
+        page.pi_source = Some(Mode::New);
+        page.search.choice = Some(SearchChoice::Google);
+        page.search.model = "fixture-search-model".into();
+        page.search_source = Some(ServiceSource::Later);
+        let error = page.save_with_runtime(&root, &resources).unwrap_err();
+        assert!(error.contains("already saved"), "{error}");
+        assert_eq!(
+            read_json_object(&agent.join("auth.json")).unwrap()["other"]["key"],
+            "concurrent-fixture"
+        );
+        // A no-write reuse can still fail while saving settings. Report that
+        // partial settings risk, but do not falsely claim credentials changed.
+        let original = r#"{"openai":{"type":"api_key","key":"saved-fixture"}}"#;
+        fs::write(agent.join("auth.json"), original).unwrap();
+        fs::write(agent.join("web-search.json"), "{}").unwrap();
+        fs::write(&node, format!(
+            "#!/bin/sh\n/bin/cat > request.json\nprintf broken > '{}/web-search.json'\nprintf '%s\\n' '{{\"version\":1,\"status\":\"ok\",\"wrote\":false}}'\n",
+            agent.display()
+        )).unwrap();
+        page.saved_auth.insert("openai".into());
+        page.pi_source = Some(Mode::Existing);
+        let error = page.save_with_runtime(&root, &resources).unwrap_err();
+        assert!(error.contains("settings may be partly applied"), "{error}");
+        assert!(!error.contains("already saved"), "{error}");
+        assert_eq!(
+            fs::read_to_string(agent.join("auth.json")).unwrap(),
+            original
+        );
         fs::remove_dir_all(root).unwrap();
     }
 

@@ -122,8 +122,13 @@ class MacOSUpdatePackageTest(unittest.TestCase):
             fake = tmp / "fake"
             for d in (bin_dir, macos, fake, tmp / "home"):
                 d.mkdir(parents=True)
-            for name in ("lib.sh", "launch-common.sh"):
+            for name in ("lib.sh", "launch-common.sh", "mash-shell"):
                 shutil.copy(ROOT / "packaging" / name, bin_dir / name)
+            # Critical seed failures now reach the setup alert, so the happy
+            # handoff needs a usable payload rather than silently missing defaults.
+            resources = bin_dir.parent
+            shutil.copytree(ROOT / "packaging/defaults", resources / "defaults", symlinks=True)
+            (resources / "defaults/optional-programming.txt").write_text("")
             shutil.copy(ROOT / "packaging/mash", bin_dir / "mash-launch")
             out = tmp / "out"
             # The stub terminal records that the handoff happened, and how.
@@ -140,6 +145,13 @@ class MacOSUpdatePackageTest(unittest.TestCase):
             subprocess.run(["/bin/bash", str(bin_dir / "mash-launch")], env=env, check=False)
             self.assertTrue(out.exists(), "the setup never handed off to the terminal")
             self.assertEqual(out.read_text(), "argc=0 err=\n")
+            # The same real launcher must pass an actual critical failure to
+            # its terminal alert instead of pretending initialization succeeded.
+            (tmp / "home/.mash/config/herdr/config.toml").unlink()
+            for name in ("config.toml", "config.linux.toml"):
+                (resources / "defaults/herdr" / name).unlink()
+            subprocess.run(["/bin/bash", str(bin_dir / "mash-launch")], env=env, check=False)
+            self.assertIn("argc=0 err=Setting up ", out.read_text())
 
     def test_bytecode_is_refused_before_the_setup_runs_python(self):
         """The setup's own seeding runs the bundled Python.

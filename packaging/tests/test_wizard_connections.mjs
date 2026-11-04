@@ -30,8 +30,15 @@ const server = createServer(async (req, res) => {
     return;
   }
   if (mode === "exhaust") { res.writeHead(404); res.end("{}"); }
+  else if (mode === "wrong-family") { res.setHeader("content-type", "application/json"); res.end(JSON.stringify({ choices: [] })); }
+  else if (mode === "error-status") { res.setHeader("content-type", "application/json"); res.end(JSON.stringify({ status: "error", message: "unsupported API family; use Responses" })); }
   else if (mode === "redirect") { res.writeHead(302, { location: "http://169.254.169.254/" }); res.end(); }
   else if (mode === "html") { res.setHeader("content-type", "text/html"); res.end("not a model API"); }
+  else if (["malformed", "empty-body", "no-content", "error-body", "scalar", "null"].includes(mode)) {
+    res.writeHead(mode === "no-content" ? 204 : 200, { "content-type": "application/json" });
+    res.end(mode === "malformed" ? "this is not JSON" : mode === "error-body" ? '{"error":{"message":"not a model"}}' : mode === "scalar" ? '"ok"' : mode === "null" ? "null" : "");
+  }
+  else if (mode === "large" && req.url === "/api/tags") { res.setHeader("content-type", "application/json"); res.end(JSON.stringify({ models: Array.from({ length: 501 }, (_, index) => ({ name: `model-${String(index).padStart(4, "0")}` })) })); }
   else if (mode === "tags") { res.setHeader("content-type", "application/json"); res.end(JSON.stringify({ models: [{ name: "qwen3:8b" }, { name: "qwen3:8b" }, { name: "gpt-oss:120b-cloud", remote_host: "ollama.com" }, { name: "\u0007bad\u0000" }, { nope: 1 }] })); }
   else if (mode === "lmstudio") { res.setHeader("content-type", "application/json"); res.end(JSON.stringify({ data: [{ id: "local/chat", type: "llm" }, { id: "nomic-embed", type: "embeddings" }] })); }
   else if (mode === "empty") { res.setHeader("content-type", "application/json"); res.end(JSON.stringify({ data: [] })); }
@@ -39,6 +46,7 @@ const server = createServer(async (req, res) => {
   else if (mode === "show") { res.setHeader("content-type", "application/json"); res.end(JSON.stringify(req.url === "/api/show" && JSON.parse(raw).model === "qwen3:8b" ? { details: { families: ["qwen3"] }, capabilities: ["tools"] } : {})); }
   else if (mode === "absent") { res.writeHead(404); res.end("{}"); }
   else if (mode === "auto" && req.url.endsWith("chat/completions")) { res.writeHead(404); res.end(); }
+  else if (mode === "auto" && req.url.endsWith("/responses")) { res.setHeader("content-type", "application/json"); res.end(JSON.stringify({ object: "response", output: [] })); }
   else { res.setHeader("content-type", "application/json"); res.end(JSON.stringify({ choices: [] })); }
 });
 await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
@@ -58,11 +66,34 @@ try {
   r = await connect(input);
   assert.equal(seen.length, 3, "Auto may attempt each of the three families once");
   assert.equal(r.accepted, false);
-  assert.equal(seen.at(-1).path, "/prefix/v1/messages");
+  assert.equal(seen.at(-1).path, "/prefix/v1/v1/messages", "match the pinned Anthropic client's /v1/messages suffix");
+  for (const bad of ["malformed", "empty-body", "no-content", "error-body", "scalar", "null"]) {
+    mode = bad;
+    seen.length = 0;
+    const refused = await connect(input);
+    assert.equal(refused.accepted, false, bad);
+    assert.equal(seen.length, 3, `${bad}: Auto continues instead of accepting a bad first response`);
+  }
   mode = "auto";
   mode = "html";
   assert.equal((await connect({ ...input, api: "anthropic-messages" })).accepted, false);
   assert.equal(seen.at(-1).body.max_tokens, 1);
+  // A chat-shaped body is not an Anthropic or Responses receipt: the wizard
+  // would persist that API family from a reply proving a different route.
+  mode = "wrong-family";
+  for (const api of ["anthropic-messages", "openai-responses"]) {
+    const mismatch = await connect({ ...input, api });
+    assert.equal(mismatch.accepted, false, api);
+    assert.equal(mismatch.reason, "wrong_api", api);
+  }
+  assert.equal((await connect({ ...input, api: "openai-completions" })).accepted, true);
+  // A 200 status:error envelope is a refusal, not the first family's success.
+  mode = "error-status";
+  seen.length = 0;
+  const errorStatus = await connect(input);
+  assert.equal(errorStatus.accepted, false);
+  assert.equal(seen.length, 3, "Auto keeps trying after a status:error reply");
+  mode = "success";
   mode = "redirect";
   const beforeRedirect = seen.length;
   const redirected = await connect({ ...input, api: "openai-completions" });
@@ -102,6 +133,13 @@ try {
   r = await connect(discovery);
   assert.deepEqual(r.models, ["qwen3:8b"], "keep tags, drop duplicates, cloud rows and unsafe ids");
   assert.equal(seen.at(-1).path, "/api/tags", "native metadata route ignores the inference prefix");
+  mode = "large";
+  r = await connect(discovery);
+  assert.equal(r.models.length, 500);
+  assert.equal(r.truncated, true);
+  assert.ok(!r.models.includes("model-0500"));
+  assert.equal((await connect({ ...input, api: "openai-completions", model: "model-0500" })).accepted, true,
+    "an exact omitted model can be verified independently of its truncated catalog");
   mode = "lmstudio";
   r = await connect({ ...discovery, preset: "lmstudio" });
   assert.deepEqual(r.models, ["local/chat"]);
@@ -111,6 +149,11 @@ try {
   r = await connect({ ...discovery, preset: "vllm" });
   assert.equal(r.accepted, true, "vLLM may still be used by exact manual entry");
   assert.equal(seen.at(-1).path, "/prefix/v1/models", "served-model routes keep the configured prefix");
+  // Discovery joins our own route, so a pasted base with repeated slashes must
+  // still ask for /prefix/v1/models rather than /prefix/v1////models.
+  r = await connect({ ...discovery, preset: "vllm", baseUrl: `${baseUrl}///` });
+  assert.equal(seen.at(-1).path, "/prefix/v1/models", "discovery trims every trailing slash");
+  assert.equal(r.accepted, true);
   mode = "unauthorized";
   assert.equal((await connect({ ...discovery, preset: "ollama" })).reason, "unauthorized");
   assert.ok(!seen.some(row => /pull|create|delete|push|login/.test(row.path)), "discovery must never administer the server");

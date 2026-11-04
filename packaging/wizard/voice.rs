@@ -67,6 +67,8 @@ pub struct Model {
     pub bytes: u64,
     /// Seconds to transcribe the 30-second reference dictation.
     pub wait_seconds: f64,
+    /// Multilingual without native detection: install the detector with it.
+    pub needs_detector: bool,
 }
 
 impl Model {
@@ -83,7 +85,6 @@ impl Model {
 pub struct Pick {
     pub best: Model,
     pub fast: Model,
-    pub needs_detector: bool,
 }
 
 impl Pick {
@@ -432,6 +433,7 @@ fn as_model(scored: &Scored) -> Model {
         name: scored.name.clone(),
         bytes: scored.bytes,
         wait_seconds: scored.wait,
+        needs_detector: scored.needs_detector,
     }
 }
 
@@ -443,7 +445,6 @@ pub fn recommend(languages: &[String]) -> Option<Pick> {
     Some(Pick {
         best: as_model(&scored[selection.overall]),
         fast: as_model(&scored[selection.fast]),
-        needs_detector: scored[selection.overall].needs_detector,
     })
 }
 
@@ -636,7 +637,7 @@ mod tests {
         let pick = pick_for(&["en"]);
         assert_eq!(pick.best.id, "parakeet-unified-en-0.6b");
         assert_eq!(pick.fast.id, "parakeet-unified-en-0.6b");
-        assert!(!pick.needs_detector);
+        assert!(!pick.best.needs_detector);
         assert!(pick.same_model());
     }
 
@@ -664,10 +665,20 @@ mod tests {
     #[test]
     fn detector_is_needed_only_for_multilingual_models_without_detection() {
         // English-only: one language, so no detector even without native detection.
-        assert!(!pick_for(&["en"]).needs_detector);
+        assert!(!pick_for(&["en"]).best.needs_detector);
         // German's canary-1b-v2 has no native detection and covers many
         // languages, so the extension ships the detector with it.
-        assert!(pick_for(&["de"]).needs_detector);
+        assert!(pick_for(&["de"]).best.needs_detector);
+    }
+
+    #[test]
+    fn each_role_carries_its_own_detector_requirement() {
+        // Best detects natively; Fast is multilingual without detection.
+        let pick = pick_for(&["en", "zh"]);
+        assert_eq!(pick.best.id, "Qwen3-ASR-0.6B");
+        assert_eq!(pick.fast.id, "Fun-ASR-Nano-2512");
+        assert!(!pick.best.needs_detector);
+        assert!(pick.fast.needs_detector);
     }
 
     #[test]

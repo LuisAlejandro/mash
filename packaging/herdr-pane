@@ -36,11 +36,11 @@ case "$HERDR_SOCKET_PATH" in
   exit 1
   ;;
 esac
-# GitHub's MCP follows Mash's gh sign-in: added while signed in, removed after a
-# logout. Covers installs whose wizard finished before this existed. Fast and
-# local (one `gh auth token`), but still kept off the window's critical path.
+# Reconcile before agents can connect, including migrating older header commands
+# that could borrow the personal keychain. This is local configuration work;
+# the helper never asks gh for credentials or contacts GitHub.
 if [ -x "$bin_dir/mash-github-mcp" ]; then
-  nohup "$bin_dir/mash-github-mcp" "$home/.mash" </dev/null >/dev/null 2>&1 &
+  "$bin_dir/mash-github-mcp" "$home/.mash" </dev/null >/dev/null 2>&1 || true
 fi
 
 # Readiness belongs to the target GUI and its new server, not the installed
