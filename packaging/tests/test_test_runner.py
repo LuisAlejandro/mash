@@ -10,10 +10,16 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 NATIVE_SUITES = (
-    "test_mash_update_apply.sh", "test_mash_update_handoff.sh",
-    "test_mash_update_launch_gate.sh", "test_mash_update_lifecycle.sh",
-    "test_mash_update_processes.sh", "test_mash_update_readiness.sh",
-    "test_mash_update_state.sh", "test_mash_update_verify.sh",
+    "test_mash_update_checks.sh",
+    "test_mash_update_apply.sh",
+    "test_mash_update_handoff.sh",
+    "test_mash_update_launch_gate.sh",
+    "test_mash_update_lifecycle.sh",
+    "test_mash_update_processes.sh",
+    "test_mash_update_readiness.sh",
+    "test_mash_update_review.sh",
+    "test_mash_update_state.sh",
+    "test_mash_update_verify.sh",
 )
 
 
