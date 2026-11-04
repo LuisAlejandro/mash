@@ -29,7 +29,7 @@ xcrun --sdk macosx clang -Wall -Wextra -Werror -O2 -mmacosx-version-min=14.0 \
 source "$root/bin/mash-update-common"
 mash_update_init "$root/data"
 mash_update_begin "$root/Mash.app" 9.9.9 9.9.8 "$root/mash-update-ABCDEF"
-mash_update_write job "$label"
+mash_update_change job "$label"
 cat >"$root/fake-apply" <<EOF
 #!/bin/bash
 HERDR_SOCKET_PATH="$root/h.sock" "$herdr_bin" server stop >/dev/null 2>&1

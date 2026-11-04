@@ -26,23 +26,7 @@ mnt="" sibling="" handed_off=0
 cleanup() {
   local rc=$?
   [ "$handed_off" = 0 ] || return 0
-  # ponytail: unfinished preparation is retained for manual cleanup; add an
-  # owner-verified reaper only if retained attempts become a storage problem.
-  if [ -n "${MU_COMMAND_BUSY:-}" ] && kill -0 "$MU_COMMAND_BUSY" 2>/dev/null; then
-    mash_update_log "retained preparation: command=$MU_COMMAND_BUSY work=$work sibling=$sibling mount=$mnt" || true
-    return "$rc"
-  fi
-  if [ -n "$mnt" ] && ! mash_update_run 60 cleanup-detach hdiutil detach "$mnt" -quiet; then
-    mash_update_log "retained preparation: cleanup-detach incomplete work=$work sibling=$sibling mount=$mnt" || true
-    return "$rc"
-  fi
-  if [ -n "${MU_ID:-}" ] && [ "$(mash_update_read id)" = "$MU_ID" ]; then
-    case "$(mash_update_read phase)" in
-    preparing | ready) mash_update_finish cancelled || true ;;
-    esac
-  fi
-  [ -z "$sibling" ] || rm -rf "$sibling"
-  rm -rf "$work"
+  mash_update_abandon_preparation "$work" "$sibling" "$mnt"
   return "$rc"
 }
 trap cleanup EXIT
@@ -65,7 +49,7 @@ team_of() { codesign -dv "$1" 2>&1 | sed -n 's/^TeamIdentifier=//p' | head -n 1;
 [ "$candidate" != "$installed" ] || fail 'This release is already installed.'
 old_uuid="$("$bin/mash-update-processes" uuid "$app/Contents/MacOS/mash-terminal")" || fail 'The current executable could not be identified.'
 mash_update_bundle_is "$app" "$installed" "$old_uuid" || fail 'The installed app changed; restart Mash before updating.'
-mash_update_write old_uuid "$old_uuid" || fail 'Could not record the previous build.'
+mash_update_change old_uuid "$old_uuid" || fail 'Could not record the previous build.'
 asset="Mash-$candidate-mac-arm64.dmg"
 printf '  Downloading Mash %s...\n' "$candidate"
 curl -fL --retry 2 --max-time 1800 --progress-bar -o "$work/$asset" \
@@ -81,11 +65,11 @@ mash_update_run 600 signature codesign --verify --deep --strict "$mnt/Mash.app" 
 mash_update_run 600 gatekeeper spctl --assess --type execute "$mnt/Mash.app" || fail 'The download was rejected by Gatekeeper.'
 want="$(team_of "$app")" got="$(team_of "$mnt/Mash.app")"
 [ -n "$want" ] && [ "$want" != 'not set' ] && [ "$want" = "$got" ] || fail 'The download has a different signing Team ID.'
-mash_update_write expected_team "$want" || fail 'Could not record the signing identity.'
+mash_update_change expected_team "$want" || fail 'Could not record the signing identity.'
 printf '  Preparing the final copy. Mash stays open during verification...\n'
 sibling="$(mktemp -d "$parent/.mash-update-XXXXXX")" || fail 'Could not prepare the update beside Mash.'
 printf '%s\n' "$MU_ID" >"$sibling/.mash-update-owner" || fail 'Could not record preparation ownership.'
-mash_update_write sibling "$sibling" || fail 'Could not record the prepared location.'
+mash_update_change sibling "$sibling" || fail 'Could not record the prepared location.'
 staged="$sibling/Mash.app"
 mash_update_run 1800 copy ditto "$mnt/Mash.app" "$staged" || fail 'The download could not be prepared.'
 prepared=""
@@ -107,7 +91,7 @@ for helper in mash-update-common mash-update-processes mash-update-gate mash-upd
 done
 chmod 700 "$work"/mash-update-*
 "$work/mash-update-processes" now >/dev/null || fail 'The detached worker cannot start.'
-mash_update_write expected_uuid "$uuid" || fail 'Could not record the target build.'
+mash_update_change expected_uuid "$uuid" || fail 'Could not record the target build.'
 mash_update_phase ready || fail 'Could not record preparation.'
 printf '\n  Ready to install Mash %s (you have %s).\n' "$candidate" "$installed"
 printf '  This closes Mash now and reopens it when done.\n'
@@ -130,7 +114,7 @@ fi
 while :; do
   [ "$(mash_update_read id)" = "$MU_ID" ] || fail 'Update ownership changed.'
   if [ "$(mash_update_read worker_claimed 2>/dev/null)" = 1 ] && mash_update_active; then
-    mash_update_write handoff_released 1 || fail 'Could not release the acknowledged worker.'
+    mash_update_change handoff_released 1 || fail 'Could not release the acknowledged worker.'
     break
   fi
   [ "$("$bin/mash-update-processes" now)" -lt "$deadline" ] || fail 'The update worker did not acknowledge startup.'

@@ -51,7 +51,7 @@ failure() {
   local reason="$1" title
   case "$(mash_update_read phase)" in confirmed | restored-previous) exit 0 ;; esac
   mash_update_log "failure=$reason swapped=$swapped"
-  mash_update_write last_error "$reason" || true
+  mash_update_change last_error "$reason" || true
   if [ "$swapped" = 0 ]; then
     mash_update_finish failed-before-swap || true
     printf '%s\n' "$version" >"$MU_STATE/update-retry"
@@ -87,7 +87,7 @@ mash_update_progress || true
 old="$work/old-processes"
 stopped=1
 mash_update_quiesce "$dest" "$old" || failure 'Mash did not completely quit; the previous installation was not replaced.'
-mash_update_write shutdown_snapshot "$old" || failure 'Could not record shutdown.'
+mash_update_change shutdown_snapshot "$old" || failure 'Could not record shutdown.'
 # No large copy or assessment follows this final admission/ownership check.
 mash_update_phase swap-intent || failure 'Could not record the exchange intent.'
 "$self/mash-update-processes" list "$dest" "$data" >"$work/final-processes" || failure 'Could not perform the final shutdown check.'

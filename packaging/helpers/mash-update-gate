@@ -88,7 +88,7 @@ recover)
   MU_JOB_FILE="$bin/update-recovery-job.plist"
   keep_helpers=1
   if ! mash_update_bootstrap "$bin/mash-update-gate" recover-owned "$app" "$data" "$MU_ID"; then
-    mash_update_write recovery_pending 0 || true
+    mash_update_change recovery_pending 0 || true
     mash_update_log 'recovery controller could not start; retained both app copies'
     exit 1
   fi
@@ -193,7 +193,7 @@ server-ready)
   # Old schema-1 transactions had no shared deadline. New coordinators always
   # publish it before launch; the fallback keeps recovery backward-compatible.
   if ! mash_update_read readiness_deadline >/dev/null; then
-    mash_update_write readiness_deadline "$(( $("$bin/mash-update-processes" now) + 180 ))" || exit 1
+    mash_update_change readiness_deadline "$(( $("$bin/mash-update-processes" now) + 180 ))" || exit 1
   fi
   while :; do
     [ "$(mash_update_read id)" = "$MU_ID" ] || exit 0

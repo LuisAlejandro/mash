@@ -59,7 +59,6 @@ mash_update_log() {
   if [ "$size" -gt 1048576 ]; then mv -f "$log" "$log.1" || return 1; fi
   (umask 077; printf '%s attempt=%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${MU_ID:-none}" "$*" >>"$log")
 }
-mash_update_write() { [ "$#" = 2 ] && mash_update_change "$@"; }
 mash_update_change() {
   [ "$#" -gt 0 ] && [ "$(($# % 2))" = 0 ] || return 2
   if [ "${MU_SERIAL:-0}" != 1 ]; then
@@ -182,7 +181,7 @@ mash_update_begin() {
   mash_update_log 'phase=preparing'
 }
 mash_update_phase() {
-  mash_update_write phase "$1" && mash_update_log "phase=$1"
+  mash_update_change phase "$1" && mash_update_log "phase=$1"
 }
 mash_update_finish() {
   if [ "${MU_SERIAL:-0}" != 1 ]; then
@@ -287,6 +286,26 @@ mash_update_confirm() {
       ;;
     esac
   fi
+}
+mash_update_abandon_preparation() {
+  local work="$1" sibling="$2" mnt="$3"
+  # ponytail: unfinished preparation is retained for manual cleanup; add an
+  # owner-verified reaper only if retained attempts become a storage problem.
+  if [ -n "${MU_COMMAND_BUSY:-}" ] && kill -0 "$MU_COMMAND_BUSY" 2>/dev/null; then
+    mash_update_log "retained preparation: command=$MU_COMMAND_BUSY work=$work sibling=$sibling mount=$mnt" || true
+    return 0
+  fi
+  if [ -n "$mnt" ] && ! mash_update_run 60 cleanup-detach hdiutil detach "$mnt" -quiet; then
+    mash_update_log "retained preparation: cleanup-detach incomplete work=$work sibling=$sibling mount=$mnt" || true
+    return 0
+  fi
+  if [ -n "${MU_ID:-}" ] && [ "$(mash_update_read id)" = "$MU_ID" ]; then
+    case "$(mash_update_read phase)" in
+    preparing | ready) mash_update_finish cancelled || true ;;
+    esac
+  fi
+  [ -z "$sibling" ] || rm -rf "$sibling"
+  rm -rf "$work"
 }
 mash_update_progress() {
   local tool ui
@@ -452,7 +471,6 @@ if [ "${BASH_SOURCE[0]}" = "$0" ]; then
   mash_update_init "$data" || exit 1
   case "$action" in
   begin) [ "$#" = 4 ] && mash_update_begin "$@" ;;
-  write) [ "$#" = 2 ] && mash_update_write "$@" ;;
   change) mash_update_change "$@" ;;
   reconcile) [ "$#" = 0 ] && mash_update_reconcile ;;
   recover-submit) [ "$#" = 0 ] && mash_update_recovery_submission ;;

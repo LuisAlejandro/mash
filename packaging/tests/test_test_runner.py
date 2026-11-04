@@ -141,7 +141,7 @@ class UpdaterSafetyAssertions(unittest.TestCase):
     def test_real_suite_rejects_forbidden_behavior_and_fixture_content(self):
         mutations = (
             (None, None),
-            ("mash_update_write owner_start invalid\n", "mash_update_active() { return 0; }\n"),
+            ("mash_update_change owner_start invalid\n", "mash_update_active() { return 0; }\n"),
             ('ln -s "$tmp/do-not-write" "$MU_TX"\n', "mash_update_begin() { return 0; }\n"),
             (None, 'label="app.mash.update"\n'),
             (None, "# /Applications/Mash.app\n"),

@@ -24,7 +24,7 @@ if (mash_update_begin "$tmp/Mash.app" 9.9.9 9.9.8 "$tmp/mash-update-ABCDEF"); th
   echo 'FAIL: a live attempt was replaced' >&2; exit 1
 fi
 [ "$(mash_update_read id)" = "$id" ]
-mash_update_write phase quiescing
+mash_update_change phase quiescing
 [ "$(mash_update_read phase)" = quiescing ]
 mash_update_finish cancelled
 [ ! -d "$MU_LOCK" ]
@@ -37,7 +37,7 @@ if mash_update_finish failed-before-swap; then
 fi
 [ "$(mash_update_read id)" = "$new" ]
 MU_ID="$new"
-mash_update_write owner_start invalid
+mash_update_change owner_start invalid
 if mash_update_active; then
   echo 'FAIL: a stale owner was reported active' >&2; exit 1
 fi

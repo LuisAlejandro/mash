@@ -73,10 +73,6 @@ class VerifyTests(unittest.TestCase):
         (self.f.candidate / "Contents/Resources/VERSION").write_text("0.0.0\n")
         self.assertNotEqual(self.f.verify().returncode, 0)
 
-    def cleanup_source(self):
-        source = (self.f.bin / "mash-update-verify").read_text()
-        return "cleanup() {" + source.split("cleanup() {", 1)[1].split("\n}\n", 1)[0] + "\n}\n"
-
     def test_cleanup_keeps_a_timed_out_childs_inputs_until_it_exits(self):
         attempt = self.f.begin()
         sibling = self.f.app.parent / ".mash-update-ABCDEF"
@@ -94,14 +90,12 @@ source "{self.f.bin}/mash-update-common"
 mash_update_init "{self.f.data}"
 MU_ID="{attempt}"
 mash_update_finish failed-before-swap
-{self.cleanup_source()}
-work="{self.f.work}" sibling="{sibling}" mnt="" handed_off=0
+work="{self.f.work}" sibling="{sibling}" mnt=""
 status=0
 mash_update_run 1 fixture-copy "{child}" "$work" "$sibling" "{observed}" || status=$?
 [ "$status" = 124 ] || exit 2
 busy="$MU_COMMAND_BUSY"
-(exit 1); cleanup
-cleanup_status=$?
+(exit 1); mash_update_abandon_preparation "$work" "$sibling" "$mnt"; cleanup_status=$?
 alive=0; kill -0 "$busy" 2>/dev/null && alive=1
 kept=0; [ -d "$work" ] && [ -d "$sibling" ] && kept=1
 wait "$busy" || true
@@ -109,7 +103,7 @@ printf 'status=%s alive=%s kept=%s cleanup=%s\\n' "$status" "$alive" "$kept" "$c
 [ "$kept" = 1 ] && [ "$(cat "{observed}")" = kept ]
 ''')
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("status=124 alive=1 kept=1 cleanup=1", result.stdout)
+        self.assertIn("status=124 alive=1 kept=1 cleanup=0", result.stdout)
         self.assertIn("retained preparation", (self.f.data / "local/state/mash-update.log").read_text())
         self.assertEqual((self.f.app / "Contents/Resources/VERSION").read_text().strip(), "9.9.8")
 
@@ -161,17 +155,15 @@ source "{self.f.bin}/mash-update-common"
 mash_update_init "{self.f.data}"
 MU_ID="{attempt}"
 mash_update_finish failed-before-swap
-{self.cleanup_source()}
-work="{self.f.work}" sibling="{sibling}" mnt="{mount}" handed_off=0
-(exit 1); cleanup
-cleanup_status=$?
+work="{self.f.work}" sibling="{sibling}" mnt="{mount}"
+mash_update_abandon_preparation "$work" "$sibling" "$mnt"; cleanup_status=$?
 kept=0; [ -d "$work" ] && [ -d "$sibling" ] && kept=1
 [ -z "${{MU_COMMAND_BUSY:-}}" ] || wait "$MU_COMMAND_BUSY" || true
 printf 'kept=%s cleanup=%s\\n' "$kept" "$cleanup_status"
 [ "$kept" = 1 ]
 ''')
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-                self.assertIn("kept=1 cleanup=1", result.stdout)
+                self.assertIn("kept=1 cleanup=0", result.stdout)
                 log = (self.f.data / "local/state/mash-update.log").read_text()
                 self.assertIn("start=cleanup-detach", log)
                 self.assertIn("retained preparation", log)

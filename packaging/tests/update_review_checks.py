@@ -18,6 +18,13 @@ class ReviewRegressions(unittest.TestCase):
     def common(self, code):
         return self.f.shell(f'source "{self.f.bin}/mash-update-common"; mash_update_init "{self.f.data}"; MU_ID="{self.f.state()["id"]}"; {code}')
 
+    def test_malformed_apply_arguments_exit_without_looping(self):
+        result = subprocess.run(
+            ["/bin/bash", str(ROOT / "packaging/helpers/mash-update-apply"), "--dest"],
+            capture_output=True, timeout=2,
+        )
+        self.assertEqual(result.returncode, 2)
+
     def test_1_handoff_keeps_a_delayed_worker_owned(self):
         self.f.begin()
         self.f.change(phase="handoff", owner_start="dead-verifier", handoff_deadline=int(self.f.inspector("now")) + 60)

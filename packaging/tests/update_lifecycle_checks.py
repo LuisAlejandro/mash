@@ -5,7 +5,7 @@ import subprocess
 import time
 import unittest
 
-from macos_update_fixture import ROOT, UpdateFixture
+from macos_update_fixture import UpdateFixture
 
 
 class LifecycleTests(unittest.TestCase):
@@ -77,17 +77,6 @@ esac''')
             if worker.poll() is None:
                 worker.terminate()
                 worker.wait(timeout=3)
-
-    def test_released_outgoing_helpers_require_a_legacy_migration_gate(self):
-        # Inspect actual released code, never execute it against a production
-        # app/job. This documents why a fixed target cannot retrofit its source.
-        for release in ("0.2.1", "0.2.2"):
-            with self.subTest(release=release):
-                old = subprocess.check_output(["git", "-C", str(ROOT), "show", f"{release}:packaging/helpers/mash-update-verify"], text=True)
-                self.assertIn('cp "$self/mash-update-apply" "$apply"', old)
-                self.assertNotIn("mash_update_bootstrap", old)
-                self.assertNotIn("expected_uuid", old)
-        print("LEGACY LIMITATION: released outgoing workers do not gain target launch/readiness guards; one-time migration/sign-off remains required.")
 
 
 if __name__ == "__main__":

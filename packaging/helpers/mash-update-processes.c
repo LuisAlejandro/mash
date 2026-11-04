@@ -252,18 +252,11 @@ int main(int argc, char **argv) {
             if (proc_pidpath(pid, path, sizeof(path)) <= 0) return 1;
             puts(path); return 0;
         }
-        if (argc == 3 && !strcmp(argv[1], "runtime-uuid")) {
-            char path[PROC_PIDPATHINFO_MAXSIZE];
-            if (proc_pidpath(pid, path, sizeof(path)) <= 0) return 1;
-            // The native GUI reports its in-memory LC_UUID as well. Reading
-            // this path is only a cross-check, not the source of its ACK.
-            return uuid(path);
-        }
         if (argc == 4 && !strcmp(value, argv[3])) {
             if (!strcmp(argv[1], "alive")) return 0;
             if (!strcmp(argv[1], "term")) return kill(pid, SIGTERM) ? 1 : 0;
         }
     }
-    fputs("usage: mash-update-processes now | uuid FILE | list APP | stamp/image/runtime-uuid PID | alive/term PID START | locked FILE COMMAND...\n", stderr);
+    fputs("usage: mash-update-processes now | uuid FILE | list APP [DATA] | tree PID START | stamp/image PID | register DATA APP PID ROLE | is-waiter DATA APP PID START | owner-alive PID START BOOT | alive/term PID START | locked|try-locked FILE COMMAND...\n", stderr);
     return 2;
 }
