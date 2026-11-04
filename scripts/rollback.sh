@@ -35,7 +35,6 @@ if [[ -z "$VERSION" ]] || ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$
 fi
 
 BRANCH_NAME="${FLOW_TYPE}/${VERSION}"
-STASHED=false
 
 if ! git rev-parse --git-dir >/dev/null 2>&1; then
     print_error "Not in a git repository"
@@ -45,11 +44,7 @@ fi
 release_require_command git
 release_require_command gh
 
-if [[ -n "$(git status --porcelain)" ]]; then
-    print_warning "Stashing dirty working tree before rollback"
-    git stash push -u -m "rollback-${FLOW_TYPE}-${VERSION}"
-    STASHED=true
-fi
+release_require_clean_worktree
 
 branch_exists_local=false
 branch_exists_remote=false
@@ -81,9 +76,6 @@ if [[ "$branch_exists_local" == false && "$branch_exists_remote" == false \
     && "$tag_exists_local" == false && "$tag_exists_remote" == false \
     && "$release_exists" == false ]]; then
     print_error "Nothing to undo for ${FLOW_TYPE} $VERSION"
-    if [[ "$STASHED" == true ]]; then
-        git stash pop || true
-    fi
     exit 1
 fi
 
@@ -96,9 +88,6 @@ if [[ "$NON_INTERACTIVE" != "true" ]]; then
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         print_error "Rollback cancelled"
-        if [[ "$STASHED" == true ]]; then
-            git stash pop || true
-        fi
         exit 1
     fi
 fi
@@ -191,11 +180,6 @@ else
         git tag -d "$VERSION" 2>/dev/null || true
     fi
     git checkout develop 2>/dev/null || true
-fi
-
-if [[ "$STASHED" == true ]]; then
-    print_step "Restoring stashed working tree"
-    git stash pop || print_warning "Could not restore stash automatically; run: git stash pop"
 fi
 
 print_step "Rollback for release $VERSION completed"

@@ -98,7 +98,7 @@ else
 fi
 
 print_step "Committing version bump and changelog"
-git add .
+git add -- .bumpversion.cfg VERSION README.md HISTORY.md
 git commit -S -m "Updating Changelog and version to $NEW_VERSION"
 
 print_step "Removing temporary tag"

@@ -224,6 +224,49 @@ release_create_github_release() {
     fi
 }
 
+release_cancel_matching_runs() {
+    local branch_name=$1
+    local version=$2
+    local workflow branch run_ids run_id pending
+    local deadline=$((SECONDS + RELEASE_CI_TIMEOUT_SECONDS))
+
+    release_require_command gh
+    if ! gh auth status >/dev/null 2>&1; then
+        print_error "GitHub CLI is not authenticated; rollback stopped"
+        return 1
+    fi
+
+    # Keep scanning: a cancelling release run may still dispatch an artifact
+    # run. No ref deletion is safe until every matching workflow is terminal.
+    while true; do
+        pending=false
+        for workflow in push.yml release.yml artifacts.yml; do
+            for branch in "$branch_name" "$version"; do
+                [ -n "$branch" ] || continue
+                run_ids=$(gh api --method GET --paginate \
+                    "repos/{owner}/{repo}/actions/workflows/$workflow/runs" \
+                    -f branch="$branch" -F per_page=100 \
+                    --jq '.workflow_runs[] | select(.status != "completed") | .id') || {
+                    print_error "Could not list $workflow runs on $branch; rollback stopped"
+                    return 1
+                }
+                for run_id in $run_ids; do
+                    pending=true
+                    print_step "Cancelling $workflow run $run_id on $branch"
+                    gh run cancel "$run_id" >/dev/null 2>&1 ||
+                        print_warning "Could not cancel run $run_id; checking its status again"
+                done
+            done
+        done
+        [ "$pending" = true ] || return 0
+        if (( SECONDS >= deadline )); then
+            print_error "Timed out waiting for matching Actions runs to stop; rollback stopped"
+            return 1
+        fi
+        sleep "$RELEASE_CI_POLL_SECONDS"
+    done
+}
+
 release_finish_release() {
     local version=$1
     local app_name=$2
