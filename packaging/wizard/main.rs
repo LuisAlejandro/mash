@@ -46,6 +46,8 @@ struct IdentityPage {
     name: String,
     email: String,
     signing_key: String,
+    /// Why a host signing key was not prefilled, shown as the field's help.
+    signing_note: Option<&'static str>,
     github: github_login::GithubLogin,
     focus: usize,
 }
@@ -66,10 +68,15 @@ struct Identity {
 
 impl IdentityPage {
     fn new(github: github_login::GithubLogin) -> Self {
+        let host = prefill_identity(
+            host_identity(&host_home()),
+            &data_dir().join("config/git/config"),
+        );
         Self {
-            name: git_config_value("user.name"),
-            email: git_config_value("user.email"),
-            signing_key: git_config_value("user.signingkey"),
+            name: host.name,
+            email: host.email,
+            signing_key: host.signing_key,
+            signing_note: host.signing_note,
             github,
             focus: FOCUS_NAME,
         }
@@ -279,6 +286,7 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
         fonts.poll_live_preview();
         // The Appearance page's theme choice recolours the wizard at once.
         wizard_style::set_light(fonts.theme == theme::Theme::Light);
+        providers.set_memory_enabled(tools.programming());
         providers.set_page(match page {
             3 => provider_page::Page::WebSearch,
             4 => provider_page::Page::Hindsight,
@@ -575,7 +583,7 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
         terminal,
         &plan,
         &git_identity,
-        &fonts,
+        &mut fonts,
         &tools,
         &mut providers,
     ) {
@@ -706,26 +714,66 @@ fn review_and_apply<B: Backend>(
     terminal: &mut Terminal<B>,
     plan: &Plan,
     identity: &Identity,
-    fonts: &font_page::FontPage,
+    fonts: &mut font_page::FontPage,
     tools: &tools_page::ToolsPage,
     providers: &mut provider_page::ProviderPage,
 ) -> Result<(), ApplyError> {
     let state_dir = state_dir();
     let mut state = load_state(&state_dir);
-    let prepare = (|| -> Result<(), String> {
-        // The keybinding mode comes first: the seed sync below renders Fresh's
-        // map for it, and the launcher opens Mash right after this returns.
-        fonts.save_mode(&data_dir())?;
-        tools.save_selection(&data_dir())?;
-        seed_selected_skills()?;
-        providers.save_with_runtime(&data_dir(), &mash_resources())?;
-        Ok(())
-    })();
-    if let Err(error) = prepare {
+    let log_path = state_dir.join("setup.log");
+    let result = apply_choices(terminal, plan, identity, fonts, tools, providers, &log_path);
+    if let Err(error) = result {
         state.error = error;
         save_state(&state_dir, &state);
+        if let Ok(mut log) = fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&log_path)
+        {
+            let _ = writeln!(log, "Setup could not finish: {}", state.error);
+        }
+        // Herdr opens next and would cover a stderr line, so say it here.
+        show_setup_failure(terminal, &state.error, &log_path);
         return Err(ApplyError::Failed(state.error));
     }
+    mark_complete(&state_dir, &mut state);
+    Ok(())
+}
+
+/// The terminal-free half of setup: every step that must happen before the
+/// installers, in the order the first launch depends on. Separated from
+/// `apply_choices` so a test can drive the shipped sequence against a scratch
+/// data folder instead of re-performing the steps itself.
+fn prepare_setup(
+    fonts: &mut font_page::FontPage,
+    tools: &tools_page::ToolsPage,
+    providers: &provider_page::ProviderPage,
+    root: &Path,
+    resources: &Path,
+) -> Result<(), String> {
+    // Retire first: a live preview edits the seeded config, and reconciliation
+    // would read that edit as the user's own and keep the old keymap.
+    fonts.retire_live_preview()?;
+    // The keybinding mode comes first: the seed sync below renders Fresh's
+    // map for it, and the launcher opens Mash right after this returns.
+    fonts.save_mode(root)?;
+    tools.save_selection(root)?;
+    seed_selected_skills(resources, root)?;
+    providers.save_with_runtime(root, resources)
+}
+
+fn apply_choices<B: Backend>(
+    terminal: &mut Terminal<B>,
+    plan: &Plan,
+    identity: &Identity,
+    fonts: &mut font_page::FontPage,
+    tools: &tools_page::ToolsPage,
+    providers: &mut provider_page::ProviderPage,
+    log_path: &Path,
+) -> Result<(), String> {
+    // The seeded terminal config goes back before reconciliation reads it;
+    // fonts.save layers the chosen appearance over the result at the end.
+    prepare_setup(fonts, tools, providers, &data_dir(), &mash_resources())?;
     check_saved_model(terminal, providers.login_later_hint());
     let missing: Vec<&str> = plan
         .tools
@@ -733,40 +781,102 @@ fn review_and_apply<B: Backend>(
         .copied()
         .filter(|name| !is_available(name))
         .collect();
-    let log_path = state_dir.join("setup.log");
-    if let Err(error) = apply_steps(plan, &missing, &log_path, terminal) {
-        state.error = error;
-        save_state(&state_dir, &state);
-        return Err(ApplyError::Failed(state.error));
-    }
+    apply_steps(plan, &missing, log_path, terminal)?;
     // After the installers, so `git` exists by the time this runs on a fresh
     // machine.
-    match apply_git_identity(identity, &data_dir().join("config/git/config")) {
-        Ok(note) => {
-            if let Ok(mut log) = fs::OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open(state_dir.join("setup.log"))
-            {
-                let _ = writeln!(log, "  Git identity: {note}");
-            }
-        }
-        Err(error) => {
-            state.error = error;
-            save_state(&state_dir, &state);
-            return Err(ApplyError::Failed(state.error));
-        }
-    }
-    if let Err(error) = fonts
-        .save(&data_dir().join("config/ghostty/config"))
-        .and_then(|()| fonts.theme.apply(&data_dir()))
+    let note = apply_git_identity(identity, &data_dir().join("config/git/config"))?;
+    if let Ok(mut log) = fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(log_path)
     {
-        state.error = error;
-        save_state(&state_dir, &state);
-        return Err(ApplyError::Failed(state.error));
+        let _ = writeln!(log, "  Git identity: {note}");
     }
-    mark_complete(&state_dir, &mut state);
-    Ok(())
+    fonts.save(&data_dir().join("config/ghostty/config"))?;
+    fonts.theme.apply(&data_dir())
+}
+
+/// Blocks on the error until a key or click, like the saved-model check.
+fn show_setup_failure<B: Backend>(terminal: &mut Terminal<B>, error: &str, log: &Path) {
+    let lines = setup_failure_lines(error, log);
+    wait_for_acknowledgement(terminal, |frame| draw_setup_failure(frame, &lines));
+}
+
+/// Draws a blocking screen until the person acknowledges it or the terminal
+/// gives up. Both the model check and the setup-failure screen use it.
+fn wait_for_acknowledgement<B: Backend>(terminal: &mut Terminal<B>, draw: impl Fn(&mut Frame)) {
+    loop {
+        if terminal
+            .draw(|frame| {
+                draw(frame);
+                wizard_style::finish(frame);
+            })
+            .is_err()
+        {
+            return;
+        }
+        match event::read() {
+            Ok(event) if acknowledges_model_check(&event) => return,
+            Ok(_) => {}
+            Err(_) => return,
+        }
+    }
+}
+
+fn setup_failure_lines(error: &str, log: &Path) -> Vec<String> {
+    let error = if error.trim().is_empty() {
+        "An unknown error stopped setup."
+    } else {
+        error.trim()
+    };
+    vec![
+        // Keep the cause readable without letting a long installer error push
+        // the log path and continuation button off screen. The log keeps all.
+        error
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ")
+            .chars()
+            .take(400)
+            .collect(),
+        String::new(),
+        format!("Details: {}", log.display()),
+        "Some choices may already be saved. Setup reopens on the next launch.".to_string(),
+    ]
+}
+
+fn draw_setup_failure(frame: &mut Frame, lines: &[String]) {
+    let mut text = vec![
+        Line::from(Span::styled(
+            "Setup could not finish",
+            Style::default().add_modifier(Modifier::BOLD),
+        )),
+        Line::from(""),
+    ];
+    text.extend(lines.iter().map(|line| Line::from(line.clone())));
+    text.push(Line::from(""));
+    text.push(Line::from(Span::styled(
+        "Press Enter to continue",
+        Style::default().fg(wizard_style::YELLOW),
+    )));
+    let parts = Layout::vertical([Constraint::Min(4), Constraint::Length(3)]).split(frame.area());
+    let body = wizard_style::section(frame, parts[0], "Mash setup");
+    frame.render_widget(
+        Paragraph::new(text).wrap(Wrap { trim: false }).style(
+            Style::default()
+                .fg(wizard_style::TEXT)
+                .bg(wizard_style::PANEL),
+        ),
+        body,
+    );
+    wizard_style::render_buttons(
+        frame,
+        parts[1],
+        &[(
+            wizard_style::button(true, " Continue — open Mash "),
+            Some(0),
+        )],
+    );
 }
 
 /// Diagnostic failures are notes, never setup failures or early completion.
@@ -827,22 +937,7 @@ fn check_saved_model<B: Backend>(terminal: &mut Terminal<B>, deferred_login: Opt
     if notes.is_empty() {
         return;
     }
-    loop {
-        if terminal
-            .draw(|frame| {
-                draw_model_check(frame, &notes, false);
-                wizard_style::finish(frame);
-            })
-            .is_err()
-        {
-            return;
-        }
-        match event::read() {
-            Ok(event) if acknowledges_model_check(&event) => return,
-            Ok(_) => {}
-            Err(_) => return,
-        }
-    }
+    wait_for_acknowledgement(terminal, |frame| draw_model_check(frame, &notes, false));
 }
 
 fn acknowledges_model_check(event: &Event) -> bool {
@@ -1003,11 +1098,9 @@ fn tools_available(tools: &[&str]) -> bool {
 // The bundle already contains the optional suites. Sync only after the final
 // choice has been written, then wire up their runtime paths just as the Linux
 // launcher does. The regular launcher does the same on later opens.
-fn seed_selected_skills() -> Result<(), String> {
-    let res = mash_resources();
-    let data = data_dir();
+fn seed_selected_skills(res: &Path, data: &Path) -> Result<(), String> {
     let mut sync = Command::new(res.join("bin/mash-seed-sync"));
-    sync.arg(&res).arg(&data);
+    sync.arg(res).arg(data);
     run_logged(sync)?;
     let mut setup = Command::new("/bin/bash");
     setup.args([
@@ -1015,7 +1108,7 @@ fn seed_selected_skills() -> Result<(), String> {
         "res=$1; d=$2; source \"$res/bin/launch-common.sh\"; mash_seed_programming_skills; mash_seed_hindsight",
         "mash",
     ]);
-    setup.arg(&res).arg(&data);
+    setup.arg(res).arg(data);
     run_logged(setup)?;
     Ok(())
 }
@@ -1029,14 +1122,13 @@ const STEP_VOICE: &str = "Install the dictation model";
 
 fn install_steps(plan: &Plan, missing: &[&str]) -> Vec<String> {
     let mut steps = vec!["Check selected tools".to_string()];
-    // Host and Linux tool installers are skipped when everything is present.
-    if !missing.is_empty() {
-        if !plan.linux.is_empty() {
-            steps.push(STEP_LINUX_TOOLS.to_string());
-        }
-        if !plan.brew.is_empty() {
-            steps.push("Install Homebrew packages".to_string());
-        }
+    // Linux Route::Mash components are Mash-owned pinned installs: a host copy
+    // on PATH cannot satisfy them. Host installers run only for missing tools.
+    if !plan.linux.is_empty() {
+        steps.push(STEP_LINUX_TOOLS.to_string());
+    }
+    if !missing.is_empty() && !plan.brew.is_empty() {
+        steps.push("Install Homebrew packages".to_string());
     }
     // A host binary must not satisfy Mash's own install: first launch creates
     // pinned shims even when the machine already has these tools.
@@ -1369,7 +1461,10 @@ fn apply_steps<B: Backend>(
         draw_apply(terminal, index, steps.len(), step, &messages);
         let result = if index == 0 {
             let mut report = if missing.is_empty()
-                && !(plan.npm.is_empty() && plan.pinned.is_empty() && plan.python.is_empty())
+                && !(plan.linux.is_empty()
+                    && plan.npm.is_empty()
+                    && plan.pinned.is_empty()
+                    && plan.python.is_empty())
             {
                 "Host tools are present; installing Mash's pinned tools.".to_string()
             } else if missing.is_empty() {
@@ -1423,17 +1518,9 @@ fn apply_steps<B: Backend>(
         // done once every selected tool is available; otherwise report why.
         // The environment steps are excluded: they have no such excuse, and
         // masking their failure would leave memory quietly absent.
-        let environment_step =
-            step == STEP_HINDSIGHT || step == STEP_HINDSIGHT_DAEMON || step == STEP_VOICE;
         let message = match result {
             Ok(message) => message,
-            Err(_)
-                if !environment_step
-                    && step != "Install npm packages"
-                    && step != "Install Python packages"
-                    && step != STEP_PINNED_TOOLS
-                    && tools_available(&plan.tools) =>
-            {
+            Err(_) if host_presence_excuses(step) && tools_available(&plan.tools) => {
                 "already installed".to_string()
             }
             Err(error) => return Err(error),
@@ -1449,6 +1536,21 @@ fn apply_steps<B: Backend>(
         &messages,
     );
     Ok(())
+}
+
+// Only host installers may treat an already-present tool as success. Mash-owned
+// installs and the environment steps have no such excuse.
+fn host_presence_excuses(step: &str) -> bool {
+    ![
+        STEP_HINDSIGHT,
+        STEP_HINDSIGHT_DAEMON,
+        STEP_VOICE,
+        STEP_LINUX_TOOLS,
+        STEP_PINNED_TOOLS,
+        "Install npm packages",
+        "Install Python packages",
+    ]
+    .contains(&step)
 }
 
 fn write_log(file: &mut fs::File, lines: &[String]) -> io::Result<()> {
@@ -1469,11 +1571,16 @@ fn apple_tool_available(tool: &str) -> bool {
         .unwrap_or(false)
 }
 
+// Mash never installs Homebrew itself, so a missing one is a prerequisite the
+// person has to resolve rather than a step that silently fails.
+const BREW_MISSING: &str =
+    "Homebrew is not installed. Install it from https://brew.sh, or uncheck the Homebrew tools.";
+
 fn install_brew(formulae: &[&'static str]) -> Result<String, String> {
     if formulae.is_empty() {
         return Ok("nothing requested".into());
     }
-    let brew = find_brew();
+    let brew = find_brew().ok_or(BREW_MISSING)?;
     let mut command = Command::new(brew);
     command
         .env("PATH", host_path())
@@ -1483,13 +1590,19 @@ fn install_brew(formulae: &[&'static str]) -> Result<String, String> {
     run_logged(command)
 }
 
-fn find_brew() -> String {
-    for candidate in ["/opt/homebrew/bin/brew", "/usr/local/bin/brew"] {
-        if fs::metadata(candidate).is_ok() {
-            return candidate.to_string();
-        }
+fn find_brew() -> Option<String> {
+    if is_linux() {
+        return None;
     }
-    "brew".into()
+    ["/opt/homebrew/bin/brew", "/usr/local/bin/brew"]
+        .into_iter()
+        .find(|candidate| {
+            use std::os::unix::fs::PermissionsExt;
+            fs::metadata(candidate)
+                .is_ok_and(|meta| meta.is_file() && meta.permissions().mode() & 0o111 != 0)
+        })
+        .map(str::to_string)
+        .or_else(|| is_available("brew").then(|| "brew".to_string()))
 }
 
 // The vendor installer drops CuaDriver.app and its CLI. Accessibility and
@@ -1527,18 +1640,97 @@ fn connect_github_mcp() {
     }
 }
 
-fn git_config_value(key: &str) -> String {
+struct HostIdentity {
+    name: String,
+    email: String,
+    signing_key: String,
+    signing_note: Option<&'static str>,
+}
+
+fn host_home() -> PathBuf {
+    env::var_os("HOME").map(PathBuf::from).unwrap_or_default()
+}
+
+// Mash signs with OpenPGP only. An SSH or X.509 key copied without its
+// gpg.format would make every signed commit fail, so it is explained instead.
+fn openpgp_only(key: String, format: &str) -> (String, Option<&'static str>) {
+    let ssh_key = key.starts_with("ssh-") || key.starts_with("key::") || key.ends_with(".pub");
+    if !key.is_empty() && (ssh_key || !matches!(format, "" | "openpgp")) {
+        return (
+            String::new(),
+            Some("Your Git signs with SSH or X.509; Mash signs with OpenPGP keys only"),
+        );
+    }
+    (key, None)
+}
+
+fn host_identity(home: &Path) -> HostIdentity {
+    let (signing_key, signing_note) = openpgp_only(
+        git_config_value(home, "user.signingkey"),
+        &git_config_value(home, "gpg.format"),
+    );
+    HostIdentity {
+        name: git_config_value(home, "user.name"),
+        email: git_config_value(home, "user.email"),
+        signing_key,
+        signing_note,
+    }
+}
+
+// A retried setup reopens on what the user already saved into Mash's own
+// config: the host may have no identity at all, and blanking the fields would
+// silently drop the name, email and key an earlier attempt applied.
+fn prefill_identity(mut host: HostIdentity, saved: &Path) -> HostIdentity {
+    let saved_value = |key| saved_git_value(saved, key);
+    if host.name.is_empty() {
+        host.name = saved_value("user.name");
+    }
+    if host.email.is_empty() {
+        host.email = saved_value("user.email");
+    }
+    // A host key Mash cannot use already carries its explanation; do not
+    // replace that note with a saved key the user may also be unable to use.
+    if host.signing_key.is_empty() && host.signing_note.is_none() {
+        let (key, note) = openpgp_only(saved_value("user.signingkey"), &saved_value("gpg.format"));
+        host.signing_key = key;
+        host.signing_note = note;
+    }
+    host
+}
+
+fn saved_git_value(config: &Path, key: &str) -> String {
+    if !config.is_file() {
+        return String::new();
+    }
     let mut command = Command::new("git");
     command
         .env("PATH", host_path())
-        .env_remove("GIT_CONFIG_GLOBAL")
-        .args(["config", "--global", "--get", key]);
+        .args(["config", "--file"])
+        .arg(config)
+        .args(["--get", key]);
+    git_output(command)
+}
+
+fn git_output(mut command: Command) -> String {
     match command.output() {
         Ok(output) if output.status.success() => {
             String::from_utf8_lossy(&output.stdout).trim().to_string()
         }
         _ => String::new(),
     }
+}
+
+// The launcher points XDG_CONFIG_HOME and GIT_CONFIG_GLOBAL at Mash's own
+// config; the host's global identity lives under the real home instead.
+fn git_config_value(home: &Path, key: &str) -> String {
+    let mut command = Command::new("git");
+    command
+        .env("PATH", host_path())
+        .env("HOME", home)
+        .env("XDG_CONFIG_HOME", home.join(".config"))
+        .env_remove("GIT_CONFIG_GLOBAL")
+        .args(["config", "--global", "--get", key]);
+    git_output(command)
 }
 
 // Written into Mash's own git config, which the launcher seeds once and never
@@ -1608,7 +1800,7 @@ fn draw_identity(frame: &mut Frame, page: &IdentityPage) {
             FOCUS_SIGNING_KEY,
             "Signing key:",
             &page.signing_key,
-            "Empty disables signing",
+            page.signing_note.unwrap_or("Empty disables signing"),
         ),
     ];
     let label_width = 13.min(body.width);
@@ -1914,7 +2106,7 @@ mod tests {
 
     /// Every tool this platform lets the Tools page choose, all checked.
     fn every_tool() -> Vec<&'static tools_page::Tool> {
-        tools_page::ToolsPage::new().chosen()
+        tools_page::ToolsPage::with_homebrew(true).chosen()
     }
 
     /// The identity page with a preview sign-in, so no test runs gh.
@@ -1945,9 +2137,117 @@ mod tests {
     #[test]
     fn identity_is_prefilled_from_the_machines_git_config() {
         let app = identity_page();
-        assert_eq!(app.name, git_config_value("user.name"));
-        assert_eq!(app.email, git_config_value("user.email"));
-        assert_eq!(app.signing_key, git_config_value("user.signingkey"));
+        let host = prefill_identity(
+            host_identity(&host_home()),
+            &data_dir().join("config/git/config"),
+        );
+        assert_eq!(app.name, host.name);
+        assert_eq!(app.email, host.email);
+        assert_eq!(app.signing_key, host.signing_key);
+        assert_eq!(app.signing_note, host.signing_note);
+    }
+
+    fn scratch_home(name: &str, config: &str) -> PathBuf {
+        let home = env::temp_dir().join(format!(
+            "mash-wizard-{name}-{}-{}",
+            std::process::id(),
+            now_millis()
+        ));
+        fs::create_dir_all(home.join(".config/git")).unwrap();
+        fs::write(home.join(".config/git/config"), config).unwrap();
+        home
+    }
+
+    #[test]
+    fn host_identity_reads_the_hosts_xdg_git_config_not_mashs() {
+        let home = scratch_home(
+            "xdg",
+            "[user]\n\tname = XDG User\n\temail = xdg@example.org\n\tsigningkey = ABC123\n",
+        );
+        let host = host_identity(&home);
+        assert_eq!(host.name, "XDG User");
+        assert_eq!(host.email, "xdg@example.org");
+        assert_eq!(host.signing_key, "ABC123");
+        assert!(host.signing_note.is_none());
+        // A second scratch home with a different identity proves the argument
+        // is what gets read, not whatever this process happens to export.
+        let second = scratch_home(
+            "xdg-b",
+            "[user]\n\tname = Second User\n\temail = second@example.org\n",
+        );
+        let other = host_identity(&second);
+        assert_eq!(other.name, "Second User");
+        assert_eq!(other.email, "second@example.org");
+        assert_eq!(other.signing_key, "");
+        fs::remove_dir_all(home).unwrap();
+        fs::remove_dir_all(second).unwrap();
+    }
+
+    #[test]
+    fn a_retried_setup_prefills_from_the_identity_mash_already_saved() {
+        let saved = scratch_home(
+            "saved",
+            "[user]\n\tname = Saved Ada\n\temail = saved@example.org\n\tsigningkey = ABC123\n",
+        );
+        let config = saved.join(".config/git/config");
+        let host = host_identity(&scratch_home("empty-host", ""));
+        assert!(host.name.is_empty() && host.email.is_empty());
+        let merged = prefill_identity(host, &config);
+        assert_eq!(merged.name, "Saved Ada");
+        assert_eq!(merged.email, "saved@example.org");
+        assert_eq!(merged.signing_key, "ABC123");
+        // Host values still win when there are any.
+        let host = host_identity(&scratch_home(
+            "typed-host",
+            "[user]\n\tname = Host Ada\n\temail = host@example.org\n",
+        ));
+        let merged = prefill_identity(host, &config);
+        assert_eq!(merged.name, "Host Ada");
+        assert_eq!(merged.email, "host@example.org");
+        assert_eq!(
+            merged.signing_key, "ABC123",
+            "a missing field still falls back"
+        );
+        // A saved key Mash cannot use is explained, never silently enabled.
+        let ssh = scratch_home(
+            "saved-ssh",
+            "[user]\n\tsigningkey = ~/.ssh/id_ed25519.pub\n[gpg]\n\tformat = ssh\n",
+        );
+        let host = host_identity(&scratch_home("empty-host-2", ""));
+        let merged = prefill_identity(host, &ssh.join(".config/git/config"));
+        assert_eq!(merged.signing_key, "");
+        assert!(merged.signing_note.is_some());
+        // A host key with its own explanation keeps it.
+        let host = host_identity(&scratch_home(
+            "ssh-host",
+            "[user]\n\tsigningkey = key::ssh-ed25519 AAAAC3Nz fixture\n",
+        ));
+        let merged = prefill_identity(host, &config);
+        assert_eq!(merged.signing_key, "");
+        assert!(merged.signing_note.is_some());
+        for home in [saved, ssh] {
+            fs::remove_dir_all(home).unwrap();
+        }
+    }
+
+    #[test]
+    fn ssh_signing_is_explained_and_never_prefilled_as_openpgp() {
+        for (format, key) in [
+            ("	format = ssh\n", "~/.ssh/id_ed25519.pub"),
+            ("", "ssh-ed25519 AAAAC3Nz fixture"),
+            ("", "key::ssh-ed25519 AAAAC3Nz fixture"),
+            ("	format = x509\n", "ABC123"),
+        ] {
+            let home = scratch_home(
+                "ssh",
+                &format!("[user]\n\tname = Ada\n\tsigningkey = {key}\n[gpg]\n{format}"),
+            );
+            let host = host_identity(&home);
+            assert_eq!(host.name, "Ada");
+            assert_eq!(host.signing_key, "", "{format:?} {key}");
+            assert!(host.signing_note.is_some(), "{format:?} {key}");
+            fs::remove_dir_all(home).unwrap();
+        }
     }
 
     #[test]
@@ -2255,6 +2555,30 @@ mod tests {
         assert!(acknowledges_model_check(&event));
         let event = Event::Key(event::KeyEvent::new(KeyCode::Char('x'), KeyModifiers::NONE));
         assert!(!acknowledges_model_check(&event));
+    }
+
+    #[test]
+    fn setup_failure_shows_the_error_and_log_before_mash_opens() {
+        let lines = setup_failure_lines(
+            "Homebrew is not installed. Install it from https://brew.sh, or uncheck the Homebrew tools.",
+            Path::new("/tmp/mash-setup/setup.log"),
+        );
+        for (width, height) in [(80, 24), (120, 30)] {
+            let mut terminal =
+                ratatui::Terminal::new(ratatui::backend::TestBackend::new(width, height)).unwrap();
+            terminal
+                .draw(|frame| draw_setup_failure(frame, &lines))
+                .unwrap();
+            let buffer = terminal.backend().buffer();
+            wizard_style::tests::find(buffer, "Setup could not finish");
+            wizard_style::tests::find(buffer, "Homebrew is not installed");
+            wizard_style::tests::find(buffer, "setup.log");
+            wizard_style::tests::find(buffer, "Press Enter");
+        }
+        assert_eq!(
+            setup_failure_lines(" ", Path::new("x"))[0],
+            "An unknown error stopped setup."
+        );
     }
 
     #[test]
@@ -2688,6 +3012,29 @@ mod tests {
             install_steps(&plan, &[]),
             vec!["Check selected tools", "Install Python packages"]
         );
+    }
+
+    #[test]
+    fn a_missing_homebrew_refusal_names_the_remedy() {
+        // No formulae is a no-op, never a `brew install` with no arguments.
+        assert_eq!(install_brew(&[]).unwrap(), "nothing requested");
+        // #22: the alert has to say what to do, not fail silently.
+        assert!(BREW_MISSING.contains("https://brew.sh"));
+        assert!(BREW_MISSING.contains("uncheck the Homebrew tools"));
+        if is_linux() {
+            assert!(find_brew().is_none(), "Linux routes tools through Mash");
+        }
+    }
+
+    #[test]
+    fn linux_mash_tools_install_even_when_host_copies_exist() {
+        let plan = Plan {
+            linux: vec!["agent-browser"],
+            tools: vec!["agent-browser"],
+            ..Plan::default()
+        };
+        assert!(install_steps(&plan, &[]).contains(&STEP_LINUX_TOOLS.to_string()));
+        assert!(!host_presence_excuses(STEP_LINUX_TOOLS));
     }
 
     #[test]

@@ -10,14 +10,19 @@
 #
 # The record lives at ~/.mash/local/state/seeded.json and stores each shipped
 # destination path, the digest of the installed bytes (after platform path
-# substitutions and Mash's forced update settings), and the version that wrote
-# it. A file with no record entry is the user's: Mash never wrote it, so it is
+# substitutions and Mash's forced update settings), and the version and canonical
+# resource root that wrote it. A file with no record entry is the user's: Mash never wrote it, so it is
 # left alone.
 #
 # Mash seeds from several shapes: copied trees, generated config files whose
 # templates contain a few install paths, and virtualenvs whose Python links and
 # shebangs are retargeted at launch. This one helper renders those same shapes,
 # so one digest rule covers all of them without special-case repair functions.
+#
+# Exit status: a render or write failure exits non-zero, and the launchers treat
+# that as fatal — a half-seeded data folder is not a state worth opening. Only
+# the two deliberate skips stay fatality-free: no resource root/data dir, and a
+# live owner holding the lock for 30s (a second window, not a broken install).
 set -euo pipefail
 
 res="${1:?usage: mash-seed-sync <resource-root> <data-dir>}"
@@ -36,8 +41,8 @@ python="$res/python/bin/python3"
 # this launch skips syncing rather than blocking Mash from opening. Refuse a
 # symlinked state directory outside the data root before creating the lock.
 if ! PYTHONDONTWRITEBYTECODE=1 "$python" -c 'import os,sys; root=os.path.realpath(sys.argv[1]); state=os.path.realpath(os.path.join(sys.argv[1],"local","state")); sys.exit(0 if os.path.commonpath((root,state)) == root else 1)' "$d"; then
-  echo "mash-seed-sync: state directory escapes the Mash data folder; skipping" >&2
-  exit 0
+  echo "mash-seed-sync: state directory escapes the Mash data folder; refusing" >&2
+  exit 1
 fi
 lock="$d/local/state/seeded.lock"
 mkdir -p "$(dirname "$lock")"
@@ -74,7 +79,7 @@ import re
 import shutil
 import sys
 
-res, data = sys.argv[1], sys.argv[2]
+res, data = os.path.realpath(sys.argv[1]), sys.argv[2]
 record_path = os.path.join(data, "local", "state", "seeded.json")
 # MASH_SEED_PLATFORM lets the tests render the other platform's files on one
 # host; nothing in the app sets it.
@@ -212,6 +217,7 @@ def load_record():
     return {
         "version": record.get("version") if isinstance(record.get("version"), str) else "",
         "selection": record.get("selection") if isinstance(record.get("selection"), dict) else None,
+        "resource_root": record.get("resource_root") if isinstance(record.get("resource_root"), str) else None,
         "files": safe_files,
         "json": safe_json,
     }
@@ -554,7 +560,8 @@ def main():
         return 0
     record = load_record()
     files = record["files"]
-    if record["version"] == version and record.get("selection") == SELECTION:
+    if (record["version"] == version and record.get("selection") == SELECTION
+            and record.get("resource_root") == res):
         return 0
 
     shipped = list(entries())
@@ -623,13 +630,20 @@ def main():
 
     record["version"] = version
     record["selection"] = SELECTION
+    record["resource_root"] = res
     record["files"] = files
-    os.makedirs(os.path.dirname(record_path), exist_ok=True)
-    tmp = record_path + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as fh:
-        json.dump(record, fh, indent=1, sort_keys=True)
-        fh.write("\n")
-    os.replace(tmp, record_path)
+    # The files are already reconciled, so a failed record write is degraded,
+    # not fatal: the next launch simply reconciles again. Exiting non-zero here
+    # would block every launch on a read-only or full data folder.
+    try:
+        os.makedirs(os.path.dirname(record_path), exist_ok=True)
+        tmp = record_path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump(record, fh, indent=1, sort_keys=True)
+            fh.write("\n")
+        os.replace(tmp, record_path)
+    except OSError as error:
+        print(f"mash-seed-sync: could not record provenance ({error}); will re-reconcile next launch", file=sys.stderr)
 
     if updated or removed:
         print(f"mash-seed-sync: {updated} refreshed, {removed} dropped, {kept} kept")

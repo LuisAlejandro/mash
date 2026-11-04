@@ -329,18 +329,29 @@ pub struct ToolsPage {
     selected: Vec<bool>,
     /// Install the Programming Skills suite (with its local memory).
     programming: bool,
+    /// Homebrew rows start unchecked, with a note, on a Mac without it.
+    homebrew: bool,
     /// An index into `rows`, the skills checkbox, or one of the two buttons.
     pub focus: usize,
 }
 
 impl ToolsPage {
     pub fn new() -> Self {
+        Self::with_homebrew(crate::find_brew().is_some())
+    }
+
+    // Mash never installs Homebrew itself; a missing one would abort setup.
+    pub fn with_homebrew(homebrew: bool) -> Self {
         let rows: Vec<&'static Tool> = TOOLS.iter().filter(|tool| tool.route().is_some()).collect();
-        let selected = vec![true; rows.len()];
+        let selected = rows
+            .iter()
+            .map(|tool| homebrew || !matches!(tool.route(), Some(Route::Brew(_))))
+            .collect();
         let mut page = Self {
             rows,
             selected,
             programming: true,
+            homebrew,
             focus: 0,
         };
         page.focus = page.focusable()[0];
@@ -494,8 +505,22 @@ impl ToolsPage {
                 )),
                 None,
             ),
-            (Line::from(""), None),
         ];
+        if !self.homebrew
+            && self
+                .rows
+                .iter()
+                .any(|tool| matches!(tool.route(), Some(Route::Brew(_))))
+        {
+            lines.push((
+                Line::from(Span::styled(
+                    "Homebrew was not found: install it from brew.sh before selecting Homebrew tools.",
+                    Style::default().fg(wizard_style::YELLOW),
+                )),
+                None,
+            ));
+        }
+        lines.push((Line::from(""), None));
         for (index, tool) in self.rows.iter().enumerate() {
             let route = tool.route().expect("rows only hold offered tools");
             let locked = route.locked();
@@ -588,8 +613,23 @@ mod tests {
     }
 
     #[test]
+    fn missing_homebrew_unchecks_its_tools_and_says_why() {
+        let page = ToolsPage::with_homebrew(false);
+        let brew = |tool: &&Tool| matches!(tool.route(), Some(Route::Brew(_)));
+        assert!(!page.chosen().iter().any(brew));
+        let (_, text) = render(&page);
+        if page.rows.iter().any(brew) {
+            assert!(text.contains("Homebrew was not found"), "{text}");
+        }
+        // Mash-owned tools stay checked; Homebrew tools are opt-in again.
+        assert!(page.chosen().iter().any(|tool| !brew(tool)));
+        let (_, text) = render(&ToolsPage::with_homebrew(true));
+        assert!(!text.contains("Homebrew was not found"));
+    }
+
+    #[test]
     fn every_row_says_whether_the_tool_leaves_mash() {
-        let (_, text) = render(&ToolsPage::new());
+        let (_, text) = render(&ToolsPage::with_homebrew(true));
         assert!(text.contains("Mash only: kept under ~/.mash"));
         assert!(text.contains("On your computer: installed system-wide"));
         for route in TOOLS.iter().filter_map(Tool::route) {
@@ -712,7 +752,7 @@ mod tests {
 
     #[test]
     fn locked_rows_are_checked_greyed_and_cannot_be_changed() {
-        let mut page = ToolsPage::new();
+        let mut page = ToolsPage::with_homebrew(true);
         let gh = page.rows.iter().position(|tool| tool.name == "gh").unwrap();
         let (_, text) = render(&page);
         assert!(text.contains("ships in Mash (Mash only)"));
@@ -729,7 +769,7 @@ mod tests {
 
     #[test]
     fn each_row_toggles_on_its_own_and_shows_how_it_installs() {
-        let mut page = ToolsPage::new();
+        let mut page = ToolsPage::with_homebrew(true);
         let all = page.chosen().len();
         let sentrux = page
             .rows
@@ -752,7 +792,7 @@ mod tests {
 
     #[test]
     fn every_locked_tool_ignores_keyboard_and_mouse_toggles() {
-        let mut page = ToolsPage::new();
+        let mut page = ToolsPage::with_homebrew(true);
         let (buffer, _) = render(&page);
         for index in 0..page.rows.len() {
             if !ToolsPage::locked(page.rows[index]) {
@@ -776,7 +816,7 @@ mod tests {
     #[test]
     fn long_list_scrolls_without_losing_click_targets() {
         for (width, height) in [(80, 24), (100, 30)] {
-            let mut page = ToolsPage::new();
+            let mut page = ToolsPage::with_homebrew(true);
             let last_tool = page
                 .focusable()
                 .into_iter()
@@ -800,7 +840,7 @@ mod tests {
 
     #[test]
     fn the_skills_suite_is_a_separate_section_below_the_tools() {
-        let mut page = ToolsPage::new();
+        let mut page = ToolsPage::with_homebrew(true);
         assert!(page.programming(), "on by default");
         let (buffer, _) = render(&page);
         let (_, last_tool) = wizard_style::tests::find(&buffer, page.rows.last().unwrap().name);
@@ -814,7 +854,10 @@ mod tests {
         assert!(page.on_click(id).is_none());
         assert!(!page.programming());
         // Toggling the suite never changes which tools install.
-        assert_eq!(page.chosen().len(), ToolsPage::new().chosen().len());
+        assert_eq!(
+            page.chosen().len(),
+            ToolsPage::with_homebrew(true).chosen().len()
+        );
         page.focus = id;
         page.on_key(KeyCode::Char(' '), KeyModifiers::NONE);
         assert!(page.programming());
@@ -826,7 +869,7 @@ mod tests {
         let root = std::env::temp_dir().join(format!("mash-skills-choice-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         std::fs::create_dir_all(root.join("setup")).unwrap();
-        let mut page = ToolsPage::new();
+        let mut page = ToolsPage::with_homebrew(true);
         page.save_selection(&root).unwrap();
         assert_eq!(
             std::fs::read_to_string(root.join("setup/skills-choice")).unwrap(),
@@ -849,7 +892,7 @@ mod tests {
 
     #[test]
     fn focus_walks_the_selectable_rows_then_the_buttons() {
-        let mut page = ToolsPage::new();
+        let mut page = ToolsPage::with_homebrew(true);
         let ids = page.focusable();
         let mut seen = vec![page.focus];
         for _ in 0..ids.len() {
@@ -877,7 +920,7 @@ mod tests {
     #[cfg(target_os = "macos")]
     #[test]
     fn macos_lists_apple_tools_and_no_apt_ones() {
-        let page = ToolsPage::new();
+        let page = ToolsPage::with_homebrew(true);
         assert!(page.rows.iter().any(|tool| tool.name == "sourcekit-lsp"));
         assert!(!page.rows.iter().any(|tool| tool.route() == APT));
     }
@@ -885,7 +928,7 @@ mod tests {
     #[cfg(target_os = "linux")]
     #[test]
     fn linux_locks_apt_dependencies_and_has_no_apple_tools() {
-        let page = ToolsPage::new();
+        let page = ToolsPage::with_homebrew(true);
         assert!(!page.rows.iter().any(|tool| tool.name == "sourcekit-lsp"));
         let (_, text) = render(&page);
         assert!(text.contains("On your computer: installed system-wide"));

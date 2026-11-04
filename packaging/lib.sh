@@ -204,75 +204,147 @@ mash_isolate() {
 mash_force_updates() {
   local home="$1"
   local d="$home/.mash"
-  mash_force_assign "$home" "$d/config/herdr/config.toml" "version_check" "false"
-  mash_force_assign "$home" "$d/config/herdr/config.toml" "manifest_check" "false"
-  mash_force_assign "$home" "$d/config/ghostty/config" "auto-update" "off"
+  mash_force_assign "$home" "$d/config/herdr/config.toml" "version_check" "false" || return 1
+  mash_force_assign "$home" "$d/config/herdr/config.toml" "manifest_check" "false" || return 1
+  mash_force_assign "$home" "$d/config/ghostty/config" "auto-update" "off" || return 1
   # Fresh defaults both of these to true: it would check GitHub for a release and
   # offer to replace itself, which swaps Mash's patched build for an upstream
   # binary that ignores MASH_FRESH_CONFIG_DIR.
-  mash_force_json_bool "$home" "$d/config/fresh/config.json" "check_for_updates" "false"
-  mash_force_json_bool "$home" "$d/config/fresh/config.json" "self_update" "false"
+  mash_force_json_bool "$home" "$d/config/fresh/config.json" "check_for_updates" "false" || return 1
+  mash_force_json_bool "$home" "$d/config/fresh/config.json" "self_update" "false" || return 1
 }
 
-# Force one top-level boolean in a pretty-printed JSON config. Never replaces the
-# file: it rewrites the key's line, or adds it after the opening brace when it is
-# absent. Mash seeds these files pretty-printed, so one key per line holds.
+# Change only one top-level JSON boolean, preserving other properties and mode.
+# Invalid or unsafe files are refused, and an already-correct value is a no-op.
 # $1 home, $2 file, $3 key, $4 true or false.
 mash_force_json_bool() {
-  local home="$1"
-  local file="$2"
-  local key="$3"
-  local value="$4"
-  local tmp
+  local home="$1" file="$2" key="$3" value="$4" python
   case "$file" in
   "$home/.mash/"*) ;;
-  *)
-    echo "Mash refused to edit $file." >&2
-    exit 1
-    ;;
+  *) echo "Mash refused to edit $file." >&2; return 1 ;;
   esac
-  [ -f "$file" ] || return 0
-  tmp="$(mktemp "$home/.mash/force.XXXXXX")"
-  awk -v key="$key" -v value="$value" '
-        # The key is added below the opening brace only when it is missing
-        # anywhere, so the whole file is read before deciding. Streaming would
-        # insert a duplicate before reaching the existing key line.
-        BEGIN {
-            re = "^[[:space:]]*\"" key "\"[[:space:]]*:"
-            brace = "^[[:space:]]*[{][[:space:]]*$"
-            has = 0
-        }
-        { lines[NR] = $0; if ($0 ~ re) has = 1 }
-        END {
-            if (has) {
-                for (i = 1; i <= NR; i++) {
-                    if (lines[i] ~ re) {
-                        match(lines[i], /^[[:space:]]*/)
-                        out = substr(lines[i], 1, RLENGTH) "\"" key "\": " value
-                        if (lines[i] ~ /,[[:space:]]*$/) out = out ","
-                        print out
-                    } else {
-                        print lines[i]
-                    }
-                }
-                exit
-            }
-            inserted = 0
-            for (i = 1; i <= NR; i++) {
-                print lines[i]
-                if (!inserted && lines[i] ~ brace) {
-                    match(lines[i], /^[[:space:]]*/)
-                    print substr(lines[i], 1, RLENGTH) "  \"" key "\": " value ","
-                    inserted = 1
-                }
-            }
-        }
-    ' "$file" >"$tmp"
-  if cmp -s "$tmp" "$file"; then
-    rm -f "$tmp"
-  else
-    mv "$tmp" "$file"
-  fi
+  [ -e "$file" ] || [ -L "$file" ] || return 0
+  python="$(dirname "${BASH_SOURCE[0]}")/../python/bin/python3"
+  [ -x "$python" ] || python="$(command -v python3)" || return 1
+  PYTHONDONTWRITEBYTECODE=1 "$python" -I -B - "$home/.mash" "$file" "$key" "$value" <<'PY'
+import json
+import os
+import stat
+import sys
+import tempfile
+
+
+def reject_constant(value):
+    raise ValueError("invalid JSON constant")
+
+
+def strip_jsonc(text):
+    """Drop // and /* */ comments and trailing commas, leaving strings intact.
+
+    Fresh parses its config as the JSONC superset (see its own parseJsonc), so a
+    comment a person added to config.json is legal input, not a broken file.
+    """
+    out = []
+    i, n = 0, len(text)
+    in_string = escaped = False
+    while i < n:
+        char = text[i]
+        if in_string:
+            out.append(char)
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            i += 1
+            continue
+        if char == '"':
+            in_string = True
+            out.append(char)
+            i += 1
+            continue
+        if text.startswith("//", i):
+            end = text.find("\n", i)
+            i = n if end < 0 else end
+            continue
+        if text.startswith("/*", i):
+            end = text.find("*/", i + 2)
+            if end < 0:
+                raise ValueError("unterminated comment")
+            i = end + 2
+            continue
+        if char == ",":
+            # A comma is a trailing comma when only whitespace and comments
+            # separate it from the closing bracket that ends the container.
+            j = i + 1
+            while j < n:
+                if text[j] in " \t\r\n":
+                    j += 1
+                elif text.startswith("//", j):
+                    end = text.find("\n", j)
+                    j = n if end < 0 else end
+                elif text.startswith("/*", j):
+                    end = text.find("*/", j + 2)
+                    if end < 0:
+                        raise ValueError("unterminated comment")
+                    j = end + 2
+                else:
+                    break
+            if j < n and text[j] in "}]":
+                i += 1
+                continue
+        out.append(char)
+        i += 1
+    return "".join(out)
+
+
+root, path, key, value = sys.argv[1:]
+tmp = None
+try:
+    root = os.path.realpath(root)
+    if os.path.commonpath((root, os.path.realpath(os.path.dirname(path)))) != root:
+        raise ValueError("unsafe path")
+    mode = os.lstat(path)
+    if not stat.S_ISREG(mode.st_mode) or mode.st_size > 4 * 1024 * 1024:
+        raise ValueError("unsafe config")
+    if value not in ("true", "false"):
+        raise ValueError("not a boolean")
+    with open(path, encoding="utf-8") as source:
+        text = source.read()
+    try:
+        data = json.loads(text, parse_constant=reject_constant)
+    except ValueError:
+        # Only reachable for a file Mash does not understand at all; refusing
+        # keeps the user's bytes rather than replacing them with a guess.
+        data = json.loads(strip_jsonc(text), parse_constant=reject_constant)
+    if not isinstance(data, dict):
+        raise ValueError("not an object")
+    wanted = value == "true"
+    if data.get(key) is wanted:
+        sys.exit(0)
+    data[key] = wanted
+    fd, tmp = tempfile.mkstemp(prefix=".mash-force-", dir=os.path.dirname(path))
+    with os.fdopen(fd, "w", encoding="utf-8") as target:
+        os.fchmod(target.fileno(), stat.S_IMODE(mode.st_mode))
+        json.dump(data, target, indent=2, allow_nan=False)
+        target.write("\n")
+        target.flush()
+        os.fsync(target.fileno())
+    os.replace(tmp, path)
+except (OSError, ValueError):
+    # The launcher surfaces this in its alert, so name the file and the remedy:
+    # the user cannot act on "settings" alone.
+    print(
+        f"Mash could not safely update {path}; the file was kept."
+        " Fix its JSON, or delete it so Mash recreates it.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+finally:
+    if tmp is not None and os.path.exists(tmp):
+        os.unlink(tmp)
+PY
 }
 
 mash_force_assign() {
@@ -289,11 +361,11 @@ mash_force_assign() {
     ;;
   esac
   [ -f "$file" ] || return 0
-  tmp="$(mktemp "$home/.mash/force.XXXXXX")"
+  tmp="$(mktemp "$home/.mash/force.XXXXXX")" || return 1
   awk -v key="$key" -v value="$value" '
         $0 ~ "^[[:space:]]*" key "[[:space:]]*=" { print key " = " value; found=1; next }
         { print }
         END { if (!found) print key " = " value }
-    ' "$file" >"$tmp"
-  mv "$tmp" "$file"
+    ' "$file" >"$tmp" || { rm -f "$tmp"; return 1; }
+  mv "$tmp" "$file" || { rm -f "$tmp"; return 1; }
 }
