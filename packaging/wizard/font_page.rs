@@ -744,6 +744,7 @@ fn write_config(config: &Path, content: &str) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::TempDir;
     use ratatui::{backend::TestBackend, Terminal};
     use std::os::unix::process::ExitStatusExt;
 
@@ -752,11 +753,8 @@ mod tests {
     /// A config, a page previewing through it, and a stand-in terminal: a
     /// sleeping child, which SIGUSR2 terminates, so a test sees exactly which
     /// process was asked to reload.
-    fn live_fixture(name: &str) -> (PathBuf, FontPage, std::process::Child) {
-        let dir =
-            std::env::temp_dir().join(format!("mash-live-font-{name}-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&dir);
-        fs::create_dir_all(&dir).unwrap();
+    fn live_fixture(name: &str) -> (TempDir, FontPage, std::process::Child) {
+        let dir = TempDir::new(&format!("live-font-{name}"));
         let config = dir.join("config");
         fs::write(&config, ORIGINAL).unwrap();
         let terminal = Command::new("sleep").arg("30").spawn().unwrap();
@@ -802,7 +800,6 @@ mod tests {
         drop(page);
         // Not saved, so leaving restores the user's file.
         assert_eq!(fs::read_to_string(dir.join("config")).unwrap(), ORIGINAL);
-        fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]
@@ -826,7 +823,6 @@ mod tests {
         let mut page = FontPage::with_fonts(vec![DEFAULT_FONT.into()], None);
         page.theme = Theme::Light;
         assert!(page.render(custom).contains("theme = Dracula\n"));
-        fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]
@@ -846,7 +842,6 @@ mod tests {
         assert!(terminal.try_wait().unwrap().is_none());
         let _ = terminal.kill();
         let _ = terminal.wait();
-        fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]
@@ -869,7 +864,6 @@ mod tests {
         assert!(fs::read_to_string(dir.join("config"))
             .unwrap()
             .contains("font-size = 14"));
-        fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]
@@ -944,7 +938,6 @@ mod tests {
             assert!(saved.contains(Theme::Light.terminal_line()), "{saved}");
             reconcile();
             assert_eq!(fs::read_to_string(&config).unwrap(), saved);
-            fs::remove_dir_all(dir).unwrap();
         }
     }
 
@@ -969,7 +962,6 @@ mod tests {
         fs::write(&config, ORIGINAL).unwrap();
         drop(page);
         assert_eq!(fs::read_to_string(&config).unwrap(), ORIGINAL);
-        fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]
@@ -977,15 +969,13 @@ mod tests {
         let mut page = FontPage::with_fonts(vec![DEFAULT_FONT.into()], None);
         page.start_live_preview(Path::new("/nonexistent/mash/ghostty/config"), 4242);
         assert!(page.live.is_none());
-        let dir = std::env::temp_dir().join(format!("mash-live-font-none-{}", std::process::id()));
-        fs::create_dir_all(&dir).unwrap();
+        let dir = TempDir::new("live-font-none");
         fs::write(dir.join("config"), ORIGINAL).unwrap();
         page.start_live_preview(&dir.join("config"), 1);
         assert!(page.live.is_none(), "pid 1 is never this window's terminal");
         page.focus = SIZE;
         page.on_key(KeyCode::Right, KeyModifiers::NONE);
         assert!(!page.live_preview_pending());
-        fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]
@@ -1021,7 +1011,8 @@ mod tests {
         page.focus = SIZE;
         page.on_key(KeyCode::Right, KeyModifiers::NONE);
         assert_eq!(page.size, 14);
-        let path = std::env::temp_dir().join(format!("mash-font-test-{}", std::process::id()));
+        let dir = TempDir::new("font-test");
+        let path = dir.join("config");
         fs::write(&path, "command = /opt/letsmash/bin/herdr-pane\nfont-family = \"MesloLGS NF\"\nfont-size = 14\nauto-update = off\n").unwrap();
         page.save(&path).unwrap();
         let saved = fs::read_to_string(&path).unwrap();
@@ -1082,8 +1073,7 @@ mod tests {
 
     #[test]
     fn mode_is_absent_until_written_and_a_retry_reads_it_back() {
-        let dir = std::env::temp_dir().join(format!("mash-mode-test-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&dir);
+        let dir = TempDir::new("mode-test");
         let mut page = FontPage::with_fonts(vec!["JetBrains Mono".into()], None);
         assert_eq!(Keybindings::current(&dir), Keybindings::Mash);
         page.keybindings = Keybindings::Native;
@@ -1093,6 +1083,5 @@ mod tests {
             fs::read_to_string(dir.join("setup/keybindings-mode")).unwrap(),
             "mode=native\n"
         );
-        let _ = fs::remove_dir_all(&dir);
     }
 }

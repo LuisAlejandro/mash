@@ -597,6 +597,7 @@ impl ToolsPage {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::TempDir;
     use ratatui::{backend::TestBackend, Terminal};
 
     /// Wide and tall enough that every row is on screen unwrapped, so a test
@@ -866,8 +867,7 @@ mod tests {
     #[test]
     fn the_skills_choice_is_written_privately() {
         use std::os::unix::fs::PermissionsExt;
-        let root = std::env::temp_dir().join(format!("mash-skills-choice-{}", std::process::id()));
-        let _ = std::fs::remove_dir_all(&root);
+        let root = TempDir::new("skills-choice");
         std::fs::create_dir_all(root.join("setup")).unwrap();
         let mut page = ToolsPage::with_homebrew(true);
         page.save_selection(&root).unwrap();
@@ -887,7 +887,6 @@ mod tests {
             std::fs::read_to_string(root.join("setup/skills-choice")).unwrap(),
             "programming=false\n"
         );
-        std::fs::remove_dir_all(&root).unwrap();
     }
 
     #[test]

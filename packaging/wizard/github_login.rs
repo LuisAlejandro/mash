@@ -375,24 +375,17 @@ fn open_in_browser(url: &str, path: &OsString) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::TempDir;
     use std::{
         env,
-        sync::atomic::{AtomicU64, Ordering},
         time::{Duration, Instant},
     };
-
-    static ID: AtomicU64 = AtomicU64::new(0);
 
     /// A stand-in gh: `login` runs the given script, `logout` fails so a test
     /// notices if sign-out ever calls it, and `token` always succeeds, like a
     /// keychain login would.
-    fn fixture(login: &str) -> (PathBuf, GithubLogin) {
-        let root = env::temp_dir().join(format!(
-            "mash-gh-test-{}-{}",
-            std::process::id(),
-            ID.fetch_add(1, Ordering::Relaxed)
-        ));
-        fs::create_dir_all(&root).unwrap();
+    fn fixture(login: &str) -> (TempDir, GithubLogin) {
+        let root = TempDir::new("gh-test");
         let gh = root.join("gh");
         fs::write(
             &gh,
@@ -478,12 +471,11 @@ mod tests {
         assert_eq!(again.status(), &Status::SignedIn(Some("ada".into())));
         login.activate();
         assert_eq!(login.status(), &Status::SignedOut);
-        fs::remove_dir_all(root).ok();
     }
 
     #[test]
     fn a_failed_sign_in_shows_why_and_offers_a_retry() {
-        let (root, mut login) =
+        let (_root, mut login) =
             fixture("echo 'X expired_token: the device code has expired' >&2; exit 1");
         login.activate();
         wait_until(&mut login, |status| matches!(status, Status::Failed(_)));
@@ -492,12 +484,11 @@ mod tests {
             &Status::Failed("expired_token: the device code has expired".into())
         );
         assert_eq!(login.button_label(), " Try again ");
-        fs::remove_dir_all(root).ok();
     }
 
     #[test]
     fn cancel_stops_gh_and_signs_nothing_in() {
-        let (root, mut login) = fixture("echo 'code: ABCD-1234' >&2; sleep 30");
+        let (_root, mut login) = fixture("echo 'code: ABCD-1234' >&2; sleep 30");
         login.activate();
         wait_until(&mut login, |status| {
             matches!(status, Status::Waiting { .. })
@@ -511,21 +502,19 @@ mod tests {
         );
         assert!(!login.busy());
         assert_eq!(login.status(), &Status::SignedOut);
-        fs::remove_dir_all(root).ok();
     }
 
     #[test]
     fn a_keychain_login_is_not_mash_sign_in() {
         // The fake gh's `auth token` always answers, as the user's own
         // keychain login does; only Mash's hosts file may count.
-        let (root, login) = fixture("exit 1");
+        let (_root, login) = fixture("exit 1");
         assert_eq!(login.status(), &Status::SignedOut);
-        fs::remove_dir_all(root).ok();
     }
 
     #[test]
     fn inherited_tokens_never_count_as_mash_sign_in() {
-        let (root, login) = fixture("exit 1");
+        let (_root, login) = fixture("exit 1");
         let envs: Vec<_> = login
             .command()
             .get_envs()
@@ -538,7 +527,6 @@ mod tests {
         }
         assert!(envs.iter().any(|(name, value)| name == "GH_CONFIG_DIR"
             && value.as_deref() == Some(login.config.as_os_str())));
-        fs::remove_dir_all(root).ok();
     }
 
     #[test]
@@ -557,7 +545,6 @@ mod tests {
         assert!(matches!(login.status(), Status::Unavailable(_)));
         login.activate();
         assert!(!login.busy());
-        fs::remove_dir_all(root).ok();
     }
 
     #[test]

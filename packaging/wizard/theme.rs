@@ -204,6 +204,7 @@ impl Theme {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::TempDir;
 
     /// Shipped config each swap path is seeded from (macOS variants).
     fn shipped(relative: &str) -> &'static str {
@@ -307,8 +308,7 @@ mod tests {
 
     #[test]
     fn switching_round_trips_and_keeps_user_edits() {
-        let root = std::env::temp_dir().join(format!("mash-theme-test-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&root);
+        let root = TempDir::new("theme-test");
         let mut seen = Vec::new();
         for (relative, _, _) in SWAPS {
             if seen.contains(relative) {
@@ -347,6 +347,5 @@ mod tests {
                 );
             }
         }
-        fs::remove_dir_all(root).unwrap();
     }
 }

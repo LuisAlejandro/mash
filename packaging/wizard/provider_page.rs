@@ -3306,23 +3306,11 @@ pub(crate) fn write_private(path: &Path, text: &str) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{
-        os::unix::fs::PermissionsExt,
-        sync::atomic::{AtomicU64, Ordering},
-    };
+    use crate::test_support::TempDir;
+    use std::os::unix::fs::PermissionsExt;
 
-    static FIXTURE_ID: AtomicU64 = AtomicU64::new(0);
-
-    fn root() -> std::path::PathBuf {
-        let path = std::env::temp_dir().join(format!(
-            "mash-provider-test-{}-{}-{}",
-            std::process::id(),
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_nanos(),
-            FIXTURE_ID.fetch_add(1, Ordering::Relaxed)
-        ));
+    fn root() -> TempDir {
+        let path = TempDir::new("provider-test");
         fs::create_dir_all(path.join("pi/agent")).unwrap();
         fs::create_dir_all(path.join(".hindsight")).unwrap();
         fs::create_dir_all(path.join("setup")).unwrap();
@@ -3378,7 +3366,6 @@ mod tests {
             !resources.join("request.json").exists(),
             "defer never starts a credential helper"
         );
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -3429,7 +3416,6 @@ mod tests {
         page.hindsight_source = Some(ServiceSource::Later);
         page.save(&root).unwrap();
         assert_eq!(fs::read_to_string(&embed).unwrap(), saved);
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -3475,7 +3461,6 @@ mod tests {
             read_json_object(&agent.join("web-search.json")).unwrap()["provider"],
             "google"
         );
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -3561,7 +3546,6 @@ mod tests {
                 "navigation cancels the old catalog owner"
             );
         }
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -3592,7 +3576,6 @@ mod tests {
                 .login_later_hint()
                 .unwrap()
                 .contains(&format!("/login {}", provider.id)));
-            fs::remove_dir_all(root).unwrap();
         }
     }
 
@@ -3698,7 +3681,6 @@ mod tests {
             .map(|cell| cell.symbol())
             .collect();
         assert!(!text.contains("must-not-appear"));
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -3777,7 +3759,6 @@ mod tests {
             serde_json::json!([{"id":"first:8b"},{"id":"second:4b"}])
         );
         assert_eq!(saved["providers"]["ollama"], original);
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -3847,7 +3828,6 @@ mod tests {
             !page.validate(),
             "changing the candidate invalidates its probe"
         );
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -3945,7 +3925,6 @@ mod tests {
         page.pi.key = "!touch-pwned".into();
         assert!(page.save(&root).unwrap_err().contains("/login"));
         assert_eq!(fs::read_to_string(agent.join("auth.json")).unwrap(), saved);
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -3959,7 +3938,6 @@ mod tests {
         page.save(&root).unwrap();
         let auth = read_json_object(&root.join("pi/agent/auth.json")).unwrap();
         assert_eq!(auth["anthropic"]["key"], "$!touch-pwned");
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -3984,7 +3962,6 @@ mod tests {
         page.save(&root).unwrap();
         let auth = read_json_object(&root.join("pi/agent/auth.json")).unwrap();
         assert_eq!(auth["openai"]["key"], "model-key");
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -4008,7 +3985,6 @@ mod tests {
             original["providers"]["gateway"],
             "the draft wrote nothing before Apply"
         );
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -4036,7 +4012,6 @@ mod tests {
         assert!(page
             .connection_status
             .is_some_and(|status| !status.contains("Connected")));
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -4061,7 +4036,6 @@ mod tests {
         assert_eq!(request["key"], "hindsight-fixture-key");
         assert_eq!(request["asCatalog"], true);
         assert!(page.model_step == ModelStep::Picker);
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -4096,7 +4070,6 @@ mod tests {
             page.selected_model,
             Some(("openai".into(), "preview-model".into()))
         );
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -4129,7 +4102,6 @@ mod tests {
         assert!(!resources.join("request.json").exists());
         page.set_memory_enabled(true);
         assert!(!page.validate());
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -4185,7 +4157,6 @@ mod tests {
             settings
         );
         assert_eq!(fs::read_to_string(agent.join("auth.json")).unwrap(), auth);
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -4256,7 +4227,6 @@ mod tests {
             read_json_object(&agent.join("settings.json")).unwrap()["defaultModel"],
             "manual-model"
         );
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -4271,7 +4241,6 @@ mod tests {
         assert!(page.model_job.is_none());
         assert!(!root.join("pi/agent/auth.json").exists());
         assert!(!root.join("pi/agent/settings.json").exists());
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -4294,7 +4263,6 @@ mod tests {
             page.pi_label(Choice::Keep),
             "Keep current: custom-provider/namespace/model"
         );
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -4328,7 +4296,6 @@ mod tests {
                 "fixture-key"
             );
             assert!(!agent.join("models.json").exists());
-            fs::remove_dir_all(root).unwrap();
         }
     }
 
@@ -4387,7 +4354,6 @@ mod tests {
             assert_eq!(saved["defaultProvider"], page.configured_provider());
             assert_eq!(saved["defaultModel"], "chosen-before-login");
         }
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -4494,7 +4460,6 @@ mod tests {
         }
         page.set_page(Page::WebSearch);
         assert!(!page.fields().contains(&Field::PiApi));
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -4543,7 +4508,6 @@ mod tests {
             page.on_click(id);
             assert_eq!(page.pi_api, Some(pi_providers::Api::Anthropic));
         }
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -4606,7 +4570,6 @@ mod tests {
         save_json(&settings, &custom).unwrap();
         crate::theme::Theme::Light.apply(&root).unwrap();
         assert_eq!(read_json_object(&settings).unwrap(), custom);
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -4661,7 +4624,6 @@ mod tests {
                 0o600
             );
         }
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -4742,7 +4704,6 @@ mod tests {
                 "{name}: helper ran"
             );
             assert!(!settings.exists(), "{name}: settings written");
-            fs::remove_dir_all(root).unwrap();
         }
     }
 
@@ -4791,7 +4752,6 @@ mod tests {
             fs::read_to_string(agent.join("auth.json")).unwrap(),
             original
         );
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -4802,7 +4762,6 @@ mod tests {
         page.hindsight.choice = Some(Choice::None);
         page.save(&root).unwrap();
         assert!(!root.join(".hindsight/embed").exists());
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -4826,7 +4785,6 @@ mod tests {
         fs::remove_file(root.join("setup/skills-choice")).unwrap();
         page.save(&root).unwrap();
         assert_eq!(fs::read_to_string(&embed).unwrap(), original);
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -4842,7 +4800,6 @@ mod tests {
         assert!(text.contains("HINDSIGHT_API_LLM_API_KEY=unused"));
         assert!(!text.contains("old.invalid"));
         assert!(!root.join("pi/agent/auth.json").exists());
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -4859,7 +4816,6 @@ mod tests {
         page.pi.url = "https://example.invalid/v1".into();
         page.pi.key = "key\nleak".into();
         assert!(!page.validate());
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -4872,7 +4828,6 @@ mod tests {
         page.pi.key = "secret".into();
         assert!(page.save(&root).is_err());
         assert!(!root.join("pi/agent/auth.json").exists());
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -5117,7 +5072,6 @@ mod tests {
             fs::metadata(&path).unwrap().permissions().mode() & 0o777,
             0o600
         );
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -5127,7 +5081,6 @@ mod tests {
         assert!(page.validate());
         page.save(&root).unwrap();
         assert!(!root.join("pi/agent/web-search.json").exists());
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -5172,7 +5125,6 @@ mod tests {
         let config = fs::read_to_string(agent.join("web-search.json")).unwrap();
         assert!(!config.contains("search-secret"));
         assert!(config.contains("grok-model"));
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -5204,7 +5156,6 @@ mod tests {
         page.save(&root).unwrap();
         let auth = read_json_object(&agent.join("auth.json")).unwrap();
         assert_eq!(auth["google"]["key"], "existing-secret");
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -5229,7 +5180,6 @@ mod tests {
             assert!(rendered.contains("/login"));
             page.save(&root).unwrap();
             assert!(!root.join("pi/agent/auth.json").exists());
-            fs::remove_dir_all(root).unwrap();
         }
     }
 
@@ -5248,7 +5198,6 @@ mod tests {
         page.save(&root).unwrap();
         let auth = read_json_object(&root.join("pi/agent/auth.json")).unwrap();
         assert_eq!(auth["openai"]["key"], "shared-secret");
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -5281,7 +5230,6 @@ mod tests {
         assert!(!config.contains("azure-secret"));
         page.search.endpoint = "http://insecure.invalid".into();
         assert!(!page.validate());
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -5303,7 +5251,6 @@ mod tests {
             "oauth"
         );
         assert!(!agent.join("web-search.json").exists());
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -5355,7 +5302,6 @@ mod tests {
         assert!(page.save(&root).is_err());
         assert_eq!(fs::read_to_string(outside).unwrap(), "keep\n");
         assert!(!agent.join("web-search.json").exists());
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -5368,7 +5314,6 @@ mod tests {
         page.search.model = "claude-sonnet-4-5".into();
         assert!(page.save(&root).is_err());
         assert!(!root.join("pi/agent/auth.json").exists());
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

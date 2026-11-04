@@ -348,19 +348,13 @@ impl Connection {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::TempDir;
     use serde_json::json;
 
     #[test]
     fn typed_keys_reach_the_bounded_helper_on_stdin_not_argv() {
         use std::{fs, os::unix::fs::PermissionsExt};
-        let root = std::env::temp_dir().join(format!(
-            "mash-probe-stdin-{}-{}",
-            std::process::id(),
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ));
+        let root = TempDir::new("probe-stdin");
         fs::create_dir_all(root.join("node/bin")).unwrap();
         let node = root.join("node/bin/node");
         fs::write(&node, "#!/bin/sh\n/bin/cat > request.json\nprintf '%s\\n' \"$@\" > argv.txt\nprintf '{\"version\":1,\"status\":\"ok\",\"accepted\":true,\"api\":\"openai-responses\"}\\n'\n").unwrap();
@@ -393,7 +387,6 @@ mod tests {
         assert!(!fs::read_to_string(root.join("argv.txt"))
             .unwrap()
             .contains("fake-private-key"));
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

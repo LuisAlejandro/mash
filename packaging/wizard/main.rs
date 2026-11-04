@@ -5,6 +5,8 @@ mod pi_connection;
 mod pi_models;
 mod pi_providers;
 mod provider_page;
+#[cfg(test)]
+mod test_support;
 mod theme;
 mod tools_page;
 mod voice;
@@ -2103,6 +2105,7 @@ fn install_plan(chosen: &[&tools_page::Tool]) -> Plan {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::TempDir;
 
     /// Every tool this platform lets the Tools page choose, all checked.
     fn every_tool() -> Vec<&'static tools_page::Tool> {
@@ -2147,12 +2150,8 @@ mod tests {
         assert_eq!(app.signing_note, host.signing_note);
     }
 
-    fn scratch_home(name: &str, config: &str) -> PathBuf {
-        let home = env::temp_dir().join(format!(
-            "mash-wizard-{name}-{}-{}",
-            std::process::id(),
-            now_millis()
-        ));
+    fn scratch_home(name: &str, config: &str) -> TempDir {
+        let home = TempDir::new(&format!("wizard-{name}"));
         fs::create_dir_all(home.join(".config/git")).unwrap();
         fs::write(home.join(".config/git/config"), config).unwrap();
         home
@@ -2179,8 +2178,6 @@ mod tests {
         assert_eq!(other.name, "Second User");
         assert_eq!(other.email, "second@example.org");
         assert_eq!(other.signing_key, "");
-        fs::remove_dir_all(home).unwrap();
-        fs::remove_dir_all(second).unwrap();
     }
 
     #[test]
@@ -2225,9 +2222,6 @@ mod tests {
         let merged = prefill_identity(host, &config);
         assert_eq!(merged.signing_key, "");
         assert!(merged.signing_note.is_some());
-        for home in [saved, ssh] {
-            fs::remove_dir_all(home).unwrap();
-        }
     }
 
     #[test]
@@ -2246,17 +2240,12 @@ mod tests {
             assert_eq!(host.name, "Ada");
             assert_eq!(host.signing_key, "", "{format:?} {key}");
             assert!(host.signing_note.is_some(), "{format:?} {key}");
-            fs::remove_dir_all(home).unwrap();
         }
     }
 
     #[test]
     fn signing_key_controls_commit_signing_in_mash_config() {
-        let dir = env::temp_dir().join(format!(
-            "mash-wizard-git-{}-{}",
-            std::process::id(),
-            now_millis()
-        ));
+        let dir = TempDir::new("wizard-git");
         let config = dir.join("git/config");
         let identity = Identity {
             name: "Ada".into(),
@@ -2283,7 +2272,6 @@ mod tests {
         apply_git_identity(&Identity::default(), &config).unwrap();
         assert_eq!(get("user.signingkey"), "");
         assert_eq!(get("commit.gpgsign"), "false");
-        fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]
@@ -2624,13 +2612,12 @@ mod tests {
 
     #[test]
     fn completing_setup_leaves_a_one_shot_workspace_popup_marker() {
-        let dir = env::temp_dir().join(format!("mash-complete-test-{}", std::process::id()));
+        let dir = TempDir::new("complete-test");
         fs::create_dir_all(&dir).unwrap();
         let mut state = State::default();
         mark_complete(&dir, &mut state);
         assert!(load_state(&dir).completed);
         assert!(dir.join(OPEN_WORKSPACE_MARKER).is_file());
-        fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]
@@ -2709,8 +2696,7 @@ mod tests {
     fn hindsight_port_parses_the_seeded_config() {
         // The step must read the port from the config Mash seeds rather than
         // assuming it, or it would poll the owner's own daemon.
-        let tmp = env::temp_dir().join(format!("mash-port-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&tmp);
+        let tmp = TempDir::new("port");
         fs::create_dir_all(tmp.join(".hindsight")).unwrap();
         fs::write(
             tmp.join(".hindsight/embed"),
@@ -2724,7 +2710,6 @@ mod tests {
             .and_then(|value| value.trim().parse().ok())
             .unwrap();
         assert_eq!(port, 8998);
-        let _ = fs::remove_dir_all(&tmp);
     }
 
     #[test]
