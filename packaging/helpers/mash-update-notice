@@ -276,7 +276,7 @@ if [ "$system" = Darwin ] && [ -f "$common" ]; then
     preparing | ready | quiescing | swap-intent)
       # A dead owner is not a running installer. Before the exchange we can
       # safely re-offer; ambiguous/committed attempts retain recovery state.
-      if [ "$phase" = preparing ] || [ "$phase" = ready ]; then
+      if [ "$phase" = preparing ] || [ "$phase" = ready ] || [ "$phase" = quiescing ]; then
         mash_update_finish failed-before-swap || exit 0
       else
         mash_update_finish recovery-required || exit 0

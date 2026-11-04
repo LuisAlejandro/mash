@@ -78,23 +78,21 @@ mash_update_begin() {
   case "$work/" in "$app/"* | "$MU_STATE/"*) return 1 ;; esac
   [ -d "$app/Contents" ] && [ ! -L "$app" ] && [ -d "$work" ] && [ ! -L "$work" ] && [ ! -L "$MU_TX" ] || return 1
   if [ -f "$MU_TX" ]; then
-    case "$(mash_update_read phase || true)" in
-    swap-intent | awaiting-ready | recovery-required) return 1 ;;
-    esac
-  fi
-  if ! (umask 077; mkdir "$MU_LOCK") 2>/dev/null; then
-    mash_update_active && return 1
-    # A stale preparation owner is reclaimable; a committed/unconfirmed update
-    # needs recovery, not another download that overwrites its backup location.
+    [ "$(mash_update_read schema)" = 1 ] || return 1
+    owner="$(mash_update_read id)" || return 1
+    [[ "$owner" =~ ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$ ]] || return 1
     case "$(mash_update_read phase || true)" in
     preparing | ready | cancelled | failed-before-swap | confirmed) ;;
-    *) return 1 ;;
+    *) return 1 ;; # Unknown or committed/unconfirmed state needs recovery.
     esac
-    owner="$(mash_update_read id)" || return 1
-    [ "$(cat "$MU_LOCK/id" 2>/dev/null)" = "$owner" ] || return 1
-    # All state writers hold the native kernel mutex. It is released even
-    # after a crash, unlike the attempt directory; stale reclaim cannot race
-    # another claimant or delete a newly acquired directory.
+    # A lost attempt directory must not make a live transaction replaceable.
+    mash_update_active && return 1
+  fi
+  if ! (umask 077; mkdir "$MU_LOCK") 2>/dev/null; then
+    [ -d "$MU_LOCK" ] || return 1
+    # All state writers hold the native kernel mutex. Once the eligible
+    # transaction is inactive, an empty or mismatched directory is an
+    # interrupted publication, not proof of another live claimant.
     rm -rf "$MU_LOCK" || return 1
     (umask 077; mkdir "$MU_LOCK") 2>/dev/null || return 1
   fi
@@ -243,12 +241,13 @@ mash_update_run() {
   mash_update_log "start=$tag"
   "$@" >>"$MU_STATE/mash-update.log" 2>&1 &
   child=$!
+  # Cleanup must know this child even if a later clock/identity query fails.
+  MU_COMMAND_BUSY="$child"
   start="$("$MU_BIN/mash-update-processes" now)" || return 1
   while kill -0 "$child" 2>/dev/null; do
     now="$("$MU_BIN/mash-update-processes" now)" || return 1
     if [ "$((now - start))" -ge "$budget" ]; then
       kill -TERM "$child" 2>/dev/null || true
-      MU_COMMAND_BUSY="$child"
       mash_update_log "end=$tag exit=124 timeout=${budget}s pid=$child; retain preparation until child exits"
       return 124
     fi
@@ -256,6 +255,7 @@ mash_update_run() {
   done
   rc=0
   wait "$child" || rc=$?
+  unset MU_COMMAND_BUSY
   mash_update_log "end=$tag exit=$rc"
   return "$rc"
 }

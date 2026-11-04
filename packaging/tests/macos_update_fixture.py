@@ -37,7 +37,10 @@ class UpdateFixture:
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <string.h>
+#include <stdio.h>
 int main(int argc, char **argv) {
+ const char *marker = getenv("FIXTURE_LAUNCH_MARKER");
+ if (marker) { FILE *f = fopen(marker, "w"); if (!f) return 4; fputs("target", f); fclose(f); return 0; }
  if (argc > 1 && !strcmp(argv[1], "child")) { if (!fork()) { execl("/bin/sleep", "sleep", "60", NULL); return 1; } }
  const char *path = getenv("FIXTURE_SOCKET");
  if (path && argc > 1 && !strcmp(argv[1], "server")) {

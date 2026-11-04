@@ -1,6 +1,6 @@
 --- a/macos/Sources/App/main.swift
 +++ b/macos/Sources/App/main.swift
-@@ -1,6 +1,119 @@
+@@ -1,6 +1,129 @@
  import AppKit
  import Cocoa
  import GhosttyKit
@@ -39,9 +39,15 @@
 +          let bytes = try? Data(contentsOf: path),
 +          let state = try? PropertyListSerialization.propertyList(from: bytes, format: nil) as? [String: String],
 +          state["schema"] == "1", let id = state["id"], UUID(uuidString: id) != nil,
-+          let app = state["app"],
-+          URL(fileURLWithPath: app).resolvingSymlinksInPath() == Bundle.main.bundleURL.resolvingSymlinksInPath() else { return nil }
++          let app = state["app"], app.hasPrefix("/"), URL(fileURLWithPath: app).pathExtension == "app",
++          let phase = state["phase"],
++          ["preparing", "ready", "quiescing", "swap-intent", "awaiting-ready", "recovery-required", "confirmed", "cancelled", "failed-before-swap"].contains(phase) else { return nil }
 +    return (data, state)
++}
++
++func mashUpdateApplies(_ state: [String: String]) -> Bool {
++    guard let app = state["app"] else { return false }
++    return URL(fileURLWithPath: app).resolvingSymlinksInPath() == Bundle.main.bundleURL.resolvingSymlinksInPath()
 +}
 +
 +func mashUpdateWait(_ data: URL, _ state: [String: String]) -> Never {
@@ -69,6 +75,10 @@
 +        if FileManager.default.fileExists(atPath: path.path) { mashSetupFailed("Mash's update record is invalid. See mash-update.log before retrying.") }
 +        return
 +    }
++    if !mashUpdateApplies(state) {
++        if ["confirmed", "cancelled", "failed-before-swap"].contains(phase) { return }
++        mashSetupFailed("An update for another Mash location needs recovery. See mash-update.log before retrying.")
++    }
 +    if phase == "quiescing" || phase == "swap-intent" ||
 +        (phase == "awaiting-ready" && state["expected_uuid"] != mashUpdateLoadedUUID) {
 +        mashUpdateWait(data, state)
@@ -84,14 +94,14 @@
 +
 +private var mashUpdateReadinessTimer: Timer?
 +func mashUpdateObserveReadiness() {
-+    guard mashUpdateReadinessTimer == nil, let (data, initial) = mashUpdateState(),
++    guard mashUpdateReadinessTimer == nil, let (data, initial) = mashUpdateState(), mashUpdateApplies(initial),
 +          ["awaiting-ready", "recovery-required"].contains(initial["phase"] ?? ""), let id = initial["id"],
 +          initial["expected_uuid"] == mashUpdateLoadedUUID,
 +          initial["candidate"] == mashUpdateLoadedVersion else { return }
 +    let started = ProcessInfo.processInfo.systemUptime
 +    mashUpdateReadinessTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { timer in
 +        guard ProcessInfo.processInfo.systemUptime - started < 180,
-+              let (_, current) = mashUpdateState(), current["id"] == id,
++              let (_, current) = mashUpdateState(), mashUpdateApplies(current), current["id"] == id,
 +              ["awaiting-ready", "recovery-required"].contains(current["phase"] ?? "") else { timer.invalidate(); return }
 +        guard TerminalController.all.contains(where: { $0.window?.isVisible == true }) else { return }
 +        let process = Process()
@@ -120,7 +130,7 @@
  
  // Mash: this binary is Mash.app's own executable. Whatever starts it -- the
  // Dock, Finder, Spotlight, `open -a`, or macOS reopening apps after a restart
-@@ -17,6 +130,7 @@
+@@ -17,6 +140,7 @@
  // shows it in an alert before quitting. The same alert covers a script that
  // cannot run, and one that returned without MASH_BIN -- execing it again
  // would loop forever.

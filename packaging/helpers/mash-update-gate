@@ -17,7 +17,14 @@ wait)
   while [ "$(mash_update_read id 2>/dev/null)" = "$MU_ID" ]; do
     phase="$(mash_update_read phase)"
     case "$phase" in
-    quiescing | swap-intent)
+    quiescing)
+      if ! mash_update_active; then
+        # Exchange is possible only after the swap-intent journal write.
+        mash_update_finish failed-before-swap || exit 1
+        break
+      fi
+      ;;
+    swap-intent)
       if ! mash_update_active; then
         # Actual identities settle whether exchange happened between journal
         # writes. Do not install a second candidate or blindly roll back data.
@@ -30,14 +37,23 @@ wait)
         fi
         break
       fi
-      if [ "$printed" = 0 ]; then
-        printf 'Mash is updating. Waiting for the prepared application...\n' >&2
-        printed=1
+      ;;
+    awaiting-ready)
+      expected="$(mash_update_read expected_uuid)"
+      actual="$("$bin/mash-update-processes" uuid "$app/Contents/MacOS/mash-terminal" 2>/dev/null || true)"
+      if [ -n "$expected" ] && [ "$actual" = "$expected" ]; then break; fi
+      if ! mash_update_active; then
+        mash_update_phase recovery-required || exit 1
+        break
       fi
-      sleep 0.2
       ;;
     *) break ;;
     esac
+    if [ "$printed" = 0 ]; then
+      printf 'Mash is updating. Waiting for the prepared application...\n' >&2
+      printed=1
+    fi
+    sleep 0.2
   done
   # This is an exec of the currently installed executable, never the old
   # binary path captured before exchange. New native entry revalidates state.
