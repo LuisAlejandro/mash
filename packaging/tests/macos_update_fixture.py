@@ -10,6 +10,69 @@ import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 
+_PROCESS_C = '''#include <unistd.h>
+#include <stdlib.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <string.h>
+#include <stdio.h>
+int main(int argc, char **argv) {
+ const char *marker = getenv("FIXTURE_LAUNCH_MARKER");
+ if (marker) { FILE *f = fopen(marker, "w"); if (!f) return 4; fputs("target", f); fclose(f); return 0; }
+ if (argc > 1 && !strcmp(argv[1], "child")) { if (!fork()) { execl("/bin/sleep", "sleep", "60", NULL); return 1; } }
+ const char *path = getenv("FIXTURE_SOCKET");
+ if (path && argc > 1 && !strcmp(argv[1], "server")) {
+  struct sockaddr_un addr = {0}; addr.sun_family = AF_UNIX;
+  if (strlen(path) >= sizeof(addr.sun_path)) return 2;
+  strcpy(addr.sun_path, path);
+  int fd = socket(AF_UNIX, SOCK_STREAM, 0);
+  if (fd < 0 || bind(fd, (struct sockaddr *)&addr, sizeof(addr)) || listen(fd, 1)) return 3;
+ }
+ for (;;) pause();
+}
+'''
+
+
+def _helper_sources_mtime() -> float:
+    names = ("mash-update-processes.c", "mash-update-swap.c")
+    return max((ROOT / "packaging/helpers" / name).stat().st_mtime for name in names)
+
+
+def _fixture_bin_cache() -> pathlib.Path:
+    """Reuse compiled helpers across tests; each case still gets its own temp tree."""
+    cache = pathlib.Path(tempfile.gettempdir()) / "mash-update-fixture-bin"
+    cache.mkdir(exist_ok=True)
+    stamp = cache / "stamp"
+    current = _helper_sources_mtime()
+    ready = stamp.exists() and float(stamp.read_text()) >= current
+    if ready:
+        ready = all((cache / name).is_file() for name in ("mash-update-processes", "mash-update-swap", "terminal-old", "terminal-new"))
+    if not ready:
+        for source, name in (("mash-update-processes.c", "mash-update-processes"), ("mash-update-swap.c", "mash-update-swap")):
+            subprocess.run(
+                [
+                    "xcrun",
+                    "--sdk",
+                    "macosx",
+                    "clang",
+                    "-Wall",
+                    "-Wextra",
+                    "-Werror",
+                    "-O2",
+                    "-mmacosx-version-min=14.0",
+                    str(ROOT / "packaging/helpers" / source),
+                    "-o",
+                    str(cache / name),
+                ],
+                check=True,
+            )
+        process_c = cache / "process.c"
+        process_c.write_text(_PROCESS_C)
+        for label in ("terminal-old", "terminal-new"):
+            subprocess.run(["xcrun", "clang", str(process_c), "-Wl,-random_uuid", "-o", str(cache / label)], check=True)
+        stamp.write_text(str(current))
+    return cache
+
 
 class UpdateFixture:
     def __init__(self):
@@ -28,36 +91,24 @@ class UpdateFixture:
         for name in ("mash-update-common", "mash-update-verify", "mash-update-apply", "mash-update-gate"):
             shutil.copy(ROOT / "packaging/helpers" / name, self.bin / name)
             (self.bin / name).chmod(0o700)
-        for source, name in (("mash-update-processes.c", "mash-update-processes"), ("mash-update-swap.c", "mash-update-swap")):
-            subprocess.run(["xcrun", "--sdk", "macosx", "clang", "-Wall", "-Wextra", "-Werror", "-O2", "-mmacosx-version-min=14.0", str(ROOT / "packaging/helpers" / source), "-o", str(self.bin / name)], check=True)
+        cache = _fixture_bin_cache()
+        for name in ("mash-update-processes", "mash-update-swap"):
+            shutil.copy(cache / name, self.bin / name)
+            (self.bin / name).chmod(0o700)
         # Different image UUIDs prove an old image cannot ACK a new target.
-        source = self.root / "process.c"
-        source.write_text('''#include <unistd.h>
-#include <stdlib.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <string.h>
-int main(int argc, char **argv) {
- if (argc > 1 && !strcmp(argv[1], "child")) { if (!fork()) { execl("/bin/sleep", "sleep", "60", NULL); return 1; } }
- const char *path = getenv("FIXTURE_SOCKET");
- if (path && argc > 1 && !strcmp(argv[1], "server")) {
-  struct sockaddr_un addr = {0}; addr.sun_family = AF_UNIX;
-  if (strlen(path) >= sizeof(addr.sun_path)) return 2;
-  strcpy(addr.sun_path, path);
-  int fd = socket(AF_UNIX, SOCK_STREAM, 0);
-  if (fd < 0 || bind(fd, (struct sockaddr *)&addr, sizeof(addr)) || listen(fd, 1)) return 3;
- }
- for (;;) pause();
-}\n''')
-        for app, version in ((self.app, "9.9.8"), (self.candidate, "9.9.9")):
+        for app, version, terminal in (
+            (self.app, "9.9.8", "terminal-old"),
+            (self.candidate, "9.9.9", "terminal-new"),
+        ):
             macos = app / "Contents/MacOS"
             macos.mkdir(parents=True)
             resources = app / "Contents/Resources"
             resources.mkdir()
             (resources / "VERSION").write_text(version + "\n")
-            (app / "Contents/Info.plist").write_bytes(plistlib.dumps({"CFBundleIdentifier": "app.mash", "CFBundleShortVersionString": version, "CFBundleVersion": version}))
-            subprocess.run(["xcrun", "clang", str(source), "-Wl,-random_uuid", "-o", str(macos / "mash-terminal")], check=True)
-        self.env = {"HOME": str(self.data.parent), "PATH": f"{self.fake}:/usr/bin:/bin:/usr/sbin:/sbin", "CALLS": str(self.calls), "FIXTURE_APP": str(self.app), "FIXTURE_CANDIDATE": str(self.candidate), "TMPDIR": str(self.root), "PYTHONDONTWRITEBYTECODE": "1"}
+            (app / "Contents/Info.plist").write_bytes(plistlib.dumps({"CFBundleIdentifier": "app.mash", "CFBundleShortVersionString": version, "CFBundleVersion": version, "MashUpdateDataCompatibility": "fixture-v1"}))
+            shutil.copy(cache / terminal, macos / "mash-terminal")
+            (macos / "mash-terminal").chmod(0o700)
+        self.env = {"HOME": str(self.data.parent), "PATH": f"{self.fake}:/usr/bin:/bin:/usr/sbin:/sbin", "CALLS": str(self.calls), "FIXTURE_APP": str(self.app), "FIXTURE_CANDIDATE": str(self.candidate), "TMPDIR": str(self.root), "PYTHONDONTWRITEBYTECODE": "1", "FIXTURE_WORKER_PID": str(os.getpid()), "FIXTURE_COMMON": str(self.bin / "mash-update-common"), "FIXTURE_PROCESS_TOOL": str(self.bin / "mash-update-processes")}
         self.stub("codesign", '''echo "codesign $*" >>"$CALLS"
 case "$1" in
 -dv) case "$2" in "$FIXTURE_APP") echo TeamIdentifier=TEAM >&2 ;; *) echo "TeamIdentifier=${FAKE_TEAM:-TEAM}" >&2 ;; esac ;;
@@ -77,7 +128,24 @@ esac''')
         self.stub("ditto", 'echo "ditto $*" >>"$CALLS"; [ "${FAKE_COPY_RC:-0}" = 0 ] || exit "$FAKE_COPY_RC"; cp -R "$1" "$2"')
         self.stub("xattr", 'echo xattr >>"$CALLS"')
         self.stub("launchctl", '''echo "launchctl $*" >>"$CALLS"
-case "$1" in print) exit 1 ;; bootstrap) exit "${FAKE_BOOTSTRAP_RC:-0}" ;; esac''')
+case "$1" in
+print) exit 1 ;;
+bootstrap)
+  [ "${FAKE_BOOTSTRAP_RC:-0}" = 0 ] || exit "$FAKE_BOOTSTRAP_RC"
+  program="$(/usr/bin/plutil -extract ProgramArguments.0 raw -o - "$3")"
+  case "$program" in
+  */mash-update-gate)
+    data="$(/usr/bin/plutil -extract ProgramArguments.3 raw -o - "$3")"
+    attempt="$(/usr/bin/plutil -extract ProgramArguments.4 raw -o - "$3")"
+    ;;
+  *)
+    data="$(/usr/bin/plutil -extract ProgramArguments.6 raw -o - "$3")"
+    attempt="$(/usr/bin/plutil -extract ProgramArguments.12 raw -o - "$3")"
+    ;;
+  esac
+  "$FIXTURE_PROCESS_TOOL" locked "$data/local/state/update-mutex" /bin/bash "$FIXTURE_COMMON" "$data" claim "$FIXTURE_WORKER_PID" "$attempt"
+  ;;
+esac''')
         self.stub("osascript", 'echo "quit $*" >>"$CALLS"; exit "${FAKE_QUIT_RC:-0}"')
         self.stub("open", 'echo "open $*" >>"$CALLS"; exit "${FAKE_OPEN_RC:-0}"')
         self.children = []

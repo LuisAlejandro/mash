@@ -31,12 +31,19 @@ export MASH_BIN="$res/bin:$res/node/bin:$res/python/bin:$d/bin"
 
 # Seeds only what is missing, so a user's own files are never replaced. This is
 # the step that makes the package usable: without it ~/.mash has no config, no
-# skills and no plugins, and Herdr would start against an empty tree.
-mash_seed_all "$res" "$d" "$home"
+# skills and no plugins, and Herdr would start against an empty tree. A failure
+# here is fatal on both platforms; say why instead of vanishing under set -e.
+mash_seed_all "$res" "$d" "$home" || {
+  printf 'Mash could not prepare %s.\n' "$d" >&2
+  exit 1
+}
 
 # Mash ships its own terminal, Herdr and Fresh, so self-updates are pinned off
 # as they are on macOS. Never replaces a file, only flips existing keys.
-mash_force_updates "$home"
+mash_force_updates "$home" || {
+  printf 'Mash could not pin its update settings; the file was kept.\n' >&2
+  exit 1
+}
 
 # Point every included tool at ~/.mash before anything starts.
 mash_isolate "$home"

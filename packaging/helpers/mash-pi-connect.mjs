@@ -5,6 +5,14 @@ import { requestJson } from "./mash-pi-http.mjs";
 import { cli, object, text, unavailable } from "./mash-pi-runtime.mjs";
 
 const APIS = ["openai-completions", "openai-responses", "anthropic-messages"];
+// The smallest honest marker each family puts on a success body. A reply that
+// carries another family's marker is a wrong-endpoint answer, not a receipt for
+// the API the wizard would persist.
+const SHAPES = {
+  "openai-completions": body => Array.isArray(body.choices) || body.object === "chat.completion",
+  "openai-responses": body => Array.isArray(body.output) || body.object === "response",
+  "anthropic-messages": body => Array.isArray(body.content) || body.type === "message",
+};
 export const PRESETS = {
   ollama: { label: "Ollama (local)", baseUrl: "http://127.0.0.1:11434/v1", metadata: "/api/tags", requireModel: true },
   lmstudio: { label: "LM Studio", baseUrl: "http://localhost:1234/v1", metadata: "/api/v1/models", requireModel: true },
@@ -13,7 +21,11 @@ export const PRESETS = {
 };
 
 const failed = (reason, extra = {}) => ({ version: 1, status: "ok", accepted: false, reason, ...extra });
-const base = url => url.replace(/\/+$/, "");
+// Pinned OpenAI/Anthropic SDKs remove only one slash when joining a route.
+const base = url => url.replace(/\/$/, "");
+// Discovery joins our own metadata route, not the SDK's, so it trims every
+// trailing slash: a pasted `.../v1///` still asks for `/v1/models`.
+const trimmed = url => url.replace(/\/+$/, "");
 const serverRoot = url => new URL(url).origin;
 
 function validRequest(r) {
@@ -27,7 +39,7 @@ function probeRequest(api, baseUrl, model, auth) {
   const headers = !auth.realKey || !text(auth.key) ? {}
     : api === "anthropic-messages" ? { "x-api-key": auth.key, "anthropic-version": "2023-06-01" } : { authorization: `Bearer ${auth.key}` };
   if (api === "anthropic-messages") {
-    return { url: `${/\/v1$/.test(base(baseUrl)) ? base(baseUrl) : `${base(baseUrl)}/v1`}/messages`, headers, body: { model, max_tokens: 1, messages: [{ role: "user", content: "Hi" }], stream: false } };
+    return { url: `${base(baseUrl)}/v1/messages`, headers, body: { model, max_tokens: 1, messages: [{ role: "user", content: "Hi" }], stream: false } };
   }
   if (api === "openai-responses") return { url: `${base(baseUrl)}/responses`, headers, body: { model, input: "Hi", max_output_tokens: 16, stream: false } };
   return { url: `${base(baseUrl)}/chat/completions`, headers, body: { model, messages: [{ role: "user", content: "Hi" }], max_tokens: 16, stream: false } };
@@ -41,13 +53,18 @@ async function attempt(api, r, auth) {
     if (response.status < 200 || response.status >= 300) return { accepted: false, reason: response.status === 401 || response.status === 403 ? "unauthorized" : response.status === 404 ? "not_found" : "rejected", http: response.status };
     // An HTML page is a wrong-endpoint answer, never a model API success.
     if (response.type && response.type !== "application/json" && !response.type.endsWith("+json")) return { accepted: false, reason: "not_json" };
+    if (!object(response.json)) return { accepted: false, reason: "not_json" };
+    if (response.json.error || response.json.type === "error" || ["error", "failed"].includes(response.json.status)) return { accepted: false, reason: "rejected" };
+    if (!SHAPES[api](response.json) && Object.keys(SHAPES).some(other => other !== api && SHAPES[other](response.json))) {
+      return { accepted: false, reason: "wrong_api" };
+    }
     return { accepted: true };
   } catch (error) { return { accepted: false, reason: error.message === "timeout" ? "timeout" : error.message }; }
 }
 
 async function discover(r, auth) {
   const preset = PRESETS[r.preset] ?? { metadata: "/models", requireModel: false };
-  const url = preset.metadata.startsWith("/api") ? serverRoot(r.baseUrl) + preset.metadata : base(r.baseUrl) + preset.metadata;
+  const url = preset.metadata.startsWith("/api") ? serverRoot(r.baseUrl) + preset.metadata : trimmed(r.baseUrl) + preset.metadata;
   const headers = auth.realKey && text(auth.key) ? { authorization: `Bearer ${auth.key}` } : {};
   let response;
   try { response = await requestJson(url, { headers, timeoutMs: 5000, selfHosted: r.selfHosted === true }); }

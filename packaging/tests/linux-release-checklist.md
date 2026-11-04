@@ -99,6 +99,18 @@ the installed app still usable. Simulate a failure after exchange (quit the new
 app before it reports ready): the recovery copy and log must remain, the state
 must read `recovery-required`, and no success must be announced.
 
+Recovery controls: with that failed state, reopen Mash and confirm the recovery
+dialog appears outside the hung app. `Retry startup` closes only the failed
+instance and relaunches it; `Restore previous` is offered only when both builds
+declare the same `MashUpdateDataCompatibility` and the retained copy passes
+signature, Gatekeeper and Team ID checks; `Later` changes nothing. No path may
+force-kill user work, and a restore must never revert `~/.mash` user data.
+
+Version disagreement: install a newer build, then relaunch while About Mash
+still shows the old version (or simulate with `MASH_RUNNING_VERSION`). A manual
+check must report `Mash restart required` naming both versions, not
+`up to date`, and no re-download must occur.
+
 Legacy transition (also blocking): repeat starting from the released 0.2.1 and
 0.2.2 builds. Those outgoing updaters run their own code, so this release
 cannot retrofit their launch gating or readiness proof. Record the outcome. If

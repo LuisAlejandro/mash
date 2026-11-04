@@ -243,6 +243,21 @@ impl FontPage {
         (self.selected, self.size, self.theme)
     }
 
+    /// Put the seeded bytes back before keybinding reconciliation, which would
+    /// otherwise keep a previewed file as a user edit. `save` then layers the
+    /// choice over the reconciled file, and nothing later restores the old one.
+    pub fn retire_live_preview(&mut self) -> Result<(), String> {
+        // Keep `live` on a failed restore: Drop retries it, and discarding the
+        // original bytes here would leave the preview looking like a user edit.
+        if let Some(live) = self.live.as_ref() {
+            if live.applied != live.initial {
+                write_config(&live.config, &live.original)?;
+            }
+        }
+        self.live = None;
+        Ok(())
+    }
+
     /// True while a change waits out the delay, so the caller keeps polling.
     pub fn live_preview_pending(&self) -> bool {
         self.live
@@ -854,6 +869,106 @@ mod tests {
         assert!(fs::read_to_string(dir.join("config"))
             .unwrap()
             .contains("font-size = 14"));
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn native_mode_and_appearance_survive_actual_seed_reconciliation_and_drop() {
+        let packaging = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+        for platform in ["Darwin", "Linux"] {
+            let (dir, mut page, mut terminal) = live_fixture(platform);
+            let resources = dir.join("resources");
+            let data = dir.join("home/.mash");
+            fs::create_dir_all(&resources).unwrap();
+            fs::create_dir_all(&data).unwrap();
+            // Read-only source defaults; all generated files stay in the fixture.
+            let defaults = resources.join("defaults");
+            fs::create_dir(&defaults).unwrap();
+            for entry in fs::read_dir(packaging.join("defaults")).unwrap() {
+                let entry = entry.unwrap();
+                if entry.file_name() != "optional-programming.txt" {
+                    std::os::unix::fs::symlink(entry.path(), defaults.join(entry.file_name()))
+                        .unwrap();
+                }
+            }
+            fs::write(defaults.join("optional-programming.txt"), "").unwrap();
+            fs::write(resources.join("VERSION"), "9.9.9\n").unwrap();
+            let reconcile = || {
+                let output = Command::new("/bin/bash")
+                    .arg(packaging.join("helpers/mash-seed-sync"))
+                    .arg(&resources)
+                    .arg(&data)
+                    .env("MASH_SEED_PLATFORM", platform)
+                    .env("PYTHONDONTWRITEBYTECODE", "1")
+                    .output()
+                    .unwrap();
+                assert!(
+                    output.status.success(),
+                    "{}",
+                    String::from_utf8_lossy(&output.stderr)
+                );
+            };
+            reconcile();
+            let config = data.join("config/ghostty/config");
+            let seeded = fs::read_to_string(&config).unwrap();
+            page.use_current(&seeded);
+            page.start_live_preview(&config, terminal.id());
+            page.live.as_mut().unwrap().delay = Duration::ZERO;
+            page.keybindings = Keybindings::Native;
+            page.theme = Theme::Light;
+            page.size += 1;
+            let chosen_size = page.size;
+            page.touched(page.live.as_ref().unwrap().initial);
+            page.poll_live_preview();
+            assert!(reloaded(&mut terminal));
+            assert_ne!(fs::read_to_string(&config).unwrap(), seeded);
+            page.retire_live_preview().unwrap();
+            assert_eq!(fs::read_to_string(&config).unwrap(), seeded);
+            page.save_mode(&data).unwrap();
+            reconcile();
+            page.save(&config).unwrap();
+            drop(page);
+            let saved = fs::read_to_string(&config).unwrap();
+            assert!(
+                saved.contains("mash-keybindings = native\n"),
+                "{platform}: {saved}"
+            );
+            assert!(
+                !saved.lines().any(|line| line.starts_with("keybind = ")),
+                "{platform}"
+            );
+            assert!(
+                saved.contains(&format!("font-size = {chosen_size}\n")),
+                "{saved}"
+            );
+            assert!(saved.contains(Theme::Light.terminal_line()), "{saved}");
+            reconcile();
+            assert_eq!(fs::read_to_string(&config).unwrap(), saved);
+            fs::remove_dir_all(dir).unwrap();
+        }
+    }
+
+    #[test]
+    fn a_failed_restore_keeps_the_original_for_the_next_attempt() {
+        let (dir, mut page, mut terminal) = live_fixture("retire-fail");
+        page.focus = SIZE;
+        page.on_key(KeyCode::Right, KeyModifiers::NONE);
+        page.poll_live_preview();
+        assert!(reloaded(&mut terminal));
+        // A directory now occupies the config path, so the atomic rename cannot
+        // land and the restore fails.
+        let config = dir.join("config");
+        fs::remove_file(&config).unwrap();
+        fs::create_dir(&config).unwrap();
+        assert!(page.retire_live_preview().is_err());
+        assert!(
+            page.live.is_some(),
+            "a failed restore must stay retryable so Drop can still undo it"
+        );
+        fs::remove_dir(&config).unwrap();
+        fs::write(&config, ORIGINAL).unwrap();
+        drop(page);
+        assert_eq!(fs::read_to_string(&config).unwrap(), ORIGINAL);
         fs::remove_dir_all(dir).unwrap();
     }
 

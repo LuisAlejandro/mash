@@ -109,7 +109,7 @@ impl VoicePage {
         Some(voice::VoiceChoice {
             model_id: model.id.clone(),
             languages,
-            needs_detector: pick.needs_detector,
+            needs_detector: model.needs_detector,
         })
     }
 
@@ -324,7 +324,7 @@ impl VoicePage {
                         None,
                     ));
                 }
-                if pick.needs_detector {
+                if pick.model(self.role).needs_detector {
                     lines.push((
                         Line::from(Span::styled(
                             format!(
@@ -354,6 +354,20 @@ mod tests {
         let choice = page.choice().expect("a choice for English");
         assert_eq!(choice.model_id, "parakeet-unified-en-0.6b");
         assert!(!choice.needs_detector);
+    }
+
+    #[test]
+    fn fast_multilingual_choice_installs_its_own_detector() {
+        let mut page = VoicePage::new();
+        for language in &mut page.languages {
+            language.checked = language.code == "en" || language.code == "zh";
+        }
+        page.recompute();
+        assert!(!page.choice().expect("Best covers en+zh").needs_detector);
+        page.role = Role::Fast;
+        let choice = page.choice().expect("Fast covers en+zh");
+        assert_eq!(choice.model_id, "Fun-ASR-Nano-2512");
+        assert!(choice.needs_detector);
     }
 
     #[test]

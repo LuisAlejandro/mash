@@ -16,6 +16,8 @@ sync="$root/packaging/helpers/mash-seed-sync"
 }
 
 tmp="$(mktemp -d)"
+# Generated resource paths are canonical, including macOS /var aliases.
+tmp="$(cd "$tmp" && pwd -P)"
 trap 'rm -rf "$tmp"' EXIT
 
 res="$tmp/res"

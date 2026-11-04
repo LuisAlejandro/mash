@@ -1,6 +1,5 @@
 #!/bin/bash
-# Outside-bundle launch waiter and healthy-server acknowledgement. A waiting
-# launch execs /bin/bash here so it does not retain the old GUI executable.
+# Outside-bundle admission, health acknowledgement, and recovery controls.
 set -u
 [ "$#" -ge 3 ] || exit 2
 action="$1" app="$2" data="$3"
@@ -9,55 +8,200 @@ bin="$(cd "$(dirname "$0")" && pwd)" || exit 2
 # shellcheck source=mash-update-common
 source "$bin/mash-update-common" || exit 1
 mash_update_init "$data" || exit 1
-case "$action" in
-wait)
+
+# Installed helpers are a safe bootstrap when reboot/temp cleanup removed an
+# old work directory. Stage them outside the bundle before waiting or opening
+# recovery UI, so they cannot keep an old executable resident during exchange.
+if [ "$action" != server-ready ]; then
   [ "$#" -ge 1 ] || exit 2
   MU_ID="$1"; shift
-  printed=0
-  while [ "$(mash_update_read id 2>/dev/null)" = "$MU_ID" ]; do
+  [ "$(mash_update_read id)" = "$MU_ID" ] || exit 1
+  canonical="$(cd "$app" && pwd -P)" || exit 1
+  [ "$(cd "$(mash_update_read app)" && pwd -P)" = "$canonical" ] || exit 1
+  if [ "$bin" = "$canonical/Contents/Resources/bin" ]; then
+    attempts="$MU_STATE/update-attempts"
+    [ ! -L "$attempts" ] && (umask 077; mkdir -p "$attempts") || exit 1
+    rescue="$(mktemp -d "$attempts/mash-update-XXXXXX")" || exit 1
+    for helper in mash-update-common mash-update-processes mash-update-gate mash-update-swap; do
+      cp "$bin/$helper" "$rescue/$helper" || exit 1
+    done
+    printf '%s\n' "$MU_ID" >"$rescue/.mash-update-owner"
+    printf '%s\n' "$MU_ID" >"$rescue/.mash-update-rescue"
+    chmod 700 "$rescue"/mash-update-*
+    exec /bin/bash "$rescue/mash-update-gate" "$action" "$app" "$data" "$MU_ID" "${@+"$@"}"
+  fi
+  "$bin/mash-update-processes" register "$data" "$app" "$$" waiter || exit 1
+fi
+cleanup() {
+  mash_update_hide_progress
+  if [ "${XPC_SERVICE_NAME:-}" = "${recovery_job:-none}" ]; then
+    (sleep 1; launchctl bootout "gui/$(id -u)/$recovery_job") </dev/null >/dev/null 2>&1 &
+  fi
+  if [ "${keep_helpers:-0}" = 0 ] && [ "$(cat "$bin/.mash-update-rescue" 2>/dev/null)" = "${MU_ID:-}" ]; then
+    case "$bin" in "$MU_STATE"/update-attempts/mash-update-??????) rm -rf "$bin" ;; esac
+  fi
+}
+trap cleanup EXIT
+recovery_dialog() {
+  local body="$1" reply
+  reply="$(osascript -e 'on run argv' \
+    -e 'set answer to display dialog (item 1 of argv) with title "Mash Update Recovery" buttons {"Later", "Restore previous", "Retry startup"} default button "Later" giving up after 300' \
+    -e 'return button returned of answer' -e 'end run' "$body" 2>>"$MU_STATE/mash-update.log")" || reply=Later
+  case "$reply" in 'Retry startup' | 'Restore previous') printf '%s\n' "$reply" ;; *) printf 'Later\n' ;; esac
+}
+case "$action" in
+wait)
+  shown=0
+  while [ "$(mash_update_read id)" = "$MU_ID" ]; do
     phase="$(mash_update_read phase)"
     case "$phase" in
     quiescing | swap-intent)
-      if ! mash_update_active; then
-        # Actual identities settle whether exchange happened between journal
-        # writes. Do not install a second candidate or blindly roll back data.
-        expected="$(mash_update_read expected_uuid)"
-        actual="$("$bin/mash-update-processes" uuid "$app/Contents/MacOS/mash-terminal" 2>/dev/null || true)"
-        if [ -n "$expected" ] && [ "$actual" = "$expected" ]; then
-          mash_update_phase recovery-required || exit 1
-        else
-          mash_update_finish failed-before-swap || exit 1
-        fi
-        break
-      fi
-      if [ "$printed" = 0 ]; then
-        printf 'Mash is updating. Waiting for the prepared application...\n' >&2
-        printed=1
-      fi
-      sleep 0.2
+      if ! mash_update_active; then mash_update_reconcile || exit 1; continue; fi
+      ;;
+    awaiting-ready)
+      if ! mash_update_active; then mash_update_reconcile || exit 1; continue; fi
+      if mash_update_bundle_is "$app" "$(mash_update_read candidate)" "$(mash_update_read expected_uuid)"; then break; fi
+      ;;
+    recovery-required)
+      mash_update_hide_progress
+      keep_helpers=1
+      exec /bin/bash "$bin/mash-update-gate" recover "$app" "$data" "$MU_ID"
       ;;
     *) break ;;
     esac
+    if [ "$shown" = 0 ]; then mash_update_progress || true; shown=1; fi
+    sleep 0.2
   done
-  # This is an exec of the currently installed executable, never the old
-  # binary path captured before exchange. New native entry revalidates state.
+  mash_update_hide_progress
+  cleanup
+  trap - EXIT
   unset MASH_BIN MASH_SETUP_HANDOFF MASH_SETUP_ERROR
-  exec "$app/Contents/MacOS/mash-terminal" "$@"
+  exec "$app/Contents/MacOS/mash-terminal" "${@+"$@"}"
+  ;;
+recover)
+  # A launchd-owned controller is reachable even when the failed GUI is hung.
+  # The incoming app/waiter exits rather than occupying LaunchServices' slot.
+  status=0
+  mash_update_recovery_submission || status=$?
+  [ "$status" != 75 ] || exit 0
+  [ "$status" = 0 ] || exit "$status"
+  MU_JOB_FILE="$bin/update-recovery-job.plist"
+  keep_helpers=1
+  if ! mash_update_bootstrap "$bin/mash-update-gate" recover-owned "$app" "$data" "$MU_ID"; then
+    mash_update_write recovery_pending 0 || true
+    mash_update_log 'recovery controller could not start; retained both app copies'
+    exit 1
+  fi
+  exit 0
+  ;;
+recover-owned)
+  [ "$(mash_update_read phase)" = recovery-required ] || exit 0
+  mash_update_claim || exit 1
+  mash_update_change recovery_pending 0 recovery_owned 1 || exit 1
+  recovery_job="$(mash_update_read job)"
+  keep_helpers=1
+  message="$(mash_update_read last_error 2>/dev/null || echo 'Startup was not confirmed.')"
+  while :; do
+    if mash_update_confirm; then break; fi
+    case "$(mash_update_read phase)" in confirmed | restored-previous) break ;; esac
+    choice="$(recovery_dialog "$message
+
+Retry closes only this Mash instance before starting it again. No application is replaced while it is running. Restore is available only for verified, data-compatible builds. Your workspace files are never rolled back.
+
+Update log: $MU_STATE/mash-update.log")"
+    [ "$choice" != Later ] || exit 0
+    restoring=0
+    if [ "$choice" = 'Restore previous' ]; then
+      backup="$(mash_update_read sibling)/Mash.app"
+      old_version="$(mash_update_read old_version)"
+      old_uuid="$(mash_update_read old_uuid 2>/dev/null || true)"
+      parent="$(dirname "$app")"
+      case "$(dirname "$backup")" in "$parent"/.mash-update-??????) ;; *) exit 1 ;; esac
+      [ ! -L "$(dirname "$backup")" ] && [ "$(cat "$(dirname "$backup")/.mash-update-owner" 2>/dev/null)" = "$MU_ID" ] || exit 1
+      current_compat="$(/usr/libexec/PlistBuddy -c 'Print :MashUpdateDataCompatibility' "$app/Contents/Info.plist" 2>/dev/null || true)"
+      backup_compat="$(/usr/libexec/PlistBuddy -c 'Print :MashUpdateDataCompatibility' "$backup/Contents/Info.plist" 2>/dev/null || true)"
+      if [ -z "$current_compat" ] || [ "$current_compat" != "$backup_compat" ] || ! mash_update_bundle_is "$backup" "$old_version" "$old_uuid"; then
+        message='Automatic restore is not safe for these builds. Both app copies were retained. Retry startup or reinstall a verified release; no user data has been reverted.'
+        continue
+      fi
+      if ! mash_update_run 600 recovery-signature codesign --verify --deep --strict "$backup" ||
+        ! mash_update_run 600 recovery-gatekeeper spctl --assess --type execute "$backup"; then
+        message='The retained application did not pass verification. It was not installed.'; continue
+      fi
+      team="$(codesign -dv "$backup" 2>&1 | sed -n 's/^TeamIdentifier=//p' | head -n 1)"
+      if [ -z "$team" ] || [ "$team" != "$(mash_update_read expected_team)" ]; then
+        message='The retained app has the wrong signing identity. It was not installed.'; continue
+      fi
+      restoring=1
+    fi
+    mash_update_progress || true
+    mash_update_phase quiescing || exit 1
+    snapshot="$MU_STATE/update-recovery-$MU_ID.processes"
+    if ! mash_update_quiesce "$app" "$snapshot"; then
+      mash_update_phase recovery-required || true
+      mash_update_hide_progress
+      message='Mash could not be closed safely. No replacement or restart was attempted. Save work and quit Mash; if it is unresponsive, use macOS Force Quit, then choose Retry startup. The updater will not force-kill user work.'
+      continue
+    fi
+    if [ "$restoring" = 1 ]; then
+      failed="$(mash_update_read failed_candidate 2>/dev/null || mash_update_read candidate)"
+      mash_update_change phase swap-intent candidate "$old_version" expected_uuid "$old_uuid" restoring 1 failed_candidate "$failed" || exit 1
+      "$bin/mash-update-processes" list "$app" "$data" >"$snapshot.final" || exit 1
+      [ ! -s "$snapshot.final" ] || exit 1
+      if ! "$bin/mash-update-swap" "$backup" "$app" >>"$MU_STATE/mash-update.log" 2>&1; then
+        mash_update_phase recovery-required || true
+        message='The previous app could not be restored atomically. Both copies were retained.'
+        continue
+      fi
+    fi
+    mash_update_launch_state "$snapshot" || exit 1
+    if ! mash_update_run 15 recovery-launch open "$app"; then
+      mash_update_phase recovery-required || true
+      mash_update_hide_progress
+      message='Mash could not be launched. Both application copies were retained.'
+      continue
+    fi
+    while [ "$(mash_update_remaining)" -gt 0 ]; do
+      if mash_update_confirm; then break 2; fi
+      case "$(mash_update_read phase)" in confirmed | restored-previous) break 2 ;; esac
+      sleep 0.2
+    done
+    mash_update_phase recovery-required || true
+    mash_update_hide_progress
+    message='The application still did not confirm a usable window and server. Retry or choose a compatible restore; both copies remain available.'
+  done
+  mash_update_hide_progress
+  sibling="$(mash_update_read sibling)"
+  case "$sibling" in "$(dirname "$app")"/.mash-update-??????)
+    if [ ! -L "$sibling" ] && [ "$(cat "$sibling/.mash-update-owner" 2>/dev/null)" = "$MU_ID" ]; then rm -rf "$sibling"; fi ;;
+  esac
+  work="$(mash_update_read work)"
+  case "$work" in /*/mash-update-??????)
+    if [ ! -L "$work" ] && [ "$(cat "$work/.mash-update-owner" 2>/dev/null)" = "$MU_ID" ]; then rm -rf "$work"; fi ;;
+  esac
+  keep_helpers=0
+  exit 0
   ;;
 server-ready)
-  # Native GUI owns its own ACK; this signal only proves the new server and
-  # explicitly binds it to that GUI's process identity.
   [ "$#" = 1 ] || exit 2
   gui_pid="$1"
   case "$(mash_update_read phase 2>/dev/null)" in awaiting-ready | recovery-required) ;; *) exit 0 ;; esac
   MU_ID="$(mash_update_read id)"
-  [ "$(mash_update_read app)" = "$app" ] || exit 1
   canonical="$(cd "$app" && pwd -P)" || exit 1
+  [ "$(cd "$(mash_update_read app)" && pwd -P)" = "$canonical" ] || exit 1
   herdr="$canonical/Contents/Resources/bin/herdr"
-  for _ in $(seq 1 150); do
+  # Old schema-1 transactions had no shared deadline. New coordinators always
+  # publish it before launch; the fallback keeps recovery backward-compatible.
+  if ! mash_update_read readiness_deadline >/dev/null; then
+    mash_update_write readiness_deadline "$(( $("$bin/mash-update-processes" now) + 180 ))" || exit 1
+  fi
+  while :; do
     [ "$(mash_update_read id)" = "$MU_ID" ] || exit 0
     case "$(mash_update_read phase)" in awaiting-ready | recovery-required) ;; *) exit 0 ;; esac
-    if HERDR_SOCKET_PATH="$data/run/herdr.sock" "$herdr" status server 2>/dev/null | grep -q 'status: running'; then
+    remaining="$(mash_update_remaining)" || exit 1
+    [ "$remaining" -gt 0 ] || exit 1
+    if mash_update_run "$remaining" herdr-health env HERDR_SOCKET_PATH="$data/run/herdr.sock" \
+      /bin/bash -o pipefail -c '"$1" status server | grep -q "status: running"' _ "$herdr"; then
       for pid in $(/usr/sbin/lsof -t "$data/run/herdr.sock" 2>/dev/null | sort -u); do
         [ "$("$bin/mash-update-processes" image "$pid" 2>/dev/null)" = "$herdr" ] || continue
         stamp="$("$bin/mash-update-processes" stamp "$pid")" || continue
@@ -74,7 +218,6 @@ server-ready)
     fi
     sleep 0.2
   done
-  exit 1
   ;;
 *) exit 2 ;;
 esac

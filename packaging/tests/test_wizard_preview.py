@@ -167,4 +167,7 @@ class WizardPreviewTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    if os.name != "posix" or not shutil.which("cargo"):
+        print("SKIP: PTY/cargo unavailable")
+        raise SystemExit(77)
     unittest.main()

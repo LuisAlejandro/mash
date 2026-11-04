@@ -44,8 +44,12 @@ if [ -f "$d/local/state/update-transaction.plist" ]; then
   quiescing | swap-intent)
     update_work="$(mash_update_read work)"
     case "$update_work" in /*/mash-update-??????) ;; *) fail "Mash's update location is invalid." ;; esac
-    [ ! -L "$update_work" ] && [ -f "$update_work/mash-update-gate" ] || fail "Mash's update helper is missing."
-    exec /bin/bash "$update_work/mash-update-gate" wait "$(dirname "$ROOT")" "$d" "$(mash_update_read id)" "${args[@]+"${args[@]}"}"
+    update_gate="$update_work/mash-update-gate"
+    if [ -L "$update_work" ] || [ ! -x "$update_gate" ]; then update_gate="$ROOT/Resources/bin/mash-update-gate"; fi
+    [ -x "$ROOT/Resources/bin/mash-update-processes" ] &&
+      "$ROOT/Resources/bin/mash-update-processes" register "$d" "$(dirname "$ROOT")" "$$" waiter ||
+      fail "Mash could not register its update waiter."
+    exec /bin/bash "$update_gate" wait "$(dirname "$ROOT")" "$d" "$(mash_update_read id)" "${args[@]+"${args[@]}"}"
     ;;
   esac
 fi

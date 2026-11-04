@@ -10,7 +10,7 @@ mash_seed_missing() {
   local src="$1"
   local dest="$2"
   [ -d "$src" ] || return 0
-  mkdir -p "$dest"
+  mkdir -p "$dest" || return 1
   # One process, not one mkdir+cp per file. defaults/pi is 52k files, and the
   # per-file loop made the first open look like a hang. --ignore-existing
   # keeps whatever the user already has, and skips what it must skip without
@@ -30,6 +30,7 @@ mash_seed_pi() {
   set --
   for suite in programming; do
     if ! mash_skill_enabled "$suite"; then
+      [ -r "$res/defaults/optional-$suite.txt" ] || return 1
       while IFS= read -r path; do
         [ -n "$path" ] && set -- "$@" "--exclude=/$path"
       done <"$res/defaults/optional-$suite.txt"
@@ -41,59 +42,58 @@ mash_seed_pi() {
   if grep -qx 'mode=native' "$d/setup/keybindings-mode" 2>/dev/null; then
     set -- "$@" --exclude=/keybindings.json
   fi
-  mkdir -p "$d/pi/agent"
+  mkdir -p "$d/pi/agent" || return 1
   rsync -a --ignore-existing "$@" "$res/defaults/pi/" "$d/pi/agent/"
 }
 
-# The notifier's click runs from Notification Center, which has none of the
-# pane's herdr environment: without the socket path the click looks for
-# ~/.config/herdr/herdr.sock, finds nothing, and does nothing at all -- and it
-# could not raise the window even if it found the server. bin/mash-notify
-# rewrites that click at notify time, when the paths are still available. The
-# absolute path is written here because only the launcher knows where the bundle
-# lives. Any other NOTIFIER line is dropped so the setting cannot go stale after
-# moving the app.
+# Initial fallback only. The ownership seeder retargets existing untouched
+# notifier defaults on relocation; rewriting here would invalidate its digest
+# or replace a user's own notifier. Notification clicks use Mash's wrapper.
 mash_write_notifier_config() {
-  local res="$1" d="$2" cfg tmp
+  local res="$1" d="$2" cfg tmp src
   cfg="$d/config/herdr/plugins/config/dot.terminal-notifier/config.env"
-  # macOS only: the notifier plugin is staged for Darwin alone (carry.sh), and
-  # Linux delivers notifications as OSC9/OSC99 through the terminal instead.
-  # Writing NOTIFIER there would configure a plugin that does not exist.
   [ "${MASH_UNAME:-$(uname -s)}" = "Darwin" ] || return 0
   [ -x "$res/bin/mash-notify" ] || return 0
-  mkdir -p "$(dirname "$cfg")"
-  tmp="$cfg.tmp"
-  : >"$tmp"
-  [ -f "$cfg" ] && grep -v '^NOTIFIER=' "$cfg" >>"$tmp"
-  printf 'NOTIFIER=%s\n' "$res/bin/mash-notify" >>"$tmp"
-  mv "$tmp" "$cfg"
+  [ ! -e "$cfg" ] && [ ! -L "$cfg" ] || return 0
+  mkdir -p "$(dirname "$cfg")" || return 1
+  tmp="$(mktemp "$cfg.XXXXXX")" || return 1
+  src="$res/defaults/plugins/dot.terminal-notifier/config.env"
+  if [ -f "$src" ]; then
+    sed '/^NOTIFIER=/d' "$src" >"$tmp" || { rm -f "$tmp"; return 1; }
+  fi
+  printf 'NOTIFIER=%s\n' "$res/bin/mash-notify" >>"$tmp" &&
+    mv "$tmp" "$cfg" || { rm -f "$tmp"; return 1; }
 }
 
 # References and the mash-parallel venv live under ~/.mash/config/mash.
-# The venv's Python symlink is retargeted at this bundle. Existing files stay.
+# Only a fresh fallback copy is retargeted here. Existing venv files belong to
+# the provenance seeder, which preserves user edits and reconciles relocation.
 mash_seed_programming_skills() {
-  local src venv py cfg current script
+  local src venv py cfg current script copied=0
   mash_skill_enabled programming || return 0
   src="$res/defaults/mash-config"
   [ -d "$src" ] || return 0
-  mash_seed_missing "$src/references" "$d/config/mash/references"
+  mash_seed_missing "$src/references" "$d/config/mash/references" || return 1
   if [ ! -f "$d/config/mash/hindsight-pin" ] && [ -f "$src/hindsight-pin" ]; then
-    cp "$src/hindsight-pin" "$d/config/mash/hindsight-pin"
+    cp "$src/hindsight-pin" "$d/config/mash/hindsight-pin" || return 1
   fi
   venv="$d/config/mash/venvs/mash-parallel"
-  if [ -d "$src/venvs/mash-parallel" ] && [ ! -e "$venv/pyvenv.cfg" ]; then
-    mkdir -p "$d/config/mash/venvs"
-    cp -a "$src/venvs/mash-parallel" "$venv"
+  if [ -d "$src/venvs/mash-parallel" ] && [ ! -e "$venv" ] && [ ! -L "$venv" ]; then
+    mkdir -p "$d/config/mash/venvs" || return 1
+    cp -a "$src/venvs/mash-parallel" "$venv" || return 1
+    copied=1
   fi
   py="$res/python/bin/python3"
-  if [ -d "$venv/bin" ] && [ -x "$py" ]; then
+  # Existing venv entries, including user edits, belong to seed-sync alone.
+  if [ "$copied" = 1 ] && [ -d "$venv/bin" ]; then
+    [ -x "$py" ] || return 1
     current="$(readlink "$venv/bin/python" 2>/dev/null || true)"
-    [ "$current" = "$py" ] || ln -sfn "$py" "$venv/bin/python"
+    [ "$current" = "$py" ] || ln -sfn "$py" "$venv/bin/python" || return 1
     current="$(readlink "$venv/bin/python3" 2>/dev/null || true)"
-    [ "$current" = "python" ] || ln -sfn python "$venv/bin/python3"
+    [ "$current" = "python" ] || ln -sfn python "$venv/bin/python3" || return 1
     if [ -L "$venv/bin/python3.13" ]; then
       current="$(readlink "$venv/bin/python3.13" 2>/dev/null || true)"
-      [ "$current" = "python" ] || ln -sfn python "$venv/bin/python3.13"
+      [ "$current" = "python" ] || ln -sfn python "$venv/bin/python3.13" || return 1
     fi
     cfg="$venv/pyvenv.cfg"
     if [ -f "$cfg" ]; then
@@ -106,14 +106,14 @@ mash_seed_programming_skills() {
                     if (!h) print "home = " homebin
                     if (!e) print "executable = " exe
                 }
-            ' "$cfg" >"$cfg.tmp"
+            ' "$cfg" >"$cfg.tmp" || return 1
       if cmp -s "$cfg.tmp" "$cfg"; then
-        rm -f "$cfg.tmp"
+        rm -f "$cfg.tmp" || return 1
       else
-        mv "$cfg.tmp" "$cfg"
+        mv "$cfg.tmp" "$cfg" || return 1
       fi
     fi
-    PYTHONNOUSERSITE=1 "$py" - "$venv" <<'PY'
+    PYTHONDONTWRITEBYTECODE=1 PYTHONNOUSERSITE=1 "$py" - "$venv" <<'PY' || return 1
 import os, sys
 venv = sys.argv[1]
 bindir = os.path.join(venv, "bin")
@@ -134,8 +134,8 @@ for name in os.listdir(bindir):
 PY
   fi
   script="$d/pi/agent/skills/mash-parallel"
-  if [ -d "$script" ] && [ -d "$venv" ] && [ ! -e "$script/.venv" ]; then
-    ln -s "$venv" "$script/.venv"
+  if [ -d "$script" ] && [ -d "$venv" ] && [ ! -e "$script/.venv" ] && [ ! -L "$script/.venv" ]; then
+    ln -s "$venv" "$script/.venv" || return 1
   fi
 }
 
@@ -146,8 +146,8 @@ mash_seed_hindsight() {
   local src="$res/defaults/mash-config/hindsight-embed.env"
   mash_skill_enabled programming || return 0
   [ -f "$src" ] || return 0
-  mkdir -p "$d/.hindsight" "$d/.local/bin" "$d/.pg0" "$d/setup"
-  [ -f "$d/.hindsight/embed" ] || cp "$src" "$d/.hindsight/embed"
+  mkdir -p "$d/.hindsight" "$d/.local/bin" "$d/.pg0" "$d/setup" || return 1
+  [ -f "$d/.hindsight/embed" ] || cp "$src" "$d/.hindsight/embed" || return 1
 }
 
 
@@ -170,29 +170,31 @@ mash_seed_configs() {
   [ -f "$res/VERSION" ] && version="$(tr -d '[:space:]' <"$res/VERSION")"
   mkdir -p "$d/config/herdr" "$d/config/ghostty" "$d/config/zsh" \
     "$d/config/bash" "$d/config/fish" \
-    "$d/config/git" "$d/config/pet"
+    "$d/config/git" "$d/config/pet" || return 1
   if [ ! -f "$d/config/herdr/config.toml" ]; then
+    [ -r "$res/defaults/herdr/config${suffix}.toml" ] || return 1
     sed -e "s#__MASH_SHELL__#$d/bin/mash-shell#g" \
       -e "s#__MASH_CONFIG__#$d/config#g" \
       -e "s#__MASH_VERSION__#$version#g" \
-      "$res/defaults/herdr/config${suffix}.toml" >"$d/config/herdr/config.toml"
+      "$res/defaults/herdr/config${suffix}.toml" >"$d/config/herdr/config.toml" || return 1
   fi
   # The terminal config names herdr-pane by absolute path, so the placeholder is
   # substituted here the same way the Herdr config's shell path is above.
   if [ ! -f "$d/config/ghostty/config" ]; then
+    [ -r "$res/defaults/ghostty/config${suffix}" ] || return 1
     sed -e "s#__MASH_HERDR_PANE__#$res/bin/herdr-pane#g" \
-      "$res/defaults/ghostty/config${suffix}" >"$d/config/ghostty/config"
+      "$res/defaults/ghostty/config${suffix}" >"$d/config/ghostty/config" || return 1
   fi
   # Fresh reads config.json only, so the Linux keymap is seeded under that name.
   # Seeding it before the tree copy below means --ignore-existing leaves it
   # alone instead of replacing it with the macOS keymap.
   if [ -n "$suffix" ] && [ -f "$res/defaults/fresh/config.linux.json" ]; then
-    mkdir -p "$d/config/fresh"
+    mkdir -p "$d/config/fresh" || return 1
     [ -f "$d/config/fresh/config.json" ] ||
-      cp "$res/defaults/fresh/config.linux.json" "$d/config/fresh/config.json"
+      cp "$res/defaults/fresh/config.linux.json" "$d/config/fresh/config.json" || return 1
   fi
   [ -f "$d/config/zsh/.zshenv" ] ||
-    cp "$res/defaults/zsh/.zshenv" "$d/config/zsh/.zshenv"
+    cp "$res/defaults/zsh/.zshenv" "$d/config/zsh/.zshenv" || return 1
   # The pane shell's own startup, one file per dialect: MASH_BIN first,
   # native completion, atuin and Starship. Each is found through a redirect the
   # launcher already establishes -- ZDOTDIR for zsh, XDG_CONFIG_HOME for fish,
@@ -200,36 +202,37 @@ mash_seed_configs() {
   # path work in .zshenv because non-interactive pane scripts need it too.
   # STARSHIP_CONFIG points every shell at the one seeded prompt config.
   [ -f "$d/config/starship.toml" ] ||
-    cp "$res/defaults/starship.toml" "$d/config/starship.toml"
+    cp "$res/defaults/starship.toml" "$d/config/starship.toml" || return 1
   for shell_rc in zsh/.zshrc bash/bashrc fish/config.fish; do
     [ -f "$d/config/$shell_rc" ] ||
-      cp "$res/defaults/$shell_rc" "$d/config/$shell_rc"
+      cp "$res/defaults/$shell_rc" "$d/config/$shell_rc" || return 1
   done
   [ -f "$d/config/git/config" ] ||
-    cp "$res/defaults/git/config" "$d/config/git/config"
+    cp "$res/defaults/git/config" "$d/config/git/config" || return 1
   # git's default global excludes file lives under the XDG directory Mash pins
   # to ~/.mash/config, so it needs no core.excludesFile entry to be read.
   [ -f "$d/config/git/ignore" ] ||
-    cp "$res/defaults/git/ignore" "$d/config/git/ignore"
-  if [ ! -f "$d/config/pet/snippet.toml" ]; then
+    cp "$res/defaults/git/ignore" "$d/config/git/ignore" || return 1
+  if [ ! -f "$d/config/pet/config.toml" ]; then
     sed "s#__MASH_PET_SNIPPET__#$d/config/pet/snippet.toml#" \
-      "$res/defaults/pet/config.toml" >"$d/config/pet/config.toml"
-    cp "$res/defaults/pet/snippet.toml" "$d/config/pet/snippet.toml"
+      "$res/defaults/pet/config.toml" >"$d/config/pet/config.toml" || return 1
   fi
+  [ -f "$d/config/pet/snippet.toml" ] ||
+    cp "$res/defaults/pet/snippet.toml" "$d/config/pet/snippet.toml" || return 1
   # The in-product cheat sheet lists chords, so it follows the platform too.
   if [ -n "$suffix" ] &&
     [ -f "$res/defaults/pi/extensions/keybindings-quickref.linux.txt" ]; then
-    mkdir -p "$d/pi/agent/extensions"
+    mkdir -p "$d/pi/agent/extensions" || return 1
     [ -f "$d/pi/agent/extensions/keybindings-quickref.txt" ] ||
       cp "$res/defaults/pi/extensions/keybindings-quickref.linux.txt" \
-        "$d/pi/agent/extensions/keybindings-quickref.txt"
+        "$d/pi/agent/extensions/keybindings-quickref.txt" || return 1
   fi
 
   # The pane shell itself is copied out of the read-only tree so a package
   # upgrade does not change the shell underneath a running pane.
-  cp "$res/bin/lib.sh" "$d/bin/lib.sh"
-  cp "$res/bin/launch-common.sh" "$d/bin/launch-common.sh"
-  cp "$res/bin/mash-shell" "$d/bin/mash-shell"
+  cp "$res/bin/lib.sh" "$d/bin/lib.sh" || return 1
+  cp "$res/bin/launch-common.sh" "$d/bin/launch-common.sh" || return 1
+  cp "$res/bin/mash-shell" "$d/bin/mash-shell" || return 1
   chmod 755 "$d/bin/lib.sh" "$d/bin/launch-common.sh" "$d/bin/mash-shell"
 }
 
@@ -284,30 +287,34 @@ mash_file_mode() {
 #   mash_seed_all <resource-root> <data-dir> <account-home>
 mash_seed_all() {
   local res="$1" d="$2" home="$3"
-  mash_protect_data_dir "$d"
+  mash_protect_data_dir "$d" || return 1
   mkdir -p \
     "$d/config/herdr" "$d/config/ghostty" "$d/config/git" "$d/config/gh" \
     "$d/config/fresh" "$d/config/zsh" "$d/config/pet" "$d/config/atuin" \
     "$d/config/lazygit" "$d/config/lazydocker" "$d/config/mash" \
     "$d/local/state" "$d/local/share/fresh" "$d/local/share/zoxide" \
-    "$d/cache" "$d/pi/agent" "$d/run" "$d/bin"
+    "$d/cache" "$d/pi/agent" "$d/run" "$d/bin" || return 1
 
   # Reconcile before the seed-if-missing helpers below. Otherwise a deleted file
   # would be re-copied from the new defaults before we can compare it to its
   # previous digest, making a legitimate restore look like a user edit.
-  [ -x "$res/bin/mash-seed-sync" ] &&
-    "$res/bin/mash-seed-sync" "$res" "$d" || true
+  if [ -x "$res/bin/mash-seed-sync" ]; then
+    "$res/bin/mash-seed-sync" "$res" "$d" || return 1
+  fi
 
-  mash_seed_configs "$res" "$d"
-  mash_seed_missing "$res/defaults/ghostty/themes" "$d/config/ghostty/themes"
-  mash_seed_missing "$res/defaults/fresh" "$d/config/fresh"
-  mash_seed_pi
-  mash_seed_missing "$res/defaults/plugins" "$d/config/herdr/plugins/config"
-  mash_write_notifier_config "$res" "$d"
-  mash_seed_missing "$res/defaults/atuin" "$d/config/atuin"
-  mash_seed_missing "$res/defaults/lazydocker" "$d/config/lazydocker"
-  mash_seed_programming_skills
-  mash_seed_hindsight
+  mash_seed_configs "$res" "$d" || return 1
+  mash_seed_missing "$res/defaults/ghostty/themes" "$d/config/ghostty/themes" || return 1
+  mash_seed_missing "$res/defaults/fresh" "$d/config/fresh" || return 1
+  [ -f "$d/config/fresh/config.json" ] || return 1
+  mash_seed_pi || return 1
+  # Render a missing notifier before the raw tree copy can fill that path.
+  mash_write_notifier_config "$res" "$d" || return 1
+  mash_seed_missing "$res/defaults/plugins" "$d/config/herdr/plugins/config" || return 1
+  mash_seed_missing "$res/defaults/atuin" "$d/config/atuin" || return 1
+  mash_seed_missing "$res/defaults/lazydocker" "$d/config/lazydocker" || return 1
+  mash_seed_programming_skills || printf 'Mash: optional Programming Skills seeding failed; continuing.\n' >&2
+  mash_seed_hindsight || printf 'Mash: optional memory seeding failed; continuing.\n' >&2
+  return 0
 }
 
 mash_link_plugins() {

@@ -9,13 +9,14 @@ import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadRuntime } from "../helpers/mash-pi-runtime.mjs";
+import { connect } from "../helpers/mash-pi-connect.mjs";
 
 // Only the staged build gate has a real pin; ordinary `make test` has none and
 // a mock would prove nothing here, so this suite states that it did not run.
 const pin = process.argv[2];
 if (!pin) {
   console.log("skip - Pi client conformance needs a staged pin: test_pi_runtime.sh <resource-root>");
-  process.exit(0);
+  process.exit(77);
 }
 
 const root = await mkdtemp(join(tmpdir(), "mash-pi-client-"));
@@ -31,6 +32,20 @@ const server = createServer(async (req, res) => {
   for await (const chunk of req) raw += chunk;
   const body = raw ? JSON.parse(raw) : undefined;
   requests.push({ path: req.url, headers: req.headers, body });
+  if (req.url.startsWith("/prefix/")) {
+    // Stop the real SDK after recording its path; 401 must not retry. The
+    // wizard's nonstreaming probe gets the body its own API family would send,
+    // so a cross-family reply cannot be mistaken for a receipt.
+    const path = req.url.split("?")[0];
+    const success = path.endsWith("/messages") ? { type: "message", content: [] }
+      : path.endsWith("/responses") ? { object: "response", output: [] }
+      : { choices: [] };
+    res.writeHead(body?.stream ? 401 : 200, { "content-type": "application/json" });
+    res.end(JSON.stringify(body?.stream
+      ? { type: "error", error: { type: "authentication_error", message: "fixture only" } }
+      : success));
+    return;
+  }
   const base = { id: "1", object: "chat.completion.chunk", created: 0, model: body?.model };
   res.writeHead(200, { "content-type": "text/event-stream" });
   res.end(
@@ -134,6 +149,37 @@ try {
   assert.equal(sent.body.tools[0].function.parameters.required[0], "zone");
   assert.equal(sent.headers.authorization, "Bearer mash-local");
   console.log("ok - a saved local connection carries text and structured tool calls through the real Pi client");
+
+  // Anthropic's pinned SDK appends /v1/messages even when the supplied base
+  // already ends in /v1. Certify the persisted route, not a friendlier probe URL.
+  for (const tail of ["/prefix/v1", "/prefix/v1///"]) {
+    for (const [api, route] of [["anthropic-messages", "/v1/messages"],
+      ["openai-completions", "/chat/completions"], ["openai-responses", "/responses"]]) {
+      const fixtureBase = baseUrl.replace(/\/v1$/, tail);
+      const probe = await connect({ version: 1, action: "probe", agentDir,
+        provider: "fixture-api", baseUrl: fixtureBase, api,
+        model: "fixture-model", mode: "none", nonce: "a".repeat(64), consent: true, selfHosted: true },
+        { packageDir: pin });
+      assert.equal(probe.accepted, true);
+      const probePath = requests.at(-1).path;
+      await writeFile(join(agentDir, "models.json"), JSON.stringify({ providers: {
+        "fixture-api": { baseUrl: fixtureBase, api: probe.api, models: [{ id: "fixture-model" }] },
+      } }));
+      await credentials.modify("fixture-api", async () => ({ type: "api_key", key: "fixture-only-key" }));
+      const client = await sdk.ModelRuntime.create({ credentials, modelsStore: new sdk.InMemoryModelsStore(),
+        modelsPath: join(agentDir, "models.json"), refreshOnCreate: false, allowModelNetwork: false });
+      const configured = client.getModel("fixture-api", "fixture-model");
+      assert.ok(configured, client.getError());
+      const beforeRequest = requests.length;
+      await client.complete(configured, { messages: [{ role: "user", content: "Hi" }] },
+        { signal: AbortSignal.timeout(20000) });
+      assert.equal(requests.length, beforeRequest + 1, "the real SDK must send a request");
+      assert.equal(probePath, tail.replace(/\/$/, "") + route);
+      assert.equal(requests.at(-1).path.split("?")[0], probePath,
+        `${api}: wizard and pinned client must use the exact same saved base path`);
+    }
+  }
+  console.log("ok - all three probes match real pinned SDK paths, including prefixed /v1 and repeated trailing slashes");
 } finally {
   server.closeAllConnections();
   await new Promise((resolve) => server.close(resolve));

@@ -422,6 +422,11 @@ version="$(tr -d '[:space:]' <"$root/VERSION")"
 [ -n "$version" ] || { echo "VERSION is empty." >&2; exit 1; }
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $version" "$plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $version" "$plist"
+# Rollback is allowed only when both signed builds explicitly declare the
+# same app data schema AND identical bundled component pins. Bump the schema
+# prefix when Mash-owned persistent data becomes incompatible.
+data_compat="v1:$(shasum -a 256 "$root/packaging/pins.txt" | awk '{print $1}')"
+/usr/libexec/PlistBuddy -c "Add :MashUpdateDataCompatibility string $data_compat" "$plist"
 # The shared seed ownership helper needs the same release id on macOS as on
 # Linux, where build-common.sh already stages Resources/VERSION.
 printf '%s\n' "$version" >"$app/Contents/Resources/VERSION"

@@ -95,6 +95,7 @@ pub enum Outcome {
     Models {
         ids: Vec<String>,
         revision: Option<String>,
+        complete: bool,
     },
     /// The endpoint accepted a real request on this API family.
     Accepted {
@@ -138,6 +139,9 @@ fn explain(reason: &str, http: Option<u64>) -> String {
         }
         "redirected" => "The endpoint redirected elsewhere; enter the final address.",
         "not_json" => "That address answered with a page, not a model API.",
+        "wrong_api" => {
+            "That address answered for a different API type; check the address and the selected API."
+        }
         "no_models" => "The server is running but has no chat model loaded.",
         "stale" => "The connection changed while checking. Test it again.",
         "consent_required" => "Testing sends one short request. Confirm to continue.",
@@ -174,6 +178,7 @@ impl Outcome {
         if let Some(models) = value["models"].as_array() {
             return Ok(Outcome::Models {
                 revision: clean(value, "revision"),
+                complete: value["truncated"] == false && models.len() <= 500,
                 ids: models
                     .iter()
                     .filter_map(|row| clean(&serde_json::json!({ "id": row }), "id"))
@@ -425,6 +430,7 @@ mod tests {
             Outcome::Models {
                 ids: vec!["a:1".into()],
                 revision: None,
+                complete: false,
             }
         );
         assert_eq!(

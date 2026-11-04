@@ -4,7 +4,7 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 if [ "$(uname -s)" != Darwin ]; then
   echo 'SKIP: macOS property lists and process identity'
-  exit 0
+  exit 77
 fi
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
@@ -38,14 +38,22 @@ fi
 [ "$(mash_update_read id)" = "$new" ]
 MU_ID="$new"
 mash_update_write owner_start invalid
-! mash_update_active
+if mash_update_active; then
+  echo 'FAIL: a stale owner was reported active' >&2; exit 1
+fi
 mash_update_finish failed-before-swap
 # An unsafe state path is rejected before writing through it.
 rm -f "$MU_TX"
 ln -s "$tmp/do-not-write" "$MU_TX"
-! mash_update_begin "$tmp/Mash.app" 9.9.9 9.9.8 "$tmp/mash-update-ABCDEF"
+if mash_update_begin "$tmp/Mash.app" 9.9.9 9.9.8 "$tmp/mash-update-ABCDEF"; then
+  echo 'FAIL: a symlinked transaction was accepted' >&2; exit 1
+fi
 [ ! -e "$tmp/do-not-write" ]
 # The existing handoff fixture must never share a production label or app path.
-! grep -q '^label="app.mash.update"$' "$root/packaging/tests/test_mash_update_handoff.sh"
-! grep -q '/Applications/Mash.app' "$root/packaging/tests/test_mash_update_handoff.sh"
+if grep -q '^label="app.mash.update"$' "$root/packaging/tests/test_mash_update_handoff.sh"; then
+  echo 'FAIL: handoff fixture uses the production launchd label' >&2; exit 1
+fi
+if grep -q '/Applications/Mash.app' "$root/packaging/tests/test_mash_update_handoff.sh"; then
+  echo 'FAIL: handoff fixture uses the production app path' >&2; exit 1
+fi
 echo 'PASS: exclusive update state, stale ownership, safe cleanup and fixture isolation'
