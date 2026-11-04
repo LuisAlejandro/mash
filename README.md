@@ -2,7 +2,7 @@
 
 ---
 
-[![](https://img.shields.io/github/release/LuisAlejandro/mash.svg)](https://github.com/LuisAlejandro/mash/releases) [![](https://img.shields.io/github/actions/workflow/status/LuisAlejandro/mash/push.yml)](https://github.com/LuisAlejandro/mash/actions/workflows/push.yml) [![](https://img.shields.io/discord/809504357359157288.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/4Wc7xphH5e) [![](https://cla-assistant.io/readme/badge/LuisAlejandro/mash)](https://cla-assistant.io/LuisAlejandro/mash)
+[![](https://img.shields.io/github/release/LuisAlejandro/mash.svg)](https://github.com/LuisAlejandro/mash/releases) [![](https://img.shields.io/github/actions/workflow/status/LuisAlejandro/mash/push.yml)](https://github.com/LuisAlejandro/mash/actions/workflows/push.yml) [![](https://img.shields.io/discord/1556678684063301682.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/Wk95fG7w2C) [![](https://cla-assistant.io/readme/badge/LuisAlejandro/mash)](https://cla-assistant.io/LuisAlejandro/mash)
 
 Current version: 0.2.2
 
