@@ -1,0 +1,90 @@
+{
+  "herdr.command.annotate-text": {
+    "text": "chú thích văn bản",
+    "source_hash": "30aff55ff069"
+  },
+  "herdr.command.check-for-updates": {
+    "text": "Kiểm tra bản cập nhật",
+    "source_hash": "9ed79ee9b212"
+  },
+  "herdr.command.command-palette": {
+    "text": "Bảng lệnh",
+    "source_hash": "0347f794d69c"
+  },
+  "herdr.command.container-status": {
+    "text": "Trạng thái container",
+    "source_hash": "ec8cbe398459"
+  },
+  "herdr.command.file-finder": {
+    "text": "Tìm tệp",
+    "source_hash": "ad77cff03b9f"
+  },
+  "herdr.command.fork-agent": {
+    "text": "Tách tác tử từ tin nhắn",
+    "source_hash": "5c313f94cc7f"
+  },
+  "herdr.command.manage-annotations": {
+    "text": "quản lý chú thích",
+    "source_hash": "eee1538430e1"
+  },
+  "herdr.command.new-agent-tab": {
+    "text": "tab tác tử mới",
+    "source_hash": "e77139a8ffa8"
+  },
+  "herdr.command.new-dev-tab": {
+    "text": "tab phát triển mới (trình soạn thảo + tác tử)",
+    "source_hash": "1b5f35ed5d61"
+  },
+  "herdr.command.new-plain-shell-tab": {
+    "text": "tab shell đơn giản mới",
+    "source_hash": "74ce437b230f"
+  },
+  "herdr.command.new-review-tab": {
+    "text": "tab đánh giá mới (diff + tác tử)",
+    "source_hash": "214404f418c9"
+  },
+  "herdr.command.new-shell-pane": {
+    "text": "khung shell mới dưới Fresh",
+    "source_hash": "fff45de0249d"
+  },
+  "herdr.command.new-workspace": {
+    "text": "Không gian làm việc mới (hồ sơ bố cục)",
+    "source_hash": "c5e156ebeed4"
+  },
+  "herdr.command.new-worktree": {
+    "text": "Cây làm việc mới (hồ sơ bố cục)",
+    "source_hash": "aeff6f1ba8e9"
+  },
+  "herdr.command.paste-annotations": {
+    "text": "dán chú thích vào tác tử của tab này và lưu trữ",
+    "source_hash": "a9b21d76fa9c"
+  },
+  "herdr.command.pick-link": {
+    "text": "Chọn liên kết hoặc ID",
+    "source_hash": "82572d1919b2"
+  },
+  "herdr.command.plugin-manager": {
+    "text": "Trình quản lý plugin",
+    "source_hash": "6d56df78dd25"
+  },
+  "herdr.command.session-search": {
+    "text": "Tìm kiếm phiên",
+    "source_hash": "82c4a0945515"
+  },
+  "herdr.command.snippets": {
+    "text": "Đoạn mã",
+    "source_hash": "ff717209de74"
+  },
+  "herdr.command.source-control": {
+    "text": "Quản lý phiên bản",
+    "source_hash": "9bd7eab78605"
+  },
+  "herdr.command.workspace-picker": {
+    "text": "Chọn không gian làm việc",
+    "source_hash": "2103daf47b34"
+  },
+  "herdr.config.window-title": {
+    "text": "Mash › {workspace} › {tab}",
+    "source_hash": "bee749ea4346"
+  }
+}

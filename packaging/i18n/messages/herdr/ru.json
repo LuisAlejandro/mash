@@ -1,0 +1,90 @@
+{
+  "herdr.command.annotate-text": {
+    "text": "аннотировать текст",
+    "source_hash": "30aff55ff069"
+  },
+  "herdr.command.check-for-updates": {
+    "text": "Проверить обновления",
+    "source_hash": "9ed79ee9b212"
+  },
+  "herdr.command.command-palette": {
+    "text": "Палитра команд",
+    "source_hash": "0347f794d69c"
+  },
+  "herdr.command.container-status": {
+    "text": "Состояние контейнеров",
+    "source_hash": "ec8cbe398459"
+  },
+  "herdr.command.file-finder": {
+    "text": "Поиск файлов",
+    "source_hash": "ad77cff03b9f"
+  },
+  "herdr.command.fork-agent": {
+    "text": "Ответвить агента из сообщения",
+    "source_hash": "5c313f94cc7f"
+  },
+  "herdr.command.manage-annotations": {
+    "text": "управление аннотациями",
+    "source_hash": "eee1538430e1"
+  },
+  "herdr.command.new-agent-tab": {
+    "text": "новая вкладка агента",
+    "source_hash": "e77139a8ffa8"
+  },
+  "herdr.command.new-dev-tab": {
+    "text": "новая вкладка разработки (редактор + агент)",
+    "source_hash": "1b5f35ed5d61"
+  },
+  "herdr.command.new-plain-shell-tab": {
+    "text": "новая вкладка простой оболочки",
+    "source_hash": "74ce437b230f"
+  },
+  "herdr.command.new-review-tab": {
+    "text": "новая вкладка проверки (diff + агент)",
+    "source_hash": "214404f418c9"
+  },
+  "herdr.command.new-shell-pane": {
+    "text": "новая панель оболочки под Fresh",
+    "source_hash": "fff45de0249d"
+  },
+  "herdr.command.new-workspace": {
+    "text": "Новое рабочее пространство (профиль раскладки)",
+    "source_hash": "c5e156ebeed4"
+  },
+  "herdr.command.new-worktree": {
+    "text": "Новое рабочее дерево (профиль раскладки)",
+    "source_hash": "aeff6f1ba8e9"
+  },
+  "herdr.command.paste-annotations": {
+    "text": "вставить аннотации в агента этой вкладки и заархивировать их",
+    "source_hash": "a9b21d76fa9c"
+  },
+  "herdr.command.pick-link": {
+    "text": "Выбрать ссылку или ID",
+    "source_hash": "82572d1919b2"
+  },
+  "herdr.command.plugin-manager": {
+    "text": "Менеджер плагинов",
+    "source_hash": "6d56df78dd25"
+  },
+  "herdr.command.session-search": {
+    "text": "Поиск по сессиям",
+    "source_hash": "82c4a0945515"
+  },
+  "herdr.command.snippets": {
+    "text": "Сниппеты",
+    "source_hash": "ff717209de74"
+  },
+  "herdr.command.source-control": {
+    "text": "Контроль версий",
+    "source_hash": "9bd7eab78605"
+  },
+  "herdr.command.workspace-picker": {
+    "text": "Выбор рабочего пространства",
+    "source_hash": "2103daf47b34"
+  },
+  "herdr.config.window-title": {
+    "text": "Mash › {workspace} › {tab}",
+    "source_hash": "bee749ea4346"
+  }
+}

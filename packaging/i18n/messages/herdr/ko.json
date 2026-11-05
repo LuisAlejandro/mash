@@ -1,0 +1,90 @@
+{
+  "herdr.command.annotate-text": {
+    "text": "텍스트에 주석 달기",
+    "source_hash": "30aff55ff069"
+  },
+  "herdr.command.check-for-updates": {
+    "text": "업데이트 확인",
+    "source_hash": "9ed79ee9b212"
+  },
+  "herdr.command.command-palette": {
+    "text": "명령 팔레트",
+    "source_hash": "0347f794d69c"
+  },
+  "herdr.command.container-status": {
+    "text": "컨테이너 상태",
+    "source_hash": "ec8cbe398459"
+  },
+  "herdr.command.file-finder": {
+    "text": "파일 찾기",
+    "source_hash": "ad77cff03b9f"
+  },
+  "herdr.command.fork-agent": {
+    "text": "메시지에서 에이전트 분기",
+    "source_hash": "5c313f94cc7f"
+  },
+  "herdr.command.manage-annotations": {
+    "text": "주석 관리",
+    "source_hash": "eee1538430e1"
+  },
+  "herdr.command.new-agent-tab": {
+    "text": "새 에이전트 탭",
+    "source_hash": "e77139a8ffa8"
+  },
+  "herdr.command.new-dev-tab": {
+    "text": "새 개발 탭 (편집기 + 에이전트)",
+    "source_hash": "1b5f35ed5d61"
+  },
+  "herdr.command.new-plain-shell-tab": {
+    "text": "새 셸 탭",
+    "source_hash": "74ce437b230f"
+  },
+  "herdr.command.new-review-tab": {
+    "text": "새 리뷰 탭 (diff + 에이전트)",
+    "source_hash": "214404f418c9"
+  },
+  "herdr.command.new-shell-pane": {
+    "text": "Fresh 아래 새 셸 창",
+    "source_hash": "fff45de0249d"
+  },
+  "herdr.command.new-workspace": {
+    "text": "새 작업 공간 (레이아웃 프로필)",
+    "source_hash": "c5e156ebeed4"
+  },
+  "herdr.command.new-worktree": {
+    "text": "새 작업 트리 (레이아웃 프로필)",
+    "source_hash": "aeff6f1ba8e9"
+  },
+  "herdr.command.paste-annotations": {
+    "text": "이 탭의 에이전트에 주석을 붙여 넣고 보관",
+    "source_hash": "a9b21d76fa9c"
+  },
+  "herdr.command.pick-link": {
+    "text": "링크 또는 ID 선택",
+    "source_hash": "82572d1919b2"
+  },
+  "herdr.command.plugin-manager": {
+    "text": "플러그인 관리자",
+    "source_hash": "6d56df78dd25"
+  },
+  "herdr.command.session-search": {
+    "text": "세션 검색",
+    "source_hash": "82c4a0945515"
+  },
+  "herdr.command.snippets": {
+    "text": "스니펫",
+    "source_hash": "ff717209de74"
+  },
+  "herdr.command.source-control": {
+    "text": "버전 관리",
+    "source_hash": "9bd7eab78605"
+  },
+  "herdr.command.workspace-picker": {
+    "text": "작업 공간 선택",
+    "source_hash": "2103daf47b34"
+  },
+  "herdr.config.window-title": {
+    "text": "Mash › {workspace} › {tab}",
+    "source_hash": "bee749ea4346"
+  }
+}
