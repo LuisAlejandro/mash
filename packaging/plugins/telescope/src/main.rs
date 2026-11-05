@@ -12,6 +12,7 @@
 mod context;
 mod files;
 mod herdr;
+mod i18n;
 mod keys;
 mod native;
 mod palette;

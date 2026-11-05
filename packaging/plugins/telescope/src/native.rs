@@ -4,6 +4,7 @@
 //! `keys::Keys::shortcut`, and ends with a preview hint of the exact `herdr`
 //! command it will run.
 
+use crate::i18n::t;
 use crate::keys::Keys;
 
 /// One native action row. `key` is the config key name whose binding to render
@@ -283,7 +284,51 @@ pub fn row_display(a: &NativeAction, keys: &Keys) -> (String, String, String) {
         keys.shortcut(a.key, None)
     };
     let keywords = format!("{} {}", a.keywords, a.id);
-    (a.title.to_string(), shortcut, keywords)
+    (title_text(a), shortcut, keywords)
+}
+
+/// The menu title for a native action, in the language Mash chose. The English
+/// `title` field is only the fallback for an id this list does not name.
+pub fn title_text(a: &NativeAction) -> String {
+    match a.id {
+        "new_tab" => t("plugin.telescope.native.new_tab"),
+        "new_tab_named" => t("plugin.telescope.native.new_tab_named"),
+        "rename_tab" => t("plugin.telescope.native.rename_tab"),
+        "close_tab" => t("plugin.telescope.native.close_tab"),
+        "split_vertical" => t("plugin.telescope.native.split_vertical"),
+        "split_horizontal" => t("plugin.telescope.native.split_horizontal"),
+        "zoom_pane" => t("plugin.telescope.native.zoom_pane"),
+        "close_pane" => t("plugin.telescope.native.close_pane"),
+        "rename_pane" => t("plugin.telescope.native.rename_pane"),
+        "focus_left" => t("plugin.telescope.native.focus_left"),
+        "focus_right" => t("plugin.telescope.native.focus_right"),
+        "focus_up" => t("plugin.telescope.native.focus_up"),
+        "focus_down" => t("plugin.telescope.native.focus_down"),
+        "resize_left" => t("plugin.telescope.native.resize_left"),
+        "resize_right" => t("plugin.telescope.native.resize_right"),
+        "resize_up" => t("plugin.telescope.native.resize_up"),
+        "resize_down" => t("plugin.telescope.native.resize_down"),
+        "swap_left" => t("plugin.telescope.native.swap_left"),
+        "swap_right" => t("plugin.telescope.native.swap_right"),
+        "swap_up" => t("plugin.telescope.native.swap_up"),
+        "swap_down" => t("plugin.telescope.native.swap_down"),
+        "move_pane_tab" => t("plugin.telescope.native.move_pane_tab"),
+        "move_pane_new_tab" => t("plugin.telescope.native.move_pane_new_tab"),
+        "move_pane_new_workspace" => t("plugin.telescope.native.move_pane_new_workspace"),
+        "start_agent" => t("plugin.telescope.native.start_agent"),
+        "prompt_agent" => t("plugin.telescope.native.prompt_agent"),
+        "interrupt_agent" => t("plugin.telescope.native.interrupt_agent"),
+        "rename_agent" => t("plugin.telescope.native.rename_agent"),
+        "new_workspace" => t("plugin.telescope.native.new_workspace"),
+        "new_workspace_here" => t("plugin.telescope.native.new_workspace_here"),
+        "rename_workspace" => t("plugin.telescope.native.rename_workspace"),
+        "close_workspace" => t("plugin.telescope.native.close_workspace"),
+        "new_worktree" => t("plugin.telescope.native.new_worktree"),
+        "new_worktree_branch" => t("plugin.telescope.native.new_worktree_branch"),
+        "remove_worktree" => t("plugin.telescope.native.remove_worktree"),
+        "reload_config" => t("plugin.telescope.native.reload_config"),
+        _ => a.title.to_string(),
+    }
 }
 
 /// Build the final display row: `title` (+pad) `shortcut` `dim-keywords`.

@@ -5,6 +5,7 @@
 
 use crate::context::OriginContext;
 use crate::herdr;
+use crate::i18n::{fill, t};
 use crate::keys::Keys;
 use crate::native;
 use crate::tty::{ask, die, paint_popup, pick_lines, run_cli, FZF_OPAQUE};
@@ -66,7 +67,7 @@ fn build_list(keys: &Keys) -> Vec<String> {
     // agent/tab label should not push every shortcut across the popup.
     let maxw = native::NATIVE_ACTIONS
         .iter()
-        .map(|a| a.title.chars().count())
+        .map(|a| native::title_text(a).chars().count())
         .max()
         .unwrap_or(24);
     let col = col_width();
@@ -125,16 +126,22 @@ fn build_list(keys: &Keys) -> Vec<String> {
         out.push(tsv(
             "files",
             "",
-            "\u{1b}[2mfiles\u{1b}[0m Search files…",
+            &format!(
+                "\u{1b}[2mfiles\u{1b}[0m {}",
+                t("plugin.telescope.entry.files")
+            ),
             "find file grep search fd rg locate",
-            "type @ to jump here, then pick a file",
+            &t("plugin.telescope.entry.files_hint"),
         ));
         out.push(tsv(
             "search",
             "",
-            "\u{1b}[2msearch\u{1b}[0m Search contents…",
+            &format!(
+                "\u{1b}[2msearch\u{1b}[0m {}",
+                t("plugin.telescope.entry.search")
+            ),
             "rg grep content text /",
-            "type / to jump here and search with ripgrep",
+            &t("plugin.telescope.entry.search_hint"),
         ));
     }
 
@@ -159,7 +166,10 @@ fn workspace_row(id: &str, label: &str) -> String {
     tsv(
         "workspace",
         id,
-        &format!("\u{1b}[2mworkspace:\u{1b}[0m {name}"),
+        &format!(
+            "\u{1b}[2m{}\u{1b}[0m {name}",
+            t("plugin.telescope.entry.workspace")
+        ),
         &format!("workspace goto jump focus project {name} {id}"),
         &format!("herdr workspace focus {id}"),
     )
@@ -187,17 +197,32 @@ struct Selection {
     line: String,
 }
 
-/// Prompt shown in action mode. Mode switches key off these exact strings.
-const ACTIONS_PROMPT: &str = "herdr telescope ▸ ";
-const FILES_PROMPT: &str = "herdr files ▸ ";
-const SEARCH_PROMPT: &str = "herdr search ▸ ";
-const ACTIONS_HEADER: &str = "↑↓ select · enter run · @ files · / search · esc cancel";
+/// Prompt shown in action mode. Mode switches key off these exact strings, and
+/// both sides read the same catalog, so a translated prompt still switches modes.
+pub fn actions_prompt() -> String {
+    t("plugin.telescope.prompt.actions")
+}
+pub fn files_prompt() -> String {
+    t("plugin.telescope.prompt.files")
+}
+pub fn search_prompt() -> String {
+    t("plugin.telescope.prompt.search")
+}
+fn actions_header() -> String {
+    t("plugin.telescope.header.actions")
+}
 /// ACTIONS-ONLY header: the same hint minus the `@ files` / `/ search` affordances,
 /// which are disabled in that mode. Advertising a key that does nothing is worse
 /// than a shorter hint.
-const ACTIONS_ONLY_HEADER: &str = "↑↓ select · enter run · esc cancel";
-const FILES_HEADER: &str = "↑↓ select · enter open · backspace to return";
-const SEARCH_HEADER: &str = "↑↓ select · enter open · rg live · backspace to return";
+fn actions_only_header() -> String {
+    t("plugin.telescope.header.actions_only")
+}
+fn files_header() -> String {
+    t("plugin.telescope.header.files")
+}
+fn search_header() -> String {
+    t("plugin.telescope.header.search")
+}
 
 const ACTION_PREVIEW_WIN: &str = "down,3,wrap,border-top";
 const SEARCH_PREVIEW_WIN: &str = "right,60%,wrap,border-left";
@@ -207,9 +232,9 @@ const STRIP_AT: &str = r#"transform-query[printf %s "${FZF_QUERY#@}"]"#;
 const STRIP_SLASH: &str = r#"transform-query[printf %s "${FZF_QUERY#/}"]"#;
 
 fn mode_of(prompt: &str) -> Mode {
-    if prompt == FILES_PROMPT {
+    if prompt == files_prompt() {
         Mode::Files
-    } else if prompt == SEARCH_PROMPT {
+    } else if prompt == search_prompt() {
         Mode::Search
     } else {
         Mode::Actions
@@ -226,6 +251,8 @@ enum Mode {
 /// fzf `change:transform` helper. `@` → filename list, `/` → rg content
 /// search (fzf's own matcher is disabled so the query is the rg pattern).
 pub fn at_switch(actions: &str, query: &str, prompt: &str, exe: &str) -> String {
+    let (files_prompt, files_header) = (files_prompt(), files_header());
+    let (search_prompt, search_header) = (search_prompt(), search_header());
     // ACTIONS-ONLY: `@` and `/` must not switch modes. Returning the unchanged
     // query (no reload/prompt change) leaves fzf matching the action rows and
     // the character simply filters them like any other text.
@@ -238,10 +265,10 @@ pub fn at_switch(actions: &str, query: &str, prompt: &str, exe: &str) -> String 
         return match mode {
             Mode::Files => format!("{STRIP_AT}\n"),
             Mode::Search => format!(
-                "enable-search+reload-sync[{list}]+change-prompt[{FILES_PROMPT}]+change-header[{FILES_HEADER}]+change-preview-window[{ACTION_PREVIEW_WIN}]+{STRIP_AT}\n"
+                "enable-search+reload-sync[{list}]+change-prompt[{files_prompt}]+change-header[{files_header}]+change-preview-window[{ACTION_PREVIEW_WIN}]+{STRIP_AT}\n"
             ),
             Mode::Actions => format!(
-                "reload-sync[{list}]+change-prompt[{FILES_PROMPT}]+change-header[{FILES_HEADER}]+{STRIP_AT}\n"
+                "reload-sync[{list}]+change-prompt[{files_prompt}]+change-header[{files_header}]+{STRIP_AT}\n"
             ),
         };
     }
@@ -250,7 +277,7 @@ pub fn at_switch(actions: &str, query: &str, prompt: &str, exe: &str) -> String 
         return match mode {
             Mode::Search => format!("{STRIP_SLASH}\n"),
             _ => format!(
-                "disable-search+reload-sync[{rg}]+change-prompt[{SEARCH_PROMPT}]+change-header[{SEARCH_HEADER}]+change-preview-window[{SEARCH_PREVIEW_WIN}]+{STRIP_SLASH}\n"
+                "disable-search+reload-sync[{rg}]+change-prompt[{search_prompt}]+change-header[{search_header}]+change-preview-window[{SEARCH_PREVIEW_WIN}]+{STRIP_SLASH}\n"
             ),
         };
     }
@@ -264,11 +291,12 @@ pub fn at_switch(actions: &str, query: &str, prompt: &str, exe: &str) -> String 
 
 /// `backward-eof` helper: leave file/search mode when the query is empty.
 pub fn at_back(actions: &str, prompt: &str) -> String {
+    let (actions_prompt, actions_header) = (actions_prompt(), actions_header());
     match mode_of(prompt) {
         // Unreachable in actions-only mode (at_switch never enters Files/Search),
         // so the full header is always correct here.
         Mode::Files | Mode::Search => format!(
-            "enable-search+reload-sync[cat -- {actions}]+change-prompt[{ACTIONS_PROMPT}]+change-header[{ACTIONS_HEADER}]+change-preview-window[{ACTION_PREVIEW_WIN}]\n"
+            "enable-search+reload-sync[cat -- {actions}]+change-prompt[{actions_prompt}]+change-header[{actions_header}]+change-preview-window[{ACTION_PREVIEW_WIN}]\n"
         ),
         Mode::Actions => String::new(),
     }
@@ -316,13 +344,13 @@ fn fzf_select(lines: &[String], cwd: &str) -> Option<Selection> {
     cmd.args(["--delimiter=\t", "--with-nth=3", "--ansi"])
         .args(["--bind", &change_bind])
         .args(["--bind", &back_bind])
-        .args([format!("--prompt={ACTIONS_PROMPT}")])
+        .args([format!("--prompt={}", actions_prompt())])
         .args([format!(
             "--header={}",
             if actions_only() {
-                ACTIONS_ONLY_HEADER
+                actions_only_header()
             } else {
-                ACTIONS_HEADER
+                actions_header()
             }
         )])
         .args(["--color", FZF_OPAQUE])
@@ -407,17 +435,17 @@ enum NativeErr {
 }
 
 /// Line prompt shown after fzf for this action. Enter must submit (see `ask`).
-fn line_prompt(id: &str) -> Option<&'static str> {
-    match id {
-        "new_tab_named" | "rename_tab" => Some("New tab name: "),
-        "rename_pane" => Some("New pane name: "),
-        "new_workspace_here" | "rename_workspace" => Some("New workspace name: "),
-        "new_worktree_branch" => Some("Branch name: "),
-        "start_agent" => Some("Agent name (a-z0-9_-): "),
-        "rename_agent" => Some("New agent name (a-z0-9_-): "),
-        "prompt_agent" => Some("Prompt: "),
-        _ => None,
-    }
+fn line_prompt(id: &str) -> Option<String> {
+    Some(match id {
+        "new_tab_named" | "rename_tab" => t("plugin.telescope.ask.new_tab_name"),
+        "rename_pane" => t("plugin.telescope.ask.new_pane_name"),
+        "new_workspace_here" | "rename_workspace" => t("plugin.telescope.ask.new_workspace_name"),
+        "new_worktree_branch" => t("plugin.telescope.ask.branch_name"),
+        "start_agent" => t("plugin.telescope.ask.agent_name"),
+        "rename_agent" => t("plugin.telescope.ask.rename_agent_name"),
+        "prompt_agent" => t("plugin.telescope.ask.prompt"),
+        _ => return None,
+    })
 }
 
 fn gather_native_input(id: &str, ctx: &OriginContext) -> Option<NativeInput> {
@@ -426,20 +454,20 @@ fn gather_native_input(id: &str, ctx: &OriginContext) -> Option<NativeInput> {
         "move_pane_tab" => input.pick = Some(pick_target_tab(ctx)?),
         "interrupt_agent" | "rename_agent" | "prompt_agent" => input.pick = Some(pick_agent()?),
         "remove_worktree" => {
-            input.confirm = confirm(format!(
-                "Remove the worktree checkout for {}? [y/N] ",
-                ctx.workspace
+            input.confirm = confirm(fill(
+                &t("plugin.telescope.ask.remove_worktree"),
+                &[("name", &ctx.workspace)],
             ));
         }
         _ => {}
     }
     if let Some(prompt) = line_prompt(id) {
         if id != "start_agent" {
-            input.line = Some(ask_with_prompt(prompt)?);
+            input.line = Some(ask_with_prompt(&prompt)?);
         }
     }
     if id == "new_worktree_branch" {
-        input.extra = ask_with_prompt_default("Base ref (empty = default): ", "");
+        input.extra = ask_with_prompt_default(&t("plugin.telescope.ask.base_ref"), "");
     }
     Some(input)
 }
@@ -845,9 +873,9 @@ fn dispatch_start_agent(ctx: &OriginContext) {
     // Agent kinds scraped from the installed binary's own completion (falls back
     // to the common set). Rough sed-style extraction.
     let kinds = agent_kinds();
-    let kind = pick_lines(&kinds, "agent kind ▸ ");
+    let kind = pick_lines(&kinds, &t("plugin.telescope.prompt.agent_kind"));
     let Some(kind) = kind else { return };
-    let Some(name) = ask_with_prompt("Agent name (a-z0-9_-): ") else {
+    let Some(name) = ask_with_prompt(&t("plugin.telescope.ask.agent_name")) else {
         return;
     };
     if !name.starts_with(|c: char| c.is_ascii_lowercase()) {
@@ -943,7 +971,10 @@ fn pick_agent() -> Option<String> {
         return None;
     };
     let Some(agents) = list.pointer("/result/agents").and_then(|v| v.as_array()) else {
-        die("telescope: no live agents.");
+        die(&format!(
+            "telescope: {}",
+            t("plugin.telescope.empty.agents")
+        ));
         return None;
     };
     let mut rows = Vec::with_capacity(agents.len());
@@ -963,10 +994,14 @@ fn pick_agent() -> Option<String> {
         rows.push(format!("{pane_id}\t{title} · {status} · {pane_id}"));
     }
     if rows.is_empty() {
-        die("telescope: no live agents.");
+        die(&format!(
+            "telescope: {}",
+            t("plugin.telescope.empty.agents")
+        ));
         return None;
     }
-    pick_lines(&rows, "agent ▸ ").map(|line| line.split('\t').next().unwrap_or("").to_string())
+    pick_lines(&rows, &t("plugin.telescope.prompt.agent"))
+        .map(|line| line.split('\t').next().unwrap_or("").to_string())
 }
 
 fn pick_target_tab(ctx: &OriginContext) -> Option<String> {
@@ -991,10 +1026,13 @@ fn pick_target_tab(ctx: &OriginContext) -> Option<String> {
         rows.push(format!("{id}\t{label}  ({n} panes)"));
     }
     if rows.is_empty() {
-        die("telescope: no other tab to move the pane to.");
+        die(&format!(
+            "telescope: {}",
+            t("plugin.telescope.empty.no_other_tab")
+        ));
         return None;
     }
-    pick_lines(&rows, "move to tab ▸ ")
+    pick_lines(&rows, &t("plugin.telescope.prompt.move_to_tab"))
         .map(|line| line.split('\t').next().unwrap_or("").to_string())
 }
 
@@ -1027,37 +1065,37 @@ mod tests {
 
     #[test]
     fn at_switch_enters_files_on_at() {
-        let out = at_switch("/tmp/a", "@", ACTIONS_PROMPT, "tel");
+        let out = at_switch("/tmp/a", "@", &actions_prompt(), "tel");
         assert!(
             out.contains("reload-sync[tel list-files]"),
             "should reload files, got {out:?}"
         );
-        assert!(out.contains(&format!("change-prompt[{FILES_PROMPT}]")));
+        assert!(out.contains(&format!("change-prompt[{}]", files_prompt())));
         assert!(out.contains(STRIP_AT));
     }
 
     #[test]
     fn at_switch_paste_at_c_strips_prefix() {
-        let out = at_switch("/tmp/a", "@C", ACTIONS_PROMPT, "tel");
+        let out = at_switch("/tmp/a", "@C", &actions_prompt(), "tel");
         assert!(out.contains("reload-sync[tel list-files]"));
         assert!(out.contains(STRIP_AT));
     }
 
     #[test]
     fn at_switch_does_not_bounce_while_filtering_files() {
-        assert_eq!(at_switch("/tmp/a", "C", FILES_PROMPT, "tel"), "");
+        assert_eq!(at_switch("/tmp/a", "C", &files_prompt(), "tel"), "");
         assert_eq!(
-            at_switch("/tmp/a", "@C", FILES_PROMPT, "tel"),
+            at_switch("/tmp/a", "@C", &files_prompt(), "tel"),
             format!("{STRIP_AT}\n")
         );
     }
 
     #[test]
     fn at_switch_enters_search_on_slash() {
-        let out = at_switch("/tmp/a", "/", ACTIONS_PROMPT, "tel");
+        let out = at_switch("/tmp/a", "/", &actions_prompt(), "tel");
         assert!(out.contains("disable-search"), "got {out:?}");
         assert!(out.contains("reload-sync[tel rg-files]"), "got {out:?}");
-        assert!(out.contains(&format!("change-prompt[{SEARCH_PROMPT}]")));
+        assert!(out.contains(&format!("change-prompt[{}]", search_prompt())));
         assert!(
             !out.contains("change-preview["),
             "preview stays on --preview {{}}, got {out:?}"
@@ -1068,28 +1106,28 @@ mod tests {
 
     #[test]
     fn at_switch_reloads_rg_while_typing_in_search() {
-        let out = at_switch("/tmp/a", "foo", SEARCH_PROMPT, "tel");
+        let out = at_switch("/tmp/a", "foo", &search_prompt(), "tel");
         assert_eq!(out, "reload-sync[tel rg-files]\n");
     }
 
     #[test]
     fn at_back_returns_to_actions_from_files_or_search() {
-        for prompt in [FILES_PROMPT, SEARCH_PROMPT] {
-            let out = at_back("/tmp/a", prompt);
+        for prompt in [files_prompt(), search_prompt()] {
+            let out = at_back("/tmp/a", &prompt);
             assert!(
                 out.contains("reload-sync[cat -- /tmp/a]"),
                 "should reload actions, got {out:?}"
             );
             assert!(out.contains("enable-search"));
-            assert!(out.contains(&format!("change-prompt[{ACTIONS_PROMPT}]")));
+            assert!(out.contains(&format!("change-prompt[{}]", actions_prompt())));
         }
     }
 
     #[test]
     fn at_switch_noop_while_still_in_actions() {
-        assert_eq!(at_switch("/tmp/a", "clo", ACTIONS_PROMPT, "tel"), "");
-        assert_eq!(at_switch("/tmp/a", "", ACTIONS_PROMPT, "tel"), "");
-        assert_eq!(at_back("/tmp/a", ACTIONS_PROMPT), "");
+        assert_eq!(at_switch("/tmp/a", "clo", &actions_prompt(), "tel"), "");
+        assert_eq!(at_switch("/tmp/a", "", &actions_prompt(), "tel"), "");
+        assert_eq!(at_back("/tmp/a", &actions_prompt()), "");
     }
 
     #[test]

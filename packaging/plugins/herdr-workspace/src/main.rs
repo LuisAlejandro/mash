@@ -13,6 +13,7 @@ mod edit;
 mod form;
 mod git;
 mod herdr;
+mod i18n;
 mod popup;
 mod theme;
 mod worktree_form;

@@ -1,0 +1,362 @@
+{
+  "plugin.herdr-workspace.button.cancel": {
+    "text": "[ 取消 ]",
+    "source_hash": "e730ebdef196"
+  },
+  "plugin.herdr-workspace.button.save": {
+    "text": "[ 保存 ]",
+    "source_hash": "8f41c85fd49c"
+  },
+  "plugin.herdr-workspace.error.no_directory": {
+    "text": "工作区没有目录",
+    "source_hash": "09507f73e42e"
+  },
+  "plugin.herdr-workspace.error.no_profiles": {
+    "text": "config.yaml 中没有配置文件",
+    "source_hash": "386b24a0cbc2"
+  },
+  "plugin.herdr-workspace.error.no_workspace": {
+    "text": "没有当前工作区；请先打开一个 git 工作区",
+    "source_hash": "469ff9786131"
+  },
+  "plugin.herdr-workspace.error.select_profile": {
+    "text": "请选择一个配置",
+    "source_hash": "48087492edf9"
+  },
+  "plugin.herdr-workspace.form.directory": {
+    "text": "目录",
+    "source_hash": "c8f84c3c5378"
+  },
+  "plugin.herdr-workspace.form.error.name_empty": {
+    "text": "工作区名称为空",
+    "source_hash": "900d774ffa7f"
+  },
+  "plugin.herdr-workspace.form.error.not_directory": {
+    "text": "不是目录",
+    "source_hash": "3b2a43e3a5b1"
+  },
+  "plugin.herdr-workspace.form.hint": {
+    "text": "↑↓/pgup/pgdn/ctrl+j/k 选择目录 · tab 补全 · enter 下一步 · esc 取消",
+    "source_hash": "177fb8ddb1f6"
+  },
+  "plugin.herdr-workspace.form.name": {
+    "text": "名称",
+    "source_hash": "dcd1d5223f73"
+  },
+  "plugin.herdr-workspace.form.no_matches": {
+    "text": "没有匹配的目录",
+    "source_hash": "8a0b7eb98806"
+  },
+  "plugin.herdr-workspace.progress.footer": {
+    "text": "正在应用布局 — 完成后弹窗会关闭",
+    "source_hash": "c4d428e38f1b"
+  },
+  "plugin.herdr-workspace.progress.gauge": {
+    "text": "进度",
+    "source_hash": "4664827f8e89"
+  },
+  "plugin.herdr-workspace.progress.working": {
+    "text": "处理中",
+    "source_hash": "a92f0449a9f7"
+  },
+  "plugin.herdr-workspace.worktree.base_ref": {
+    "text": "基础引用",
+    "source_hash": "9c6c10f9d4c6"
+  },
+  "plugin.herdr-workspace.worktree.branch": {
+    "text": "分支",
+    "source_hash": "52656e8104ee"
+  },
+  "plugin.herdr-workspace.worktree.error.base_empty": {
+    "text": "基础引用为空",
+    "source_hash": "fc7621cfcebf"
+  },
+  "plugin.herdr-workspace.worktree.error.branch_empty": {
+    "text": "分支名称为空",
+    "source_hash": "50f256f07996"
+  },
+  "plugin.herdr-workspace.worktree.error.unknown_ref": {
+    "text": "未知引用 `{ref}`",
+    "source_hash": "bc8df133c5c1"
+  },
+  "plugin.herdr-workspace.worktree.hint": {
+    "text": "↑↓/pgup/pgdn/ctrl+j/k 选择引用 · tab 补全 · enter 下一步 · esc 取消",
+    "source_hash": "a7a9383e0b70"
+  },
+  "plugin.herdr-workspace.worktree.no_matches": {
+    "text": "没有匹配的引用",
+    "source_hash": "342b4bc4ea99"
+  },
+  "plugin.telescope.ask.agent_name": {
+    "text": "代理名称 (a-z0-9_-): ",
+    "source_hash": "c282b483b831"
+  },
+  "plugin.telescope.ask.base_ref": {
+    "text": "基础引用（留空 = 默认）: ",
+    "source_hash": "83dcd25e5dd8"
+  },
+  "plugin.telescope.ask.branch_name": {
+    "text": "分支名称: ",
+    "source_hash": "73b89f123311"
+  },
+  "plugin.telescope.ask.new_pane_name": {
+    "text": "新窗格名称: ",
+    "source_hash": "f0d8ca6fb8fb"
+  },
+  "plugin.telescope.ask.new_tab_name": {
+    "text": "新标签页名称: ",
+    "source_hash": "ab715f5eeefd"
+  },
+  "plugin.telescope.ask.new_workspace_name": {
+    "text": "新工作区名称: ",
+    "source_hash": "1f1c54f1f88f"
+  },
+  "plugin.telescope.ask.prompt": {
+    "text": "提示词: ",
+    "source_hash": "45ea9812454c"
+  },
+  "plugin.telescope.ask.remove_worktree": {
+    "text": "删除 {name} 的 worktree？ [y/N] ",
+    "source_hash": "f70c7f093467"
+  },
+  "plugin.telescope.ask.rename_agent_name": {
+    "text": "新代理名称 (a-z0-9_-): ",
+    "source_hash": "7a151ffa422b"
+  },
+  "plugin.telescope.empty.agents": {
+    "text": "没有正在运行的代理。",
+    "source_hash": "64a644e8fa2a"
+  },
+  "plugin.telescope.empty.files": {
+    "text": "在起始目录下没有找到文件。",
+    "source_hash": "1a35fa2322e9"
+  },
+  "plugin.telescope.empty.no_origin_dir": {
+    "text": "没有可用于搜索文件的起始目录。",
+    "source_hash": "9bf01c7629b4"
+  },
+  "plugin.telescope.empty.no_other_tab": {
+    "text": "没有可以移动窗格过去的其他标签页。",
+    "source_hash": "63852167a39a"
+  },
+  "plugin.telescope.entry.files": {
+    "text": "搜索文件…",
+    "source_hash": "149a9d15d113"
+  },
+  "plugin.telescope.entry.files_hint": {
+    "text": "输入 @ 跳转到此处，然后选择文件",
+    "source_hash": "709da3a1cc6f"
+  },
+  "plugin.telescope.entry.search": {
+    "text": "搜索内容…",
+    "source_hash": "f59229c80c91"
+  },
+  "plugin.telescope.entry.search_hint": {
+    "text": "输入 / 跳转到此处，并用 ripgrep 搜索",
+    "source_hash": "5902de0f0b06"
+  },
+  "plugin.telescope.entry.workspace": {
+    "text": "工作区：",
+    "source_hash": "26a6b9a1e72f"
+  },
+  "plugin.telescope.file.pane": {
+    "text": "新窗格（拆分，右侧）",
+    "source_hash": "79d6a04fe6a4"
+  },
+  "plugin.telescope.file.window": {
+    "text": "新窗口（标签页）",
+    "source_hash": "228471da3a5e"
+  },
+  "plugin.telescope.header.actions": {
+    "text": "↑↓ 选择 · enter 运行 · @ 文件 · / 搜索 · esc 取消",
+    "source_hash": "f378fe331346"
+  },
+  "plugin.telescope.header.actions_only": {
+    "text": "↑↓ 选择 · enter 运行 · esc 取消",
+    "source_hash": "358b2735de9b"
+  },
+  "plugin.telescope.header.files": {
+    "text": "↑↓ 选择 · enter 打开 · backspace 返回",
+    "source_hash": "09937a318485"
+  },
+  "plugin.telescope.header.search": {
+    "text": "↑↓ 选择 · enter 打开 · rg 实时 · backspace 返回",
+    "source_hash": "92e50a4cbc77"
+  },
+  "plugin.telescope.native.close_pane": {
+    "text": "关闭窗格",
+    "source_hash": "7fa0f9613d91"
+  },
+  "plugin.telescope.native.close_tab": {
+    "text": "关闭标签页",
+    "source_hash": "50a3f9523122"
+  },
+  "plugin.telescope.native.close_workspace": {
+    "text": "关闭工作区",
+    "source_hash": "e5086f0455d5"
+  },
+  "plugin.telescope.native.focus_down": {
+    "text": "聚焦下方窗格",
+    "source_hash": "634e72370a91"
+  },
+  "plugin.telescope.native.focus_left": {
+    "text": "聚焦左侧窗格",
+    "source_hash": "2703127d3921"
+  },
+  "plugin.telescope.native.focus_right": {
+    "text": "聚焦右侧窗格",
+    "source_hash": "bf3836bedbb7"
+  },
+  "plugin.telescope.native.focus_up": {
+    "text": "聚焦上方窗格",
+    "source_hash": "f0ad95b3b130"
+  },
+  "plugin.telescope.native.interrupt_agent": {
+    "text": "中断代理 (esc)…",
+    "source_hash": "c02ae808d617"
+  },
+  "plugin.telescope.native.move_pane_new_tab": {
+    "text": "将窗格移出到新标签页",
+    "source_hash": "4b21a13e2c84"
+  },
+  "plugin.telescope.native.move_pane_new_workspace": {
+    "text": "将窗格移出到新工作区",
+    "source_hash": "f451f1754798"
+  },
+  "plugin.telescope.native.move_pane_tab": {
+    "text": "将窗格移动到其他标签页…",
+    "source_hash": "663cea16681b"
+  },
+  "plugin.telescope.native.new_tab": {
+    "text": "新建标签页",
+    "source_hash": "1e08fda9c966"
+  },
+  "plugin.telescope.native.new_tab_named": {
+    "text": "新建标签页（命名）…",
+    "source_hash": "a8670dddf8c6"
+  },
+  "plugin.telescope.native.new_workspace": {
+    "text": "新建工作区",
+    "source_hash": "df0caf1b27bd"
+  },
+  "plugin.telescope.native.new_workspace_here": {
+    "text": "在此新建工作区（命名）…",
+    "source_hash": "41bf4921641c"
+  },
+  "plugin.telescope.native.new_worktree": {
+    "text": "在此新建 worktree",
+    "source_hash": "e22dc2615464"
+  },
+  "plugin.telescope.native.new_worktree_branch": {
+    "text": "基于分支新建 worktree…",
+    "source_hash": "b32c49f90359"
+  },
+  "plugin.telescope.native.prompt_agent": {
+    "text": "向代理发送提示词…",
+    "source_hash": "e7678c0d781d"
+  },
+  "plugin.telescope.native.reload_config": {
+    "text": "重新加载 herdr 配置",
+    "source_hash": "3540ced939eb"
+  },
+  "plugin.telescope.native.remove_worktree": {
+    "text": "删除此 worktree",
+    "source_hash": "01ca8116273b"
+  },
+  "plugin.telescope.native.rename_agent": {
+    "text": "重命名代理…",
+    "source_hash": "27dfb3075d0c"
+  },
+  "plugin.telescope.native.rename_pane": {
+    "text": "重命名窗格",
+    "source_hash": "405cae1ccaa7"
+  },
+  "plugin.telescope.native.rename_tab": {
+    "text": "重命名标签页",
+    "source_hash": "29365ea1847d"
+  },
+  "plugin.telescope.native.rename_workspace": {
+    "text": "重命名工作区",
+    "source_hash": "34f5e996c30f"
+  },
+  "plugin.telescope.native.resize_down": {
+    "text": "向下调整窗格大小",
+    "source_hash": "77ed5a2e7fb0"
+  },
+  "plugin.telescope.native.resize_left": {
+    "text": "向左调整窗格大小",
+    "source_hash": "defda04803d1"
+  },
+  "plugin.telescope.native.resize_right": {
+    "text": "向右调整窗格大小",
+    "source_hash": "f2910218c90b"
+  },
+  "plugin.telescope.native.resize_up": {
+    "text": "向上调整窗格大小",
+    "source_hash": "f19c067a8289"
+  },
+  "plugin.telescope.native.split_horizontal": {
+    "text": "向下拆分窗格（水平）",
+    "source_hash": "004b1057ce44"
+  },
+  "plugin.telescope.native.split_vertical": {
+    "text": "向右拆分窗格（垂直）",
+    "source_hash": "f0dd18b413a3"
+  },
+  "plugin.telescope.native.start_agent": {
+    "text": "在新分屏中启动代理…",
+    "source_hash": "b32fe7c2fbf1"
+  },
+  "plugin.telescope.native.swap_down": {
+    "text": "与下方窗格交换",
+    "source_hash": "9a8ad9aab9f6"
+  },
+  "plugin.telescope.native.swap_left": {
+    "text": "与左侧窗格交换",
+    "source_hash": "1510339a92f2"
+  },
+  "plugin.telescope.native.swap_right": {
+    "text": "与右侧窗格交换",
+    "source_hash": "65cbd7e247ee"
+  },
+  "plugin.telescope.native.swap_up": {
+    "text": "与上方窗格交换",
+    "source_hash": "44b80631af06"
+  },
+  "plugin.telescope.native.zoom_pane": {
+    "text": "切换缩放（全屏窗格）",
+    "source_hash": "105f4ae38609"
+  },
+  "plugin.telescope.prompt.actions": {
+    "text": "herdr telescope ▸ ",
+    "source_hash": "7c5f98437004"
+  },
+  "plugin.telescope.prompt.agent": {
+    "text": "代理 ▸ ",
+    "source_hash": "d85334454461"
+  },
+  "plugin.telescope.prompt.agent_kind": {
+    "text": "代理类型 ▸ ",
+    "source_hash": "125a5c4df55e"
+  },
+  "plugin.telescope.prompt.files": {
+    "text": "herdr 文件 ▸ ",
+    "source_hash": "528da619324c"
+  },
+  "plugin.telescope.prompt.files_count": {
+    "text": "telescope 文件 ▸  （{count} 个文件）",
+    "source_hash": "bc69f7b01e49"
+  },
+  "plugin.telescope.prompt.move_to_tab": {
+    "text": "移动到标签页 ▸ ",
+    "source_hash": "cf64824d1647"
+  },
+  "plugin.telescope.prompt.open_in": {
+    "text": "打开方式 ▸ ",
+    "source_hash": "53a1a50464e7"
+  },
+  "plugin.telescope.prompt.search": {
+    "text": "herdr 搜索 ▸ ",
+    "source_hash": "7114dbae5e91"
+  }
+}
