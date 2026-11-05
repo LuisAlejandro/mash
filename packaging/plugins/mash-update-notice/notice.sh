@@ -11,36 +11,26 @@ clear
 case "$status" in
 up-to-date)
   if [ "$system" = Linux ]; then
-    printf '\n  No newer Mash version found in the current APT metadata.\n\n'
-    printf '  If package lists may be old, run sudo apt update.   (any key closes)'
+    printf '%s' "$(mash-t plugin.mash-update-notice.pane.up-to-date-linux)"
   else
-    printf '\n  Everything is up to date (Mash %s).\n\n' "${installed:-unknown}"
-    printf '  (any key closes)'
+    printf '%s' "$(mash-t plugin.mash-update-notice.pane.up-to-date-macos "version=${installed:-unknown}")"
   fi
   ;;
 restart-required)
-  printf '\n  Mash %s is running; Mash %s is already installed.\n\n' "${installed:-unknown}" "${candidate:-unknown}"
-  printf '  Save work and restart Mash to use the installed version.\n'
-  printf '  No download is needed.   (any key closes)'
+  printf '%s' "$(mash-t plugin.mash-update-notice.pane.restart-required "installed=${installed:-unknown}" "candidate=${candidate:-unknown}")"
   ;;
 restored-previous)
-  printf '\n  Mash %s is running again.\n\n' "${installed:-unknown}"
-  printf '  The update to %s did not complete. Your workspace files were not rolled back.\n\n' "${candidate:-unknown}"
-  printf '  (any key closes)'
+  printf '%s' "$(mash-t plugin.mash-update-notice.pane.previous-restored "installed=${installed:-unknown}" "candidate=${candidate:-unknown}")"
   ;;
 check-unavailable)
-  printf '\n  Could not check for updates right now.\n\n'
-  printf '  Check your internet connection and try again.   (any key closes)'
+  printf '%s' "$(mash-t plugin.mash-update-notice.pane.check-failed)"
   ;;
 apt-unavailable)
-  printf '\n  No update information was found in APT.\n\n'
-  printf '  Verify the Mash repository and run sudo apt update.   (any key closes)'
+  printf '%s' "$(mash-t plugin.mash-update-notice.pane.apt-failed)"
   ;;
 *)
   if [ -n "$candidate" ]; then
-    printf '\n  Mash %s is available (you have %s).\n\n' "$candidate" "${installed:-an older version}"
-    printf '  To upgrade, run:\n    sudo apt install --only-upgrade letsmash\n\n'
-    printf '  Then restart Mash.   (any key closes)'
+    printf '%s' "$(mash-t plugin.mash-update-notice.pane.available-linux "candidate=$candidate" "installed=${installed:-an older version}")"
   fi
   ;;
 esac

@@ -172,34 +172,34 @@ mash_macos_app() {
 mash_show_notice() {
   local title body command herdr
   if [ "$manual_status" = up-to-date ]; then
-    title="Mash is up to date"
+    title="$(mash-t plugin.mash-update-notice.title.up-to-date)"
     if [ "$system" = Darwin ]; then
-      body="Everything is up to date. Mash $installed is current."
+      body="$(mash-t plugin.mash-update-notice.notice.current-macos "version=$installed")"
     else
-      body="No newer Mash version found in the current APT metadata."
+      body="$(mash-t plugin.mash-update-notice.notice.current-linux)"
     fi
   elif [ "$manual_status" = restart-required ]; then
-    title="Mash restart required"
-    body="You are running $installed. Mash $candidate is already installed; restart Mash to use it."
+    title="$(mash-t plugin.mash-update-notice.title.restart-required)"
+    body="$(mash-t plugin.mash-update-notice.notice.restart-required "installed=$installed" "candidate=$candidate")"
   elif [ "$manual_status" = restored-previous ]; then
-    title="Previous Mash restored"
-    body="Mash $installed is running again. The update to $candidate did not complete."
+    title="$(mash-t plugin.mash-update-notice.title.previous-restored)"
+    body="$(mash-t plugin.mash-update-notice.notice.previous-restored "installed=$installed" "candidate=$candidate")"
   elif [ "$manual_status" = check-unavailable ]; then
-    title="Couldn't check for Mash updates"
-    body="Check your internet connection and try again."
+    title="$(mash-t plugin.mash-update-notice.title.check-failed)"
+    body="$(mash-t plugin.mash-update-notice.notice.check-failed)"
   elif [ "$manual_status" = apt-unavailable ]; then
-    title="Couldn't check for Mash updates"
-    body="Verify the APT repository and run sudo apt update."
+    title="$(mash-t plugin.mash-update-notice.title.check-failed)"
+    body="$(mash-t plugin.mash-update-notice.notice.apt-failed)"
   elif [ "$entrypoint" = updated ]; then
-    title="Mash updated to $installed"
-    body="Mash is running the new version."
+    title="$(mash-t plugin.mash-update-notice.title.updated "version=$installed")"
+    body="$(mash-t plugin.mash-update-notice.notice.updated)"
   elif [ "$system" = Darwin ]; then
-    title="Mash $candidate is available"
-    body="You have $installed. Open Mash to update."
+    title="$(mash-t plugin.mash-update-notice.title.available "candidate=$candidate")"
+    body="$(mash-t plugin.mash-update-notice.notice.available-macos "installed=$installed")"
   else
     command="sudo apt install --only-upgrade letsmash"
-    title="Mash $candidate is available"
-    body="You have $installed. To upgrade, run: $command"
+    title="$(mash-t plugin.mash-update-notice.title.available "candidate=$candidate")"
+    body="$(mash-t plugin.mash-update-notice.notice.available-linux "installed=$installed" "command=$command")"
   fi
 
   # Desktop notification. On Linux notify-send (libnotify-bin) is not

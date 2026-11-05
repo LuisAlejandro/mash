@@ -16,16 +16,16 @@ f="${IMAGE_POPUP_FILE:-}"
 clear
 
 if [ -z "$f" ] || [ ! -r "$f" ]; then
-	printf 'No image to show: %s\n' "${f:-<none>}"
+	printf '%s\n' "$(mash-t plugin.image-popup.no-image "file=${f:-<none>}")"
 elif ! command -v viu >/dev/null 2>&1; then
-	printf 'viu is not installed. Install it with: brew install viu\n'
-	printf '(the image itself is at %s)\n' "$f"
+	printf '%s\n' "$(mash-t plugin.image-popup.viu-missing)"
+	printf '%s\n' "$(mash-t plugin.image-popup.source-file "file=$f")"
 else
 	cols="$(tput cols)"
 	rows="$(tput lines)"
 	# Two rows are kept for the filename line and the closing hint.
 	viu -w "$cols" -h "$((rows > 4 ? rows - 3 : rows))" "$f"
-	printf '\n%s   (any key closes)' "$(basename "$f")"
+	printf '\n%s   %s' "$(basename "$f")" "$(mash-t helper.popup.dismiss)"
 fi
 
 # Block until the user dismisses. A popup that exits immediately would be gone

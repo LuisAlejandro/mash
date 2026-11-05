@@ -24,21 +24,17 @@ close() {
 clear
 [ -n "$candidate" ] || close
 
-printf '\n  Mash %s is available (you have %s).\n\n' \
-  "$candidate" "${installed:-an older version}"
+
 
 # A bundle we cannot replace -- a read-only DMG mount, a dist tree -- still
 # gets told, it just cannot be offered the one-key path.
 if [ "$can_apply" != 1 ] || [ ! -x "$verify" ]; then
-  printf '  Download it from:\n    https://github.com/LuisAlejandro/mash/releases/latest\n\n'
-  printf '  (any key closes)'
+  printf '%s' "$(mash-t plugin.mash-update-notice.pane.update-unavailable "candidate=$candidate" "installed=${installed:-an older version}" url=https://github.com/LuisAlejandro/mash/releases/latest)"
   IFS= read -rsn1 _ </dev/tty || true
   close
 fi
 
-printf '  Press u to update now, or any other key to dismiss.\n'
-printf '  Updating quits Mash and reopens it on the new version.\n\n'
-printf '  > '
+printf '%s' "$(mash-t plugin.mash-update-notice.pane.update-prompt "candidate=$candidate" "installed=${installed:-an older version}")"
 IFS= read -rsn1 key </dev/tty || close
 case "$key" in
 u | U) ;;
@@ -52,6 +48,6 @@ esac
 printf '\n\n'
 "$verify" "$app" "$candidate" "$installed" "$data" </dev/tty
 
-printf '\n  (any key closes)'
+printf '\n  %s' "$(mash-t helper.popup.dismiss)"
 IFS= read -rsn1 _ </dev/tty || true
 close

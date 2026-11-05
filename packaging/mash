@@ -20,8 +20,10 @@ args=("$@")
 # the terminal a reason instead of exiting, and it shows an alert. Exiting here
 # would make Mash vanish without a word.
 fail() {
-  printf 'setup failed: %s\n' "$1" >&2
-  export MASH_SETUP_ERROR="$1"
+  local message="${1:-}"
+  [ -n "$message" ] || message="${2:-}"
+  printf 'setup failed: %s\n' "$message" >&2
+  export MASH_SETUP_ERROR="$message"
   exec "$terminal" "${args[@]+"${args[@]}"}"
 }
 
@@ -38,17 +40,17 @@ d="$home/.mash"
 # Also gate script entry before seeding. Native main performs this before its
 # environment shortcut, so inherited MASH_BIN cannot bypass the barrier.
 if [ -f "$d/local/state/update-transaction.plist" ]; then
-  source "$ROOT/Resources/bin/mash-update-common" || fail "Mash's updater is incomplete."
-  mash_update_init "$d" || fail "Mash's update state is unsafe."
+  source "$ROOT/Resources/bin/mash-update-common" || fail "$(PATH="$ROOT/Resources/bin:$ROOT/Resources/python/bin:$PATH" MASH_LANGUAGE="$(mash_language_code "$d" 2>/dev/null || true)" MASH_I18N_DIR="$ROOT/Resources/i18n" mash-t helper.launch.updater_incomplete 2>/dev/null || printf '%s' "Mash's updater is incomplete.")" "Mash's updater is incomplete."
+  mash_update_init "$d" || fail "$(PATH="$ROOT/Resources/bin:$ROOT/Resources/python/bin:$PATH" MASH_LANGUAGE="$(mash_language_code "$d" 2>/dev/null || true)" MASH_I18N_DIR="$ROOT/Resources/i18n" mash-t helper.launch.update_state_unsafe 2>/dev/null || printf '%s' "Mash's update state is unsafe.")" "Mash's update state is unsafe."
   case "$(mash_update_read phase || true)" in
   quiescing | swap-intent)
     update_work="$(mash_update_read work)"
-    case "$update_work" in /*/mash-update-??????) ;; *) fail "Mash's update location is invalid." ;; esac
+    case "$update_work" in /*/mash-update-??????) ;; *) fail "$(PATH="$ROOT/Resources/bin:$ROOT/Resources/python/bin:$PATH" MASH_LANGUAGE="$(mash_language_code "$d" 2>/dev/null || true)" MASH_I18N_DIR="$ROOT/Resources/i18n" mash-t helper.launch.update_location_invalid 2>/dev/null || printf '%s' "Mash's update location is invalid.")" "Mash's update location is invalid." ;; esac
     update_gate="$update_work/mash-update-gate"
     if [ -L "$update_work" ] || [ ! -x "$update_gate" ]; then update_gate="$ROOT/Resources/bin/mash-update-gate"; fi
     [ -x "$ROOT/Resources/bin/mash-update-processes" ] &&
       "$ROOT/Resources/bin/mash-update-processes" register "$d" "$(dirname "$ROOT")" "$$" waiter ||
-      fail "Mash could not register its update waiter."
+      fail "$(PATH="$ROOT/Resources/bin:$ROOT/Resources/python/bin:$PATH" MASH_LANGUAGE="$(mash_language_code "$d" 2>/dev/null || true)" MASH_I18N_DIR="$ROOT/Resources/i18n" mash-t helper.launch.update_waiter_failed 2>/dev/null || printf '%s' 'Mash could not register its update waiter.')" 'Mash could not register its update waiter.'
     exec /bin/bash "$update_gate" wait "$(dirname "$ROOT")" "$d" "$(mash_update_read id)" "${args[@]+"${args[@]}"}"
     ;;
   esac
@@ -82,19 +84,19 @@ export PYTHONDONTWRITEBYTECODE=1
 # 0700, not the umask's 0755: the data folder holds agent transcripts and logs
 # written by tools Mash does not own, and +x on this directory is what gates
 # every one of them. Runs on every launch so an existing 0755 install is fixed.
-mash_protect_data_dir "$d" || fail "Mash could not prepare $d. Details: $log"
-[ -d "$d" ] && [ -w "$d" ] || fail "$d is not a writable folder. Details: $log"
+mash_protect_data_dir "$d" || fail "$(PATH="$ROOT/Resources/bin:$ROOT/Resources/python/bin:$PATH" MASH_LANGUAGE="$(mash_language_code "$d" 2>/dev/null || true)" MASH_I18N_DIR="$ROOT/Resources/i18n" mash-t helper.launch.data_prepare_failed "path=$d" "log=$log" 2>/dev/null || printf 'Mash could not prepare %s. Details: %s' "$d" "$log")" "Mash could not prepare $d. Details: $log"
+[ -d "$d" ] && [ -w "$d" ] || fail "$(PATH="$ROOT/Resources/bin:$ROOT/Resources/python/bin:$PATH" MASH_LANGUAGE="$(mash_language_code "$d" 2>/dev/null || true)" MASH_I18N_DIR="$ROOT/Resources/i18n" mash-t helper.launch.data_not_writable "path=$d" "log=$log" 2>/dev/null || printf '%s is not a writable folder. Details: %s' "$d" "$log")" "$d is not a writable folder. Details: $log"
 # Everything that fills ~/.mash lives in launch-common.sh, which the Linux
 # launcher calls the same way: directory layout, the ownership reconcile, the
 # generated configs, the seeded trees, the programming suite and Hindsight.
-mash_seed_all "$ROOT/Resources" "$d" "$home" || fail "Setting up $d failed. Details: $log"
-mash_force_updates "$home" || fail "Mash could not pin its update settings. Details: $log"
+mash_seed_all "$ROOT/Resources" "$d" "$home" || fail "$(PATH="$ROOT/Resources/bin:$ROOT/Resources/python/bin:$PATH" MASH_LANGUAGE="$(mash_language_code "$d" 2>/dev/null || true)" MASH_I18N_DIR="$ROOT/Resources/i18n" mash-t helper.launch.setup_failed "path=$d" "log=$log" 2>/dev/null || printf 'Setting up %s failed. Details: %s' "$d" "$log")" "Setting up $d failed. Details: $log"
+mash_force_updates "$home" || fail "$(PATH="$ROOT/Resources/bin:$ROOT/Resources/python/bin:$PATH" MASH_LANGUAGE="$(mash_language_code "$d" 2>/dev/null || true)" MASH_I18N_DIR="$ROOT/Resources/i18n" mash-t helper.launch.update_settings_failed "log=$log" 2>/dev/null || printf 'Mash could not pin its update settings. Details: %s' "$log")" "Mash could not pin its update settings. Details: $log"
 
 export MASH_BIN="$ROOT/Resources/bin:$ROOT/Resources/node/bin:$ROOT/Resources/python/bin:$d/bin"
 # mash_isolate exits the process on its refusals (a socket or Herdr config
 # outside ~/.mash). A subshell runs it first so a refusal becomes an alert; the
 # second call then sets the environment in this process.
-(mash_isolate "$home") || fail "Mash refused an environment outside $d. Details: $log"
+(mash_isolate "$home") || fail "$(PATH="$ROOT/Resources/bin:$ROOT/Resources/python/bin:$PATH" MASH_LANGUAGE="$(mash_language_code "$d" 2>/dev/null || true)" MASH_I18N_DIR="$ROOT/Resources/i18n" mash-t helper.launch.environment_refused "path=$d" "log=$log" 2>/dev/null || printf 'Mash refused an environment outside %s. Details: %s' "$d" "$log")" "Mash refused an environment outside $d. Details: $log"
 mash_isolate "$home"
 
 # After mash_isolate: the shared mash_link_plugins reads XDG_CONFIG_HOME and

@@ -71,18 +71,23 @@ esac'
 cp "$fake/herdr" "$res/bin/herdr"
 
 run() { # run [VAR=value...] -- one launch's worth of the helper
-  env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" "$@" \
+  env -i HOME="$tmp" PATH="$root/packaging/helpers:$fake:$tools" CALLS="$calls" \
+    MASH_I18N_DIR="$root/packaging/i18n" "$@" \
     bash "$helper" "$res" "$data" 2>"$tmp/stderr"
 }
 run_manual() { # run_manual [VAR=value...] -- one user-requested check
   mkdir -p "$data/local/state"
-  env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" "$@" \
+  env -i HOME="$tmp" PATH="$root/packaging/helpers:$fake:$tools" CALLS="$calls" \
+    MASH_I18N_DIR="$root/packaging/i18n" "$@" \
     bash "$helper" --manual "$res" "$data" 2>"$tmp/stderr"
 }
 count() { grep -c "^$1 " "$calls" 2>/dev/null || true; }
-show_status() { # show_status STATUS SYSTEM -- render the manual result pane
-  env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" \
-    MASH_UPDATE_STATUS="$1" MASH_UPDATE_SYSTEM="$2" \
+show_status() { # show_status STATUS SYSTEM [VAR=value...] -- render the manual result pane
+  local status="$1" system="$2"
+  shift 2
+  env -i HOME="$tmp" PATH="$root/packaging/helpers:$fake:$tools" CALLS="$calls" \
+    MASH_I18N_DIR="$root/packaging/i18n" "$@" \
+    MASH_UPDATE_STATUS="$status" MASH_UPDATE_SYSTEM="$system" \
     MASH_UPDATE_INSTALLED=0.2.0 HERDR_PANE_ID=manual \
     bash "$root/packaging/plugins/mash-update-notice/notice.sh" \
     >"$tmp/status-out" 2>"$tmp/status-stderr" || true
@@ -188,12 +193,14 @@ printf '#!/bin/bash\necho "notify $*" >>"$CALLS"\n' \
 chmod +x "$app/Contents/Resources/bin/mash-notify"
 appres="$app/Contents/Resources"
 mac() { # mac [VAR=value...] -- one macOS launch, run from inside the bundle
-  env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" FAKE_UNAME=Darwin "$@" \
+  env -i HOME="$tmp" PATH="$root/packaging/helpers:$fake:$tools" CALLS="$calls" \
+    MASH_I18N_DIR="$root/packaging/i18n" FAKE_UNAME=Darwin "$@" \
     bash "$appres/bin/mash-update-notice" "$appres" "$data" 2>"$tmp/stderr"
 }
 mac_manual() { # mac_manual [VAR=value...] -- one user-requested macOS check
   mkdir -p "$data/local/state"
-  env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" FAKE_UNAME=Darwin "$@" \
+  env -i HOME="$tmp" PATH="$root/packaging/helpers:$fake:$tools" CALLS="$calls" \
+    MASH_I18N_DIR="$root/packaging/i18n" FAKE_UNAME=Darwin "$@" \
     bash "$appres/bin/mash-update-notice" --manual "$appres" "$data" 2>"$tmp/stderr"
 }
 setversion() { printf '%s\n' "$1" >"$appres/VERSION"; }
@@ -279,6 +286,16 @@ check "macOS manual status says everything is up to date" \
 show_status up-to-date Linux
 check "Linux manual status qualifies its cached APT result" \
   grep -q 'No newer Mash version found in the current APT metadata' "$tmp/status-out"
+show_status up-to-date Linux MASH_LANGUAGE=es
+check "Spanish manual status is translated from the catalog" \
+  grep -q 'No se encontró una versión más reciente de Mash' "$tmp/status-out"
+
+fresh ptbr
+run MASH_LANGUAGE=pt-BR FAKE_INSTALLED=0.1.1 FAKE_CANDIDATE=0.2.0
+check "pt-BR notification is translated from the catalog" \
+  grep -q 'Mash 0\.2\.0 está disponível.*Você tem 0\.1\.1' "$calls"
+check "localized notice keeps canonical state value" \
+  grep -qx 0.2.0 "$data/local/state/update-notice"
 
 # --- an announced version is not re-announced ----------------------------------
 fresh mac-already-announced
@@ -414,7 +431,8 @@ mkdir -p "$plain/bin"
 cp "$helper" "$plain/bin/mash-update-notice"
 cp "$fake/herdr" "$plain/bin/herdr"
 printf '0.1.1\n' >"$plain/VERSION"
-env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" FAKE_UNAME=Darwin FAKE_RELEASE=0.2.0 \
+env -i HOME="$tmp" PATH="$root/packaging/helpers:$fake:$tools" CALLS="$calls" \
+  MASH_I18N_DIR="$root/packaging/i18n" FAKE_UNAME=Darwin FAKE_RELEASE=0.2.0 \
   bash "$plain/bin/mash-update-notice" "$plain" "$data" 2>"$tmp/stderr"
 check "a non-.app location still announces" test "$(count popup)" = 1
 check "a non-.app location offers no update" grep -q 'MASH_UPDATE_CAN_APPLY=0' "$calls"

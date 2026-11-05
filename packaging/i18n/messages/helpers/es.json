@@ -1,0 +1,182 @@
+{
+  "helper.launch.data_not_writable": {
+    "text": "{path} no es una carpeta con permisos de escritura. Detalles: {log}",
+    "source_hash": "c2daaf7abb17"
+  },
+  "helper.launch.data_prepare_failed": {
+    "text": "Mash no pudo preparar {path}. Detalles: {log}",
+    "source_hash": "f1a3af24d2f1"
+  },
+  "helper.launch.environment_refused": {
+    "text": "Mash rechazó un entorno fuera de {path}. Detalles: {log}",
+    "source_hash": "6cba761820b9"
+  },
+  "helper.launch.linux_data_prepare_failed": {
+    "text": "Mash no pudo preparar {path}.",
+    "source_hash": "67920ad8e50d"
+  },
+  "helper.launch.linux_update_settings_failed": {
+    "text": "Mash no pudo fijar la configuración de actualizaciones; se conservó el archivo.",
+    "source_hash": "a8cb9d5749da"
+  },
+  "helper.launch.refused_start": {
+    "text": "Mash rechazó el inicio.",
+    "source_hash": "fea43a382106"
+  },
+  "helper.launch.setup_failed": {
+    "text": "No se pudo configurar {path}. Detalles: {log}",
+    "source_hash": "e891d0a29f1a"
+  },
+  "helper.launch.socket_outside": {
+    "text": "Mash rechazó el inicio: el socket está fuera de ~/.mash.",
+    "source_hash": "ddb5d709d6cd"
+  },
+  "helper.launch.update_location_invalid": {
+    "text": "La ubicación de actualización de Mash no es válida.",
+    "source_hash": "c53120b603c7"
+  },
+  "helper.launch.update_settings_failed": {
+    "text": "Mash no pudo fijar la configuración de actualizaciones. Detalles: {log}",
+    "source_hash": "31a1842ec5dc"
+  },
+  "helper.launch.update_state_unsafe": {
+    "text": "El estado de actualización de Mash no es seguro.",
+    "source_hash": "f5d6ba096441"
+  },
+  "helper.launch.update_waiter_failed": {
+    "text": "Mash no pudo registrar el proceso de espera de actualización.",
+    "source_hash": "ff2f989250a6"
+  },
+  "helper.launch.updater_incomplete": {
+    "text": "El actualizador de Mash está incompleto.",
+    "source_hash": "43c808c2338d"
+  },
+  "helper.popup.dismiss": {
+    "text": "(pulsa cualquier tecla para cerrar)",
+    "source_hash": "f57ff387149d"
+  },
+  "helper.setup.not_finished": {
+    "text": "La configuración de Mash no ha terminado, así que Mash no se abrió.",
+    "source_hash": "f7435b584992"
+  },
+  "helper.setup.open_again": {
+    "text": "Vuelve a abrir Mash para iniciar la configuración desde el principio.",
+    "source_hash": "3c08c76f274a"
+  },
+  "helper.setup.press_enter": {
+    "text": "Pulsa Enter para cerrar esta ventana.",
+    "source_hash": "3cbf0fb2a94f"
+  },
+  "plugin.image-popup.no-image": {
+    "text": "No hay ninguna imagen para mostrar: {file}",
+    "source_hash": "91aa57b30f47"
+  },
+  "plugin.image-popup.source-file": {
+    "text": "(la imagen está en {file})",
+    "source_hash": "acda13cd6347"
+  },
+  "plugin.image-popup.viu-missing": {
+    "text": "viu no está instalado. Instálalo con: brew install viu",
+    "source_hash": "51d203b460ac"
+  },
+  "plugin.mash-update-notice.notice.apt-failed": {
+    "text": "Verifica el repositorio APT y ejecuta sudo apt update.",
+    "source_hash": "6e5d462c3fb3"
+  },
+  "plugin.mash-update-notice.notice.available-linux": {
+    "text": "Tienes {installed}. Para actualizar, ejecuta: {command}",
+    "source_hash": "408651e42b2f"
+  },
+  "plugin.mash-update-notice.notice.available-macos": {
+    "text": "Tienes {installed}. Abre Mash para actualizar.",
+    "source_hash": "110061a9c5d1"
+  },
+  "plugin.mash-update-notice.notice.check-failed": {
+    "text": "Comprueba tu conexión a Internet e inténtalo de nuevo.",
+    "source_hash": "176afd02072f"
+  },
+  "plugin.mash-update-notice.notice.current-linux": {
+    "text": "No se encontró una versión más reciente de Mash en los metadatos APT actuales.",
+    "source_hash": "4076014ba5ad"
+  },
+  "plugin.mash-update-notice.notice.current-macos": {
+    "text": "Todo está actualizado. Mash {version} es la versión actual.",
+    "source_hash": "541489679898"
+  },
+  "plugin.mash-update-notice.notice.previous-restored": {
+    "text": "Mash {installed} vuelve a ejecutarse. La actualización a {candidate} no se completó.",
+    "source_hash": "e15f090dff62"
+  },
+  "plugin.mash-update-notice.notice.restart-required": {
+    "text": "Se está ejecutando {installed}. Mash {candidate} ya está instalado; reinicia Mash para usarlo.",
+    "source_hash": "e1248557730a"
+  },
+  "plugin.mash-update-notice.notice.updated": {
+    "text": "Mash está ejecutando la nueva versión.",
+    "source_hash": "e3caeafe33e1"
+  },
+  "plugin.mash-update-notice.pane.apt-failed": {
+    "text": "\n  No se encontró información de actualizaciones en APT.\n\n  Verifica el repositorio de Mash y ejecuta sudo apt update.   (pulsa cualquier tecla para cerrar)",
+    "source_hash": "ae2c3f30f3cd"
+  },
+  "plugin.mash-update-notice.pane.available-linux": {
+    "text": "\n  Mash {candidate} está disponible (tienes {installed}).\n\n  Para actualizar, ejecuta:\n    sudo apt install --only-upgrade letsmash\n\n  Después, reinicia Mash.   (pulsa cualquier tecla para cerrar)",
+    "source_hash": "2073e20a4f2e"
+  },
+  "plugin.mash-update-notice.pane.check-failed": {
+    "text": "\n  No se pudieron comprobar las actualizaciones ahora.\n\n  Comprueba tu conexión a Internet e inténtalo de nuevo.   (pulsa cualquier tecla para cerrar)",
+    "source_hash": "d716b0057955"
+  },
+  "plugin.mash-update-notice.pane.previous-restored": {
+    "text": "\n  Mash {installed} vuelve a ejecutarse.\n\n  La actualización a {candidate} no se completó. Tus archivos de trabajo no se revirtieron.\n\n  (pulsa cualquier tecla para cerrar)",
+    "source_hash": "23ce21e89b73"
+  },
+  "plugin.mash-update-notice.pane.restart-required": {
+    "text": "\n  Se está ejecutando Mash {installed}; Mash {candidate} ya está instalado.\n\n  Guarda tu trabajo y reinicia Mash para usar la versión instalada.\n  No hace falta descargar nada.   (pulsa cualquier tecla para cerrar)",
+    "source_hash": "8cfff1a68c6e"
+  },
+  "plugin.mash-update-notice.pane.update-prompt": {
+    "text": "\n  Mash {candidate} está disponible (tienes {installed}).\n\n  Pulsa u para actualizar ahora o cualquier otra tecla para descartar.\n  La actualización cierra Mash y lo vuelve a abrir con la nueva versión.\n\n  > ",
+    "source_hash": "e72a656d118c"
+  },
+  "plugin.mash-update-notice.pane.update-unavailable": {
+    "text": "\n  Mash {candidate} está disponible (tienes {installed}).\n\n  Descárgalo desde:\n    {url}\n\n  (pulsa cualquier tecla para cerrar)",
+    "source_hash": "3559cf5d3977"
+  },
+  "plugin.mash-update-notice.pane.updated": {
+    "text": "\n  Mash {version} está instalado y en ejecución.\n\n  Tus espacios de trabajo y configuración siguen en ~/.mash.\n\n  (pulsa cualquier tecla para cerrar)",
+    "source_hash": "b6ec8b2c9bee"
+  },
+  "plugin.mash-update-notice.pane.up-to-date-linux": {
+    "text": "\n  No se encontró una versión más reciente de Mash en los metadatos APT actuales.\n\n  Si las listas de paquetes pueden estar desactualizadas, ejecuta sudo apt update.   (pulsa cualquier tecla para cerrar)",
+    "source_hash": "e5f9e50c721f"
+  },
+  "plugin.mash-update-notice.pane.up-to-date-macos": {
+    "text": "\n  Todo está actualizado (Mash {version}).\n\n  (pulsa cualquier tecla para cerrar)",
+    "source_hash": "0f6af22649b2"
+  },
+  "plugin.mash-update-notice.title.available": {
+    "text": "Mash {candidate} está disponible",
+    "source_hash": "e9ea02ee8c67"
+  },
+  "plugin.mash-update-notice.title.check-failed": {
+    "text": "No se pudieron comprobar las actualizaciones de Mash",
+    "source_hash": "43d510221839"
+  },
+  "plugin.mash-update-notice.title.previous-restored": {
+    "text": "Se restauró la versión anterior de Mash",
+    "source_hash": "db2ddd4e3f64"
+  },
+  "plugin.mash-update-notice.title.restart-required": {
+    "text": "Es necesario reiniciar Mash",
+    "source_hash": "c22b233a4d7d"
+  },
+  "plugin.mash-update-notice.title.up-to-date": {
+    "text": "Mash está actualizado",
+    "source_hash": "cc9e6d5993b9"
+  },
+  "plugin.mash-update-notice.title.updated": {
+    "text": "Mash se actualizó a {version}",
+    "source_hash": "855f75f65bcb"
+  }
+}

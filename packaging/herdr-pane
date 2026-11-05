@@ -7,6 +7,7 @@ home="$(mash_real_home)"
 bin_dir="$(cd "$(dirname "$0")" && pwd)"
 res="$(cd "$bin_dir/.." && pwd)"
 export MASH_BIN="$bin_dir:$res/node/bin:$res/python/bin:$home/.mash/bin"
+
 # First-open setup. It is the only way to reach Herdr until it finishes: an
 # unfinished setup leaves no providers and no git identity,
 # and Herdr would then open on top of that as if Mash were ready. The wizard
@@ -21,9 +22,9 @@ if [ -x "$bin_dir/mash-wizard" ]; then
   status=0
   "$bin_dir/mash-wizard" || status=$?
   if [ "$status" = 3 ]; then
-    printf '\n  Mash setup is not finished, so Mash did not open.\n'
-    printf '  Open Mash again to start setup from the beginning.\n\n'
-    printf '  Press Enter to close this window. '
+    printf '\n  %s\n' "$(PATH="$bin_dir:$res/python/bin:$PATH" MASH_LANGUAGE="$(mash_language_code "$home/.mash" 2>/dev/null || true)" MASH_I18N_DIR="$res/i18n" mash-t helper.setup.not_finished 2>/dev/null || printf '%s' 'Mash setup is not finished, so Mash did not open.')"
+    printf '  %s\n\n' "$(PATH="$bin_dir:$res/python/bin:$PATH" MASH_LANGUAGE="$(mash_language_code "$home/.mash" 2>/dev/null || true)" MASH_I18N_DIR="$res/i18n" mash-t helper.setup.open_again 2>/dev/null || printf '%s' 'Open Mash again to start setup from the beginning.')"
+    printf '  %s ' "$(PATH="$bin_dir:$res/python/bin:$PATH" MASH_LANGUAGE="$(mash_language_code "$home/.mash" 2>/dev/null || true)" MASH_I18N_DIR="$res/i18n" mash-t helper.setup.press_enter 2>/dev/null || printf '%s' 'Press Enter to close this window.')"
     read -r _ || true
     exit 0
   fi
@@ -32,7 +33,7 @@ mash_isolate "$home"
 case "$HERDR_SOCKET_PATH" in
 "$home/.mash/run/herdr.sock") ;;
 *)
-  echo "Mash refused to start." >&2
+  printf '%s\n' "$(PATH="$bin_dir:$res/python/bin:$PATH" MASH_LANGUAGE="$(mash_language_code "$home/.mash" 2>/dev/null || true)" MASH_I18N_DIR="$res/i18n" mash-t helper.launch.refused_start 2>/dev/null || printf '%s' 'Mash refused to start.')" >&2
   exit 1
   ;;
 esac

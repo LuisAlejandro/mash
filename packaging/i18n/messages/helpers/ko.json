@@ -1,0 +1,182 @@
+{
+  "helper.launch.data_not_writable": {
+    "text": "{path}은(는) 쓰기 가능한 폴더가 아닙니다. 자세한 내용: {log}",
+    "source_hash": "c2daaf7abb17"
+  },
+  "helper.launch.data_prepare_failed": {
+    "text": "Mash에서 {path}을(를) 준비하지 못했습니다. 자세한 내용: {log}",
+    "source_hash": "f1a3af24d2f1"
+  },
+  "helper.launch.environment_refused": {
+    "text": "Mash에서 {path} 외부 환경을 거부했습니다. 자세한 내용: {log}",
+    "source_hash": "6cba761820b9"
+  },
+  "helper.launch.linux_data_prepare_failed": {
+    "text": "Mash에서 {path}을(를) 준비하지 못했습니다.",
+    "source_hash": "67920ad8e50d"
+  },
+  "helper.launch.linux_update_settings_failed": {
+    "text": "Mash에서 업데이트 설정을 고정하지 못했습니다. 파일은 그대로 유지했습니다.",
+    "source_hash": "a8cb9d5749da"
+  },
+  "helper.launch.refused_start": {
+    "text": "Mash 시작이 거부되었습니다.",
+    "source_hash": "fea43a382106"
+  },
+  "helper.launch.setup_failed": {
+    "text": "{path} 설정에 실패했습니다. 자세한 내용: {log}",
+    "source_hash": "e891d0a29f1a"
+  },
+  "helper.launch.socket_outside": {
+    "text": "Mash 시작이 거부되었습니다: 소켓이 ~/.mash 외부에 있습니다.",
+    "source_hash": "ddb5d709d6cd"
+  },
+  "helper.launch.update_location_invalid": {
+    "text": "Mash 업데이트 위치가 올바르지 않습니다.",
+    "source_hash": "c53120b603c7"
+  },
+  "helper.launch.update_settings_failed": {
+    "text": "Mash에서 업데이트 설정을 고정하지 못했습니다. 자세한 내용: {log}",
+    "source_hash": "31a1842ec5dc"
+  },
+  "helper.launch.update_state_unsafe": {
+    "text": "Mash 업데이트 상태가 안전하지 않습니다.",
+    "source_hash": "f5d6ba096441"
+  },
+  "helper.launch.update_waiter_failed": {
+    "text": "Mash에서 업데이트 대기 프로세스를 등록하지 못했습니다.",
+    "source_hash": "ff2f989250a6"
+  },
+  "helper.launch.updater_incomplete": {
+    "text": "Mash 업데이트 프로그램이 완전하지 않습니다.",
+    "source_hash": "43c808c2338d"
+  },
+  "helper.popup.dismiss": {
+    "text": "(아무 키나 누르면 닫힘)",
+    "source_hash": "f57ff387149d"
+  },
+  "helper.setup.not_finished": {
+    "text": "Mash 설정이 끝나지 않아 Mash를 열지 않았습니다.",
+    "source_hash": "f7435b584992"
+  },
+  "helper.setup.open_again": {
+    "text": "Mash를 다시 열어 설정을 처음부터 시작하세요.",
+    "source_hash": "3c08c76f274a"
+  },
+  "helper.setup.press_enter": {
+    "text": "Enter 키를 누르면 이 창이 닫힙니다.",
+    "source_hash": "3cbf0fb2a94f"
+  },
+  "plugin.image-popup.no-image": {
+    "text": "표시할 이미지가 없습니다: {file}",
+    "source_hash": "91aa57b30f47"
+  },
+  "plugin.image-popup.source-file": {
+    "text": "(이미지 파일 위치: {file})",
+    "source_hash": "acda13cd6347"
+  },
+  "plugin.image-popup.viu-missing": {
+    "text": "viu가 설치되어 있지 않습니다. 다음 명령으로 설치하세요: brew install viu",
+    "source_hash": "51d203b460ac"
+  },
+  "plugin.mash-update-notice.notice.apt-failed": {
+    "text": "APT 저장소를 확인하고 sudo apt update를 실행하세요.",
+    "source_hash": "6e5d462c3fb3"
+  },
+  "plugin.mash-update-notice.notice.available-linux": {
+    "text": "현재 버전은 {installed}입니다. 업데이트하려면 실행하세요: {command}",
+    "source_hash": "408651e42b2f"
+  },
+  "plugin.mash-update-notice.notice.available-macos": {
+    "text": "현재 버전은 {installed}입니다. Mash를 열어 업데이트하세요.",
+    "source_hash": "110061a9c5d1"
+  },
+  "plugin.mash-update-notice.notice.check-failed": {
+    "text": "인터넷 연결을 확인하고 다시 시도하세요.",
+    "source_hash": "176afd02072f"
+  },
+  "plugin.mash-update-notice.notice.current-linux": {
+    "text": "현재 APT 메타데이터에서 더 새로운 Mash 버전을 찾지 못했습니다.",
+    "source_hash": "4076014ba5ad"
+  },
+  "plugin.mash-update-notice.notice.current-macos": {
+    "text": "모두 최신 상태입니다. Mash {version}이(가) 현재 버전입니다.",
+    "source_hash": "541489679898"
+  },
+  "plugin.mash-update-notice.notice.previous-restored": {
+    "text": "Mash {installed}이(가) 다시 실행 중입니다. {candidate} 업데이트가 완료되지 않았습니다.",
+    "source_hash": "e15f090dff62"
+  },
+  "plugin.mash-update-notice.notice.restart-required": {
+    "text": "{installed}이(가) 실행 중입니다. Mash {candidate}은(는) 이미 설치되었습니다. 사용하려면 Mash를 다시 시작하세요.",
+    "source_hash": "e1248557730a"
+  },
+  "plugin.mash-update-notice.notice.updated": {
+    "text": "새 버전의 Mash가 실행 중입니다.",
+    "source_hash": "e3caeafe33e1"
+  },
+  "plugin.mash-update-notice.pane.apt-failed": {
+    "text": "\n  APT에서 업데이트 정보를 찾지 못했습니다.\n\n  Mash 저장소를 확인하고 sudo apt update를 실행하세요.   (아무 키나 누르면 닫힘)",
+    "source_hash": "ae2c3f30f3cd"
+  },
+  "plugin.mash-update-notice.pane.available-linux": {
+    "text": "\n  Mash {candidate}을(를) 사용할 수 있습니다 (현재 {installed}).\n\n  업데이트 명령:\n    sudo apt install --only-upgrade letsmash\n\n  그런 다음 Mash를 다시 시작하세요.   (아무 키나 누르면 닫힘)",
+    "source_hash": "2073e20a4f2e"
+  },
+  "plugin.mash-update-notice.pane.check-failed": {
+    "text": "\n  지금은 업데이트를 확인할 수 없습니다.\n\n  인터넷 연결을 확인하고 다시 시도하세요.   (아무 키나 누르면 닫힘)",
+    "source_hash": "d716b0057955"
+  },
+  "plugin.mash-update-notice.pane.previous-restored": {
+    "text": "\n  Mash {installed}이(가) 다시 실행 중입니다.\n\n  {candidate} 업데이트가 완료되지 않았습니다. 작업 공간 파일은 롤백되지 않았습니다.\n\n  (아무 키나 누르면 닫힘)",
+    "source_hash": "23ce21e89b73"
+  },
+  "plugin.mash-update-notice.pane.restart-required": {
+    "text": "\n  Mash {installed}이(가) 실행 중이고 Mash {candidate}은(는) 이미 설치되었습니다.\n\n  작업을 저장한 뒤 설치된 버전을 사용하도록 Mash를 다시 시작하세요.\n  다운로드할 필요가 없습니다.   (아무 키나 누르면 닫힘)",
+    "source_hash": "8cfff1a68c6e"
+  },
+  "plugin.mash-update-notice.pane.update-prompt": {
+    "text": "\n  Mash {candidate}을(를) 사용할 수 있습니다 (현재 {installed}).\n\n  지금 업데이트하려면 u를 누르고, 닫으려면 다른 키를 누르세요.\n  업데이트 중 Mash를 종료하고 새 버전으로 다시 엽니다.\n\n  > ",
+    "source_hash": "e72a656d118c"
+  },
+  "plugin.mash-update-notice.pane.update-unavailable": {
+    "text": "\n  Mash {candidate}을(를) 사용할 수 있습니다 (현재 {installed}).\n\n  다음에서 다운로드하세요:\n    {url}\n\n  (아무 키나 누르면 닫힘)",
+    "source_hash": "3559cf5d3977"
+  },
+  "plugin.mash-update-notice.pane.updated": {
+    "text": "\n  Mash {version}이(가) 설치되어 실행 중입니다.\n\n  작업 공간과 설정은 ~/.mash에 유지됩니다.\n\n  (아무 키나 누르면 닫힘)",
+    "source_hash": "b6ec8b2c9bee"
+  },
+  "plugin.mash-update-notice.pane.up-to-date-linux": {
+    "text": "\n  현재 APT 메타데이터에서 더 새로운 Mash 버전을 찾지 못했습니다.\n\n  패키지 목록이 오래되었을 수 있다면 sudo apt update를 실행하세요.   (아무 키나 누르면 닫힘)",
+    "source_hash": "e5f9e50c721f"
+  },
+  "plugin.mash-update-notice.pane.up-to-date-macos": {
+    "text": "\n  모두 최신 상태입니다 (Mash {version}).\n\n  (아무 키나 누르면 닫힘)",
+    "source_hash": "0f6af22649b2"
+  },
+  "plugin.mash-update-notice.title.available": {
+    "text": "Mash {candidate}을(를) 사용할 수 있습니다",
+    "source_hash": "e9ea02ee8c67"
+  },
+  "plugin.mash-update-notice.title.check-failed": {
+    "text": "Mash 업데이트를 확인할 수 없습니다",
+    "source_hash": "43d510221839"
+  },
+  "plugin.mash-update-notice.title.previous-restored": {
+    "text": "이전 Mash가 복원되었습니다",
+    "source_hash": "db2ddd4e3f64"
+  },
+  "plugin.mash-update-notice.title.restart-required": {
+    "text": "Mash를 다시 시작해야 합니다",
+    "source_hash": "c22b233a4d7d"
+  },
+  "plugin.mash-update-notice.title.up-to-date": {
+    "text": "Mash가 최신 상태입니다",
+    "source_hash": "cc9e6d5993b9"
+  },
+  "plugin.mash-update-notice.title.updated": {
+    "text": "Mash가 {version}(으)로 업데이트되었습니다",
+    "source_hash": "855f75f65bcb"
+  }
+}

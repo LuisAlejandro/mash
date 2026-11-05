@@ -1,0 +1,182 @@
+{
+  "helper.launch.data_not_writable": {
+    "text": "{path} ist kein beschreibbarer Ordner. Details: {log}",
+    "source_hash": "c2daaf7abb17"
+  },
+  "helper.launch.data_prepare_failed": {
+    "text": "Mash konnte {path} nicht vorbereiten. Details: {log}",
+    "source_hash": "f1a3af24d2f1"
+  },
+  "helper.launch.environment_refused": {
+    "text": "Mash hat eine Umgebung außerhalb von {path} abgelehnt. Details: {log}",
+    "source_hash": "6cba761820b9"
+  },
+  "helper.launch.linux_data_prepare_failed": {
+    "text": "Mash konnte {path} nicht vorbereiten.",
+    "source_hash": "67920ad8e50d"
+  },
+  "helper.launch.linux_update_settings_failed": {
+    "text": "Mash konnte die Update-Einstellungen nicht festsetzen; die Datei blieb unverändert.",
+    "source_hash": "a8cb9d5749da"
+  },
+  "helper.launch.refused_start": {
+    "text": "Mash wurde nicht gestartet.",
+    "source_hash": "fea43a382106"
+  },
+  "helper.launch.setup_failed": {
+    "text": "Einrichtung von {path} fehlgeschlagen. Details: {log}",
+    "source_hash": "e891d0a29f1a"
+  },
+  "helper.launch.socket_outside": {
+    "text": "Mash wurde nicht gestartet: Socket liegt außerhalb von ~/.mash.",
+    "source_hash": "ddb5d709d6cd"
+  },
+  "helper.launch.update_location_invalid": {
+    "text": "Der Update-Speicherort von Mash ist ungültig.",
+    "source_hash": "c53120b603c7"
+  },
+  "helper.launch.update_settings_failed": {
+    "text": "Mash konnte die Update-Einstellungen nicht festsetzen. Details: {log}",
+    "source_hash": "31a1842ec5dc"
+  },
+  "helper.launch.update_state_unsafe": {
+    "text": "Der Update-Status von Mash ist unsicher.",
+    "source_hash": "f5d6ba096441"
+  },
+  "helper.launch.update_waiter_failed": {
+    "text": "Mash konnte den Update-Warteprozess nicht registrieren.",
+    "source_hash": "ff2f989250a6"
+  },
+  "helper.launch.updater_incomplete": {
+    "text": "Der Mash-Updater ist unvollständig.",
+    "source_hash": "43c808c2338d"
+  },
+  "helper.popup.dismiss": {
+    "text": "(beliebige Taste schließt)",
+    "source_hash": "f57ff387149d"
+  },
+  "helper.setup.not_finished": {
+    "text": "Die Mash-Einrichtung ist nicht abgeschlossen; Mash wurde daher nicht geöffnet.",
+    "source_hash": "f7435b584992"
+  },
+  "helper.setup.open_again": {
+    "text": "Öffne Mash erneut, um die Einrichtung von Anfang an zu starten.",
+    "source_hash": "3c08c76f274a"
+  },
+  "helper.setup.press_enter": {
+    "text": "Drücke Enter, um dieses Fenster zu schließen.",
+    "source_hash": "3cbf0fb2a94f"
+  },
+  "plugin.image-popup.no-image": {
+    "text": "Kein Bild zum Anzeigen: {file}",
+    "source_hash": "91aa57b30f47"
+  },
+  "plugin.image-popup.source-file": {
+    "text": "(das Bild selbst befindet sich unter {file})",
+    "source_hash": "acda13cd6347"
+  },
+  "plugin.image-popup.viu-missing": {
+    "text": "viu ist nicht installiert. Installiere es mit: brew install viu",
+    "source_hash": "51d203b460ac"
+  },
+  "plugin.mash-update-notice.notice.apt-failed": {
+    "text": "Prüfe das APT-Repository und führe sudo apt update aus.",
+    "source_hash": "6e5d462c3fb3"
+  },
+  "plugin.mash-update-notice.notice.available-linux": {
+    "text": "Du hast {installed}. Aktualisiere mit: {command}",
+    "source_hash": "408651e42b2f"
+  },
+  "plugin.mash-update-notice.notice.available-macos": {
+    "text": "Du hast {installed}. Öffne Mash zum Aktualisieren.",
+    "source_hash": "110061a9c5d1"
+  },
+  "plugin.mash-update-notice.notice.check-failed": {
+    "text": "Prüfe deine Internetverbindung und versuche es erneut.",
+    "source_hash": "176afd02072f"
+  },
+  "plugin.mash-update-notice.notice.current-linux": {
+    "text": "In den aktuellen APT-Metadaten wurde keine neuere Mash-Version gefunden.",
+    "source_hash": "4076014ba5ad"
+  },
+  "plugin.mash-update-notice.notice.current-macos": {
+    "text": "Alles ist aktuell. Mash {version} ist die aktuelle Version.",
+    "source_hash": "541489679898"
+  },
+  "plugin.mash-update-notice.notice.previous-restored": {
+    "text": "Mash {installed} läuft wieder. Das Update auf {candidate} wurde nicht abgeschlossen.",
+    "source_hash": "e15f090dff62"
+  },
+  "plugin.mash-update-notice.notice.restart-required": {
+    "text": "{installed} läuft. Mash {candidate} ist bereits installiert; starte Mash neu, um es zu verwenden.",
+    "source_hash": "e1248557730a"
+  },
+  "plugin.mash-update-notice.notice.updated": {
+    "text": "Mash läuft mit der neuen Version.",
+    "source_hash": "e3caeafe33e1"
+  },
+  "plugin.mash-update-notice.pane.apt-failed": {
+    "text": "\n  In APT wurden keine Update-Informationen gefunden.\n\n  Prüfe das Mash-Repository und führe sudo apt update aus.   (beliebige Taste schließt)",
+    "source_hash": "ae2c3f30f3cd"
+  },
+  "plugin.mash-update-notice.pane.available-linux": {
+    "text": "\n  Mash {candidate} ist verfügbar (du hast {installed}).\n\n  Aktualisiere mit:\n    sudo apt install --only-upgrade letsmash\n\n  Starte Mash anschließend neu.   (beliebige Taste schließt)",
+    "source_hash": "2073e20a4f2e"
+  },
+  "plugin.mash-update-notice.pane.check-failed": {
+    "text": "\n  Updates können gerade nicht geprüft werden.\n\n  Prüfe deine Internetverbindung und versuche es erneut.   (beliebige Taste schließt)",
+    "source_hash": "d716b0057955"
+  },
+  "plugin.mash-update-notice.pane.previous-restored": {
+    "text": "\n  Mash {installed} läuft wieder.\n\n  Das Update auf {candidate} wurde nicht abgeschlossen. Dateien deiner Arbeitsbereiche wurden nicht zurückgesetzt.\n\n  (beliebige Taste schließt)",
+    "source_hash": "23ce21e89b73"
+  },
+  "plugin.mash-update-notice.pane.restart-required": {
+    "text": "\n  Mash {installed} läuft; Mash {candidate} ist bereits installiert.\n\n  Speichere deine Arbeit und starte Mash neu, um die installierte Version zu verwenden.\n  Ein Download ist nicht nötig.   (beliebige Taste schließt)",
+    "source_hash": "8cfff1a68c6e"
+  },
+  "plugin.mash-update-notice.pane.update-prompt": {
+    "text": "\n  Mash {candidate} ist verfügbar (du hast {installed}).\n\n  Drücke u, um jetzt zu aktualisieren, oder eine andere Taste zum Schließen.\n  Das Update beendet Mash und öffnet es mit der neuen Version erneut.\n\n  > ",
+    "source_hash": "e72a656d118c"
+  },
+  "plugin.mash-update-notice.pane.update-unavailable": {
+    "text": "\n  Mash {candidate} ist verfügbar (du hast {installed}).\n\n  Lade es herunter unter:\n    {url}\n\n  (beliebige Taste schließt)",
+    "source_hash": "3559cf5d3977"
+  },
+  "plugin.mash-update-notice.pane.updated": {
+    "text": "\n  Mash {version} ist installiert und läuft.\n\n  Deine Arbeitsbereiche und Konfiguration bleiben in ~/.mash.\n\n  (beliebige Taste schließt)",
+    "source_hash": "b6ec8b2c9bee"
+  },
+  "plugin.mash-update-notice.pane.up-to-date-linux": {
+    "text": "\n  In den aktuellen APT-Metadaten wurde keine neuere Mash-Version gefunden.\n\n  Falls die Paketlisten veraltet sein könnten, führe sudo apt update aus.   (beliebige Taste schließt)",
+    "source_hash": "e5f9e50c721f"
+  },
+  "plugin.mash-update-notice.pane.up-to-date-macos": {
+    "text": "\n  Alles ist aktuell (Mash {version}).\n\n  (beliebige Taste schließt)",
+    "source_hash": "0f6af22649b2"
+  },
+  "plugin.mash-update-notice.title.available": {
+    "text": "Mash {candidate} ist verfügbar",
+    "source_hash": "e9ea02ee8c67"
+  },
+  "plugin.mash-update-notice.title.check-failed": {
+    "text": "Mash-Updates konnten nicht geprüft werden",
+    "source_hash": "43d510221839"
+  },
+  "plugin.mash-update-notice.title.previous-restored": {
+    "text": "Vorherige Mash-Version wiederhergestellt",
+    "source_hash": "db2ddd4e3f64"
+  },
+  "plugin.mash-update-notice.title.restart-required": {
+    "text": "Mash-Neustart erforderlich",
+    "source_hash": "c22b233a4d7d"
+  },
+  "plugin.mash-update-notice.title.up-to-date": {
+    "text": "Mash ist aktuell",
+    "source_hash": "cc9e6d5993b9"
+  },
+  "plugin.mash-update-notice.title.updated": {
+    "text": "Mash auf {version} aktualisiert",
+    "source_hash": "855f75f65bcb"
+  }
+}
