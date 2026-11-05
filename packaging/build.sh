@@ -69,6 +69,7 @@ ship_helpers=(
   mash-pi-http.mjs
   mash-notify
   mash-seed-sync
+  mash-t
   mash-update-notice
   mash-pane-resume
   mash-update-verify
@@ -366,6 +367,12 @@ chmod 755 "$app/Contents/Resources/bin/mash-launch" \
 cp "$root/packaging/Mash.icns" "$app/Contents/Resources/Mash.icns"
 # Shared runtime staging already created defaults/pi; merge without nesting.
 cp -R "$root/packaging/defaults/." "$app/Contents/Resources/defaults/"
+# The language table and the message catalogs. Every Mash component reads them
+# from the staged tree: mash-t and the helpers through MASH_I18N_DIR, the Pi
+# extensions and the Fresh plugin through the same variable. The Linux build
+# gets them from mash_stage_portable_payload; this build stages file by file.
+mkdir -p "$app/Contents/Resources/i18n"
+cp -R "$root/packaging/i18n/." "$app/Contents/Resources/i18n/"
 # The wizard's Mash-owned npm installer and host pip installer resolve pinned
 # versions from this manifest. Both refuse an unpinned network install.
 mkdir -p "$app/Contents/Resources/assets"
