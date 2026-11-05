@@ -31,6 +31,140 @@ mash_real_shell() {
   printf '%s\n' "${shell:-${SHELL:-/bin/sh}}"
 }
 
+# The POSIX locale of every language the wizard offers.
+#
+# The table is written out here because mash_isolate has to name LANG before it
+# can start any program, and the source of truth is packaging/i18n/languages.json
+# (KTD1). packaging/tests/test_mash_language_env.sh compares every row below with
+# that file, so a language cannot be added to one and forgotten in the other.
+mash_language_locale() {
+  case "${1:-}" in
+  bg) printf '%s\n' bg_BG.UTF-8 ;;
+  cs) printf '%s\n' cs_CZ.UTF-8 ;;
+  de) printf '%s\n' de_DE.UTF-8 ;;
+  en) printf '%s\n' en_US.UTF-8 ;;
+  es) printf '%s\n' es_MX.UTF-8 ;;
+  fr) printf '%s\n' fr_FR.UTF-8 ;;
+  it) printf '%s\n' it_IT.UTF-8 ;;
+  ja) printf '%s\n' ja_JP.UTF-8 ;;
+  ko) printf '%s\n' ko_KR.UTF-8 ;;
+  pt-BR) printf '%s\n' pt_BR.UTF-8 ;;
+  ru) printf '%s\n' ru_RU.UTF-8 ;;
+  th) printf '%s\n' th_TH.UTF-8 ;;
+  uk) printf '%s\n' uk_UA.UTF-8 ;;
+  vi) printf '%s\n' vi_VN.UTF-8 ;;
+  zh-CN) printf '%s\n' zh_CN.UTF-8 ;;
+  *) return 1 ;;
+  esac
+}
+
+# The raw value of the setup/language record, whatever it says.
+#
+# One `language=<code>` line, the same shape as setup/keybindings-mode. awk takes
+# the first match and stops, rather than piping sed into head: under a caller's
+# `set -o pipefail` a head that exits first turns sed's SIGPIPE into a failed
+# pipeline, which would read a perfectly good language as an unknown one.
+mash_language_recorded() {
+  awk 'sub(/^language=/, "") { print; exit }' "${1%/}/setup/language" 2>/dev/null
+}
+
+# Echo the language recorded in setup/language, or nothing when there is none.
+#
+# A code Mash does not ship reads as absent: the wizard can only write one of the
+# fifteen, so anything else is a hand edit a later launch has to survive rather
+# than refuse.
+mash_language_code() {
+  local code
+  code="$(mash_language_recorded "$1")"
+  [ -n "$code" ] || return 1
+  mash_language_locale "$code" >/dev/null || return 1
+  printf '%s\n' "$code"
+}
+
+# True when this host cannot resolve a POSIX locale.
+#
+# `locale -a` spells names the host's own way -- Ubuntu lists de_DE.utf8 where
+# macOS lists de_DE.UTF-8 -- so both sides are lowercased with the dashes dropped
+# before they are compared. No usable `locale` at all counts as missing, because
+# the fallback is the safe answer either way.
+mash_language_locale_missing() {
+  local want have
+  want="$(printf '%s\n' "${1:-}" | tr '[:upper:]' '[:lower:]' | tr -d '-')"
+  have="$(locale -a 2>/dev/null | tr '[:upper:]' '[:lower:]' | tr -d '-')" || return 0
+  # Matched with `case`, not `grep -q`: a grep that stops at its first match
+  # leaves the writing side of the pipeline on SIGPIPE, and under a caller's
+  # `set -o pipefail` that failed pipeline would read as "locale missing".
+  case "
+$have
+" in
+  *"
+$want
+"*) return 1 ;;
+  esac
+  return 0
+}
+
+# Point this process at the language the wizard recorded.
+#
+# $1 is the home whose ~/.mash/setup/language is read. The code decides LANG,
+# MASH_LANGUAGE (what every Mash catalog lookup reads) and MASH_I18N_DIR (the
+# staged catalogs beside this library). LC_ALL and every LC_* variable are
+# cleared: LC_ALL overrides LANG outright, and an inherited LC_TIME or
+# LC_NUMERIC would leave part of the process on the old locale, which is the
+# half-localized state a language switch must not produce (R5).
+#
+# On Linux with the locale absent from the host -- a minimal container, a
+# distribution that did not generate it -- LANG stays a locale the system can
+# always set, C.UTF-8, and LANGUAGE names the chosen language for gettext, so
+# the shell prints no locale warnings (R14, AE8) while GTK menus and other
+# gettext programs keep following the choice. Nothing Mash owns depends on the
+# system locale: its text comes from the catalogs (KTD2). macOS ships every
+# locale, so the check is Linux-only (KTD5).
+#
+# An unrecognized code leaves the environment exactly as it was and writes one
+# line to the launch log, so a typo is visible without breaking the launch.
+mash_isolate_language() {
+  local home="${1%/}" d code locale log line name lib_dir i18n
+  d="$home/.mash"
+  if code="$(mash_language_code "$d")"; then
+    locale="$(mash_language_locale "$code")"
+    export MASH_LANGUAGE="$code"
+    export LANG="$locale"
+    # In the bundle lib.sh sits in Resources/bin beside Resources/i18n; in the
+    # source tree it is packaging/lib.sh beside packaging/i18n. One candidate
+    # covers both, and an inherited MASH_I18N_DIR is left alone when neither
+    # exists rather than being pointed at nothing.
+    lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    if [ -d "$lib_dir/../i18n" ]; then
+      i18n="$(cd "$lib_dir/../i18n" && pwd)"
+      export MASH_I18N_DIR="$i18n"
+    elif [ -d "$lib_dir/i18n" ]; then
+      export MASH_I18N_DIR="$lib_dir/i18n"
+    fi
+    for name in LC_ALL LC_ADDRESS LC_COLLATE LC_CTYPE LC_IDENTIFICATION \
+      LC_MEASUREMENT LC_MESSAGES LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER \
+      LC_TELEPHONE LC_TIME; do
+      unset "$name"
+    done
+    if [ "${MASH_UNAME:-$(uname -s)}" = Linux ] && mash_language_locale_missing "$locale"; then
+      export LANG=C.UTF-8
+      export LANGUAGE="$code"
+    fi
+    return 0
+  fi
+  # Absent means an install from before the wizard asked; there is nothing to
+  # report. Anything else in the file is a code Mash does not ship. The line goes
+  # to the launch log once: the launcher truncates that log on every launch, and
+  # a pane finds the line already there instead of adding its own.
+  [ -s "$d/setup/language" ] || return 0
+  line="language: $(mash_language_recorded "$d") is not a language Mash ships; keeping the system locale" || true
+  log="$d/local/state/mash-launch.log"
+  if [ -d "$d/local/state" ] && ! grep -qxF -- "$line" "$log" 2>/dev/null; then
+    printf '%s\n' "$line" >>"$log" 2>/dev/null || true
+  fi
+  return 0
+}
+
 # Clear inherited HERDR_* and point every included tool at ~/.mash.
 #
 # $2 = "pane" is the pane shell's call. It keeps the per-pane variables the
@@ -186,6 +320,11 @@ mash_isolate() {
   if [ -n "$joined" ]; then
     export PATH="$joined"
   fi
+  # The wizard's language choice becomes this process's locale. It is read last,
+  # after the rest of the environment is built, so every program started from a
+  # pane inherits it -- and a change reaches the next pane even while Herdr's
+  # server keeps running from an earlier launch (AE2).
+  mash_isolate_language "$home"
   case "$HERDR_SOCKET_PATH" in
   "$home/.mash/run/herdr.sock") ;;
   *)
