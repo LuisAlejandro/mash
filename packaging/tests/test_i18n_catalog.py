@@ -117,15 +117,10 @@ def discover_sources(repo: Path) -> dict[str, str]:
     return sources
 
 
-def validate_i18n(i18n_dir: Path, source_files: dict[str, str] | None = None) -> list[str]:
-    errors: list[str] = []
-    codes, language_errors = validate_languages(i18n_dir / "languages.json")
-    errors.extend(language_errors)
-
-    messages_dir = i18n_dir / "messages"
+def _load_catalogs(component_dir: Path, errors: list[str]) -> dict[str, dict]:
     catalogs: dict[str, dict] = {}
     for code in EXPECTED_CODES:
-        path = messages_dir / f"{code}.json"
+        path = component_dir / f"{code}.json"
         data = _read_json(path, errors)
         if data is None:
             continue
@@ -133,52 +128,90 @@ def validate_i18n(i18n_dir: Path, source_files: dict[str, str] | None = None) ->
             errors.append(f"{path}: catalog must be a JSON object")
             continue
         catalogs[code] = data
+    for path in sorted(component_dir.glob("*.json")):
+        if path.stem not in EXPECTED_CODES:
+            errors.append(f"unexpected message catalog {component_dir.name}/{path.name}")
+    return catalogs
 
-    if messages_dir.is_dir():
-        for path in sorted(messages_dir.glob("*.json")):
-            if path.stem not in EXPECTED_CODES:
-                errors.append(f"unexpected message catalog {path.name}")
 
-    english = catalogs.get("en")
-    if english is None:
-        return errors
-
+def _check_english(component: str, english: dict, errors: list[str]) -> None:
     for key, value in english.items():
         if not isinstance(key, str) or not KEY.fullmatch(key):
-            errors.append(f"en.json has invalid message key {key!r}")
+            errors.append(f"{component}/en.json has invalid message key {key!r}")
         if not isinstance(value, str):
-            errors.append(f"en.json key {key!r} must have a string value")
+            errors.append(f"{component}/en.json key {key!r} must have a string value")
         elif not value:
-            errors.append(f"en.json key {key!r} has an empty value")
+            errors.append(f"{component}/en.json key {key!r} has an empty value")
 
+
+def _check_translations(component: str, english: dict, catalogs: dict[str, dict], errors: list[str]) -> None:
     for code in EXPECTED_CODES:
-        if code == "en" or code not in catalogs:
+        if code == "en":
             continue
-        translated = catalogs[code]
+        translated = catalogs.get(code)
+        if translated is None:
+            continue
         for key in english:
             if key not in translated:
-                errors.append(f"{code}: missing key {key!r}")
+                errors.append(f"{component}/{code}: missing key {key!r}")
         for key, entry in translated.items():
             if key not in english:
-                errors.append(f"{code}: translation-only key {key!r}")
+                errors.append(f"{component}/{code}: translation-only key {key!r}")
                 continue
             english_text = english[key]
             if not isinstance(english_text, str):
                 continue
             if not isinstance(entry, dict):
-                errors.append(f"{code}: {key!r} must contain text and source_hash")
+                errors.append(f"{component}/{code}: {key!r} must contain text and source_hash")
                 continue
             text = entry.get("text")
             recorded_hash = entry.get("source_hash")
             if not isinstance(text, str):
-                errors.append(f"{code}: {key!r} has no string text")
+                errors.append(f"{component}/{code}: {key!r} has no string text")
                 continue
             if not text:
-                errors.append(f"{code}: {key!r} has an empty value")
+                errors.append(f"{component}/{code}: {key!r} has an empty value")
             if recorded_hash != source_hash(english_text):
-                errors.append(f"{code}: {key!r} is stale (source_hash mismatch)")
+                errors.append(f"{component}/{code}: {key!r} is stale (source_hash mismatch)")
             if set(PLACEHOLDER.findall(text)) != set(PLACEHOLDER.findall(english_text)):
-                errors.append(f"{code}: {key!r} has a placeholder mismatch")
+                errors.append(f"{component}/{code}: {key!r} has a placeholder mismatch")
+
+
+def validate_i18n(i18n_dir: Path, source_files: dict[str, str] | None = None) -> list[str]:
+    """Check every component catalog under messages/<component>/<lang>.json.
+
+    Each component directory is owned by one unit of work, so a component must
+    carry all fifteen languages, and a key may be defined by only one component.
+    """
+    errors: list[str] = []
+    _, language_errors = validate_languages(i18n_dir / "languages.json")
+    errors.extend(language_errors)
+
+    messages_dir = i18n_dir / "messages"
+    if not messages_dir.is_dir():
+        errors.append(f"missing {messages_dir}")
+        return errors
+    for path in sorted(messages_dir.iterdir()):
+        if path.is_file() and path.name != ".gitkeep":
+            errors.append(f"unexpected file messages/{path.name}; catalogs live in messages/<component>/")
+
+    combined: dict[str, str] = {}
+    for component_dir in sorted(p for p in messages_dir.iterdir() if p.is_dir()):
+        component = component_dir.name
+        catalogs = _load_catalogs(component_dir, errors)
+        for code in EXPECTED_CODES:
+            if code not in catalogs and not (component_dir / f"{code}.json").exists():
+                errors.append(f"{component}: missing {code}.json")
+        english = catalogs.get("en")
+        if english is None:
+            continue
+        _check_english(component, english, errors)
+        for key, value in english.items():
+            if key in combined:
+                errors.append(f"{component}/en.json key {key!r} is also defined in another component")
+            elif isinstance(value, str):
+                combined[key] = value
+        _check_translations(component, english, catalogs, errors)
 
     sources = discover_sources(REPO) if source_files is None else source_files
     used: dict[str, str] = {}
@@ -186,22 +219,22 @@ def validate_i18n(i18n_dir: Path, source_files: dict[str, str] | None = None) ->
         file_keys = {key for pattern in LOOKUP_PATTERNS for key in pattern.findall(source)}
         for key in sorted(file_keys):
             used.setdefault(key, filename)
-            if key not in english:
+            if key not in combined:
                 errors.append(f"{filename}: undefined i18n key {key!r}")
-    for key in english:
+    for key in combined:
         if key not in used:
             errors.append(f"unused catalog key {key!r}")
 
     return errors
 
 
-def _fixture_catalogs(directory: Path, english: dict[str, str] | None = None) -> Path:
+def _fixture_catalogs(directory: Path, english: dict[str, str] | None = None, component: str = "helpers") -> Path:
     root = directory / "i18n"
-    messages = root / "messages"
-    messages.mkdir(parents=True)
+    component_dir = root / "messages" / component
+    component_dir.mkdir(parents=True)
     shutil.copyfile(I18N / "languages.json", root / "languages.json")
     english = english or {}
-    (messages / "en.json").write_text(json.dumps(english), encoding="utf-8")
+    (component_dir / "en.json").write_text(json.dumps(english), encoding="utf-8")
     for code in EXPECTED_CODES:
         if code == "en":
             continue
@@ -209,7 +242,7 @@ def _fixture_catalogs(directory: Path, english: dict[str, str] | None = None) ->
             key: {"text": value, "source_hash": source_hash(value)}
             for key, value in english.items()
         }
-        (messages / f"{code}.json").write_text(json.dumps(translated), encoding="utf-8")
+        (component_dir / f"{code}.json").write_text(json.dumps(translated), encoding="utf-8")
     return root
 
 
@@ -220,7 +253,7 @@ class I18nCatalogTest(unittest.TestCase):
     def test_missing_translation_names_key_and_language(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = _fixture_catalogs(Path(tmp), {"helper.example": "Count {count}"})
-            path = root / "messages" / "th.json"
+            path = root / "messages" / "helpers" / "th.json"
             path.write_text("{}", encoding="utf-8")
             problems = self.problems(root, {})
         self.assertTrue(any("helper.example" in problem and "th" in problem for problem in problems), problems)
@@ -228,7 +261,7 @@ class I18nCatalogTest(unittest.TestCase):
     def test_changed_english_source_is_stale(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = _fixture_catalogs(Path(tmp), {"helper.example": "Hello"})
-            english = root / "messages" / "en.json"
+            english = root / "messages" / "helpers" / "en.json"
             english.write_text(json.dumps({"helper.example": "Hello again"}), encoding="utf-8")
             problems = self.problems(root, {})
         self.assertTrue(any("helper.example" in problem and "de" in problem and "stale" in problem for problem in problems), problems)
@@ -236,7 +269,7 @@ class I18nCatalogTest(unittest.TestCase):
     def test_placeholder_names_must_match(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = _fixture_catalogs(Path(tmp), {"helper.example": "Count {count}"})
-            path = root / "messages" / "de.json"
+            path = root / "messages" / "helpers" / "de.json"
             data = json.loads(path.read_text(encoding="utf-8"))
             data["helper.example"]["text"] = "Anzahl {n}"
             path.write_text(json.dumps(data), encoding="utf-8")
@@ -246,7 +279,7 @@ class I18nCatalogTest(unittest.TestCase):
     def test_empty_and_translation_only_entries_fail(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = _fixture_catalogs(Path(tmp), {"helper.empty": ""})
-            path = root / "messages" / "de.json"
+            path = root / "messages" / "helpers" / "de.json"
             data = json.loads(path.read_text(encoding="utf-8"))
             data["helper.extra"] = {"text": "Zusatz", "source_hash": source_hash("")}
             path.write_text(json.dumps(data), encoding="utf-8")
@@ -290,6 +323,9 @@ class I18nCatalogTest(unittest.TestCase):
             (packaging / "helpers").mkdir(parents=True)
             (packaging / "defaults").mkdir()
             shutil.copytree(I18N, packaging / "i18n")
+            (packaging / "i18n" / "messages" / "helpers").mkdir(parents=True)
+            for code in EXPECTED_CODES:
+                (packaging / "i18n" / "messages" / "helpers" / f"{code}.json").write_text("{}\n", encoding="utf-8")
             (packaging / "assets.json").write_text("{}\n", encoding="utf-8")
             (packaging / "assets.py").write_text("\n", encoding="utf-8")
             (source / "VERSION").write_text("1.0.0\n", encoding="utf-8")
@@ -308,7 +344,27 @@ class I18nCatalogTest(unittest.TestCase):
             self.assertTrue((destination / "i18n" / "languages.json").is_file())
             for code in EXPECTED_CODES:
                 with self.subTest(code=code):
-                    self.assertTrue((destination / "i18n" / "messages" / f"{code}.json").is_file())
+                    self.assertTrue((destination / "i18n" / "messages" / "helpers" / f"{code}.json").is_file())
+
+    def test_component_needs_all_fifteen_languages(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = _fixture_catalogs(Path(tmp), {"helper.example": "Hello"})
+            (root / "messages" / "helpers" / "fr.json").unlink()
+            problems = self.problems(root, {"packaging/helpers/x.sh": "mash-t helper.example\n"})
+        self.assertTrue(any("helpers: missing fr.json" in problem for problem in problems), problems)
+
+    def test_key_defined_by_two_components_fails(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = _fixture_catalogs(Path(tmp), {"helper.example": "Hello"})
+            other = root / "messages" / "pi"
+            other.mkdir()
+            for code in EXPECTED_CODES:
+                (other / f"{code}.json").write_text(
+                    json.dumps({"helper.example": {"text": "x", "source_hash": source_hash("Hello")}} if code != "en" else {"helper.example": "Hello"}),
+                    encoding="utf-8",
+                )
+            problems = self.problems(root, {"packaging/helpers/x.sh": "mash-t helper.example\n"})
+        self.assertTrue(any("also defined in another component" in problem for problem in problems), problems)
 
     def test_repository_catalogs_are_complete(self):
         self.assertEqual([], validate_i18n(I18N), "\n".join(validate_i18n(I18N)))
