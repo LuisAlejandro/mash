@@ -94,6 +94,18 @@ def validate_languages(path: Path) -> tuple[list[str], list[str]]:
     return codes, errors
 
 
+def _is_shell_script(path: Path) -> bool:
+    """Extensionless launchers such as packaging/mash are shell sources too."""
+    if path.suffix:
+        return False
+    try:
+        with path.open("rb") as handle:
+            head = handle.read(200)
+    except OSError:
+        return False
+    return head.startswith(b"#!") and b"sh" in head.split(b"\n", 1)[0]
+
+
 def discover_sources(repo: Path) -> dict[str, str]:
     sources: dict[str, str] = {}
     for root_name in ("packaging", "scripts"):
@@ -101,7 +113,9 @@ def discover_sources(repo: Path) -> dict[str, str]:
         if not root.is_dir():
             continue
         for path in sorted(root.rglob("*")):
-            if not path.is_file() or path.suffix not in SOURCE_SUFFIXES:
+            if not path.is_file():
+                continue
+            if path.suffix not in SOURCE_SUFFIXES and not _is_shell_script(path):
                 continue
             relative = path.relative_to(repo)
             if "tests" in relative.parts or "node_modules" in relative.parts or "target" in relative.parts:
@@ -323,9 +337,6 @@ class I18nCatalogTest(unittest.TestCase):
             (packaging / "helpers").mkdir(parents=True)
             (packaging / "defaults").mkdir()
             shutil.copytree(I18N, packaging / "i18n")
-            (packaging / "i18n" / "messages" / "helpers").mkdir(parents=True)
-            for code in EXPECTED_CODES:
-                (packaging / "i18n" / "messages" / "helpers" / f"{code}.json").write_text("{}\n", encoding="utf-8")
             (packaging / "assets.json").write_text("{}\n", encoding="utf-8")
             (packaging / "assets.py").write_text("\n", encoding="utf-8")
             (source / "VERSION").write_text("1.0.0\n", encoding="utf-8")
