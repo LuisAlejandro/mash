@@ -150,6 +150,21 @@ class FreshPatchParityTest(unittest.TestCase):
         self.assertIn("for name in $patches", common)  # apply loop
 
 
+def resolved_extra_depends(build):
+    """extra_depends as the control file receives it.
+
+    The build script composes it from shell variables, so substitute every
+    $name with the name="..." assignment in the same script: the string inside
+    the .deb is what matters, not how it was assembled.
+    """
+    extra = re.search(r'extra_depends="([^"]+)"', build).group(1)
+    for name in set(re.findall(r"\$(\w+)", extra)):
+        assignment = re.search(rf'(?m)^{name}="([^"]+)"', build)
+        assert assignment, f"extra_depends uses ${name} but build-linux.sh never assigns it"
+        extra = extra.replace(f"${name}", assignment.group(1))
+    return extra
+
+
 class HostUtilityDependsTest(unittest.TestCase):
     """The host utilities arrive through apt, and under the right names.
 
@@ -160,12 +175,7 @@ class HostUtilityDependsTest(unittest.TestCase):
     """
 
     def setUp(self):
-        self.build = (PACKAGING / "build-linux.sh").read_text()
-        # extra_depends composes $host_utilities, so resolve it the way the
-        # shell will: the string the control file receives is what matters.
-        utilities = re.search(r'host_utilities="([^"]+)"', self.build).group(1)
-        extra = re.search(r'extra_depends="([^"]+)"', self.build).group(1)
-        self.depends = extra.replace("$host_utilities", utilities)
+        self.depends = resolved_extra_depends((PACKAGING / "build-linux.sh").read_text())
 
     def test_every_host_utility_is_a_dependency(self):
         for package in ("git", "zoxide", "eza", "fzf", "fd-find", "bat",
@@ -206,6 +216,30 @@ class HostUtilityDependsTest(unittest.TestCase):
         files_rs = (PACKAGING / "plugins" / "telescope" / "src" / "files.rs").read_text()
         self.assertIn("TELESCOPE_FD", files_rs)
         self.assertIn("fdfind", files_rs)
+
+
+class FontDependsTest(unittest.TestCase):
+    """CJK and Thai text must not arrive as boxes on a fresh Linux install.
+
+    Mash speaks 15 languages, four of which need glyphs Ubuntu does not ship by
+    default (ja, ko, zh-CN and th). Ghostty falls back to fontconfig per missing
+    glyph, so the fonts themselves are the dependency: without them the wizard
+    and the terminal render tofu, and nothing tells the user to install fonts.
+    """
+
+    def setUp(self):
+        self.depends = resolved_extra_depends((PACKAGING / "build-linux.sh").read_text())
+
+    def test_cjk_and_thai_fonts_are_dependencies(self):
+        for package in ("fonts-noto-cjk", "fonts-thai-tlwg"):
+            with self.subTest(package=package):
+                self.assertIn(package, self.depends)
+
+    def test_fonts_reach_the_control_file(self):
+        # The composed value is only a dependency if the sed that renders
+        # control.in actually substitutes it into @EXTRA_DEPENDS@.
+        build = (PACKAGING / "build-linux.sh").read_text()
+        self.assertIn('s#@EXTRA_DEPENDS@#$extra_depends#', build)
 
 
 class SharedPayloadCatalogTest(unittest.TestCase):

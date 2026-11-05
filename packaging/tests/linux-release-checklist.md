@@ -27,6 +27,7 @@ display, claims the packaged app-id, and exits without leaving a server behind.
 | Voice model selection | `test-mash-voice-model.sh` plans a model path without a network |
 | Tool installation | `mash-tool-install` installs npm, binary and system strategies into `~/.mash` and the shims answer `--version` |
 | Package contents | `verify-linux-installed.sh`: 26 checks over metadata, tree, icons, RPATH, linkage and identity |
+| Language fonts | `test_linux_package.py` requires the built `Depends` to carry `fonts-noto-cjk` and `fonts-thai-tlwg`, so a machine without extra font installs has a fallback for ja, ko, zh-CN and th. Ghostty asks fontconfig per missing glyph, so the fonts are the only thing that was missing |
 | Repository configuration | `test_linux_package.py` contract-checks `postinst`/`postrm`; a real install is proven by `apt-upgrade-smoke.sh --deb <package>` writing `/etc/apt/sources.list.d/letsmash.sources` |
 | Repository trust chain | `apt-upgrade-smoke.sh`: the published index verifies against the keyring the package ships, and apt resolves `letsmash` from `apt.letsma.sh` |
 | Upgrade preserves state | `apt-upgrade-smoke.sh` after publication, plus `test_seed_ownership.sh` for the seeded-file rule (edited files kept, untouched defaults refreshed) |
@@ -47,7 +48,7 @@ used.
 | Update notice | On GNOME Xorg and Wayland, install an older `letsmash`, make a newer one the APT candidate (published, or a scratch repository as in `packaging/tests/apt-upgrade-smoke.sh`), and open Mash: one centered popup and one desktop notification name both versions and `sudo apt install --only-upgrade letsmash`, and any key closes the popup. Close Mash and relaunch: nothing appears. Delete `/etc/apt/sources.list.d/letsmash.sources`, run `apt-get update`, and relaunch: nothing appears. The popup is drawn by the attached client and the notification surface is not observable headlessly |
 | CUA background input into an occluded window | depends on compositor policy a headless backend does not implement |
 | Notification delivery appearance | the session bus is observable, the notification surface is not |
-| Font rendering | needs a real GPU/screen to judge, not only fontconfig discovery |
+| Font rendering | needs a real GPU/screen to judge, not only fontconfig discovery. On Ubuntu 24.04 choose each of ja, ko, zh-CN and th in the wizard, and confirm the glyphs render there, in a Herdr pane and in Fresh: with Korean, the wizard shows Hangul, not boxes (AE7). The package declares the fonts, so boxes here mean a font or fallback regression, not a missing install |
 | Audio capture from a microphone | the harness uses a virtual source; hardware wake-up and permissions are a machine concern |
 
 **Blocking:** publication requires every row above to be signed off. If a row
