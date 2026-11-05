@@ -1,7 +1,7 @@
 //! Terminal font and colour theme. Font choices come from the Ghostty bundled
 //! with Mash, so the list contains installed monospaced families that this
 //! terminal can actually use. The theme switches every Mash component at once.
-use crate::wizard_style;
+use crate::{i18n, wizard_style};
 use ratatui::{
     crossterm::event::{KeyCode, KeyModifiers},
     layout::{Constraint, Layout, Rect},
@@ -21,6 +21,7 @@ use std::{
 use crate::theme::Theme;
 
 const DEFAULT_FONT: &str = "MesloLGS NF";
+const NO_FONT_LIST_WARNING: &str = "wizard.font.warning_no_list";
 const MIN_SIZE: u8 = 6;
 const MAX_SIZE: u8 = 72;
 const THEME: u8 = 0;
@@ -78,10 +79,10 @@ pub enum Keybindings {
 }
 
 impl Keybindings {
-    pub fn label(self) -> &'static str {
+    pub fn label(self) -> String {
         match self {
-            Self::Mash => "Mash / Cursor-style",
-            Self::Native => "Native",
+            Self::Mash => i18n::t("wizard.font.keybindings.mash"),
+            Self::Native => i18n::t("wizard.font.keybindings.native"),
         }
     }
 
@@ -150,10 +151,7 @@ impl FontPage {
                 Self::parse_fonts(&String::from_utf8_lossy(&output.stdout)),
                 None,
             ),
-            _ => (
-                vec![],
-                Some("Could not list installed fonts; bundled Meslo is still available.".into()),
-            ),
+            _ => (vec![], Some(NO_FONT_LIST_WARNING.into())),
         };
         let mut page = Self::with_fonts(fonts, warning);
         if let Ok(current) = fs::read_to_string(config) {
@@ -545,15 +543,22 @@ impl FontPage {
             Constraint::Length(3),
         ])
         .split(wizard_style::page_area(frame, Some(5)));
-        wizard_style::header(frame, parts[0], &wizard_style::page_title("Appearance", 5));
+        wizard_style::header(
+            frame,
+            parts[0],
+            &wizard_style::page_title(&i18n::t("wizard.font.title"), 5),
+        );
         self.draw_theme(frame, parts[1]);
         self.draw_keybindings(frame, parts[2]);
         let parts = &parts[2..];
-        let hint = wizard_style::section(frame, parts[1], "Fonts on this computer");
-        let mut filter =
-            wizard_style::text_field(self.focus == LIST, "Filter fonts", self.filter.clone());
+        let hint = wizard_style::section(frame, parts[1], &i18n::t("wizard.font.fonts_section"));
+        let mut filter = wizard_style::text_field(
+            self.focus == LIST,
+            &i18n::t("wizard.font.filter"),
+            self.filter.clone(),
+        );
         filter.spans.push(Span::styled(
-            "   ↑/↓ fonts · Tab to size",
+            format!("   {}", i18n::t("wizard.font.filter_hint")),
             Style::default().fg(wizard_style::MUTED),
         ));
         wizard_style::render_form(
@@ -570,12 +575,18 @@ impl FontPage {
             parts[4],
             &[
                 (
-                    wizard_style::button(self.focus == BACK, " Back "),
+                    wizard_style::button(
+                        self.focus == BACK,
+                        &format!(" {} ", i18n::t("wizard.font.back")),
+                    ),
                     Some(self.fonts.len() + 2),
                 ),
                 (Span::raw("  "), None),
                 (
-                    wizard_style::button(self.focus == NEXT, " Continue to dictation "),
+                    wizard_style::button(
+                        self.focus == NEXT,
+                        &format!(" {} ", i18n::t("wizard.font.next")),
+                    ),
                     Some(self.fonts.len() + 3),
                 ),
             ],
@@ -583,7 +594,7 @@ impl FontPage {
     }
 
     fn draw_fonts(&self, frame: &mut Frame, area: Rect) {
-        let body = wizard_style::section(frame, area, "Font family (Meslo is bundled)");
+        let body = wizard_style::section(frame, area, &i18n::t("wizard.font.family_section"));
         let matches = self.matching();
         let count = body
             .height
@@ -615,23 +626,27 @@ impl FontPage {
         }
         if lines.is_empty() {
             lines.push(Line::styled(
-                "No matching fonts — Backspace to broaden the search",
+                i18n::t("wizard.font.no_fonts"),
                 Style::default().fg(wizard_style::RED),
             ));
         }
         frame.render_widget(Paragraph::new(lines), body);
         if let Some(warning) = &self.warning {
             let row = Rect::new(body.x, body.bottom().saturating_sub(1), body.width, 1);
+            let warning = if warning == NO_FONT_LIST_WARNING {
+                i18n::t("wizard.font.warning_no_list")
+            } else {
+                warning.clone()
+            };
             frame.render_widget(
-                Paragraph::new(warning.as_str()).style(Style::default().fg(wizard_style::RED)),
+                Paragraph::new(warning).style(Style::default().fg(wizard_style::RED)),
                 row,
             );
         }
     }
 
     fn draw_keybindings(&self, frame: &mut Frame, area: Rect) {
-        let body =
-            wizard_style::section(frame, area, "Keybindings (permanent once setup completes)");
+        let body = wizard_style::section(frame, area, &i18n::t("wizard.font.keybindings_section"));
         let mut x = body.x + 2;
         let mut spans = vec![Span::raw("  ")];
         for (index, mode) in [Keybindings::Mash, Keybindings::Native]
@@ -661,18 +676,14 @@ impl FontPage {
         frame.render_widget(Paragraph::new(Line::from(spans)), body);
         let note = Rect::new(body.x + 2, body.y + 1, body.width.saturating_sub(2), 1);
         frame.render_widget(
-            Paragraph::new("Cursor's chords, or each app's own keys (Herdr on Ctrl+B).")
+            Paragraph::new(i18n::t("wizard.font.keybindings_note"))
                 .style(Style::default().fg(wizard_style::MUTED)),
             note,
         );
     }
 
     fn draw_theme(&self, frame: &mut Frame, area: Rect) {
-        let body = wizard_style::section(
-            frame,
-            area,
-            "Theme (Herdr, Mash Terminal, Fresh, Pi, reviewr)",
-        );
+        let body = wizard_style::section(frame, area, &i18n::t("wizard.font.theme_section"));
         let mut x = body.x + 2;
         let mut spans = vec![Span::raw("  ")];
         for (index, theme) in [Theme::Dark, Theme::Light].into_iter().enumerate() {
@@ -693,21 +704,22 @@ impl FontPage {
             spans.push(Span::raw("    "));
         }
         spans.push(Span::styled(
-            "←/→ switch",
+            i18n::t("wizard.font.theme_switch"),
             Style::default().fg(wizard_style::MUTED),
         ));
         frame.render_widget(Paragraph::new(Line::from(spans)), body);
     }
 
     fn draw_size(&self, frame: &mut Frame, area: Rect) {
-        let body = wizard_style::section(frame, area, "Font size (points)");
+        let body = wizard_style::section(frame, area, &i18n::t("wizard.font.size_section"));
         let controls = format!(
-            "  [-]  {:>2}  [+]   ←/→ adjust (6–72){}",
+            "  [-]  {:>2}  [+]   {}{}",
             self.size,
+            i18n::t("wizard.font.size_adjust"),
             if self.live.is_some() {
-                " · previews in this window"
+                format!(" · {}", i18n::t("wizard.font.preview_suffix"))
             } else {
-                ""
+                String::new()
             }
         );
         wizard_style::target(Rect::new(body.x + 2, body.y, 3, 1), self.fonts.len());

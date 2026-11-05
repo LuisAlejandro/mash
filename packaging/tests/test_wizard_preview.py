@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Real PTY: eight pages, source choices and all three model pickers; no writes."""
 import fcntl
+import json
 import os
 from pathlib import Path
 import pty
@@ -88,9 +89,11 @@ class WizardPreviewTest(unittest.TestCase):
                 try:
                     initial = b""
                     deadline = time.monotonic() + 5
-                    while "Start config wizard" not in ANSI.sub("", initial.decode("utf-8", errors="replace")):
-                        self.assertLess(time.monotonic(), deadline, "wizard did not start")
+                    while "Choose your language" not in ANSI.sub("", initial.decode("utf-8", errors="replace")):
+                        self.assertLess(time.monotonic(), deadline, "language page did not start")
                         initial += drain(0.1)
+                    welcome = frame(b"\r")
+                    self.assertIn("Start config wizard", welcome)
                     identity = frame(b"\r")
                     self.assertIn("Identity — page 1/7", identity)
                     self.assertIn("Signing key", identity)
@@ -158,6 +161,99 @@ class WizardPreviewTest(unittest.TestCase):
                     process.wait()
                     self.assertEqual(process.returncode, 3)
                     self.assertEqual(list(home.rglob("*")), [], "preview wrote data or launched a helper")
+                finally:
+                    if process.poll() is None:
+                        process.kill()
+                        process.wait()
+                    os.close(master)
+                    os.close(slave)
+
+    def test_language_and_tools_pages_fit_all_catalogs_at_80x24(self):
+        languages = json.loads((ROOT / "packaging/i18n/languages.json").read_text())
+        codes = [row["code"] for row in languages]
+        english_index = codes.index("en")
+        for row in languages:
+            code = row["code"]
+            catalog = json.loads(
+                (ROOT / "packaging/i18n/messages/wizard" / f"{code}.json").read_text()
+            )
+            message = lambda key: catalog[key]["text"] if isinstance(catalog[key], dict) else catalog[key]
+            page_title = lambda key, page: message("wizard.shell.page_title").format(
+                title=message(key), current=page, total=7
+            )
+            with self.subTest(language=code), tempfile.TemporaryDirectory(prefix="mash-language-") as tmp:
+                home = Path(tmp) / "home"
+                home.mkdir()
+                resources = Path(tmp) / "resources"
+                resources.mkdir()
+                master, slave = pty.openpty()
+
+                def attach():
+                    os.setsid()
+                    fcntl.ioctl(0, termios.TIOCSCTTY, 0)
+
+                fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 24, 80, 0, 0))
+                process = subprocess.Popen(
+                    [str(self.binary), "--preview"], stdin=slave, stdout=slave, stderr=slave,
+                    cwd=ROOT, preexec_fn=attach,
+                    env={"HOME": str(home), "PATH": os.environ["PATH"], "TERM": "xterm-256color",
+                         "MASH_RES_ROOT": str(resources)},
+                )
+
+                def drain(seconds):
+                    output = b""
+                    until = time.monotonic() + seconds
+                    while time.monotonic() < until:
+                        ready, _, _ = select.select([master], [], [], max(0, until - time.monotonic()))
+                        if ready:
+                            try:
+                                output += os.read(master, 65536)
+                            except OSError:
+                                break
+                    return output
+
+                columns = 80
+
+                def size():
+                    fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 24, columns, 0, 0))
+
+                def frame(keys=b""):
+                    nonlocal columns
+                    if keys:
+                        os.write(master, keys)
+                    drain(0.1)
+                    if process.poll() is not None:
+                        return ""
+                    columns = 81 if columns == 80 else 80
+                    size()
+                    os.kill(process.pid, signal.SIGWINCH)
+                    return ANSI.sub("", drain(0.2).decode("utf-8", errors="replace"))
+
+                try:
+                    initial = b""
+                    deadline = time.monotonic() + 5
+                    while "Choose your language" not in ANSI.sub("", initial.decode("utf-8", errors="replace")):
+                        self.assertLess(time.monotonic(), deadline, "language page did not start")
+                        initial += drain(0.1)
+                    delta = codes.index(code) - english_index
+                    move = DOWN if delta > 0 else b"\x1b[A"
+                    lang_screen = frame(move * abs(delta)) + frame()
+                    self.assertIn(row["name"], lang_screen)
+                    self.assertIn(message("wizard.language.continue"), lang_screen)
+                    welcome = frame(b"\r")
+                    self.assertIn(message("wizard.welcome.start"), welcome)
+                    identity = frame(b"\r")
+                    self.assertIn(page_title("wizard.identity.title", 1), identity)
+                    tools = frame(b"2") + frame()
+                    self.assertIn(page_title("wizard.tools.title", 2), tools)
+                    self.assertIn(message("wizard.tools.next"), tools)
+                    if code == "es":
+                        voice_page = frame(b"7")
+                        self.assertIn("[x] Español", voice_page)
+                    frame(b"\x1b")
+                    frame(b"\x1b")
+                    self.assertEqual(process.wait(timeout=5), 3)
+                    self.assertEqual(list(home.rglob("*")), [], "preview wrote setup state")
                 finally:
                     if process.poll() is None:
                         process.kill()

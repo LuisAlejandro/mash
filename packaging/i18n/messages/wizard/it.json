@@ -1,0 +1,590 @@
+{
+  "wizard.language.title": {
+    "text": "Scegli la lingua",
+    "source_hash": "8e2d0664dbbb"
+  },
+  "wizard.language.prompt": {
+    "text": "Lingua di configurazione",
+    "source_hash": "6a37bc86eb31"
+  },
+  "wizard.language.continue": {
+    "text": "Continua",
+    "source_hash": "31fbef162594"
+  },
+  "wizard.welcome.start": {
+    "text": "Avvia la procedura guidata",
+    "source_hash": "0fe79b066746"
+  },
+  "wizard.identity.title": {
+    "text": "Identità",
+    "source_hash": "999f23fcd7be"
+  },
+  "wizard.identity.name_label": {
+    "text": "Nome:",
+    "source_hash": "2683cad48a14"
+  },
+  "wizard.identity.name_help": {
+    "text": "Nome nei commit",
+    "source_hash": "496635d99500"
+  },
+  "wizard.identity.email_label": {
+    "text": "E-mail:",
+    "source_hash": "17507dcf8457"
+  },
+  "wizard.identity.email_help": {
+    "text": "E-mail nei commit",
+    "source_hash": "c5b5196053ec"
+  },
+  "wizard.identity.key_label": {
+    "text": "Chiave di firma:",
+    "source_hash": "bbfbc9ee3f2d"
+  },
+  "wizard.identity.key_help": {
+    "text": "Lascia vuoto per disattivare la firma",
+    "source_hash": "89da89efcf12"
+  },
+  "wizard.identity.next": {
+    "text": "Avanti — scegli gli strumenti",
+    "source_hash": "a3dc8180c38c"
+  },
+  "wizard.tools.title": {
+    "text": "Strumenti",
+    "source_hash": "ea93d6a262ec"
+  },
+  "wizard.tools.intro": {
+    "text": "Scegli gli strumenti da installare. Quelli attenuati sono sempre disponibili.",
+    "source_hash": "5428fc58e4db"
+  },
+  "wizard.tools.mash_only": {
+    "text": "Solo Mash: salvati in ~/.mash; non visibili fuori da Mash.",
+    "source_hash": "c1401b334c12"
+  },
+  "wizard.tools.shared": {
+    "text": "Sul tuo computer: installati a livello di sistema e condivisi con le altre app.",
+    "source_hash": "ffd57efffb24"
+  },
+  "wizard.tools.no_homebrew": {
+    "text": "Homebrew non trovato: installalo da brew.sh prima di scegliere i suoi strumenti.",
+    "source_hash": "59e2e7cd4988"
+  },
+  "wizard.tools.choices": {
+    "text": "Scelte di installazione",
+    "source_hash": "ab5a2f64781a"
+  },
+  "wizard.tools.skills": {
+    "text": "Competenze",
+    "source_hash": "66d0f523a379"
+  },
+  "wizard.tools.skills_check": {
+    "text": "Installa Programming Skills (include la memoria)",
+    "source_hash": "7accde9f1e3d"
+  },
+  "wizard.tools.skills_help": {
+    "text": "Flussi di lavoro Pi per idee, piani, lavoro, QA e release, con memoria locale.",
+    "source_hash": "bd9f35e51cb5"
+  },
+  "wizard.tools.back": {
+    "text": "Indietro",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.tools.next": {
+    "text": "Avanti — configura i provider",
+    "source_hash": "1168b9d2c2a3"
+  },
+  "wizard.tools.route.bundled": {
+    "text": "incluso in Mash",
+    "source_hash": "ef935c70d966"
+  },
+  "wizard.tools.route.apt": {
+    "text": "apt",
+    "source_hash": "5009a047a11f"
+  },
+  "wizard.tools.route.homebrew": {
+    "text": "Homebrew",
+    "source_hash": "bc49b968dbe4"
+  },
+  "wizard.tools.route.download": {
+    "text": "download fissato",
+    "source_hash": "33093fa51037"
+  },
+  "wizard.tools.route.npm": {
+    "text": "npm fissato",
+    "source_hash": "a903155cf3fd"
+  },
+  "wizard.tools.route.pip": {
+    "text": "pip fissato",
+    "source_hash": "34399ac2dcb4"
+  },
+  "wizard.tools.route.cua": {
+    "text": "programma di installazione CUA",
+    "source_hash": "34c982365b95"
+  },
+  "wizard.tools.route.xcode": {
+    "text": "strumenti Xcode",
+    "source_hash": "80c6d0b53bee"
+  },
+  "wizard.tools.scope.shared": {
+    "text": "il tuo computer",
+    "source_hash": "dced8f39fb9d"
+  },
+  "wizard.tools.scope.mash_only": {
+    "text": "Solo Mash",
+    "source_hash": "3011913d5cb4"
+  },
+  "wizard.font.title": {
+    "text": "Aspetto",
+    "source_hash": "3907fa7f8072"
+  },
+  "wizard.font.fonts_section": {
+    "text": "Font su questo computer",
+    "source_hash": "48ceedcfd9eb"
+  },
+  "wizard.font.filter": {
+    "text": "Filtra font",
+    "source_hash": "b86e7b247be1"
+  },
+  "wizard.font.filter_hint": {
+    "text": "↑/↓ font · Tab per la dimensione",
+    "source_hash": "356ea9afc4bf"
+  },
+  "wizard.font.family_section": {
+    "text": "Famiglia di font (Meslo è incluso)",
+    "source_hash": "7445920f6507"
+  },
+  "wizard.font.no_fonts": {
+    "text": "Nessun font corrispondente — usa Backspace per ampliare la ricerca",
+    "source_hash": "8d7931285de0"
+  },
+  "wizard.font.keybindings_section": {
+    "text": "Scorciatoie da tastiera (definitive al termine della configurazione)",
+    "source_hash": "92dc99e05387"
+  },
+  "wizard.font.keybindings_note": {
+    "text": "Scorciatoie di Cursor o i tasti propri di ogni app (Herdr usa Ctrl+B).",
+    "source_hash": "8658dfe96d6a"
+  },
+  "wizard.font.theme_section": {
+    "text": "Tema (Herdr, Mash Terminal, Fresh, Pi, reviewr)",
+    "source_hash": "396f9810c847"
+  },
+  "wizard.font.theme_switch": {
+    "text": "←/→ cambia",
+    "source_hash": "06a1545f5045"
+  },
+  "wizard.font.size_section": {
+    "text": "Dimensione font (punti)",
+    "source_hash": "31b2eb5d3b2c"
+  },
+  "wizard.font.size_adjust": {
+    "text": "←/→ regola (6–72)",
+    "source_hash": "976de7024dc8"
+  },
+  "wizard.font.preview_suffix": {
+    "text": "anteprima in questa finestra",
+    "source_hash": "b086c32f40d5"
+  },
+  "wizard.font.back": {
+    "text": "Indietro",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.font.next": {
+    "text": "Continua alla dettatura",
+    "source_hash": "ec7a0ff60525"
+  },
+  "wizard.theme.dark": {
+    "text": "Tema scuro",
+    "source_hash": "3f11a5cc643a"
+  },
+  "wizard.theme.light": {
+    "text": "Tema chiaro",
+    "source_hash": "3669a1b2770f"
+  },
+  "wizard.voice.title": {
+    "text": "Dettatura",
+    "source_hash": "25ce1a09ddc1"
+  },
+  "wizard.voice.languages_section": {
+    "text": "Lingue in cui dettare",
+    "source_hash": "7287a2bc2529"
+  },
+  "wizard.voice.empty_notice": {
+    "text": "Nessuna lingua selezionata: la dettatura non sarà configurata. Pi può aggiungerla più tardi con /voice.",
+    "source_hash": "b903d36755f6"
+  },
+  "wizard.voice.no_match": {
+    "text": "Nessun modello copre questa combinazione. Rimuovi una lingua.",
+    "source_hash": "b8b167ba3990"
+  },
+  "wizard.voice.best": {
+    "text": "Migliore",
+    "source_hash": "c47d21c643c0"
+  },
+  "wizard.voice.fast": {
+    "text": "Veloce",
+    "source_hash": "6c582b62e0e5"
+  },
+  "wizard.voice.best_summary": {
+    "text": "il compromesso consigliato tra velocità e precisione",
+    "source_hash": "2fde20c2ddd6"
+  },
+  "wizard.voice.fast_summary": {
+    "text": "la trascrizione più rapida ancora utilizzabile",
+    "source_hash": "9f01f55f16dc"
+  },
+  "wizard.voice.same_model": {
+    "text": "Qui entrambi i ruoli usano lo stesso modello.",
+    "source_hash": "6a800db5cff9"
+  },
+  "wizard.voice.detector_notice": {
+    "text": "aggiunge il rilevatore di lingua da {size} per il rilevamento automatico",
+    "source_hash": "3c9c1859e707"
+  },
+  "wizard.voice.model_section": {
+    "text": "Modello da scaricare",
+    "source_hash": "e90982e6cea9"
+  },
+  "wizard.voice.continue_without": {
+    "text": "Continua senza dettatura",
+    "source_hash": "25309b666263"
+  },
+  "wizard.voice.download_continue": {
+    "text": "Scarica e continua",
+    "source_hash": "0a12deea1f8d"
+  },
+  "wizard.voice.back": {
+    "text": "Indietro",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.voice.more": {
+    "text": "Altri {count} — scorri o continua verso il basso",
+    "source_hash": "00703aa3c372"
+  },
+  "wizard.voice.name.bg": {
+    "text": "Bulgaro",
+    "source_hash": "ecd986094baf"
+  },
+  "wizard.voice.name.cs": {
+    "text": "Ceco",
+    "source_hash": "8b463ea23a7e"
+  },
+  "wizard.voice.name.de": {
+    "text": "Tedesco",
+    "source_hash": "a659b60d246d"
+  },
+  "wizard.voice.name.en": {
+    "text": "Inglese",
+    "source_hash": "ba118bf7fc9c"
+  },
+  "wizard.voice.name.es": {
+    "text": "Spagnolo",
+    "source_hash": "3411059cb8e0"
+  },
+  "wizard.voice.name.fr": {
+    "text": "Francese",
+    "source_hash": "7458199fe97a"
+  },
+  "wizard.voice.name.it": {
+    "text": "Italiano",
+    "source_hash": "fe1d9c7db376"
+  },
+  "wizard.voice.name.ja": {
+    "text": "Giapponese",
+    "source_hash": "be4ee906d3ef"
+  },
+  "wizard.voice.name.ko": {
+    "text": "Coreano",
+    "source_hash": "04656c6fe003"
+  },
+  "wizard.voice.name.pt": {
+    "text": "Portoghese",
+    "source_hash": "98b01b890687"
+  },
+  "wizard.voice.name.ru": {
+    "text": "Russo",
+    "source_hash": "5bcc40adf6e0"
+  },
+  "wizard.voice.name.th": {
+    "text": "Tailandese",
+    "source_hash": "ad705ee19c04"
+  },
+  "wizard.voice.name.uk": {
+    "text": "Ucraino",
+    "source_hash": "6f424303fa12"
+  },
+  "wizard.voice.name.vi": {
+    "text": "Vietnamita",
+    "source_hash": "f25499e9df5c"
+  },
+  "wizard.voice.name.zh": {
+    "text": "Cinese mandarino",
+    "source_hash": "b4d3ec443738"
+  },
+  "wizard.github.section": {
+    "text": "GitHub (facoltativo)",
+    "source_hash": "d02de70d7691"
+  },
+  "wizard.github.signed_out": {
+    "text": "Accesso non effettuato",
+    "source_hash": "491fc91cd76e"
+  },
+  "wizard.github.starting": {
+    "text": "Connessione a GitHub…",
+    "source_hash": "e7018ff9b61a"
+  },
+  "wizard.github.waiting": {
+    "text": "In attesa dell’approvazione nel browser",
+    "source_hash": "0e591354e538"
+  },
+  "wizard.github.signed_in": {
+    "text": "✓ Accesso effettuato",
+    "source_hash": "a6bc36f81df5"
+  },
+  "wizard.github.signed_in_as": {
+    "text": "✓ Accesso effettuato come {user}",
+    "source_hash": "33cfe2e60aae"
+  },
+  "wizard.github.sign_in": {
+    "text": "Accedi a GitHub",
+    "source_hash": "47e9895d1d76"
+  },
+  "wizard.github.cancel": {
+    "text": "Annulla",
+    "source_hash": "19766ed6ccb2"
+  },
+  "wizard.github.sign_out": {
+    "text": "Esci",
+    "source_hash": "48f0d3d397d4"
+  },
+  "wizard.github.retry": {
+    "text": "Riprova",
+    "source_hash": "d8b8392e2c54"
+  },
+  "wizard.github.copied": {
+    "text": "copiato negli appunti",
+    "source_hash": "9a6d3fb1a8f5"
+  },
+  "wizard.github.approve": {
+    "text": "Inserisci il codice su {url} per autorizzare Mash.",
+    "source_hash": "0811fcc61af8"
+  },
+  "wizard.github.usage": {
+    "text": "Usato da Git tramite HTTPS, pull request e strumenti GitHub degli agenti.",
+    "source_hash": "687743c41d86"
+  },
+  "wizard.font.keybindings.mash": {
+    "text": "Mash / stile Cursor",
+    "source_hash": "50c4eaf509a5"
+  },
+  "wizard.font.keybindings.native": {
+    "text": "Nativo",
+    "source_hash": "d509e4938852"
+  },
+  "wizard.tools.description.agent-browser": {
+    "text": "Automazione del browser per lavorare sulle pagine",
+    "source_hash": "17a3b5d9e891"
+  },
+  "wizard.tools.description.atuin": {
+    "text": "Cronologia della shell consultabile",
+    "source_hash": "f1667e433eff"
+  },
+  "wizard.tools.description.bash-language-server": {
+    "text": "Server di linguaggio Bash",
+    "source_hash": "8bb3d3483973"
+  },
+  "wizard.tools.description.bat": {
+    "text": "Anteprima file con evidenziazione",
+    "source_hash": "65f67ed05fd4"
+  },
+  "wizard.tools.description.clangd": {
+    "text": "Server di linguaggio C e C++",
+    "source_hash": "eb55e1c1e2fc"
+  },
+  "wizard.tools.description.cua-driver": {
+    "text": "Controllo desktop nativo per le app",
+    "source_hash": "875a66659bbe"
+  },
+  "wizard.tools.description.delta": {
+    "text": "Diff Git e pager",
+    "source_hash": "0a5ab9622ca0"
+  },
+  "wizard.tools.description.eza": {
+    "text": "Elenchi di file",
+    "source_hash": "90065d6d509a"
+  },
+  "wizard.tools.description.fd": {
+    "text": "Ricerca file",
+    "source_hash": "401934824f5c"
+  },
+  "wizard.tools.description.fresh": {
+    "text": "Editor di Mash",
+    "source_hash": "07a3ce240a97"
+  },
+  "wizard.tools.description.fzf": {
+    "text": "Selettore fuzzy interattivo",
+    "source_hash": "74befff772fe"
+  },
+  "wizard.tools.description.gh": {
+    "text": "CLI GitHub e gestione credenziali",
+    "source_hash": "7f9081e6b668"
+  },
+  "wizard.tools.description.git": {
+    "text": "Controllo versione Git",
+    "source_hash": "04ecfc4b2a56"
+  },
+  "wizard.tools.description.gopls": {
+    "text": "Server di linguaggio Go",
+    "source_hash": "7c830acbe2df"
+  },
+  "wizard.tools.description.herdr": {
+    "text": "Spazi di lavoro, schede e pannelli",
+    "source_hash": "ae8e873192bf"
+  },
+  "wizard.tools.description.jq": {
+    "text": "Utilità JSON",
+    "source_hash": "8f8b7b35919d"
+  },
+  "wizard.tools.description.latexindent": {
+    "text": "Formattazione LaTeX",
+    "source_hash": "2d27bc2aed62"
+  },
+  "wizard.tools.description.lazydocker": {
+    "text": "Docker nel terminale",
+    "source_hash": "a1ea900f50dc"
+  },
+  "wizard.tools.description.lazygit": {
+    "text": "Git nel terminale",
+    "source_hash": "56280a7e33fa"
+  },
+  "wizard.tools.description.marksman": {
+    "text": "Server di linguaggio Markdown",
+    "source_hash": "acd246ea56cd"
+  },
+  "wizard.tools.description.node": {
+    "text": "Runtime JavaScript e npm",
+    "source_hash": "257e5fc25d9c"
+  },
+  "wizard.tools.description.pet": {
+    "text": "Frammenti di comandi",
+    "source_hash": "2c7046aea68e"
+  },
+  "wizard.tools.description.pi": {
+    "text": "Agente di programmazione Mash",
+    "source_hash": "1e3348dc35ec"
+  },
+  "wizard.tools.description.prettier": {
+    "text": "Formattazione JavaScript, JSON, Markdown, CSS e Svelte",
+    "source_hash": "0a196b7eee63"
+  },
+  "wizard.tools.description.python": {
+    "text": "Runtime Python e pip",
+    "source_hash": "d378a966a298"
+  },
+  "wizard.tools.description.python-lsp-server": {
+    "text": "Server di linguaggio Python",
+    "source_hash": "45689d922173"
+  },
+  "wizard.tools.description.rg": {
+    "text": "Ricerca nel contenuto",
+    "source_hash": "364c20f57972"
+  },
+  "wizard.tools.description.rust-analyzer": {
+    "text": "Server di linguaggio Rust",
+    "source_hash": "59af4ee7c852"
+  },
+  "wizard.tools.description.sentrux": {
+    "text": "Analisi strutturale di piani, lavoro e QA",
+    "source_hash": "cdadc36df319"
+  },
+  "wizard.tools.description.shfmt": {
+    "text": "Formattazione shell",
+    "source_hash": "ef675cf302a8"
+  },
+  "wizard.tools.description.sourcekit-lsp": {
+    "text": "Server di linguaggio Swift",
+    "source_hash": "bf29ee422d2f"
+  },
+  "wizard.tools.description.starship": {
+    "text": "Prompt della shell",
+    "source_hash": "ef8740639be1"
+  },
+  "wizard.tools.description.svelte-language-server": {
+    "text": "Server di linguaggio Svelte",
+    "source_hash": "5f0011a9203a"
+  },
+  "wizard.tools.description.tailwindcss-language-server": {
+    "text": "Server di linguaggio Tailwind CSS",
+    "source_hash": "b33fd822317e"
+  },
+  "wizard.tools.description.texlab": {
+    "text": "Server di linguaggio LaTeX",
+    "source_hash": "3388b1a9bd89"
+  },
+  "wizard.tools.description.typescript-language-server": {
+    "text": "Server di linguaggio TypeScript e JavaScript",
+    "source_hash": "199f12a09d18"
+  },
+  "wizard.tools.description.viu": {
+    "text": "Immagini nel terminale",
+    "source_hash": "6068123d4bf5"
+  },
+  "wizard.tools.description.vscode-css-language-server": {
+    "text": "Server CSS (pacchetto condiviso CSS/HTML/JSON)",
+    "source_hash": "3ae9cafca643"
+  },
+  "wizard.tools.description.vscode-html-language-server": {
+    "text": "Server HTML (pacchetto condiviso CSS/HTML/JSON)",
+    "source_hash": "4fdddbf99da0"
+  },
+  "wizard.tools.description.vscode-json-language-server": {
+    "text": "Server JSON (pacchetto condiviso CSS/HTML/JSON)",
+    "source_hash": "af757d93137e"
+  },
+  "wizard.tools.description.yaml-language-server": {
+    "text": "Server di linguaggio YAML",
+    "source_hash": "d56c118152ef"
+  },
+  "wizard.tools.description.zoxide": {
+    "text": "Ordinamento intelligente delle directory",
+    "source_hash": "82deb27f3f2d"
+  },
+  "wizard.font.warning_no_list": {
+    "text": "Impossibile elencare i font installati; Meslo incluso è ancora disponibile.",
+    "source_hash": "800ea442cefd"
+  },
+  "wizard.shell.setup": {
+    "text": "Configurazione",
+    "source_hash": "7013af4c42fe"
+  },
+  "wizard.shell.installing": {
+    "text": "Installazione…",
+    "source_hash": "530bcc355f0a"
+  },
+  "wizard.shell.navigation_hint": {
+    "text": "Tab per spostarsi · Invio per selezionare",
+    "source_hash": "fbe682a41063"
+  },
+  "wizard.shell.preview_hint": {
+    "text": "←/→ pagine · Esc indietro",
+    "source_hash": "9a1a64bc4c7d"
+  },
+  "wizard.shell.page_title": {
+    "text": "{title} — pagina {current}/{total}",
+    "source_hash": "26ddd83b8742"
+  },
+  "wizard.page.model_provider": {
+    "text": "Provider del modello",
+    "source_hash": "ea70384c465d"
+  },
+  "wizard.page.web_search": {
+    "text": "Ricerca web",
+    "source_hash": "7711faa74a10"
+  },
+  "wizard.page.memory": {
+    "text": "Memoria",
+    "source_hash": "c3963aedaac6"
+  },
+  "wizard.shell.setup_label": {
+    "text": "CONFIGURAZIONE",
+    "source_hash": "7175b03373a2"
+  }
+}

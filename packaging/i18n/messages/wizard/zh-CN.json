@@ -1,0 +1,590 @@
+{
+  "wizard.language.title": {
+    "text": "选择语言",
+    "source_hash": "8e2d0664dbbb"
+  },
+  "wizard.language.prompt": {
+    "text": "设置语言",
+    "source_hash": "6a37bc86eb31"
+  },
+  "wizard.language.continue": {
+    "text": "继续",
+    "source_hash": "31fbef162594"
+  },
+  "wizard.welcome.start": {
+    "text": "启动设置向导",
+    "source_hash": "0fe79b066746"
+  },
+  "wizard.identity.title": {
+    "text": "身份信息",
+    "source_hash": "999f23fcd7be"
+  },
+  "wizard.identity.name_label": {
+    "text": "姓名：",
+    "source_hash": "2683cad48a14"
+  },
+  "wizard.identity.name_help": {
+    "text": "提交记录中的姓名",
+    "source_hash": "496635d99500"
+  },
+  "wizard.identity.email_label": {
+    "text": "邮箱：",
+    "source_hash": "17507dcf8457"
+  },
+  "wizard.identity.email_help": {
+    "text": "提交记录中的邮箱",
+    "source_hash": "c5b5196053ec"
+  },
+  "wizard.identity.key_label": {
+    "text": "签名密钥：",
+    "source_hash": "bbfbc9ee3f2d"
+  },
+  "wizard.identity.key_help": {
+    "text": "留空可禁用签名",
+    "source_hash": "89da89efcf12"
+  },
+  "wizard.identity.next": {
+    "text": "下一步 — 选择工具",
+    "source_hash": "a3dc8180c38c"
+  },
+  "wizard.tools.title": {
+    "text": "工具",
+    "source_hash": "ea93d6a262ec"
+  },
+  "wizard.tools.intro": {
+    "text": "选择要安装的工具。灰显工具始终可用。",
+    "source_hash": "5428fc58e4db"
+  },
+  "wizard.tools.mash_only": {
+    "text": "仅供 Mash 使用：保存在 ~/.mash；Mash 之外无法访问。",
+    "source_hash": "c1401b334c12"
+  },
+  "wizard.tools.shared": {
+    "text": "安装到电脑：系统范围安装，并与其他应用共享。",
+    "source_hash": "ffd57efffb24"
+  },
+  "wizard.tools.no_homebrew": {
+    "text": "未找到 Homebrew：选择 Homebrew 工具前，请先从 brew.sh 安装。",
+    "source_hash": "59e2e7cd4988"
+  },
+  "wizard.tools.choices": {
+    "text": "安装选项",
+    "source_hash": "ab5a2f64781a"
+  },
+  "wizard.tools.skills": {
+    "text": "技能",
+    "source_hash": "66d0f523a379"
+  },
+  "wizard.tools.skills_check": {
+    "text": "安装 Programming Skills（包含记忆）",
+    "source_hash": "7accde9f1e3d"
+  },
+  "wizard.tools.skills_help": {
+    "text": "Pi 的构思、规划、工作、QA 和发布工作流，并使用本地记忆。",
+    "source_hash": "bd9f35e51cb5"
+  },
+  "wizard.tools.back": {
+    "text": "返回",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.tools.next": {
+    "text": "下一步 — 配置提供商",
+    "source_hash": "1168b9d2c2a3"
+  },
+  "wizard.tools.route.bundled": {
+    "text": "Mash 内置",
+    "source_hash": "ef935c70d966"
+  },
+  "wizard.tools.route.apt": {
+    "text": "apt",
+    "source_hash": "5009a047a11f"
+  },
+  "wizard.tools.route.homebrew": {
+    "text": "Homebrew",
+    "source_hash": "bc49b968dbe4"
+  },
+  "wizard.tools.route.download": {
+    "text": "固定版本下载",
+    "source_hash": "33093fa51037"
+  },
+  "wizard.tools.route.npm": {
+    "text": "固定版本 npm",
+    "source_hash": "a903155cf3fd"
+  },
+  "wizard.tools.route.pip": {
+    "text": "固定版本 pip",
+    "source_hash": "34399ac2dcb4"
+  },
+  "wizard.tools.route.cua": {
+    "text": "CUA 安装程序",
+    "source_hash": "34c982365b95"
+  },
+  "wizard.tools.route.xcode": {
+    "text": "Xcode 工具",
+    "source_hash": "80c6d0b53bee"
+  },
+  "wizard.tools.scope.shared": {
+    "text": "你的电脑",
+    "source_hash": "dced8f39fb9d"
+  },
+  "wizard.tools.scope.mash_only": {
+    "text": "仅供 Mash 使用",
+    "source_hash": "3011913d5cb4"
+  },
+  "wizard.font.title": {
+    "text": "外观",
+    "source_hash": "3907fa7f8072"
+  },
+  "wizard.font.fonts_section": {
+    "text": "此电脑上的字体",
+    "source_hash": "48ceedcfd9eb"
+  },
+  "wizard.font.filter": {
+    "text": "筛选字体",
+    "source_hash": "b86e7b247be1"
+  },
+  "wizard.font.filter_hint": {
+    "text": "↑/↓ 字体 · Tab 调整大小",
+    "source_hash": "356ea9afc4bf"
+  },
+  "wizard.font.family_section": {
+    "text": "字体系列（已附带 Meslo）",
+    "source_hash": "7445920f6507"
+  },
+  "wizard.font.no_fonts": {
+    "text": "没有匹配的字体 — 按 Backspace 扩大搜索范围",
+    "source_hash": "8d7931285de0"
+  },
+  "wizard.font.keybindings_section": {
+    "text": "键位绑定（设置完成后固定）",
+    "source_hash": "92dc99e05387"
+  },
+  "wizard.font.keybindings_note": {
+    "text": "使用 Cursor 快捷键，或各应用自己的按键（Herdr 使用 Ctrl+B）。",
+    "source_hash": "8658dfe96d6a"
+  },
+  "wizard.font.theme_section": {
+    "text": "主题（Herdr、Mash Terminal、Fresh、Pi、reviewr）",
+    "source_hash": "396f9810c847"
+  },
+  "wizard.font.theme_switch": {
+    "text": "←/→ 切换",
+    "source_hash": "06a1545f5045"
+  },
+  "wizard.font.size_section": {
+    "text": "字体大小（点）",
+    "source_hash": "31b2eb5d3b2c"
+  },
+  "wizard.font.size_adjust": {
+    "text": "←/→ 调整（6–72）",
+    "source_hash": "976de7024dc8"
+  },
+  "wizard.font.preview_suffix": {
+    "text": "在此窗口预览",
+    "source_hash": "b086c32f40d5"
+  },
+  "wizard.font.back": {
+    "text": "返回",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.font.next": {
+    "text": "继续设置听写",
+    "source_hash": "ec7a0ff60525"
+  },
+  "wizard.theme.dark": {
+    "text": "深色主题",
+    "source_hash": "3f11a5cc643a"
+  },
+  "wizard.theme.light": {
+    "text": "浅色主题",
+    "source_hash": "3669a1b2770f"
+  },
+  "wizard.voice.title": {
+    "text": "听写",
+    "source_hash": "25ce1a09ddc1"
+  },
+  "wizard.voice.languages_section": {
+    "text": "听写语言",
+    "source_hash": "7287a2bc2529"
+  },
+  "wizard.voice.empty_notice": {
+    "text": "未选择语言：不会设置听写。之后可在 Pi 中使用 /voice 添加。",
+    "source_hash": "b903d36755f6"
+  },
+  "wizard.voice.no_match": {
+    "text": "没有模型支持此语言组合。请移除一种语言。",
+    "source_hash": "b8b167ba3990"
+  },
+  "wizard.voice.best": {
+    "text": "最佳",
+    "source_hash": "c47d21c643c0"
+  },
+  "wizard.voice.fast": {
+    "text": "快速",
+    "source_hash": "6c582b62e0e5"
+  },
+  "wizard.voice.best_summary": {
+    "text": "速度与准确度的推荐平衡",
+    "source_hash": "2fde20c2ddd6"
+  },
+  "wizard.voice.fast_summary": {
+    "text": "仍可用的最快转写",
+    "source_hash": "9f01f55f16dc"
+  },
+  "wizard.voice.same_model": {
+    "text": "此处两个角色使用相同模型。",
+    "source_hash": "6a800db5cff9"
+  },
+  "wizard.voice.detector_notice": {
+    "text": "添加 {size} 的语言检测器以自动检测",
+    "source_hash": "3c9c1859e707"
+  },
+  "wizard.voice.model_section": {
+    "text": "要下载的模型",
+    "source_hash": "e90982e6cea9"
+  },
+  "wizard.voice.continue_without": {
+    "text": "不设置听写并继续",
+    "source_hash": "25309b666263"
+  },
+  "wizard.voice.download_continue": {
+    "text": "下载并继续",
+    "source_hash": "0a12deea1f8d"
+  },
+  "wizard.voice.back": {
+    "text": "返回",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.voice.more": {
+    "text": "还有 {count} 项 — 滚动或继续向下",
+    "source_hash": "00703aa3c372"
+  },
+  "wizard.voice.name.bg": {
+    "text": "保加利亚语",
+    "source_hash": "ecd986094baf"
+  },
+  "wizard.voice.name.cs": {
+    "text": "捷克语",
+    "source_hash": "8b463ea23a7e"
+  },
+  "wizard.voice.name.de": {
+    "text": "德语",
+    "source_hash": "a659b60d246d"
+  },
+  "wizard.voice.name.en": {
+    "text": "英语",
+    "source_hash": "ba118bf7fc9c"
+  },
+  "wizard.voice.name.es": {
+    "text": "西班牙语",
+    "source_hash": "3411059cb8e0"
+  },
+  "wizard.voice.name.fr": {
+    "text": "法语",
+    "source_hash": "7458199fe97a"
+  },
+  "wizard.voice.name.it": {
+    "text": "意大利语",
+    "source_hash": "fe1d9c7db376"
+  },
+  "wizard.voice.name.ja": {
+    "text": "日语",
+    "source_hash": "be4ee906d3ef"
+  },
+  "wizard.voice.name.ko": {
+    "text": "韩语",
+    "source_hash": "04656c6fe003"
+  },
+  "wizard.voice.name.pt": {
+    "text": "葡萄牙语",
+    "source_hash": "98b01b890687"
+  },
+  "wizard.voice.name.ru": {
+    "text": "俄语",
+    "source_hash": "5bcc40adf6e0"
+  },
+  "wizard.voice.name.th": {
+    "text": "泰语",
+    "source_hash": "ad705ee19c04"
+  },
+  "wizard.voice.name.uk": {
+    "text": "乌克兰语",
+    "source_hash": "6f424303fa12"
+  },
+  "wizard.voice.name.vi": {
+    "text": "越南语",
+    "source_hash": "f25499e9df5c"
+  },
+  "wizard.voice.name.zh": {
+    "text": "普通话（中文）",
+    "source_hash": "b4d3ec443738"
+  },
+  "wizard.github.section": {
+    "text": "GitHub（可选）",
+    "source_hash": "d02de70d7691"
+  },
+  "wizard.github.signed_out": {
+    "text": "未登录",
+    "source_hash": "491fc91cd76e"
+  },
+  "wizard.github.starting": {
+    "text": "正在连接 GitHub…",
+    "source_hash": "e7018ff9b61a"
+  },
+  "wizard.github.waiting": {
+    "text": "等待在浏览器中批准",
+    "source_hash": "0e591354e538"
+  },
+  "wizard.github.signed_in": {
+    "text": "✓ 已登录",
+    "source_hash": "a6bc36f81df5"
+  },
+  "wizard.github.signed_in_as": {
+    "text": "✓ 已以 {user} 身份登录",
+    "source_hash": "33cfe2e60aae"
+  },
+  "wizard.github.sign_in": {
+    "text": "登录 GitHub",
+    "source_hash": "47e9895d1d76"
+  },
+  "wizard.github.cancel": {
+    "text": "取消",
+    "source_hash": "19766ed6ccb2"
+  },
+  "wizard.github.sign_out": {
+    "text": "退出登录",
+    "source_hash": "48f0d3d397d4"
+  },
+  "wizard.github.retry": {
+    "text": "重试",
+    "source_hash": "d8b8392e2c54"
+  },
+  "wizard.github.copied": {
+    "text": "已复制到剪贴板",
+    "source_hash": "9a6d3fb1a8f5"
+  },
+  "wizard.github.approve": {
+    "text": "请在 {url} 输入代码以批准 Mash。",
+    "source_hash": "0811fcc61af8"
+  },
+  "wizard.github.usage": {
+    "text": "供 Git HTTPS、拉取请求和智能体的 GitHub 工具使用。",
+    "source_hash": "687743c41d86"
+  },
+  "wizard.font.keybindings.mash": {
+    "text": "Mash / Cursor 风格",
+    "source_hash": "50c4eaf509a5"
+  },
+  "wizard.font.keybindings.native": {
+    "text": "原生",
+    "source_hash": "d509e4938852"
+  },
+  "wizard.tools.description.agent-browser": {
+    "text": "用于页面工作的浏览器自动化",
+    "source_hash": "17a3b5d9e891"
+  },
+  "wizard.tools.description.atuin": {
+    "text": "可搜索的 shell 历史",
+    "source_hash": "f1667e433eff"
+  },
+  "wizard.tools.description.bash-language-server": {
+    "text": "Bash 语言服务器",
+    "source_hash": "8bb3d3483973"
+  },
+  "wizard.tools.description.bat": {
+    "text": "带语法高亮的文件预览",
+    "source_hash": "65f67ed05fd4"
+  },
+  "wizard.tools.description.clangd": {
+    "text": "C 和 C++ 语言服务器",
+    "source_hash": "eb55e1c1e2fc"
+  },
+  "wizard.tools.description.cua-driver": {
+    "text": "应用界面的原生桌面控制",
+    "source_hash": "875a66659bbe"
+  },
+  "wizard.tools.description.delta": {
+    "text": "Git 差异和分页查看",
+    "source_hash": "0a5ab9622ca0"
+  },
+  "wizard.tools.description.eza": {
+    "text": "文件列表",
+    "source_hash": "90065d6d509a"
+  },
+  "wizard.tools.description.fd": {
+    "text": "文件搜索",
+    "source_hash": "401934824f5c"
+  },
+  "wizard.tools.description.fresh": {
+    "text": "Mash 编辑器",
+    "source_hash": "07a3ce240a97"
+  },
+  "wizard.tools.description.fzf": {
+    "text": "交互式模糊查找器",
+    "source_hash": "74befff772fe"
+  },
+  "wizard.tools.description.gh": {
+    "text": "GitHub CLI 和凭据助手",
+    "source_hash": "7f9081e6b668"
+  },
+  "wizard.tools.description.git": {
+    "text": "Git 版本控制",
+    "source_hash": "04ecfc4b2a56"
+  },
+  "wizard.tools.description.gopls": {
+    "text": "Go 语言服务器",
+    "source_hash": "7c830acbe2df"
+  },
+  "wizard.tools.description.herdr": {
+    "text": "工作区、标签页和面板",
+    "source_hash": "ae8e873192bf"
+  },
+  "wizard.tools.description.jq": {
+    "text": "JSON 工具",
+    "source_hash": "8f8b7b35919d"
+  },
+  "wizard.tools.description.latexindent": {
+    "text": "LaTeX 格式化",
+    "source_hash": "2d27bc2aed62"
+  },
+  "wizard.tools.description.lazydocker": {
+    "text": "终端中的 Docker",
+    "source_hash": "a1ea900f50dc"
+  },
+  "wizard.tools.description.lazygit": {
+    "text": "终端中的 Git",
+    "source_hash": "56280a7e33fa"
+  },
+  "wizard.tools.description.marksman": {
+    "text": "Markdown 语言服务器",
+    "source_hash": "acd246ea56cd"
+  },
+  "wizard.tools.description.node": {
+    "text": "JavaScript 运行时和 npm",
+    "source_hash": "257e5fc25d9c"
+  },
+  "wizard.tools.description.pet": {
+    "text": "命令片段",
+    "source_hash": "2c7046aea68e"
+  },
+  "wizard.tools.description.pi": {
+    "text": "Mash 编码代理",
+    "source_hash": "1e3348dc35ec"
+  },
+  "wizard.tools.description.prettier": {
+    "text": "JavaScript、JSON、Markdown、CSS 和 Svelte 格式化",
+    "source_hash": "0a196b7eee63"
+  },
+  "wizard.tools.description.python": {
+    "text": "Python 运行时和 pip",
+    "source_hash": "d378a966a298"
+  },
+  "wizard.tools.description.python-lsp-server": {
+    "text": "Python 语言服务器",
+    "source_hash": "45689d922173"
+  },
+  "wizard.tools.description.rg": {
+    "text": "内容搜索",
+    "source_hash": "364c20f57972"
+  },
+  "wizard.tools.description.rust-analyzer": {
+    "text": "Rust 语言服务器",
+    "source_hash": "59af4ee7c852"
+  },
+  "wizard.tools.description.sentrux": {
+    "text": "计划、工作和 QA 的结构分析",
+    "source_hash": "cdadc36df319"
+  },
+  "wizard.tools.description.shfmt": {
+    "text": "Shell 格式化",
+    "source_hash": "ef675cf302a8"
+  },
+  "wizard.tools.description.sourcekit-lsp": {
+    "text": "Swift 语言服务器",
+    "source_hash": "bf29ee422d2f"
+  },
+  "wizard.tools.description.starship": {
+    "text": "Shell 提示符",
+    "source_hash": "ef8740639be1"
+  },
+  "wizard.tools.description.svelte-language-server": {
+    "text": "Svelte 语言服务器",
+    "source_hash": "5f0011a9203a"
+  },
+  "wizard.tools.description.tailwindcss-language-server": {
+    "text": "Tailwind CSS 语言服务器",
+    "source_hash": "b33fd822317e"
+  },
+  "wizard.tools.description.texlab": {
+    "text": "LaTeX 语言服务器",
+    "source_hash": "3388b1a9bd89"
+  },
+  "wizard.tools.description.typescript-language-server": {
+    "text": "TypeScript 和 JavaScript 语言服务器",
+    "source_hash": "199f12a09d18"
+  },
+  "wizard.tools.description.viu": {
+    "text": "终端中的图像",
+    "source_hash": "6068123d4bf5"
+  },
+  "wizard.tools.description.vscode-css-language-server": {
+    "text": "CSS 服务器（共享 CSS/HTML/JSON 包）",
+    "source_hash": "3ae9cafca643"
+  },
+  "wizard.tools.description.vscode-html-language-server": {
+    "text": "HTML 服务器（共享 CSS/HTML/JSON 包）",
+    "source_hash": "4fdddbf99da0"
+  },
+  "wizard.tools.description.vscode-json-language-server": {
+    "text": "JSON 服务器（共享 CSS/HTML/JSON 包）",
+    "source_hash": "af757d93137e"
+  },
+  "wizard.tools.description.yaml-language-server": {
+    "text": "YAML 语言服务器",
+    "source_hash": "d56c118152ef"
+  },
+  "wizard.tools.description.zoxide": {
+    "text": "智能目录排序",
+    "source_hash": "82deb27f3f2d"
+  },
+  "wizard.font.warning_no_list": {
+    "text": "无法列出已安装字体；仍可使用随附的 Meslo 字体。",
+    "source_hash": "800ea442cefd"
+  },
+  "wizard.shell.setup": {
+    "text": "设置",
+    "source_hash": "7013af4c42fe"
+  },
+  "wizard.shell.installing": {
+    "text": "正在安装…",
+    "source_hash": "530bcc355f0a"
+  },
+  "wizard.shell.navigation_hint": {
+    "text": "Tab 移动 · Enter 选择",
+    "source_hash": "fbe682a41063"
+  },
+  "wizard.shell.preview_hint": {
+    "text": "←/→ 页面 · Esc 返回",
+    "source_hash": "9a1a64bc4c7d"
+  },
+  "wizard.shell.page_title": {
+    "text": "{title} — 第 {current}/{total} 页",
+    "source_hash": "26ddd83b8742"
+  },
+  "wizard.page.model_provider": {
+    "text": "模型提供商",
+    "source_hash": "ea70384c465d"
+  },
+  "wizard.page.web_search": {
+    "text": "网页搜索",
+    "source_hash": "7711faa74a10"
+  },
+  "wizard.page.memory": {
+    "text": "记忆",
+    "source_hash": "c3963aedaac6"
+  },
+  "wizard.shell.setup_label": {
+    "text": "设置",
+    "source_hash": "7175b03373a2"
+  }
+}

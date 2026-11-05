@@ -1,5 +1,6 @@
 //! Shared visual frame for the first-launch wizard. Herdr is not running yet,
 //! so the sidebar is a page index drawn with the same palette, not Herdr UI.
+use crate::i18n;
 // ponytail: these are today's bundled Herdr colors, not live user overrides;
 // read config.toml only if wizard theming needs to follow custom themes.
 use ratatui::{
@@ -261,7 +262,31 @@ pub const PAGES: [&str; 7] = [
 pub const PAGE_COUNT: usize = PAGES.len();
 
 pub fn page_title(title: &str, index: usize) -> String {
-    format!("{title} — page {}/{}", index + 1, PAGE_COUNT)
+    i18n::t("wizard.shell.page_title")
+        .replace("{title}", title)
+        .replace("{current}", &(index + 1).to_string())
+        .replace("{total}", &PAGE_COUNT.to_string())
+}
+
+pub fn page_label(index: usize) -> String {
+    let (key, label) = match index {
+        0 => ("wizard.identity.title", i18n::t("wizard.identity.title")),
+        1 => ("wizard.tools.title", i18n::t("wizard.tools.title")),
+        2 => (
+            "wizard.page.model_provider",
+            i18n::t("wizard.page.model_provider"),
+        ),
+        3 => ("wizard.page.web_search", i18n::t("wizard.page.web_search")),
+        4 => ("wizard.page.memory", i18n::t("wizard.page.memory")),
+        5 => ("wizard.font.title", i18n::t("wizard.font.title")),
+        6 => ("wizard.voice.title", i18n::t("wizard.voice.title")),
+        _ => return String::new(),
+    };
+    if label == key {
+        PAGES[index].to_string()
+    } else {
+        label
+    }
 }
 
 pub fn selected() -> Style {
@@ -413,13 +438,14 @@ pub fn page_area(frame: &mut Frame, page: Option<usize>) -> Rect {
     if area.width < 90 || area.height < 16 {
         let rows = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]).split(area);
         let title = page.map_or_else(
-            || "Mash  ›  Installing".to_string(),
+            || format!("Mash  ›  {}", i18n::t("wizard.shell.installing")),
             |index| {
                 format!(
-                    "Mash  ›  Setup {}/{}  ›  {}",
+                    "Mash  ›  {} {}/{}  ›  {}",
+                    i18n::t("wizard.shell.setup"),
                     index + 1,
                     PAGES.len(),
-                    PAGES[index]
+                    page_label(index)
                 )
             },
         );
@@ -449,7 +475,13 @@ pub fn page_area(frame: &mut Frame, page: Option<usize>) -> Rect {
             .into_iter()
             .map(Line::centered)
             .collect();
-        art.push(Line::styled("SETUP", Style::default().fg(MUTED)).centered());
+        art.push(
+            Line::styled(
+                i18n::t("wizard.shell.setup_label"),
+                Style::default().fg(MUTED),
+            )
+            .centered(),
+        );
         art
     } else {
         vec![
@@ -457,12 +489,16 @@ pub fn page_area(frame: &mut Frame, page: Option<usize>) -> Rect {
                 " MASH",
                 Style::default().fg(TEXT).add_modifier(Modifier::BOLD),
             ),
-            Line::styled(" SETUP", Style::default().fg(MUTED)),
+            Line::styled(
+                format!(" {}", i18n::t("wizard.shell.setup_label")),
+                Style::default().fg(MUTED),
+            ),
         ]
     };
     lines.push(Line::default());
     let first_page = inner.y + lines.len() as u16;
-    for (index, label) in PAGES.iter().enumerate() {
+    for index in 0..PAGES.len() {
+        let label = page_label(index);
         let active = page == Some(index);
         let completed = page.is_none_or(|current| index < current);
         let marker = if active {
@@ -494,9 +530,9 @@ pub fn page_area(frame: &mut Frame, page: Option<usize>) -> Rect {
     lines.push(Line::default());
     lines.push(Line::styled(
         if page.is_some() {
-            " Tab to move · Enter to select"
+            i18n::t("wizard.shell.navigation_hint")
         } else {
-            " Installing…"
+            format!(" {}", i18n::t("wizard.shell.installing"))
         },
         Style::default().fg(MUTED),
     ));
@@ -515,7 +551,7 @@ pub fn preview_hint(frame: &mut Frame) {
         frame.render_widget(
             Paragraph::new(format!(
                 "{:<width$}",
-                " ←/→ pages · Esc back",
+                format!(" {}", i18n::t("wizard.shell.preview_hint")),
                 width = width as usize
             ))
             .style(Style::default().fg(MUTED).bg(PANEL)),

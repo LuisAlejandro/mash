@@ -1,0 +1,590 @@
+{
+  "wizard.language.title": {
+    "text": "언어 선택",
+    "source_hash": "8e2d0664dbbb"
+  },
+  "wizard.language.prompt": {
+    "text": "설정 언어",
+    "source_hash": "6a37bc86eb31"
+  },
+  "wizard.language.continue": {
+    "text": "계속",
+    "source_hash": "31fbef162594"
+  },
+  "wizard.welcome.start": {
+    "text": "설정 마법사 시작",
+    "source_hash": "0fe79b066746"
+  },
+  "wizard.identity.title": {
+    "text": "사용자 정보",
+    "source_hash": "999f23fcd7be"
+  },
+  "wizard.identity.name_label": {
+    "text": "이름:",
+    "source_hash": "2683cad48a14"
+  },
+  "wizard.identity.name_help": {
+    "text": "커밋에 표시할 이름",
+    "source_hash": "496635d99500"
+  },
+  "wizard.identity.email_label": {
+    "text": "이메일:",
+    "source_hash": "17507dcf8457"
+  },
+  "wizard.identity.email_help": {
+    "text": "커밋에 표시할 이메일",
+    "source_hash": "c5b5196053ec"
+  },
+  "wizard.identity.key_label": {
+    "text": "서명 키:",
+    "source_hash": "bbfbc9ee3f2d"
+  },
+  "wizard.identity.key_help": {
+    "text": "비워 두면 서명이 비활성화됩니다",
+    "source_hash": "89da89efcf12"
+  },
+  "wizard.identity.next": {
+    "text": "다음 — 도구 선택",
+    "source_hash": "a3dc8180c38c"
+  },
+  "wizard.tools.title": {
+    "text": "도구",
+    "source_hash": "ea93d6a262ec"
+  },
+  "wizard.tools.intro": {
+    "text": "설치할 도구를 선택하세요. 흐리게 표시된 도구는 항상 사용할 수 있습니다.",
+    "source_hash": "5428fc58e4db"
+  },
+  "wizard.tools.mash_only": {
+    "text": "Mash 전용: ~/.mash에 저장되며 Mash 외부에서는 볼 수 없습니다.",
+    "source_hash": "c1401b334c12"
+  },
+  "wizard.tools.shared": {
+    "text": "컴퓨터 전체: 시스템 전체에 설치되어 다른 앱과 공유됩니다.",
+    "source_hash": "ffd57efffb24"
+  },
+  "wizard.tools.no_homebrew": {
+    "text": "Homebrew를 찾을 수 없습니다. Homebrew 도구를 선택하기 전에 brew.sh에서 설치하세요.",
+    "source_hash": "59e2e7cd4988"
+  },
+  "wizard.tools.choices": {
+    "text": "설치 선택",
+    "source_hash": "ab5a2f64781a"
+  },
+  "wizard.tools.skills": {
+    "text": "기술",
+    "source_hash": "66d0f523a379"
+  },
+  "wizard.tools.skills_check": {
+    "text": "Programming Skills 설치 (메모리 포함)",
+    "source_hash": "7accde9f1e3d"
+  },
+  "wizard.tools.skills_help": {
+    "text": "로컬 메모리를 사용하는 Pi의 아이디어, 계획, 작업, QA, 릴리스 워크플로.",
+    "source_hash": "bd9f35e51cb5"
+  },
+  "wizard.tools.back": {
+    "text": "뒤로",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.tools.next": {
+    "text": "다음 — 제공자 설정",
+    "source_hash": "1168b9d2c2a3"
+  },
+  "wizard.tools.route.bundled": {
+    "text": "Mash에 포함됨",
+    "source_hash": "ef935c70d966"
+  },
+  "wizard.tools.route.apt": {
+    "text": "apt",
+    "source_hash": "5009a047a11f"
+  },
+  "wizard.tools.route.homebrew": {
+    "text": "Homebrew",
+    "source_hash": "bc49b968dbe4"
+  },
+  "wizard.tools.route.download": {
+    "text": "고정 다운로드",
+    "source_hash": "33093fa51037"
+  },
+  "wizard.tools.route.npm": {
+    "text": "고정 npm",
+    "source_hash": "a903155cf3fd"
+  },
+  "wizard.tools.route.pip": {
+    "text": "고정 pip",
+    "source_hash": "34399ac2dcb4"
+  },
+  "wizard.tools.route.cua": {
+    "text": "CUA 설치 프로그램",
+    "source_hash": "34c982365b95"
+  },
+  "wizard.tools.route.xcode": {
+    "text": "Xcode 도구",
+    "source_hash": "80c6d0b53bee"
+  },
+  "wizard.tools.scope.shared": {
+    "text": "컴퓨터 전체",
+    "source_hash": "dced8f39fb9d"
+  },
+  "wizard.tools.scope.mash_only": {
+    "text": "Mash 전용",
+    "source_hash": "3011913d5cb4"
+  },
+  "wizard.font.title": {
+    "text": "화면 모양",
+    "source_hash": "3907fa7f8072"
+  },
+  "wizard.font.fonts_section": {
+    "text": "이 컴퓨터의 글꼴",
+    "source_hash": "48ceedcfd9eb"
+  },
+  "wizard.font.filter": {
+    "text": "글꼴 필터",
+    "source_hash": "b86e7b247be1"
+  },
+  "wizard.font.filter_hint": {
+    "text": "↑/↓ 글꼴 · Tab 크기 조절",
+    "source_hash": "356ea9afc4bf"
+  },
+  "wizard.font.family_section": {
+    "text": "글꼴 계열 (Meslo 포함)",
+    "source_hash": "7445920f6507"
+  },
+  "wizard.font.no_fonts": {
+    "text": "일치하는 글꼴 없음 — Backspace로 검색 범위 확장",
+    "source_hash": "8d7931285de0"
+  },
+  "wizard.font.keybindings_section": {
+    "text": "키 바인딩 (설정 완료 후 영구 적용)",
+    "source_hash": "92dc99e05387"
+  },
+  "wizard.font.keybindings_note": {
+    "text": "Cursor 단축키 또는 각 앱의 키 사용 (Herdr는 Ctrl+B).",
+    "source_hash": "8658dfe96d6a"
+  },
+  "wizard.font.theme_section": {
+    "text": "테마 (Herdr, Mash Terminal, Fresh, Pi, reviewr)",
+    "source_hash": "396f9810c847"
+  },
+  "wizard.font.theme_switch": {
+    "text": "←/→ 전환",
+    "source_hash": "06a1545f5045"
+  },
+  "wizard.font.size_section": {
+    "text": "글꼴 크기 (포인트)",
+    "source_hash": "31b2eb5d3b2c"
+  },
+  "wizard.font.size_adjust": {
+    "text": "←/→ 조절 (6–72)",
+    "source_hash": "976de7024dc8"
+  },
+  "wizard.font.preview_suffix": {
+    "text": "이 창에서 미리 보기",
+    "source_hash": "b086c32f40d5"
+  },
+  "wizard.font.back": {
+    "text": "뒤로",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.font.next": {
+    "text": "받아쓰기 설정으로 계속",
+    "source_hash": "ec7a0ff60525"
+  },
+  "wizard.theme.dark": {
+    "text": "어두운 테마",
+    "source_hash": "3f11a5cc643a"
+  },
+  "wizard.theme.light": {
+    "text": "밝은 테마",
+    "source_hash": "3669a1b2770f"
+  },
+  "wizard.voice.title": {
+    "text": "받아쓰기",
+    "source_hash": "25ce1a09ddc1"
+  },
+  "wizard.voice.languages_section": {
+    "text": "받아쓸 언어",
+    "source_hash": "7287a2bc2529"
+  },
+  "wizard.voice.empty_notice": {
+    "text": "선택한 언어 없음: 받아쓰기가 설정되지 않습니다. 나중에 Pi의 /voice로 추가할 수 있습니다.",
+    "source_hash": "b903d36755f6"
+  },
+  "wizard.voice.no_match": {
+    "text": "이 조합을 지원하는 모델이 없습니다. 언어를 제거하세요.",
+    "source_hash": "b8b167ba3990"
+  },
+  "wizard.voice.best": {
+    "text": "추천",
+    "source_hash": "c47d21c643c0"
+  },
+  "wizard.voice.fast": {
+    "text": "빠른",
+    "source_hash": "6c582b62e0e5"
+  },
+  "wizard.voice.best_summary": {
+    "text": "속도와 정확도의 권장 균형",
+    "source_hash": "2fde20c2ddd6"
+  },
+  "wizard.voice.fast_summary": {
+    "text": "사용 가능한 품질을 유지하는 가장 빠른 전사",
+    "source_hash": "9f01f55f16dc"
+  },
+  "wizard.voice.same_model": {
+    "text": "여기서는 두 역할이 같은 모델을 사용합니다.",
+    "source_hash": "6a800db5cff9"
+  },
+  "wizard.voice.detector_notice": {
+    "text": "자동 감지를 위해 {size} 언어 감지기 추가",
+    "source_hash": "3c9c1859e707"
+  },
+  "wizard.voice.model_section": {
+    "text": "다운로드할 모델",
+    "source_hash": "e90982e6cea9"
+  },
+  "wizard.voice.continue_without": {
+    "text": "받아쓰기 없이 계속",
+    "source_hash": "25309b666263"
+  },
+  "wizard.voice.download_continue": {
+    "text": "다운로드하고 계속",
+    "source_hash": "0a12deea1f8d"
+  },
+  "wizard.voice.back": {
+    "text": "뒤로",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.voice.more": {
+    "text": "{count}개 더 — 스크롤하거나 아래로 이동",
+    "source_hash": "00703aa3c372"
+  },
+  "wizard.voice.name.bg": {
+    "text": "불가리아어",
+    "source_hash": "ecd986094baf"
+  },
+  "wizard.voice.name.cs": {
+    "text": "체코어",
+    "source_hash": "8b463ea23a7e"
+  },
+  "wizard.voice.name.de": {
+    "text": "독일어",
+    "source_hash": "a659b60d246d"
+  },
+  "wizard.voice.name.en": {
+    "text": "영어",
+    "source_hash": "ba118bf7fc9c"
+  },
+  "wizard.voice.name.es": {
+    "text": "스페인어",
+    "source_hash": "3411059cb8e0"
+  },
+  "wizard.voice.name.fr": {
+    "text": "프랑스어",
+    "source_hash": "7458199fe97a"
+  },
+  "wizard.voice.name.it": {
+    "text": "이탈리아어",
+    "source_hash": "fe1d9c7db376"
+  },
+  "wizard.voice.name.ja": {
+    "text": "일본어",
+    "source_hash": "be4ee906d3ef"
+  },
+  "wizard.voice.name.ko": {
+    "text": "한국어",
+    "source_hash": "04656c6fe003"
+  },
+  "wizard.voice.name.pt": {
+    "text": "포르투갈어",
+    "source_hash": "98b01b890687"
+  },
+  "wizard.voice.name.ru": {
+    "text": "러시아어",
+    "source_hash": "5bcc40adf6e0"
+  },
+  "wizard.voice.name.th": {
+    "text": "태국어",
+    "source_hash": "ad705ee19c04"
+  },
+  "wizard.voice.name.uk": {
+    "text": "우크라이나어",
+    "source_hash": "6f424303fa12"
+  },
+  "wizard.voice.name.vi": {
+    "text": "베트남어",
+    "source_hash": "f25499e9df5c"
+  },
+  "wizard.voice.name.zh": {
+    "text": "중국어(표준어)",
+    "source_hash": "b4d3ec443738"
+  },
+  "wizard.github.section": {
+    "text": "GitHub (선택 사항)",
+    "source_hash": "d02de70d7691"
+  },
+  "wizard.github.signed_out": {
+    "text": "로그인되지 않음",
+    "source_hash": "491fc91cd76e"
+  },
+  "wizard.github.starting": {
+    "text": "GitHub에 연결 중…",
+    "source_hash": "e7018ff9b61a"
+  },
+  "wizard.github.waiting": {
+    "text": "브라우저에서 승인을 기다리는 중",
+    "source_hash": "0e591354e538"
+  },
+  "wizard.github.signed_in": {
+    "text": "✓ 로그인됨",
+    "source_hash": "a6bc36f81df5"
+  },
+  "wizard.github.signed_in_as": {
+    "text": "✓ {user}(으)로 로그인됨",
+    "source_hash": "33cfe2e60aae"
+  },
+  "wizard.github.sign_in": {
+    "text": "GitHub 로그인",
+    "source_hash": "47e9895d1d76"
+  },
+  "wizard.github.cancel": {
+    "text": "취소",
+    "source_hash": "19766ed6ccb2"
+  },
+  "wizard.github.sign_out": {
+    "text": "로그아웃",
+    "source_hash": "48f0d3d397d4"
+  },
+  "wizard.github.retry": {
+    "text": "다시 시도",
+    "source_hash": "d8b8392e2c54"
+  },
+  "wizard.github.copied": {
+    "text": "클립보드에 복사됨",
+    "source_hash": "9a6d3fb1a8f5"
+  },
+  "wizard.github.approve": {
+    "text": "Mash를 승인하려면 {url}에서 코드를 입력하세요.",
+    "source_hash": "0811fcc61af8"
+  },
+  "wizard.github.usage": {
+    "text": "Git HTTPS, 풀 리퀘스트 및 에이전트의 GitHub 도구에서 사용됩니다.",
+    "source_hash": "687743c41d86"
+  },
+  "wizard.font.keybindings.mash": {
+    "text": "Mash / Cursor 스타일",
+    "source_hash": "50c4eaf509a5"
+  },
+  "wizard.font.keybindings.native": {
+    "text": "기본",
+    "source_hash": "d509e4938852"
+  },
+  "wizard.tools.description.agent-browser": {
+    "text": "페이지 작업용 브라우저 자동화",
+    "source_hash": "17a3b5d9e891"
+  },
+  "wizard.tools.description.atuin": {
+    "text": "검색 가능한 셸 기록",
+    "source_hash": "f1667e433eff"
+  },
+  "wizard.tools.description.bash-language-server": {
+    "text": "Bash 언어 서버",
+    "source_hash": "8bb3d3483973"
+  },
+  "wizard.tools.description.bat": {
+    "text": "강조 표시된 파일 미리 보기",
+    "source_hash": "65f67ed05fd4"
+  },
+  "wizard.tools.description.clangd": {
+    "text": "C 및 C++ 언어 서버",
+    "source_hash": "eb55e1c1e2fc"
+  },
+  "wizard.tools.description.cua-driver": {
+    "text": "앱 화면용 기본 데스크톱 제어",
+    "source_hash": "875a66659bbe"
+  },
+  "wizard.tools.description.delta": {
+    "text": "Git diff 및 페이지 표시",
+    "source_hash": "0a5ab9622ca0"
+  },
+  "wizard.tools.description.eza": {
+    "text": "파일 목록",
+    "source_hash": "90065d6d509a"
+  },
+  "wizard.tools.description.fd": {
+    "text": "파일 검색",
+    "source_hash": "401934824f5c"
+  },
+  "wizard.tools.description.fresh": {
+    "text": "Mash 편집기",
+    "source_hash": "07a3ce240a97"
+  },
+  "wizard.tools.description.fzf": {
+    "text": "대화형 퍼지 선택기",
+    "source_hash": "74befff772fe"
+  },
+  "wizard.tools.description.gh": {
+    "text": "GitHub CLI 및 자격 증명 도우미",
+    "source_hash": "7f9081e6b668"
+  },
+  "wizard.tools.description.git": {
+    "text": "Git 버전 관리",
+    "source_hash": "04ecfc4b2a56"
+  },
+  "wizard.tools.description.gopls": {
+    "text": "Go 언어 서버",
+    "source_hash": "7c830acbe2df"
+  },
+  "wizard.tools.description.herdr": {
+    "text": "작업 공간, 탭 및 패널",
+    "source_hash": "ae8e873192bf"
+  },
+  "wizard.tools.description.jq": {
+    "text": "JSON 유틸리티",
+    "source_hash": "8f8b7b35919d"
+  },
+  "wizard.tools.description.latexindent": {
+    "text": "LaTeX 서식 지정",
+    "source_hash": "2d27bc2aed62"
+  },
+  "wizard.tools.description.lazydocker": {
+    "text": "터미널의 Docker",
+    "source_hash": "a1ea900f50dc"
+  },
+  "wizard.tools.description.lazygit": {
+    "text": "터미널의 Git",
+    "source_hash": "56280a7e33fa"
+  },
+  "wizard.tools.description.marksman": {
+    "text": "Markdown 언어 서버",
+    "source_hash": "acd246ea56cd"
+  },
+  "wizard.tools.description.node": {
+    "text": "JavaScript 런타임 및 npm",
+    "source_hash": "257e5fc25d9c"
+  },
+  "wizard.tools.description.pet": {
+    "text": "명령 스니펫",
+    "source_hash": "2c7046aea68e"
+  },
+  "wizard.tools.description.pi": {
+    "text": "Mash 코딩 에이전트",
+    "source_hash": "1e3348dc35ec"
+  },
+  "wizard.tools.description.prettier": {
+    "text": "JavaScript, JSON, Markdown, CSS 및 Svelte 서식 지정",
+    "source_hash": "0a196b7eee63"
+  },
+  "wizard.tools.description.python": {
+    "text": "Python 런타임 및 pip",
+    "source_hash": "d378a966a298"
+  },
+  "wizard.tools.description.python-lsp-server": {
+    "text": "Python 언어 서버",
+    "source_hash": "45689d922173"
+  },
+  "wizard.tools.description.rg": {
+    "text": "콘텐츠 검색",
+    "source_hash": "364c20f57972"
+  },
+  "wizard.tools.description.rust-analyzer": {
+    "text": "Rust 언어 서버",
+    "source_hash": "59af4ee7c852"
+  },
+  "wizard.tools.description.sentrux": {
+    "text": "계획, 작업 및 QA 구조 분석",
+    "source_hash": "cdadc36df319"
+  },
+  "wizard.tools.description.shfmt": {
+    "text": "셸 서식 지정",
+    "source_hash": "ef675cf302a8"
+  },
+  "wizard.tools.description.sourcekit-lsp": {
+    "text": "Swift 언어 서버",
+    "source_hash": "bf29ee422d2f"
+  },
+  "wizard.tools.description.starship": {
+    "text": "셸 프롬프트",
+    "source_hash": "ef8740639be1"
+  },
+  "wizard.tools.description.svelte-language-server": {
+    "text": "Svelte 언어 서버",
+    "source_hash": "5f0011a9203a"
+  },
+  "wizard.tools.description.tailwindcss-language-server": {
+    "text": "Tailwind CSS 언어 서버",
+    "source_hash": "b33fd822317e"
+  },
+  "wizard.tools.description.texlab": {
+    "text": "LaTeX 언어 서버",
+    "source_hash": "3388b1a9bd89"
+  },
+  "wizard.tools.description.typescript-language-server": {
+    "text": "TypeScript 및 JavaScript 언어 서버",
+    "source_hash": "199f12a09d18"
+  },
+  "wizard.tools.description.viu": {
+    "text": "터미널 이미지",
+    "source_hash": "6068123d4bf5"
+  },
+  "wizard.tools.description.vscode-css-language-server": {
+    "text": "CSS 서버 (CSS/HTML/JSON 공유 패키지)",
+    "source_hash": "3ae9cafca643"
+  },
+  "wizard.tools.description.vscode-html-language-server": {
+    "text": "HTML 서버 (CSS/HTML/JSON 공유 패키지)",
+    "source_hash": "4fdddbf99da0"
+  },
+  "wizard.tools.description.vscode-json-language-server": {
+    "text": "JSON 서버 (CSS/HTML/JSON 공유 패키지)",
+    "source_hash": "af757d93137e"
+  },
+  "wizard.tools.description.yaml-language-server": {
+    "text": "YAML 언어 서버",
+    "source_hash": "d56c118152ef"
+  },
+  "wizard.tools.description.zoxide": {
+    "text": "스마트 디렉터리 정렬",
+    "source_hash": "82deb27f3f2d"
+  },
+  "wizard.font.warning_no_list": {
+    "text": "설치된 글꼴을 나열할 수 없습니다. 번들 Meslo는 계속 사용할 수 있습니다.",
+    "source_hash": "800ea442cefd"
+  },
+  "wizard.shell.setup": {
+    "text": "설정",
+    "source_hash": "7013af4c42fe"
+  },
+  "wizard.shell.installing": {
+    "text": "설치 중…",
+    "source_hash": "530bcc355f0a"
+  },
+  "wizard.shell.navigation_hint": {
+    "text": "Tab 이동 · Enter 선택",
+    "source_hash": "fbe682a41063"
+  },
+  "wizard.shell.preview_hint": {
+    "text": "←/→ 페이지 · Esc 뒤로",
+    "source_hash": "9a1a64bc4c7d"
+  },
+  "wizard.shell.page_title": {
+    "text": "{title} — {total}페이지 중 {current}페이지",
+    "source_hash": "26ddd83b8742"
+  },
+  "wizard.page.model_provider": {
+    "text": "모델 제공자",
+    "source_hash": "ea70384c465d"
+  },
+  "wizard.page.web_search": {
+    "text": "웹 검색",
+    "source_hash": "7711faa74a10"
+  },
+  "wizard.page.memory": {
+    "text": "메모리",
+    "source_hash": "c3963aedaac6"
+  },
+  "wizard.shell.setup_label": {
+    "text": "설정",
+    "source_hash": "7175b03373a2"
+  }
+}

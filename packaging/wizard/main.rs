@@ -1,5 +1,7 @@
 mod font_page;
 mod github_login;
+mod i18n;
+mod language_page;
 mod model_picker;
 mod pi_connection;
 mod pi_models;
@@ -259,6 +261,8 @@ fn run() -> Result<i32, String> {
 }
 
 fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<i32, String> {
+    let mut language = language_page::LanguagePage::new();
+    let mut language_chosen = false;
     let mut identity = IdentityPage::new(github_login(preview));
     let mut tools = tools_page::ToolsPage::new();
     let mut providers = provider_page::ProviderPage::new();
@@ -302,7 +306,9 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
         }
         terminal
             .draw(|frame| {
-                if started {
+                if !language_chosen {
+                    language.draw(frame);
+                } else if started {
                     match page {
                         0 => draw_identity(frame, &identity),
                         1 => tools.draw(frame),
@@ -328,6 +334,39 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
             continue;
         }
         let event = event::read().map_err(|e| e.to_string())?;
+        if !language_chosen {
+            let decision = if let Some(id) = wizard_style::clicked(&event) {
+                language.on_click(id)
+            } else if let Some(direction) = wizard_style::wheel(&event) {
+                language.on_key(
+                    if direction < 0 {
+                        KeyCode::Up
+                    } else {
+                        KeyCode::Down
+                    },
+                    KeyModifiers::NONE,
+                )
+            } else if let Event::Key(key) = event {
+                if key.kind == KeyEventKind::Press {
+                    language.on_key(key.code, key.modifiers)
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+            match decision {
+                Some(language_page::Decision::Continue) => {
+                    language_chosen = true;
+                    voice = voice_page::VoicePage::new();
+                }
+                Some(language_page::Decision::Cancel) if preview || confirm_quit(terminal)? => {
+                    return Ok(EXIT_NOT_DONE);
+                }
+                _ => {}
+            }
+            continue;
+        }
         if !started {
             if welcome_page::starts_on(&event, start_button) {
                 started = true;
@@ -760,6 +799,7 @@ fn prepare_setup(
     // map for it, and the launcher opens Mash right after this returns.
     fonts.save_mode(root)?;
     tools.save_selection(root)?;
+    language_page::LanguagePage::save_selection(root, i18n::language())?;
     seed_selected_skills(resources, root)?;
     providers.save_with_runtime(root, resources)
 }
@@ -1792,20 +1832,43 @@ fn draw_identity(frame: &mut Frame, page: &IdentityPage) {
         Constraint::Length(3),
     ])
     .split(area);
-    wizard_style::header(frame, chunks[0], &wizard_style::page_title("Identity", 0));
+    let identity_title = i18n::t("wizard.identity.title");
+    wizard_style::header(
+        frame,
+        chunks[0],
+        &wizard_style::page_title(&identity_title, 0),
+    );
 
-    let body = wizard_style::section(frame, chunks[1], "Identity");
+    let body = wizard_style::section(frame, chunks[1], &identity_title);
     let fields = [
-        (FOCUS_NAME, "Name:", &page.name, "Name on commits"),
-        (FOCUS_EMAIL, "Email:", &page.email, "Email on commits"),
+        (
+            FOCUS_NAME,
+            i18n::t("wizard.identity.name_label"),
+            &page.name,
+            i18n::t("wizard.identity.name_help"),
+        ),
+        (
+            FOCUS_EMAIL,
+            i18n::t("wizard.identity.email_label"),
+            &page.email,
+            i18n::t("wizard.identity.email_help"),
+        ),
         (
             FOCUS_SIGNING_KEY,
-            "Signing key:",
+            i18n::t("wizard.identity.key_label"),
             &page.signing_key,
-            page.signing_note.unwrap_or("Empty disables signing"),
+            page.signing_note
+                .map(str::to_owned)
+                .unwrap_or_else(|| i18n::t("wizard.identity.key_help")),
         ),
     ];
-    let label_width = 13.min(body.width);
+    let label_width = fields
+        .iter()
+        .map(|(_, label, _, _)| Line::from(label.as_str()).width())
+        .max()
+        .unwrap_or(0)
+        .saturating_add(1)
+        .min(body.width as usize) as u16;
     let input_width = fields
         .iter()
         .map(|(_, _, value, _)| Line::from((*value).clone()).width() + 3)
@@ -1819,7 +1882,7 @@ fn draw_identity(frame: &mut Frame, page: &IdentityPage) {
     let rows: Vec<_> = fields
         .iter()
         .map(|(_, _, _, hint)| {
-            let height = Paragraph::new(*hint)
+            let height = Paragraph::new(hint.as_str())
                 .wrap(Wrap { trim: true })
                 .line_count(help_width.max(1)) as u16;
             let start = row;
@@ -1849,7 +1912,7 @@ fn draw_identity(frame: &mut Frame, page: &IdentityPage) {
         let focused = page.focus == *focus;
         let input = Rect::new(body.x + label_width, y, input_width, 1);
         frame.render_widget(
-            Paragraph::new(*label).style(Style::default().add_modifier(Modifier::BOLD)),
+            Paragraph::new(label.as_str()).style(Style::default().add_modifier(Modifier::BOLD)),
             Rect::new(body.x, y, label_width, 1),
         );
         let text = Line::from(vec![
@@ -1880,7 +1943,7 @@ fn draw_identity(frame: &mut Frame, page: &IdentityPage) {
         );
         wizard_style::target(Rect::new(body.x, y, label_width + input_width, 1), *focus);
         frame.render_widget(
-            Paragraph::new(*hint)
+            Paragraph::new(hint.as_str())
                 .wrap(Wrap { trim: true })
                 .style(Style::default().fg(wizard_style::MUTED)),
             Rect::new(help_x, y, help_width, height.min(body.bottom() - y)),
@@ -1902,7 +1965,10 @@ fn draw_identity(frame: &mut Frame, page: &IdentityPage) {
         frame,
         chunks[2],
         &[(
-            wizard_style::button(page.focus == FOCUS_IDENTITY_NEXT, " Next — choose tools "),
+            wizard_style::button(
+                page.focus == FOCUS_IDENTITY_NEXT,
+                &format!(" {} ", i18n::t("wizard.identity.next")),
+            ),
             Some(FOCUS_IDENTITY_NEXT),
         )],
     );
@@ -1915,7 +1981,8 @@ fn draw_github(frame: &mut Frame, area: Rect, github: &github_login::GithubLogin
         return;
     }
     frame.render_widget(
-        Paragraph::new("GitHub (optional)").style(Style::default().add_modifier(Modifier::BOLD)),
+        Paragraph::new(i18n::t("wizard.github.section"))
+            .style(Style::default().add_modifier(Modifier::BOLD)),
         Rect::new(area.x, area.y, area.width, 1),
     );
     if area.height <= 2 {
@@ -1923,14 +1990,14 @@ fn draw_github(frame: &mut Frame, area: Rect, github: &github_login::GithubLogin
     }
     let (note, color) = match github.status() {
         Status::Unavailable(reason) => (reason.clone(), wizard_style::MUTED),
-        Status::SignedOut => ("Not signed in".to_string(), wizard_style::MUTED),
-        Status::Starting => ("Contacting GitHub…".to_string(), wizard_style::MUTED),
-        Status::Waiting { .. } => (
-            "Waiting for approval in your browser".to_string(),
-            wizard_style::YELLOW,
+        Status::SignedOut => (i18n::t("wizard.github.signed_out"), wizard_style::MUTED),
+        Status::Starting => (i18n::t("wizard.github.starting"), wizard_style::MUTED),
+        Status::Waiting { .. } => (i18n::t("wizard.github.waiting"), wizard_style::YELLOW),
+        Status::SignedIn(Some(user)) => (
+            i18n::t("wizard.github.signed_in_as").replace("{user}", user),
+            wizard_style::GREEN,
         ),
-        Status::SignedIn(Some(user)) => (format!("✓ Signed in as {user}"), wizard_style::GREEN),
-        Status::SignedIn(None) => ("✓ Signed in".to_string(), wizard_style::GREEN),
+        Status::SignedIn(None) => (i18n::t("wizard.github.signed_in"), wizard_style::GREEN),
         Status::Failed(reason) => (reason.clone(), wizard_style::RED),
     };
     if matches!(github.status(), Status::Unavailable(_)) {
@@ -1944,8 +2011,14 @@ fn draw_github(frame: &mut Frame, area: Rect, github: &github_login::GithubLogin
     }
     // Same 23-column, centred, filled treatment as Start config wizard.
     let button = Rect::new(area.x, area.y + 2, 23.min(area.width), 1);
+    let button_label = match github.button_label().trim() {
+        "Cancel" => i18n::t("wizard.github.cancel"),
+        "Sign out" => i18n::t("wizard.github.sign_out"),
+        "Try again" => i18n::t("wizard.github.retry"),
+        _ => i18n::t("wizard.github.sign_in"),
+    };
     frame.render_widget(
-        Paragraph::new(github.button_label())
+        Paragraph::new(format!(" {} ", button_label))
             .alignment(Alignment::Center)
             .style(if focused {
                 wizard_style::selected().add_modifier(Modifier::BOLD)
@@ -1978,16 +2051,16 @@ fn draw_github(frame: &mut Frame, area: Rect, github: &github_login::GithubLogin
                     .add_modifier(Modifier::BOLD),
             ),
             Span::raw(if *copied {
-                "   copied to clipboard"
+                format!("   {}", i18n::t("wizard.github.copied"))
             } else {
-                ""
+                String::new()
             }),
         ]));
-        details.push(Line::from(format!("Enter it at {url} to approve Mash.")));
-    } else if matches!(github.status(), Status::SignedOut | Status::Failed(_)) {
         details.push(Line::from(
-            "Used by Git over HTTPS, pull requests and the agents' GitHub tools.",
+            i18n::t("wizard.github.approve").replace("{url}", url),
         ));
+    } else if matches!(github.status(), Status::SignedOut | Status::Failed(_)) {
+        details.push(Line::from(i18n::t("wizard.github.usage")));
     }
     let details_y = button.y + note_height + 1;
     frame.render_widget(

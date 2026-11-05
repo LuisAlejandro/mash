@@ -8,6 +8,7 @@
 //! per-language error plus a penalty for waiting, with accuracy as a hard
 //! constraint first.
 
+use crate::i18n;
 use serde_json::Value;
 use std::cmp::Ordering;
 use std::collections::HashSet;
@@ -44,17 +45,17 @@ pub enum Role {
 }
 
 impl Role {
-    pub fn label(self) -> &'static str {
+    pub fn label(self) -> String {
         match self {
-            Role::Best => "Best",
-            Role::Fast => "Fast",
+            Role::Best => i18n::t("wizard.voice.best"),
+            Role::Fast => i18n::t("wizard.voice.fast"),
         }
     }
 
-    pub fn summary(self) -> &'static str {
+    pub fn summary(self) -> String {
         match self {
-            Role::Best => "the suggested balance of speed and accuracy",
-            Role::Fast => "the quickest transcription that stays usable",
+            Role::Best => i18n::t("wizard.voice.best_summary"),
+            Role::Fast => i18n::t("wizard.voice.fast_summary"),
         }
     }
 }
@@ -568,9 +569,31 @@ const LANGUAGE_NAMES: &[(&str, &str)] = &[
 ];
 
 pub fn display_name(language: &str) -> String {
+    let language_code = canonical(language);
+    let localized = match language_code.as_str() {
+        "bg" => Some(i18n::t("wizard.voice.name.bg")),
+        "cs" => Some(i18n::t("wizard.voice.name.cs")),
+        "de" => Some(i18n::t("wizard.voice.name.de")),
+        "en" => Some(i18n::t("wizard.voice.name.en")),
+        "es" => Some(i18n::t("wizard.voice.name.es")),
+        "fr" => Some(i18n::t("wizard.voice.name.fr")),
+        "it" => Some(i18n::t("wizard.voice.name.it")),
+        "ja" => Some(i18n::t("wizard.voice.name.ja")),
+        "ko" => Some(i18n::t("wizard.voice.name.ko")),
+        "pt" => Some(i18n::t("wizard.voice.name.pt")),
+        "ru" => Some(i18n::t("wizard.voice.name.ru")),
+        "th" => Some(i18n::t("wizard.voice.name.th")),
+        "uk" => Some(i18n::t("wizard.voice.name.uk")),
+        "vi" => Some(i18n::t("wizard.voice.name.vi")),
+        "zh" => Some(i18n::t("wizard.voice.name.zh")),
+        _ => None,
+    };
+    if let Some(name) = localized {
+        return name;
+    }
     LANGUAGE_NAMES
         .iter()
-        .find(|(code, _)| *code == canonical(language))
+        .find(|(table_code, _)| *table_code == language_code)
         .map(|(_, name)| (*name).to_string())
         .unwrap_or_else(|| language.to_string())
 }

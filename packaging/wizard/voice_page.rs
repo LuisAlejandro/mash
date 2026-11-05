@@ -2,8 +2,11 @@
 //! model to download. Last page of the first-launch wizard, so `Save` is what
 //! lets the install run begin.
 
-use crate::voice::{self, Role};
-use crate::wizard_style;
+use crate::{
+    i18n,
+    voice::{self, Role},
+    wizard_style,
+};
 use ratatui::{
     crossterm::event::{KeyCode, KeyModifiers},
     layout::{Constraint, Layout},
@@ -37,19 +40,32 @@ pub struct VoicePage {
 
 impl VoicePage {
     pub fn new() -> Self {
-        let languages = voice::offered_languages()
+        let preferred = crate::language_page::voice_language(i18n::language())
+            .and_then(|code| code.split('-').next())
+            .unwrap_or("en");
+        let offered = voice::offered_languages();
+        let preferred = if offered.iter().any(|(code, _)| code == preferred) {
+            preferred
+        } else {
+            "en"
+        };
+        let languages: Vec<Language> = offered
             .into_iter()
             .map(|(code, name)| Language {
-                // English first, and preselected: it is the picker's own
-                // `defaultSpokenLanguages()` fallback outside a known locale.
-                checked: code == "en",
+                // English is the final fallback if the selected UI language has
+                // no supported dictation model.
+                checked: code == preferred,
                 code,
                 name,
             })
             .collect();
+        let row = languages
+            .iter()
+            .position(|language| language.checked)
+            .unwrap_or(0);
         let mut page = Self {
             languages,
-            row: 0,
+            row,
             role: Role::Best,
             pick: None,
         };
@@ -198,7 +214,11 @@ impl VoicePage {
         ])
         .split(wizard_style::page_area(frame, Some(6)));
 
-        wizard_style::header(frame, parts[0], &wizard_style::page_title("Dictation", 6));
+        wizard_style::header(
+            frame,
+            parts[0],
+            &wizard_style::page_title(&i18n::t("wizard.voice.title"), 6),
+        );
 
         self.draw_languages(frame, parts[1]);
         self.draw_pick(frame, parts[2]);
@@ -208,18 +228,24 @@ impl VoicePage {
             parts[3],
             &[
                 (
-                    wizard_style::button(self.row == self.back_row(), " Back "),
+                    wizard_style::button(
+                        self.row == self.back_row(),
+                        &format!(" {} ", i18n::t("wizard.voice.back")),
+                    ),
                     Some(self.back_row()),
                 ),
                 (Span::raw("  "), None),
                 (
                     wizard_style::button(
                         self.row == self.save_row(),
-                        if self.selected().is_empty() {
-                            " Continue without dictation "
-                        } else {
-                            " Download and continue "
-                        },
+                        &format!(
+                            " {} ",
+                            if self.selected().is_empty() {
+                                i18n::t("wizard.voice.continue_without")
+                            } else {
+                                i18n::t("wizard.voice.download_continue")
+                            }
+                        ),
                     ),
                     Some(self.save_row()),
                 ),
@@ -262,14 +288,14 @@ impl VoicePage {
         if hidden > 0 {
             lines.push((
                 Line::from(Span::styled(
-                    format!("  {hidden} more — scroll or keep moving down"),
+                    i18n::t("wizard.voice.more").replace("{count}", &hidden.to_string()),
                     Style::default().fg(wizard_style::MUTED),
                 )),
                 None,
             ));
         }
 
-        let body = wizard_style::section(frame, area, "Languages you will dictate in");
+        let body = wizard_style::section(frame, area, &i18n::t("wizard.voice.languages_section"));
         wizard_style::render_form(frame, body, lines, false);
     }
 
@@ -278,14 +304,14 @@ impl VoicePage {
         match &self.pick {
             None if self.selected().is_empty() => lines.push((
                 Line::from(Span::styled(
-                    "No language selected: dictation will not be set up. Pi can add it later with /voice.",
+                    i18n::t("wizard.voice.empty_notice"),
                     Style::default().fg(wizard_style::MUTED),
                 )),
                 None,
             )),
             None => lines.push((
                 Line::from(Span::styled(
-                    "No model covers that combination. Remove a language.",
+                    i18n::t("wizard.voice.no_match"),
                     Style::default().fg(wizard_style::RED),
                 )),
                 None,
@@ -318,7 +344,7 @@ impl VoicePage {
                 if pick.same_model() {
                     lines.push((
                         Line::from(Span::styled(
-                            "  Both roles are the same model here.",
+                            i18n::t("wizard.voice.same_model"),
                             Style::default().fg(wizard_style::MUTED),
                         )),
                         None,
@@ -328,8 +354,11 @@ impl VoicePage {
                     lines.push((
                         Line::from(Span::styled(
                             format!(
-                                "  adds the {} language detector for auto-detect",
-                                voice::human_size(voice::detector_bytes())
+                                "  {}",
+                                i18n::t("wizard.voice.detector_notice").replace(
+                                    "{size}",
+                                    &voice::human_size(voice::detector_bytes()),
+                                )
                             ),
                             Style::default().fg(wizard_style::MUTED),
                         )),
@@ -338,7 +367,7 @@ impl VoicePage {
                 }
             }
         }
-        let body = wizard_style::section(frame, area, "Model to download");
+        let body = wizard_style::section(frame, area, &i18n::t("wizard.voice.model_section"));
         wizard_style::render_form(frame, body, lines, false);
     }
 }

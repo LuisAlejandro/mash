@@ -1,0 +1,590 @@
+{
+  "wizard.language.title": {
+    "text": "Выберите язык",
+    "source_hash": "8e2d0664dbbb"
+  },
+  "wizard.language.prompt": {
+    "text": "Язык настройки",
+    "source_hash": "6a37bc86eb31"
+  },
+  "wizard.language.continue": {
+    "text": "Продолжить",
+    "source_hash": "31fbef162594"
+  },
+  "wizard.welcome.start": {
+    "text": "Запустить мастер настройки",
+    "source_hash": "0fe79b066746"
+  },
+  "wizard.identity.title": {
+    "text": "Профиль",
+    "source_hash": "999f23fcd7be"
+  },
+  "wizard.identity.name_label": {
+    "text": "Имя:",
+    "source_hash": "2683cad48a14"
+  },
+  "wizard.identity.name_help": {
+    "text": "Имя в коммитах",
+    "source_hash": "496635d99500"
+  },
+  "wizard.identity.email_label": {
+    "text": "Эл. почта:",
+    "source_hash": "17507dcf8457"
+  },
+  "wizard.identity.email_help": {
+    "text": "Эл. почта в коммитах",
+    "source_hash": "c5b5196053ec"
+  },
+  "wizard.identity.key_label": {
+    "text": "Ключ подписи:",
+    "source_hash": "bbfbc9ee3f2d"
+  },
+  "wizard.identity.key_help": {
+    "text": "Оставьте пустым, чтобы отключить подпись",
+    "source_hash": "89da89efcf12"
+  },
+  "wizard.identity.next": {
+    "text": "Далее — выбрать инструменты",
+    "source_hash": "a3dc8180c38c"
+  },
+  "wizard.tools.title": {
+    "text": "Инструменты",
+    "source_hash": "ea93d6a262ec"
+  },
+  "wizard.tools.intro": {
+    "text": "Выберите инструменты для установки. Серые пункты всегда доступны.",
+    "source_hash": "5428fc58e4db"
+  },
+  "wizard.tools.mash_only": {
+    "text": "Только в Mash: хранится в ~/.mash и не видна за пределами Mash.",
+    "source_hash": "c1401b334c12"
+  },
+  "wizard.tools.shared": {
+    "text": "На компьютере: устанавливается для всей системы и доступна другим приложениям.",
+    "source_hash": "ffd57efffb24"
+  },
+  "wizard.tools.no_homebrew": {
+    "text": "Homebrew не найден: установите его с brew.sh, прежде чем выбирать его инструменты.",
+    "source_hash": "59e2e7cd4988"
+  },
+  "wizard.tools.choices": {
+    "text": "Варианты установки",
+    "source_hash": "ab5a2f64781a"
+  },
+  "wizard.tools.skills": {
+    "text": "Навыки",
+    "source_hash": "66d0f523a379"
+  },
+  "wizard.tools.skills_check": {
+    "text": "Установить Programming Skills (включая память)",
+    "source_hash": "7accde9f1e3d"
+  },
+  "wizard.tools.skills_help": {
+    "text": "Рабочие процессы Pi для идей, планирования, работы, QA и выпусков с локальной памятью.",
+    "source_hash": "bd9f35e51cb5"
+  },
+  "wizard.tools.back": {
+    "text": "Назад",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.tools.next": {
+    "text": "Далее — настроить провайдеров",
+    "source_hash": "1168b9d2c2a3"
+  },
+  "wizard.tools.route.bundled": {
+    "text": "входит в Mash",
+    "source_hash": "ef935c70d966"
+  },
+  "wizard.tools.route.apt": {
+    "text": "apt",
+    "source_hash": "5009a047a11f"
+  },
+  "wizard.tools.route.homebrew": {
+    "text": "Homebrew",
+    "source_hash": "bc49b968dbe4"
+  },
+  "wizard.tools.route.download": {
+    "text": "закреплённая загрузка",
+    "source_hash": "33093fa51037"
+  },
+  "wizard.tools.route.npm": {
+    "text": "закреплённый npm",
+    "source_hash": "a903155cf3fd"
+  },
+  "wizard.tools.route.pip": {
+    "text": "закреплённый pip",
+    "source_hash": "34399ac2dcb4"
+  },
+  "wizard.tools.route.cua": {
+    "text": "установщик CUA",
+    "source_hash": "34c982365b95"
+  },
+  "wizard.tools.route.xcode": {
+    "text": "инструменты Xcode",
+    "source_hash": "80c6d0b53bee"
+  },
+  "wizard.tools.scope.shared": {
+    "text": "ваш компьютер",
+    "source_hash": "dced8f39fb9d"
+  },
+  "wizard.tools.scope.mash_only": {
+    "text": "Только в Mash",
+    "source_hash": "3011913d5cb4"
+  },
+  "wizard.font.title": {
+    "text": "Внешний вид",
+    "source_hash": "3907fa7f8072"
+  },
+  "wizard.font.fonts_section": {
+    "text": "Шрифты на этом компьютере",
+    "source_hash": "48ceedcfd9eb"
+  },
+  "wizard.font.filter": {
+    "text": "Фильтр шрифтов",
+    "source_hash": "b86e7b247be1"
+  },
+  "wizard.font.filter_hint": {
+    "text": "↑/↓ шрифты · Tab — размер",
+    "source_hash": "356ea9afc4bf"
+  },
+  "wizard.font.family_section": {
+    "text": "Семейство шрифтов (Meslo включён)",
+    "source_hash": "7445920f6507"
+  },
+  "wizard.font.no_fonts": {
+    "text": "Подходящих шрифтов нет — нажмите Backspace, чтобы расширить поиск",
+    "source_hash": "8d7931285de0"
+  },
+  "wizard.font.keybindings_section": {
+    "text": "Сочетания клавиш (сохраняются после настройки)",
+    "source_hash": "92dc99e05387"
+  },
+  "wizard.font.keybindings_note": {
+    "text": "Сочетания Cursor или клавиши самих приложений (Herdr — Ctrl+B).",
+    "source_hash": "8658dfe96d6a"
+  },
+  "wizard.font.theme_section": {
+    "text": "Тема (Herdr, Mash Terminal, Fresh, Pi, reviewr)",
+    "source_hash": "396f9810c847"
+  },
+  "wizard.font.theme_switch": {
+    "text": "←/→ переключить",
+    "source_hash": "06a1545f5045"
+  },
+  "wizard.font.size_section": {
+    "text": "Размер шрифта (пункты)",
+    "source_hash": "31b2eb5d3b2c"
+  },
+  "wizard.font.size_adjust": {
+    "text": "←/→ настроить (6–72)",
+    "source_hash": "976de7024dc8"
+  },
+  "wizard.font.preview_suffix": {
+    "text": "предпросмотр в этом окне",
+    "source_hash": "b086c32f40d5"
+  },
+  "wizard.font.back": {
+    "text": "Назад",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.font.next": {
+    "text": "Перейти к диктовке",
+    "source_hash": "ec7a0ff60525"
+  },
+  "wizard.theme.dark": {
+    "text": "Тёмная тема",
+    "source_hash": "3f11a5cc643a"
+  },
+  "wizard.theme.light": {
+    "text": "Светлая тема",
+    "source_hash": "3669a1b2770f"
+  },
+  "wizard.voice.title": {
+    "text": "Диктовка",
+    "source_hash": "25ce1a09ddc1"
+  },
+  "wizard.voice.languages_section": {
+    "text": "Языки диктовки",
+    "source_hash": "7287a2bc2529"
+  },
+  "wizard.voice.empty_notice": {
+    "text": "Язык не выбран: диктовка не будет настроена. Позже её можно добавить в Pi командой /voice.",
+    "source_hash": "b903d36755f6"
+  },
+  "wizard.voice.no_match": {
+    "text": "Для этой комбинации нет модели. Удалите язык.",
+    "source_hash": "b8b167ba3990"
+  },
+  "wizard.voice.best": {
+    "text": "Лучшая",
+    "source_hash": "c47d21c643c0"
+  },
+  "wizard.voice.fast": {
+    "text": "Быстрая",
+    "source_hash": "6c582b62e0e5"
+  },
+  "wizard.voice.best_summary": {
+    "text": "рекомендуемый баланс скорости и точности",
+    "source_hash": "2fde20c2ddd6"
+  },
+  "wizard.voice.fast_summary": {
+    "text": "самая быстрая пригодная для использования расшифровка",
+    "source_hash": "9f01f55f16dc"
+  },
+  "wizard.voice.same_model": {
+    "text": "Здесь обе роли используют одну модель.",
+    "source_hash": "6a800db5cff9"
+  },
+  "wizard.voice.detector_notice": {
+    "text": "добавляет детектор языка размером {size} для автоопределения",
+    "source_hash": "3c9c1859e707"
+  },
+  "wizard.voice.model_section": {
+    "text": "Модель для загрузки",
+    "source_hash": "e90982e6cea9"
+  },
+  "wizard.voice.continue_without": {
+    "text": "Продолжить без диктовки",
+    "source_hash": "25309b666263"
+  },
+  "wizard.voice.download_continue": {
+    "text": "Загрузить и продолжить",
+    "source_hash": "0a12deea1f8d"
+  },
+  "wizard.voice.back": {
+    "text": "Назад",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.voice.more": {
+    "text": "Ещё {count} — прокрутите или двигайтесь вниз",
+    "source_hash": "00703aa3c372"
+  },
+  "wizard.voice.name.bg": {
+    "text": "Болгарский",
+    "source_hash": "ecd986094baf"
+  },
+  "wizard.voice.name.cs": {
+    "text": "Чешский",
+    "source_hash": "8b463ea23a7e"
+  },
+  "wizard.voice.name.de": {
+    "text": "Немецкий",
+    "source_hash": "a659b60d246d"
+  },
+  "wizard.voice.name.en": {
+    "text": "Английский",
+    "source_hash": "ba118bf7fc9c"
+  },
+  "wizard.voice.name.es": {
+    "text": "Испанский",
+    "source_hash": "3411059cb8e0"
+  },
+  "wizard.voice.name.fr": {
+    "text": "Французский",
+    "source_hash": "7458199fe97a"
+  },
+  "wizard.voice.name.it": {
+    "text": "Итальянский",
+    "source_hash": "fe1d9c7db376"
+  },
+  "wizard.voice.name.ja": {
+    "text": "Японский",
+    "source_hash": "be4ee906d3ef"
+  },
+  "wizard.voice.name.ko": {
+    "text": "Корейский",
+    "source_hash": "04656c6fe003"
+  },
+  "wizard.voice.name.pt": {
+    "text": "Португальский",
+    "source_hash": "98b01b890687"
+  },
+  "wizard.voice.name.ru": {
+    "text": "Русский",
+    "source_hash": "5bcc40adf6e0"
+  },
+  "wizard.voice.name.th": {
+    "text": "Тайский",
+    "source_hash": "ad705ee19c04"
+  },
+  "wizard.voice.name.uk": {
+    "text": "Украинский",
+    "source_hash": "6f424303fa12"
+  },
+  "wizard.voice.name.vi": {
+    "text": "Вьетнамский",
+    "source_hash": "f25499e9df5c"
+  },
+  "wizard.voice.name.zh": {
+    "text": "Китайский (мандарин)",
+    "source_hash": "b4d3ec443738"
+  },
+  "wizard.github.section": {
+    "text": "GitHub (необязательно)",
+    "source_hash": "d02de70d7691"
+  },
+  "wizard.github.signed_out": {
+    "text": "Вы не вошли",
+    "source_hash": "491fc91cd76e"
+  },
+  "wizard.github.starting": {
+    "text": "Подключение к GitHub…",
+    "source_hash": "e7018ff9b61a"
+  },
+  "wizard.github.waiting": {
+    "text": "Ожидание подтверждения в браузере",
+    "source_hash": "0e591354e538"
+  },
+  "wizard.github.signed_in": {
+    "text": "✓ Вход выполнен",
+    "source_hash": "a6bc36f81df5"
+  },
+  "wizard.github.signed_in_as": {
+    "text": "✓ Вход выполнен как {user}",
+    "source_hash": "33cfe2e60aae"
+  },
+  "wizard.github.sign_in": {
+    "text": "Войти в GitHub",
+    "source_hash": "47e9895d1d76"
+  },
+  "wizard.github.cancel": {
+    "text": "Отмена",
+    "source_hash": "19766ed6ccb2"
+  },
+  "wizard.github.sign_out": {
+    "text": "Выйти",
+    "source_hash": "48f0d3d397d4"
+  },
+  "wizard.github.retry": {
+    "text": "Повторить",
+    "source_hash": "d8b8392e2c54"
+  },
+  "wizard.github.copied": {
+    "text": "скопировано в буфер обмена",
+    "source_hash": "9a6d3fb1a8f5"
+  },
+  "wizard.github.approve": {
+    "text": "Введите код на {url}, чтобы подтвердить Mash.",
+    "source_hash": "0811fcc61af8"
+  },
+  "wizard.github.usage": {
+    "text": "Используется Git через HTTPS, запросами на слияние и инструментами GitHub агентов.",
+    "source_hash": "687743c41d86"
+  },
+  "wizard.font.keybindings.mash": {
+    "text": "Mash / стиль Cursor",
+    "source_hash": "50c4eaf509a5"
+  },
+  "wizard.font.keybindings.native": {
+    "text": "Собственный",
+    "source_hash": "d509e4938852"
+  },
+  "wizard.tools.description.agent-browser": {
+    "text": "Автоматизация браузера для работы со страницами",
+    "source_hash": "17a3b5d9e891"
+  },
+  "wizard.tools.description.atuin": {
+    "text": "История командной оболочки с поиском",
+    "source_hash": "f1667e433eff"
+  },
+  "wizard.tools.description.bash-language-server": {
+    "text": "Языковой сервер Bash",
+    "source_hash": "8bb3d3483973"
+  },
+  "wizard.tools.description.bat": {
+    "text": "Предпросмотр файлов с подсветкой",
+    "source_hash": "65f67ed05fd4"
+  },
+  "wizard.tools.description.clangd": {
+    "text": "Языковой сервер C и C++",
+    "source_hash": "eb55e1c1e2fc"
+  },
+  "wizard.tools.description.cua-driver": {
+    "text": "Нативное управление рабочим столом приложений",
+    "source_hash": "875a66659bbe"
+  },
+  "wizard.tools.description.delta": {
+    "text": "Различия Git и постраничный просмотр",
+    "source_hash": "0a5ab9622ca0"
+  },
+  "wizard.tools.description.eza": {
+    "text": "Списки файлов",
+    "source_hash": "90065d6d509a"
+  },
+  "wizard.tools.description.fd": {
+    "text": "Поиск файлов",
+    "source_hash": "401934824f5c"
+  },
+  "wizard.tools.description.fresh": {
+    "text": "Редактор Mash",
+    "source_hash": "07a3ce240a97"
+  },
+  "wizard.tools.description.fzf": {
+    "text": "Интерактивный нечёткий поиск",
+    "source_hash": "74befff772fe"
+  },
+  "wizard.tools.description.gh": {
+    "text": "GitHub CLI и помощник учётных данных",
+    "source_hash": "7f9081e6b668"
+  },
+  "wizard.tools.description.git": {
+    "text": "Контроль версий Git",
+    "source_hash": "04ecfc4b2a56"
+  },
+  "wizard.tools.description.gopls": {
+    "text": "Языковой сервер Go",
+    "source_hash": "7c830acbe2df"
+  },
+  "wizard.tools.description.herdr": {
+    "text": "Рабочие области, вкладки и панели",
+    "source_hash": "ae8e873192bf"
+  },
+  "wizard.tools.description.jq": {
+    "text": "Утилита JSON",
+    "source_hash": "8f8b7b35919d"
+  },
+  "wizard.tools.description.latexindent": {
+    "text": "Форматирование LaTeX",
+    "source_hash": "2d27bc2aed62"
+  },
+  "wizard.tools.description.lazydocker": {
+    "text": "Docker в терминале",
+    "source_hash": "a1ea900f50dc"
+  },
+  "wizard.tools.description.lazygit": {
+    "text": "Git в терминале",
+    "source_hash": "56280a7e33fa"
+  },
+  "wizard.tools.description.marksman": {
+    "text": "Языковой сервер Markdown",
+    "source_hash": "acd246ea56cd"
+  },
+  "wizard.tools.description.node": {
+    "text": "Среда JavaScript и npm",
+    "source_hash": "257e5fc25d9c"
+  },
+  "wizard.tools.description.pet": {
+    "text": "Фрагменты команд",
+    "source_hash": "2c7046aea68e"
+  },
+  "wizard.tools.description.pi": {
+    "text": "Агент программирования Mash",
+    "source_hash": "1e3348dc35ec"
+  },
+  "wizard.tools.description.prettier": {
+    "text": "Форматирование JavaScript, JSON, Markdown, CSS и Svelte",
+    "source_hash": "0a196b7eee63"
+  },
+  "wizard.tools.description.python": {
+    "text": "Среда Python и pip",
+    "source_hash": "d378a966a298"
+  },
+  "wizard.tools.description.python-lsp-server": {
+    "text": "Языковой сервер Python",
+    "source_hash": "45689d922173"
+  },
+  "wizard.tools.description.rg": {
+    "text": "Поиск по содержимому",
+    "source_hash": "364c20f57972"
+  },
+  "wizard.tools.description.rust-analyzer": {
+    "text": "Языковой сервер Rust",
+    "source_hash": "59af4ee7c852"
+  },
+  "wizard.tools.description.sentrux": {
+    "text": "Структурный анализ планов, работы и QA",
+    "source_hash": "cdadc36df319"
+  },
+  "wizard.tools.description.shfmt": {
+    "text": "Форматирование shell",
+    "source_hash": "ef675cf302a8"
+  },
+  "wizard.tools.description.sourcekit-lsp": {
+    "text": "Языковой сервер Swift",
+    "source_hash": "bf29ee422d2f"
+  },
+  "wizard.tools.description.starship": {
+    "text": "Приглашение shell",
+    "source_hash": "ef8740639be1"
+  },
+  "wizard.tools.description.svelte-language-server": {
+    "text": "Языковой сервер Svelte",
+    "source_hash": "5f0011a9203a"
+  },
+  "wizard.tools.description.tailwindcss-language-server": {
+    "text": "Языковой сервер Tailwind CSS",
+    "source_hash": "b33fd822317e"
+  },
+  "wizard.tools.description.texlab": {
+    "text": "Языковой сервер LaTeX",
+    "source_hash": "3388b1a9bd89"
+  },
+  "wizard.tools.description.typescript-language-server": {
+    "text": "Языковой сервер TypeScript и JavaScript",
+    "source_hash": "199f12a09d18"
+  },
+  "wizard.tools.description.viu": {
+    "text": "Изображения в терминале",
+    "source_hash": "6068123d4bf5"
+  },
+  "wizard.tools.description.vscode-css-language-server": {
+    "text": "CSS-сервер (общий пакет CSS/HTML/JSON)",
+    "source_hash": "3ae9cafca643"
+  },
+  "wizard.tools.description.vscode-html-language-server": {
+    "text": "HTML-сервер (общий пакет CSS/HTML/JSON)",
+    "source_hash": "4fdddbf99da0"
+  },
+  "wizard.tools.description.vscode-json-language-server": {
+    "text": "JSON-сервер (общий пакет CSS/HTML/JSON)",
+    "source_hash": "af757d93137e"
+  },
+  "wizard.tools.description.yaml-language-server": {
+    "text": "Языковой сервер YAML",
+    "source_hash": "d56c118152ef"
+  },
+  "wizard.tools.description.zoxide": {
+    "text": "Умная сортировка каталогов",
+    "source_hash": "82deb27f3f2d"
+  },
+  "wizard.font.warning_no_list": {
+    "text": "Не удалось перечислить установленные шрифты; Meslo по-прежнему доступен.",
+    "source_hash": "800ea442cefd"
+  },
+  "wizard.shell.setup": {
+    "text": "Настройка",
+    "source_hash": "7013af4c42fe"
+  },
+  "wizard.shell.installing": {
+    "text": "Установка…",
+    "source_hash": "530bcc355f0a"
+  },
+  "wizard.shell.navigation_hint": {
+    "text": "Tab — перемещение · Enter — выбор",
+    "source_hash": "fbe682a41063"
+  },
+  "wizard.shell.preview_hint": {
+    "text": "←/→ страницы · Esc назад",
+    "source_hash": "9a1a64bc4c7d"
+  },
+  "wizard.shell.page_title": {
+    "text": "{title} — страница {current}/{total}",
+    "source_hash": "26ddd83b8742"
+  },
+  "wizard.page.model_provider": {
+    "text": "Провайдер модели",
+    "source_hash": "ea70384c465d"
+  },
+  "wizard.page.web_search": {
+    "text": "Веб-поиск",
+    "source_hash": "7711faa74a10"
+  },
+  "wizard.page.memory": {
+    "text": "Память",
+    "source_hash": "c3963aedaac6"
+  },
+  "wizard.shell.setup_label": {
+    "text": "НАСТРОЙКА",
+    "source_hash": "7175b03373a2"
+  }
+}
