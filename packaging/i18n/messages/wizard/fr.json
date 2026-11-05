@@ -586,5 +586,769 @@
   "wizard.shell.setup_label": {
     "text": "CONFIGURATION",
     "source_hash": "7175b03373a2"
+  },
+  "wizard.github.config_inside": {
+    "text": "La configuration GitHub doit rester dans Mash.",
+    "source_hash": "2b038878bb44"
+  },
+  "wizard.github.cli_unavailable": {
+    "text": "La CLI GitHub n'est pas disponible dans cette version.",
+    "source_hash": "929b978e3fa2"
+  },
+  "wizard.github.incomplete": {
+    "text": "La connexion à GitHub n'a pas abouti.",
+    "source_hash": "d7fb51538ef3"
+  },
+  "wizard.github.start_failed": {
+    "text": "Impossible de démarrer la CLI GitHub : {error}",
+    "source_hash": "77cc54ecbb65"
+  },
+  "wizard.model.local_catalog": {
+    "text": "Catalogue local ; les identifiants ne sont pas vérifiés par le serveur",
+    "source_hash": "b90b73d51076"
+  },
+  "wizard.model.filter": {
+    "text": "Filtrer les modèles",
+    "source_hash": "9a35e606cd37"
+  },
+  "wizard.model.choose": {
+    "text": "Choisissez un modèle (Entrée ou clic)",
+    "source_hash": "b67e2354ebe6"
+  },
+  "wizard.model.enter_manual": {
+    "text": "Saisir manuellement",
+    "source_hash": "ad876beba8ac"
+  },
+  "wizard.model.use_model": {
+    "text": "Utiliser le modèle",
+    "source_hash": "cb1c1ca37393"
+  },
+  "wizard.connection.unavailable": {
+    "text": "Vérification de connexion indisponible. Saisissez les détails manuellement ; la configuration peut continuer.",
+    "source_hash": "df66e4e70112"
+  },
+  "wizard.connection.mode.existing": {
+    "text": "Réutiliser l'identifiant enregistré",
+    "source_hash": "a8f3c9ed4b75"
+  },
+  "wizard.common.new_api_key": {
+    "text": "Saisir une nouvelle clé API",
+    "source_hash": "9b6cc5e19d07"
+  },
+  "wizard.connection.mode.none": {
+    "text": "Pas de clé (serveur local)",
+    "source_hash": "327d8a7f069e"
+  },
+  "wizard.common.sign_in_later": {
+    "text": "Se connecter plus tard dans Pi",
+    "source_hash": "9e6b7094c00b"
+  },
+  "wizard.connection.local_server": {
+    "text": "{name} (local)",
+    "source_hash": "60d0adb8ca44"
+  },
+  "wizard.connection.reason.unauthorized": {
+    "text": "Le point de terminaison a rejeté ces identifiants.",
+    "source_hash": "5c67730adff0"
+  },
+  "wizard.connection.reason.not_found": {
+    "text": "Le point de terminaison ne propose pas ce modèle ni ce chemin d'API.",
+    "source_hash": "92e6a1ef02b9"
+  },
+  "wizard.connection.reason.timeout": {
+    "text": "Le point de terminaison n'a pas répondu à temps.",
+    "source_hash": "824104c212df"
+  },
+  "wizard.connection.reason.unreachable": {
+    "text": "Aucun serveur n'a répondu à cette adresse.",
+    "source_hash": "91cf761f6798"
+  },
+  "wizard.connection.reason.blocked": {
+    "text": "Cette adresse n'est pas autorisée ; utilisez un point de terminaison HTTPS ou l'adresse d'un serveur local.",
+    "source_hash": "91672c928382"
+  },
+  "wizard.connection.reason.redirected": {
+    "text": "Le point de terminaison a redirigé ailleurs ; saisissez l'adresse finale.",
+    "source_hash": "6f5c4d2db072"
+  },
+  "wizard.connection.reason.not_json": {
+    "text": "Cette adresse a répondu par une page, et non par une API de modèles.",
+    "source_hash": "caa45c7a5c14"
+  },
+  "wizard.connection.reason.wrong_api": {
+    "text": "Cette adresse a répondu pour un autre type d'API ; vérifiez l'adresse et l'API choisie.",
+    "source_hash": "4214079dbe1b"
+  },
+  "wizard.connection.reason.no_models": {
+    "text": "Le serveur fonctionne, mais aucun modèle de chat n'est chargé.",
+    "source_hash": "a1655be795a4"
+  },
+  "wizard.connection.reason.stale": {
+    "text": "La connexion a changé pendant la vérification. Testez-la à nouveau.",
+    "source_hash": "270cbc62e785"
+  },
+  "wizard.connection.reason.consent": {
+    "text": "Le test envoie une courte requête. Confirmez pour continuer.",
+    "source_hash": "8210811701c1"
+  },
+  "wizard.connection.reason.command_secret": {
+    "text": "Cet identifiant exécute une commande ; gérez-le plutôt dans Pi.",
+    "source_hash": "07c5bdb147b9"
+  },
+  "wizard.connection.reason.oauth_expired": {
+    "text": "La connexion enregistrée a expiré ; reconnectez-vous via Pi.",
+    "source_hash": "d5ce40555415"
+  },
+  "wizard.connection.reason.endpoint_changed": {
+    "text": "L'identifiant enregistré appartient à un autre point de terminaison.",
+    "source_hash": "c8ac0862d7b2"
+  },
+  "wizard.connection.reason.additional_setup": {
+    "text": "Ce fournisseur nécessite une configuration supplémentaire ; terminez-la dans Pi.",
+    "source_hash": "b02eeda9e214"
+  },
+  "wizard.connection.reason.fallback": {
+    "text": "La connexion n'a pas pu être vérifiée.",
+    "source_hash": "a329289ba9b5"
+  },
+  "wizard.connection.saved": {
+    "text": "Identifiant enregistré",
+    "source_hash": "cd3c6826c368"
+  },
+  "wizard.connection.deferred": {
+    "text": "L'authentification est reportée à Pi /login",
+    "source_hash": "48ed1207e344"
+  },
+  "wizard.connection.http_status": {
+    "text": "{message} (HTTP {status})",
+    "source_hash": "28b2090559db"
+  },
+  "wizard.models.unavailable": {
+    "text": "L'inspection des modèles Pi est indisponible. Configurez le modèle manuellement ou utilisez Pi /login après la configuration.",
+    "source_hash": "b446b49932ad"
+  },
+  "wizard.models.helper_unavailable": {
+    "text": "L'assistant de configuration est indisponible. Saisissez les détails manuellement ; la configuration peut continuer.",
+    "source_hash": "c105bfa9119a"
+  },
+  "wizard.models.not_in_catalog": {
+    "text": "Le modèle enregistré ne figure pas dans le catalogue local de Pi. Son identifiant exact a été conservé.",
+    "source_hash": "3a377429f23a"
+  },
+  "wizard.models.no_catalog": {
+    "text": "Aucun catalogue local n'est disponible pour le modèle enregistré ; son identifiant n'est pas vérifié.",
+    "source_hash": "41e3d45585a9"
+  },
+  "wizard.models.not_ready": {
+    "text": "Aucun identifiant n'est configuré pour le fournisseur du modèle enregistré. Utilisez Pi /login après la configuration.",
+    "source_hash": "27dc6e44bc1e"
+  },
+  "wizard.models.unverified": {
+    "text": "Les identifiants du fournisseur enregistré n'ont pas pu être vérifiés localement. Utilisez Pi /login après la configuration.",
+    "source_hash": "eb785e842362"
+  },
+  "wizard.providers.invalid_catalog": {
+    "text": "Catalogue de fournisseurs Pi inclus invalide",
+    "source_hash": "bbcc3cc163f5"
+  },
+  "wizard.providers.hint.azure": {
+    "text": "Configurez d'abord AZURE_OPENAI_BASE_URL ou AZURE_OPENAI_RESOURCE_NAME.",
+    "source_hash": "2decf0bd1d6b"
+  },
+  "wizard.providers.hint.cloudflare_gateway": {
+    "text": "Cloudflare nécessite aussi un identifiant de compte et un identifiant de passerelle.",
+    "source_hash": "c6bb32d55e90"
+  },
+  "wizard.providers.hint.cloudflare_workers": {
+    "text": "Cloudflare nécessite aussi un identifiant de compte.",
+    "source_hash": "487cf2bed2ad"
+  },
+  "wizard.providers.hint.bedrock": {
+    "text": "Les profils AWS et IAM peuvent aussi fournir les identifiants automatiquement.",
+    "source_hash": "d4ddd86cd093"
+  },
+  "wizard.providers.hint.vertex": {
+    "text": "L'accès par ADC ou compte de service nécessite aussi un projet et une région.",
+    "source_hash": "a382011b4183"
+  },
+  "wizard.providers.guidance.azure": {
+    "text": "Définissez AZURE_OPENAI_BASE_URL ou AZURE_OPENAI_RESOURCE_NAME, puis utilisez /login azure dans Pi. Continuer conserve votre configuration Pi actuelle.",
+    "source_hash": "5834561a0d12"
+  },
+  "wizard.providers.guidance.cloudflare_gateway": {
+    "text": "Nécessite un jeton, un identifiant de compte et un identifiant de passerelle. Utilisez /login cloudflare-ai-gateway dans Pi. Continuer conserve votre configuration Pi actuelle.",
+    "source_hash": "2c4fdf840f5a"
+  },
+  "wizard.providers.guidance.cloudflare_workers": {
+    "text": "Nécessite un jeton et un identifiant de compte. Utilisez /login cloudflare-workers-ai dans Pi. Continuer conserve votre configuration Pi actuelle.",
+    "source_hash": "95b2361c0b9a"
+  },
+  "wizard.providers.guidance.bedrock": {
+    "text": "Saisissez un jeton bearer Bedrock, et non un identifiant de clé d'accès AWS. Pour les profils AWS ou IAM, utilisez /login amazon-bedrock dans Pi.",
+    "source_hash": "869163e8c80d"
+  },
+  "wizard.providers.guidance.vertex": {
+    "text": "Saisissez une clé API Google Cloud. Pour ADC ou un fichier de compte de service, utilisez /login google-vertex dans Pi.",
+    "source_hash": "786382a710f6"
+  },
+  "wizard.providers.guidance.generic": {
+    "text": "Après la configuration, utilisez /login {id} dans Pi. Continuer conserve votre configuration Pi actuelle.",
+    "source_hash": "558591c917f8"
+  },
+  "wizard.providers.guidance.oauth": {
+    "text": "Utilisez ici une clé API. Pour une connexion par navigateur ou appareil, utilisez /login {id} dans Pi après la configuration.",
+    "source_hash": "c50e0a9f050c"
+  },
+  "wizard.providers.login_deferred": {
+    "text": "Authentification reportée. Après la configuration, exécutez /login {id} dans Pi.",
+    "source_hash": "de2f18975d71"
+  },
+  "wizard.providers.key_api": {
+    "text": "Clé API {name}",
+    "source_hash": "a07eb1509dcd"
+  },
+  "wizard.providers.key_token": {
+    "text": "Jeton {name}",
+    "source_hash": "ba35265f1f56"
+  },
+  "wizard.providers.key_aws": {
+    "text": "Identifiants AWS ou jeton bearer",
+    "source_hash": "cdfc8a182045"
+  },
+  "wizard.providers.key_gcloud": {
+    "text": "Identifiants Google Cloud",
+    "source_hash": "1757285aa598"
+  },
+  "wizard.providers.key_bedrock": {
+    "text": "Jeton bearer Bedrock",
+    "source_hash": "56b93e9ece96"
+  },
+  "wizard.provider.none_llm": {
+    "text": "Aucun (sans LLM)",
+    "source_hash": "8756f88be90d"
+  },
+  "wizard.provider.custom": {
+    "text": "Fournisseur personnalisé",
+    "source_hash": "fee405014d78"
+  },
+  "wizard.provider.openai_compatible": {
+    "text": "Compatible OpenAI (Chat Completions)",
+    "source_hash": "d53238670c07"
+  },
+  "wizard.search.keep": {
+    "text": "Conserver la configuration de recherche existante",
+    "source_hash": "5e67d2e2b08e"
+  },
+  "wizard.search.use_chat": {
+    "text": "Utiliser le modèle de chat",
+    "source_hash": "a3132658890a"
+  },
+  "wizard.provider.auto_api": {
+    "text": "Automatique (détecté lors du test)",
+    "source_hash": "88afbf0096a7"
+  },
+  "wizard.provider.enter_id": {
+    "text": "Saisissez d'abord un identifiant de fournisseur.",
+    "source_hash": "0c037db27d29"
+  },
+  "wizard.provider.preview_only": {
+    "text": "Aperçu uniquement : aucune requête n'est envoyée et rien n'est enregistré.",
+    "source_hash": "0ebb19deae89"
+  },
+  "wizard.provider.testing": {
+    "text": "Test de la connexion… une courte requête est envoyée.",
+    "source_hash": "1676396cacd0"
+  },
+  "wizard.provider.connected": {
+    "text": "Connecté : le point de terminaison a répondu sur {label}.",
+    "source_hash": "7ad0b1549289"
+  },
+  "wizard.provider.models_reported": {
+    "text": "Le serveur a signalé {count} modèles.",
+    "source_hash": "f31fe95a9707"
+  },
+  "wizard.provider.list_incomplete": {
+    "text": "La liste est incomplète ; saisissez manuellement un identifiant manquant et testez-le.",
+    "source_hash": "2d588d0ed045"
+  },
+  "wizard.provider.no_chat_model": {
+    "text": "Le serveur a répondu, mais n'a signalé aucun modèle de chat.",
+    "source_hash": "facf8d7bd587"
+  },
+  "wizard.provider.credential_label": {
+    "text": "Identifiant : {label}",
+    "source_hash": "8b458229f825"
+  },
+  "wizard.provider.credential_unusable": {
+    "text": "Identifiant inutilisable : {label}",
+    "source_hash": "d431bbfadbd4"
+  },
+  "wizard.provider.model_list_unavailable": {
+    "text": "Liste de modèles indisponible ou vide. Saisissez l'identifiant exact du modèle ; il reste non vérifié.",
+    "source_hash": "00dff5896fd5"
+  },
+  "wizard.provider.choose_or_enter": {
+    "text": "Choisissez un modèle de ce point de terminaison ou saisissez son identifiant exact.",
+    "source_hash": "cfad129610d3"
+  },
+  "wizard.provider.fetch_or_test": {
+    "text": "Récupérez la liste de modèles du serveur ou testez un identifiant manquant d'une liste incomplète.",
+    "source_hash": "c320f93cb08b"
+  },
+  "wizard.provider.choose_reported": {
+    "text": "{label} : choisissez un modèle signalé, ou testez un identifiant manquant d'une liste incomplète.",
+    "source_hash": "a77913382c56"
+  },
+  "wizard.provider.pi_test_first": {
+    "text": "Pi : testez d'abord cette connexion personnalisée ; seule une requête acceptée peut être enregistrée.",
+    "source_hash": "161d742c4903"
+  },
+  "wizard.search.src_chat": {
+    "text": "Utiliser les identifiants du fournisseur de chat",
+    "source_hash": "f775d3990dd0"
+  },
+  "wizard.memory.src_saved": {
+    "text": "Conserver la clé de mémoire enregistrée",
+    "source_hash": "e5a0bc3ecc75"
+  },
+  "wizard.search.src_saved": {
+    "text": "Utiliser les identifiants Pi enregistrés",
+    "source_hash": "68823fc1dc94"
+  },
+  "wizard.memory.src_later": {
+    "text": "Configurer plus tard (conserver l'existant)",
+    "source_hash": "b9e8bb9af513"
+  },
+  "wizard.search.keep_unreadable": {
+    "text": "Conserver la configuration de recherche existante (illisible)",
+    "source_hash": "03bfcd418f97"
+  },
+  "wizard.search.keep_chat": {
+    "text": "Conserver l'actuel : utilise le modèle de chat",
+    "source_hash": "c454fc0778ba"
+  },
+  "wizard.common.keep_current_model": {
+    "text": "Conserver l'actuel : {provider}/{model}",
+    "source_hash": "417283f9b64d"
+  },
+  "wizard.search.use_chat_unset": {
+    "text": "Utiliser le modèle de chat (pas encore configuré)",
+    "source_hash": "e8b6ce6cb122"
+  },
+  "wizard.search.use_chat_model": {
+    "text": "Utiliser le modèle de chat : {provider}/{model}",
+    "source_hash": "8d09d2b9f3dd"
+  },
+  "wizard.common.keep_or_later": {
+    "text": "Conserver l'existant / configurer plus tard",
+    "source_hash": "4cec99ff32b6"
+  },
+  "wizard.provider.custom_endpoint": {
+    "text": "Point de terminaison personnalisé",
+    "source_hash": "5fb0795eaf2e"
+  },
+  "wizard.common.keep_current_provider": {
+    "text": "Conserver l'actuel : {provider}",
+    "source_hash": "e0547b6f785f"
+  },
+  "wizard.common.set_up_later": {
+    "text": "Configurer plus tard",
+    "source_hash": "eb5e104944c1"
+  },
+  "wizard.common.currently_configured": {
+    "text": "(actuellement configuré)",
+    "source_hash": "fd8c4c2150d6"
+  },
+  "wizard.memory.enter_url": {
+    "text": "Mémoire : saisissez l'URL du point de terminaison avant de récupérer les modèles.",
+    "source_hash": "4491f26c74d0"
+  },
+  "wizard.search.configure_chat_first": {
+    "text": "Recherche web : configurez d'abord un modèle de chat",
+    "source_hash": "f2d6fcb7ce5a"
+  },
+  "wizard.search.not_native": {
+    "text": "Ce fournisseur de chat ne propose pas la recherche web native. Choisissez un fournisseur de recherche dédié.",
+    "source_hash": "2ae0277a4bbb"
+  },
+  "wizard.search.enter_key_or_later": {
+    "text": "Recherche web : saisissez une clé ou sélectionnez « Se connecter plus tard dans Pi »",
+    "source_hash": "ec8998bc8e73"
+  },
+  "wizard.search.credential_invalid": {
+    "text": "Recherche web : l'identifiant Pi existant est invalide",
+    "source_hash": "2bdcb880250c"
+  },
+  "wizard.search.oauth_exists": {
+    "text": "Recherche web : un identifiant OAuth existe déjà ; gérez-le avec Pi /login",
+    "source_hash": "789004e75d1e"
+  },
+  "wizard.search.azure_env_invalid": {
+    "text": "Recherche web : l'identifiant Azure existant a un environnement invalide",
+    "source_hash": "907c142da323"
+  },
+  "wizard.search.credential_on_model_page": {
+    "text": "Recherche web : l'identifiant de ce fournisseur est défini sur la page Fournisseur de modèles. Utilisez ici l'identifiant du modèle de chat ou choisissez un autre fournisseur de recherche.",
+    "source_hash": "9cb065a8fae4"
+  },
+  "wizard.provider.pi_signed_in": {
+    "text": "Pi : ce fournisseur est connecté via Pi /login. Conservez l'identifiant enregistré, ou reconnectez-vous dans Pi au lieu de le remplacer.",
+    "source_hash": "eb4d65ce6ad3"
+  },
+  "wizard.provider.credential_dir_unavailable": {
+    "text": "Répertoire des identifiants Pi indisponible",
+    "source_hash": "98f28d5f8b0b"
+  },
+  "wizard.provider.retest_before_apply": {
+    "text": "Testez de nouveau cette connexion personnalisée avant d'appliquer ses identifiants.",
+    "source_hash": "33f016024d39"
+  },
+  "wizard.search.manage_oauth": {
+    "text": "Recherche web : gérez l'identifiant OAuth existant avec Pi /login",
+    "source_hash": "9b1cb7045e7d"
+  },
+  "wizard.memory.config_missing": {
+    "text": "La configuration de la mémoire est absente ; rouvrez Mash pour la restaurer",
+    "source_hash": "19b25e7d8997"
+  },
+  "wizard.provider.models_providers_invalid": {
+    "text": "Le fichier models.json de Pi contient un objet providers invalide",
+    "source_hash": "4e54bf06618d"
+  },
+  "wizard.provider.models_definition_invalid": {
+    "text": "Le fichier models.json de Pi contient une définition de fournisseur invalide",
+    "source_hash": "0c2aec3a83b0"
+  },
+  "wizard.provider.models_list_invalid": {
+    "text": "Le fichier models.json de Pi contient une liste de modèles invalide",
+    "source_hash": "e653afbf6dc8"
+  },
+  "wizard.search.symlink": {
+    "text": "Recherche web : configuration liée par un lien symbolique refusée",
+    "source_hash": "b8dd10482ddf"
+  },
+  "wizard.search.regular_file": {
+    "text": "Recherche web : un fichier de configuration ordinaire était attendu",
+    "source_hash": "b6b6243f6e7a"
+  },
+  "wizard.memory.credential_changed": {
+    "text": "Mémoire : le fournisseur ou le point de terminaison de l'identifiant enregistré a changé ; choisissez à nouveau sa source",
+    "source_hash": "67915097bd25"
+  },
+  "wizard.memory.key_unavailable": {
+    "text": "Mémoire : la clé enregistrée est indisponible ; choisissez à nouveau sa source",
+    "source_hash": "a755ba277cc4"
+  },
+  "wizard.provider.test_for_api": {
+    "text": "Pi : testez la connexion pour connaître son type d'API",
+    "source_hash": "c15bc6eb37b4"
+  },
+  "wizard.provider.env_invalid": {
+    "text": "Pi : l'environnement existant du fournisseur est invalide",
+    "source_hash": "11b3e98a566f"
+  },
+  "wizard.search.override_remove_failed": {
+    "text": "Recherche web : impossible de supprimer la substitution du modèle dédié",
+    "source_hash": "4179191bf160"
+  },
+  "wizard.provider.list_title": {
+    "text": "Fournisseurs de modèles",
+    "source_hash": "fbdc457db218"
+  },
+  "wizard.search.list_title": {
+    "text": "Fournisseurs de recherche web",
+    "source_hash": "3f76c4cc3f0f"
+  },
+  "wizard.memory.list_title": {
+    "text": "Fournisseurs de mémoire",
+    "source_hash": "f7ac1d2de59f"
+  },
+  "wizard.provider.preview_model": {
+    "text": "Modèle d'aperçu",
+    "source_hash": "b6eb6b14ddad"
+  },
+  "wizard.provider.preview_small_model": {
+    "text": "Petit modèle d'aperçu",
+    "source_hash": "e552021200b5"
+  },
+  "wizard.provider.connection_details": {
+    "text": "Détails de la connexion",
+    "source_hash": "51bfffbcdbcf"
+  },
+  "wizard.provider.no_extra": {
+    "text": "Aucune configuration supplémentaire n'est nécessaire.",
+    "source_hash": "a8523c5346ec"
+  },
+  "wizard.provider.fetch_models": {
+    "text": "Récupérer les modèles",
+    "source_hash": "812c98c992c6"
+  },
+  "wizard.provider.choose_model": {
+    "text": "Choisir le modèle",
+    "source_hash": "f6e05dcfcfa8"
+  },
+  "wizard.provider.testing_short": {
+    "text": "Test en cours...",
+    "source_hash": "6c02a28421f8"
+  },
+  "wizard.provider.test_connection": {
+    "text": "Tester la connexion",
+    "source_hash": "5bcf311b19d8"
+  },
+  "wizard.provider.not_tested": {
+    "text": "Non testé",
+    "source_hash": "51e3a01219f2"
+  },
+  "wizard.provider.lists_models": {
+    "text": "Liste les modèles du point de terminaison ; aucune inférence ni écriture en mémoire.",
+    "source_hash": "ade190bd0811"
+  },
+  "wizard.provider.browse_or_enter": {
+    "text": "Parcourez les suggestions ou saisissez un identifiant de modèle exact.",
+    "source_hash": "ea1aef31b165"
+  },
+  "wizard.provider.sends_request": {
+    "text": "Envoie une courte requête ; des frais du fournisseur peuvent s'appliquer.",
+    "source_hash": "29e67ff448f6"
+  },
+  "wizard.shell.next": {
+    "text": "Suivant — {page}",
+    "source_hash": "827f82fa3edf"
+  },
+  "wizard.provider.catalog_truncated": {
+    "text": "Catalogue tronqué ; saisissez un identifiant manquant à l'étape manuelle",
+    "source_hash": "a74d0cf6f9ec"
+  },
+  "wizard.search.catalog_note": {
+    "text": "Catalogue de recherche native ; la disponibilité n'est pas vérifiée",
+    "source_hash": "6dc5683dbdc3"
+  },
+  "wizard.memory.catalog_note": {
+    "text": "Suggestions de modèles ; la compatibilité avec la mémoire n'est pas vérifiée",
+    "source_hash": "39137a61ed43"
+  },
+  "wizard.provider.fetching": {
+    "text": "Récupération des modèles depuis le point de terminaison choisi…",
+    "source_hash": "0230b84d9b0c"
+  },
+  "wizard.provider.loading_local": {
+    "text": "Chargement du catalogue local de modèles…",
+    "source_hash": "fb9cfdb82b65"
+  },
+  "wizard.provider.no_auth_check": {
+    "text": "Aucune authentification du serveur ni vérification des droits du compte n'est effectuée.",
+    "source_hash": "48043c00d31d"
+  },
+  "wizard.provider.credentials_changed": {
+    "text": "Les identifiants Pi ont changé ou n'ont pas pu être enregistrés. Vérifiez la source choisie et testez de nouveau les connexions personnalisées.",
+    "source_hash": "76a2cf9164f0"
+  },
+  "wizard.search.enter_model": {
+    "text": "Recherche web : saisissez un identifiant de modèle exact",
+    "source_hash": "a5abb7475ed0"
+  },
+  "wizard.search.key_invalid": {
+    "text": "Recherche web : saisissez une clé API sans espaces ni caractères de contrôle",
+    "source_hash": "904667c8779a"
+  },
+  "wizard.search.azure_url": {
+    "text": "Recherche web : saisissez une URL de base Azure HTTPS sans identifiants",
+    "source_hash": "88c2de75ba77"
+  },
+  "wizard.search.azure_both": {
+    "text": "Recherche web : saisissez une clé API avec l'URL de base Azure, ou configurez les deux plus tard dans Pi",
+    "source_hash": "d82f956e9ea6"
+  },
+  "wizard.provider.pi_url": {
+    "text": "Pi : saisissez une URL de base HTTPS ou l'adresse d'un serveur local",
+    "source_hash": "961be0bfd948"
+  },
+  "wizard.common.enter_model_id": {
+    "text": "{label} : saisissez un identifiant de modèle exact",
+    "source_hash": "686e504338e0"
+  },
+  "wizard.common.https_no_credentials": {
+    "text": "{label} : saisissez une URL de base HTTPS sans identifiants",
+    "source_hash": "5ab56666492c"
+  },
+  "wizard.common.key_invalid": {
+    "text": "{label} : saisissez une clé API sans espaces ni caractères de contrôle",
+    "source_hash": "06cb71707873"
+  },
+  "wizard.provider.unique_id": {
+    "text": "Pi : utilisez un identifiant de fournisseur unique en minuscules (ex. omniroute)",
+    "source_hash": "a5d12f69f254"
+  },
+  "wizard.memory.symlink": {
+    "text": "Mémoire : configuration liée par un lien symbolique refusée",
+    "source_hash": "408cc1d5eca7"
+  },
+  "wizard.memory.config_unavailable": {
+    "text": "Configuration de la mémoire indisponible",
+    "source_hash": "5facb5204c8b"
+  },
+  "wizard.memory.config_too_large": {
+    "text": "La configuration de la mémoire est trop volumineuse",
+    "source_hash": "0abce5fa7620"
+  },
+  "wizard.common.symlink_at": {
+    "text": "lien symbolique refusé à {path}",
+    "source_hash": "2d1d6d9229be"
+  },
+  "wizard.common.invalid_json": {
+    "text": "JSON invalide dans {path} : {error}",
+    "source_hash": "cb1c0852dda4"
+  },
+  "wizard.common.expected_object": {
+    "text": "objet JSON attendu dans {path}",
+    "source_hash": "b40e836032c5"
+  },
+  "wizard.memory.symlink_config": {
+    "text": "lien symbolique refusé dans la configuration de la mémoire",
+    "source_hash": "7093970b6456"
+  },
+  "wizard.memory.config_error": {
+    "text": "Configuration de la mémoire : {error}",
+    "source_hash": "0d2dd39a2d90"
+  },
+  "wizard.common.missing_dir": {
+    "text": "répertoire de configuration manquant",
+    "source_hash": "35701334e8bf"
+  },
+  "wizard.provider.partly_saved": {
+    "text": "{error} (certains identifiants ont déjà été enregistrés dans Pi ; les paramètres ont peut-être été partiellement appliqués)",
+    "source_hash": "69266b7404df"
+  },
+  "wizard.provider.partly_applied": {
+    "text": "{error} (les paramètres ont peut-être été partiellement appliqués ; vérifiez-les avant de relancer la configuration)",
+    "source_hash": "93e84daad133"
+  },
+  "wizard.provider.list_hint": {
+    "text": "↑/↓ parcourir · Espace sélectionner · Tab détails  {index}/{count}",
+    "source_hash": "6f4e925e84b1"
+  },
+  "wizard.form.provider_id": {
+    "text": "Identifiant du fournisseur :",
+    "source_hash": "e035a2e312e7"
+  },
+  "wizard.form.provider_id_hint": {
+    "text": "ex. omniroute",
+    "source_hash": "474364acdb88"
+  },
+  "wizard.form.base_url": {
+    "text": "URL de base :",
+    "source_hash": "d34c1f38253c"
+  },
+  "wizard.form.base_url_hint": {
+    "text": "URL de base de l'API",
+    "source_hash": "a45474ea09c3"
+  },
+  "wizard.form.api_type": {
+    "text": "Type d'API :",
+    "source_hash": "ef56d0b93d30"
+  },
+  "wizard.form.api_type_hint": {
+    "text": "Famille d'API",
+    "source_hash": "921463d37e58"
+  },
+  "wizard.form.model_id": {
+    "text": "Identifiant du modèle :",
+    "source_hash": "93139b7fb881"
+  },
+  "wizard.form.model_id_exact": {
+    "text": "Identifiant exact du modèle",
+    "source_hash": "b0d6631bddc5"
+  },
+  "wizard.form.credential": {
+    "text": "Identifiant :",
+    "source_hash": "c410f0de5633"
+  },
+  "wizard.form.use_login": {
+    "text": "Utiliser /login dans Pi",
+    "source_hash": "9b741fe3564a"
+  },
+  "wizard.form.saved_or_new": {
+    "text": "Enregistré ou nouveau",
+    "source_hash": "12374a1d011c"
+  },
+  "wizard.form.api_key": {
+    "text": "Clé API :",
+    "source_hash": "2f77effde67c"
+  },
+  "wizard.form.kept_private": {
+    "text": "Gardé privé",
+    "source_hash": "187c44112cef"
+  },
+  "wizard.form.pick_or_enter": {
+    "text": "Choisissez ou saisissez l'identifiant",
+    "source_hash": "d04d70878e87"
+  },
+  "wizard.form.stored_in_pi": {
+    "text": "Enregistré dans Pi",
+    "source_hash": "d25575aa94b0"
+  },
+  "wizard.form.azure_endpoint": {
+    "text": "Point de terminaison Azure",
+    "source_hash": "9083377a277e"
+  },
+  "wizard.form.memory_only": {
+    "text": "Mémoire uniquement",
+    "source_hash": "32e44d486399"
+  },
+  "wizard.provider.settings_unchanged": {
+    "text": "Les paramètres actuels du fournisseur restent inchangés.",
+    "source_hash": "dfb133c06e72"
+  },
+  "wizard.search.keeps_unchanged": {
+    "text": "Conserve la configuration de recherche et les identifiants existants sans modification.",
+    "source_hash": "58aa4df1275c"
+  },
+  "wizard.search.removes_override": {
+    "text": "Supprime la substitution de recherche dédiée et suit votre modèle de conversation. Ce modèle doit prendre en charge la recherche native ; il n'existe aucune solution de repli automatique.",
+    "source_hash": "a8414fd4c8f2"
+  },
+  "wizard.search.shares_chat": {
+    "text": "Partage les identifiants Pi de ce fournisseur avec le chat ; aucune clé n'est copiée vers un autre fournisseur.",
+    "source_hash": "a8c1b3542f7e"
+  },
+  "wizard.search.uses_saved": {
+    "text": "Utilise sans modification les identifiants Pi enregistrés de ce fournisseur. Choisir un autre modèle ne remplace pas la clé.",
+    "source_hash": "df913b2221e3"
+  },
+  "wizard.search.new_key_note": {
+    "text": "La nouvelle clé est enregistrée dans Pi lors de l'application finale. Le catalogue liste les modèles à recherche native, pas tous les modèles de chat.",
+    "source_hash": "6cb0b2fd20b7"
+  },
+  "wizard.search.later_note": {
+    "text": "Modèle configuré sans modifier les identifiants. Après la configuration, exécutez /login {id} dans Pi.",
+    "source_hash": "ef6b5edfbe81"
+  },
+  "wizard.search.azure_note": {
+    "text": "Azure nécessite aussi la configuration de son point de terminaison.",
+    "source_hash": "3c0a05a844aa"
+  },
+  "wizard.memory.not_enabled": {
+    "text": "La mémoire fait partie de Programming Skills, qui n'est pas coché dans Tools : rien de cette page ne sera enregistré.",
+    "source_hash": "5f38d8d9f142"
+  },
+  "wizard.memory.keep": {
+    "text": "La configuration de mémoire existante reste inchangée.",
+    "source_hash": "8747d4c2d994"
+  },
+  "wizard.memory.no_llm": {
+    "text": "La mémoire n'utilisera pas de LLM.",
+    "source_hash": "85197fc97e6b"
+  },
+  "wizard.memory.keeps_saved": {
+    "text": "Conserve la clé de mémoire enregistrée pour ce fournisseur et ce point de terminaison. Les modifications du seul modèle la conservent.",
+    "source_hash": "dec480d705ed"
+  },
+  "wizard.memory.deferred": {
+    "text": "La configuration de la mémoire est reportée. Les paramètres et identifiants existants restent inchangés ; Pi /login n'authentifie pas la mémoire.",
+    "source_hash": "56476111c257"
+  },
+  "wizard.memory.own_key": {
+    "text": "La mémoire utilise sa propre clé, jamais une connexion Pi. Les suggestions de modèles ne garantissent pas la compatibilité avec la mémoire.",
+    "source_hash": "5e9f06b7afef"
   }
 }

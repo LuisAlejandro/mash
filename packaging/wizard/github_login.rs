@@ -5,6 +5,7 @@
 //! reads that code and draws its own UI; the user never sees `gh` itself.
 //! Everything stays in Mash's own `GH_CONFIG_DIR`, and tokens inherited from
 //! the environment are ignored so they cannot make Mash look signed in.
+use crate::i18n;
 use std::{
     ffi::OsString,
     fs,
@@ -103,13 +104,13 @@ impl GithubLogin {
     /// What is known without the network: the config's own sign-in.
     fn local_status(&self) -> Status {
         if self.config.is_symlink() || self.config.join("hosts.yml").is_symlink() {
-            return Status::Unavailable("GitHub config must stay inside Mash.".into());
+            return Status::Unavailable(i18n::t("wizard.github.config_inside").into());
         }
         if self.preview {
             return Status::SignedOut;
         }
         if !self.gh_runs() {
-            return Status::Unavailable("The GitHub CLI is not available in this build.".into());
+            return Status::Unavailable(i18n::t("wizard.github.cli_unavailable").into());
         }
         // Only Mash's own hosts file counts. `gh auth token` also answers from
         // the system keychain, where the user's personal gh keeps its login
@@ -149,7 +150,7 @@ impl GithubLogin {
 
     fn prepare_config(&self) -> Result<(), String> {
         if self.config.is_symlink() || self.config.join("hosts.yml").is_symlink() {
-            return Err("GitHub config must stay inside Mash.".into());
+            return Err(i18n::t("wizard.github.config_inside").into());
         }
         fs::create_dir_all(&self.config).map_err(|e| e.to_string())?;
         fs::set_permissions(&self.config, fs::Permissions::from_mode(0o700))
@@ -190,7 +191,9 @@ impl GithubLogin {
         let mut child = match command.spawn() {
             Ok(child) => child,
             Err(error) => {
-                self.status = Status::Failed(format!("Could not start the GitHub CLI: {error}"));
+                self.status = Status::Failed(
+                    i18n::t("wizard.github.start_failed").replace("{error}", &error.to_string()),
+                );
                 return;
             }
         };
@@ -246,7 +249,7 @@ impl GithubLogin {
         self.status = if exit.success() {
             Status::SignedIn(hosts_user(&self.config))
         } else if self.last_line.is_empty() {
-            Status::Failed("GitHub sign-in did not complete.".into())
+            Status::Failed(i18n::t("wizard.github.incomplete").into())
         } else {
             Status::Failed(self.last_line.clone())
         };

@@ -586,5 +586,769 @@
   "wizard.shell.setup_label": {
     "text": "설정",
     "source_hash": "7175b03373a2"
+  },
+  "wizard.github.config_inside": {
+    "text": "GitHub 설정은 Mash 안에 있어야 합니다.",
+    "source_hash": "2b038878bb44"
+  },
+  "wizard.github.cli_unavailable": {
+    "text": "이 빌드에서는 GitHub CLI를 사용할 수 없습니다.",
+    "source_hash": "929b978e3fa2"
+  },
+  "wizard.github.incomplete": {
+    "text": "GitHub 로그인이 완료되지 않았습니다.",
+    "source_hash": "d7fb51538ef3"
+  },
+  "wizard.github.start_failed": {
+    "text": "GitHub CLI를 시작할 수 없습니다: {error}",
+    "source_hash": "77cc54ecbb65"
+  },
+  "wizard.model.local_catalog": {
+    "text": "로컬 카탈로그입니다. 자격 증명은 서버에서 검증되지 않습니다",
+    "source_hash": "b90b73d51076"
+  },
+  "wizard.model.filter": {
+    "text": "모델 필터",
+    "source_hash": "9a35e606cd37"
+  },
+  "wizard.model.choose": {
+    "text": "모델 선택 (Enter 또는 클릭)",
+    "source_hash": "b67e2354ebe6"
+  },
+  "wizard.model.enter_manual": {
+    "text": "직접 입력",
+    "source_hash": "ad876beba8ac"
+  },
+  "wizard.model.use_model": {
+    "text": "모델 사용",
+    "source_hash": "cb1c1ca37393"
+  },
+  "wizard.connection.unavailable": {
+    "text": "연결 확인을 사용할 수 없습니다. 세부 정보를 직접 입력하세요. 설정은 계속할 수 있습니다.",
+    "source_hash": "df66e4e70112"
+  },
+  "wizard.connection.mode.existing": {
+    "text": "저장된 자격 증명 재사용",
+    "source_hash": "a8f3c9ed4b75"
+  },
+  "wizard.common.new_api_key": {
+    "text": "새 API 키 입력",
+    "source_hash": "9b6cc5e19d07"
+  },
+  "wizard.connection.mode.none": {
+    "text": "키 없음 (로컬 서버)",
+    "source_hash": "327d8a7f069e"
+  },
+  "wizard.common.sign_in_later": {
+    "text": "나중에 Pi에서 로그인",
+    "source_hash": "9e6b7094c00b"
+  },
+  "wizard.connection.local_server": {
+    "text": "{name} (로컬)",
+    "source_hash": "60d0adb8ca44"
+  },
+  "wizard.connection.reason.unauthorized": {
+    "text": "엔드포인트가 이 자격 증명을 거부했습니다.",
+    "source_hash": "5c67730adff0"
+  },
+  "wizard.connection.reason.not_found": {
+    "text": "엔드포인트에 해당 모델이나 API 경로가 없습니다.",
+    "source_hash": "92e6a1ef02b9"
+  },
+  "wizard.connection.reason.timeout": {
+    "text": "엔드포인트가 제때 응답하지 않았습니다.",
+    "source_hash": "824104c212df"
+  },
+  "wizard.connection.reason.unreachable": {
+    "text": "해당 주소에서 응답한 서버가 없습니다.",
+    "source_hash": "91cf761f6798"
+  },
+  "wizard.connection.reason.blocked": {
+    "text": "이 주소는 허용되지 않습니다. HTTPS 엔드포인트 또는 로컬 서버 주소를 사용하세요.",
+    "source_hash": "91672c928382"
+  },
+  "wizard.connection.reason.redirected": {
+    "text": "엔드포인트가 다른 곳으로 리디렉션되었습니다. 최종 주소를 입력하세요.",
+    "source_hash": "6f5c4d2db072"
+  },
+  "wizard.connection.reason.not_json": {
+    "text": "이 주소는 모델 API가 아닌 페이지로 응답했습니다.",
+    "source_hash": "caa45c7a5c14"
+  },
+  "wizard.connection.reason.wrong_api": {
+    "text": "이 주소는 다른 API 유형으로 응답했습니다. 주소와 선택한 API를 확인하세요.",
+    "source_hash": "4214079dbe1b"
+  },
+  "wizard.connection.reason.no_models": {
+    "text": "서버는 실행 중이지만 로드된 채팅 모델이 없습니다.",
+    "source_hash": "a1655be795a4"
+  },
+  "wizard.connection.reason.stale": {
+    "text": "확인하는 동안 연결이 변경되었습니다. 다시 테스트하세요.",
+    "source_hash": "270cbc62e785"
+  },
+  "wizard.connection.reason.consent": {
+    "text": "테스트는 짧은 요청을 한 번 보냅니다. 계속하려면 확인하세요.",
+    "source_hash": "8210811701c1"
+  },
+  "wizard.connection.reason.command_secret": {
+    "text": "이 자격 증명은 명령을 실행합니다. 대신 Pi에서 관리하세요.",
+    "source_hash": "07c5bdb147b9"
+  },
+  "wizard.connection.reason.oauth_expired": {
+    "text": "저장된 로그인이 만료되었습니다. Pi를 통해 다시 로그인하세요.",
+    "source_hash": "d5ce40555415"
+  },
+  "wizard.connection.reason.endpoint_changed": {
+    "text": "저장된 자격 증명은 다른 엔드포인트의 것입니다.",
+    "source_hash": "c8ac0862d7b2"
+  },
+  "wizard.connection.reason.additional_setup": {
+    "text": "이 제공자는 추가 설정이 필요합니다. Pi에서 마치세요.",
+    "source_hash": "b02eeda9e214"
+  },
+  "wizard.connection.reason.fallback": {
+    "text": "연결을 확인할 수 없습니다.",
+    "source_hash": "a329289ba9b5"
+  },
+  "wizard.connection.saved": {
+    "text": "저장된 자격 증명",
+    "source_hash": "cd3c6826c368"
+  },
+  "wizard.connection.deferred": {
+    "text": "인증은 Pi /login으로 미뤄졌습니다",
+    "source_hash": "48ed1207e344"
+  },
+  "wizard.connection.http_status": {
+    "text": "{message} (HTTP {status})",
+    "source_hash": "28b2090559db"
+  },
+  "wizard.models.unavailable": {
+    "text": "Pi 모델 조회를 사용할 수 없습니다. 모델을 직접 설정하거나 설정 후 Pi /login을 사용하세요.",
+    "source_hash": "b446b49932ad"
+  },
+  "wizard.models.helper_unavailable": {
+    "text": "설정 도우미를 사용할 수 없습니다. 세부 정보를 직접 입력하세요. 설정은 계속할 수 있습니다.",
+    "source_hash": "c105bfa9119a"
+  },
+  "wizard.models.not_in_catalog": {
+    "text": "저장된 모델이 Pi의 로컬 카탈로그에 없습니다. 정확한 ID는 유지되었습니다.",
+    "source_hash": "3a377429f23a"
+  },
+  "wizard.models.no_catalog": {
+    "text": "저장된 모델에 사용할 수 있는 로컬 카탈로그가 없어 ID를 검증할 수 없습니다.",
+    "source_hash": "41e3d45585a9"
+  },
+  "wizard.models.not_ready": {
+    "text": "저장된 모델 제공자에 설정된 자격 증명이 없습니다. 설정 후 Pi /login을 사용하세요.",
+    "source_hash": "27dc6e44bc1e"
+  },
+  "wizard.models.unverified": {
+    "text": "저장된 제공자의 자격 증명을 로컬에서 확인할 수 없습니다. 설정 후 Pi /login을 사용하세요.",
+    "source_hash": "eb785e842362"
+  },
+  "wizard.providers.invalid_catalog": {
+    "text": "내장된 Pi 제공자 카탈로그가 올바르지 않습니다",
+    "source_hash": "bbcc3cc163f5"
+  },
+  "wizard.providers.hint.azure": {
+    "text": "먼저 AZURE_OPENAI_BASE_URL 또는 AZURE_OPENAI_RESOURCE_NAME을 설정하세요.",
+    "source_hash": "2decf0bd1d6b"
+  },
+  "wizard.providers.hint.cloudflare_gateway": {
+    "text": "Cloudflare에는 계정 ID와 게이트웨이 ID도 필요합니다.",
+    "source_hash": "c6bb32d55e90"
+  },
+  "wizard.providers.hint.cloudflare_workers": {
+    "text": "Cloudflare에는 계정 ID도 필요합니다.",
+    "source_hash": "487cf2bed2ad"
+  },
+  "wizard.providers.hint.bedrock": {
+    "text": "대신 AWS 프로필과 IAM으로 환경 자격 증명을 사용할 수도 있습니다.",
+    "source_hash": "d4ddd86cd093"
+  },
+  "wizard.providers.hint.vertex": {
+    "text": "ADC 또는 서비스 계정 액세스에는 프로젝트와 위치도 필요합니다.",
+    "source_hash": "a382011b4183"
+  },
+  "wizard.providers.guidance.azure": {
+    "text": "AZURE_OPENAI_BASE_URL 또는 AZURE_OPENAI_RESOURCE_NAME을 설정한 다음 Pi에서 /login azure를 사용하세요. 계속하면 현재 Pi 설정이 유지됩니다.",
+    "source_hash": "5834561a0d12"
+  },
+  "wizard.providers.guidance.cloudflare_gateway": {
+    "text": "토큰, 계정 ID, 게이트웨이 ID가 필요합니다. Pi에서 /login cloudflare-ai-gateway를 사용하세요. 계속하면 현재 Pi 설정이 유지됩니다.",
+    "source_hash": "2c4fdf840f5a"
+  },
+  "wizard.providers.guidance.cloudflare_workers": {
+    "text": "토큰과 계정 ID가 필요합니다. Pi에서 /login cloudflare-workers-ai를 사용하세요. 계속하면 현재 Pi 설정이 유지됩니다.",
+    "source_hash": "95b2361c0b9a"
+  },
+  "wizard.providers.guidance.bedrock": {
+    "text": "AWS 액세스 키 ID가 아닌 Bedrock 베어러 토큰을 입력하세요. AWS 프로필이나 IAM을 쓰려면 Pi에서 /login amazon-bedrock을 사용하세요.",
+    "source_hash": "869163e8c80d"
+  },
+  "wizard.providers.guidance.vertex": {
+    "text": "Google Cloud API 키를 입력하세요. ADC나 서비스 계정 파일을 쓰려면 Pi에서 /login google-vertex를 사용하세요.",
+    "source_hash": "786382a710f6"
+  },
+  "wizard.providers.guidance.generic": {
+    "text": "설정 후 Pi에서 /login {id}를 사용하세요. 계속하면 현재 Pi 설정이 유지됩니다.",
+    "source_hash": "558591c917f8"
+  },
+  "wizard.providers.guidance.oauth": {
+    "text": "여기서는 API 키를 사용하세요. 브라우저나 기기 로그인은 설정 후 Pi에서 /login {id}를 사용하세요.",
+    "source_hash": "c50e0a9f050c"
+  },
+  "wizard.providers.login_deferred": {
+    "text": "인증은 보류되었습니다. 설정 후 Pi에서 /login {id}를 실행하세요.",
+    "source_hash": "de2f18975d71"
+  },
+  "wizard.providers.key_api": {
+    "text": "{name} API 키",
+    "source_hash": "a07eb1509dcd"
+  },
+  "wizard.providers.key_token": {
+    "text": "{name} 토큰",
+    "source_hash": "ba35265f1f56"
+  },
+  "wizard.providers.key_aws": {
+    "text": "AWS 자격 증명 또는 베어러 토큰",
+    "source_hash": "cdfc8a182045"
+  },
+  "wizard.providers.key_gcloud": {
+    "text": "Google Cloud 자격 증명",
+    "source_hash": "1757285aa598"
+  },
+  "wizard.providers.key_bedrock": {
+    "text": "Bedrock 베어러 토큰",
+    "source_hash": "56b93e9ece96"
+  },
+  "wizard.provider.none_llm": {
+    "text": "없음 (LLM 없음)",
+    "source_hash": "8756f88be90d"
+  },
+  "wizard.provider.custom": {
+    "text": "사용자 지정 제공자",
+    "source_hash": "fee405014d78"
+  },
+  "wizard.provider.openai_compatible": {
+    "text": "OpenAI 호환 (Chat Completions)",
+    "source_hash": "d53238670c07"
+  },
+  "wizard.search.keep": {
+    "text": "기존 검색 설정 유지",
+    "source_hash": "5e67d2e2b08e"
+  },
+  "wizard.search.use_chat": {
+    "text": "채팅 모델 사용",
+    "source_hash": "a3132658890a"
+  },
+  "wizard.provider.auto_api": {
+    "text": "자동 (테스트 시 감지)",
+    "source_hash": "88afbf0096a7"
+  },
+  "wizard.provider.enter_id": {
+    "text": "먼저 제공자 ID를 입력하세요.",
+    "source_hash": "0c037db27d29"
+  },
+  "wizard.provider.preview_only": {
+    "text": "미리보기 전용입니다. 요청을 보내지 않으며 아무것도 저장하지 않습니다.",
+    "source_hash": "0ebb19deae89"
+  },
+  "wizard.provider.testing": {
+    "text": "연결을 테스트하는 중... 짧은 요청을 한 번 보냅니다.",
+    "source_hash": "1676396cacd0"
+  },
+  "wizard.provider.connected": {
+    "text": "연결됨: 엔드포인트가 {label}에서 응답했습니다.",
+    "source_hash": "7ad0b1549289"
+  },
+  "wizard.provider.models_reported": {
+    "text": "이 서버가 보고한 모델은 {count}개입니다.",
+    "source_hash": "f31fe95a9707"
+  },
+  "wizard.provider.list_incomplete": {
+    "text": "목록이 완전하지 않습니다. 빠진 ID를 직접 입력하고 테스트하세요.",
+    "source_hash": "2d588d0ed045"
+  },
+  "wizard.provider.no_chat_model": {
+    "text": "서버가 응답했지만 채팅 모델을 보고하지 않았습니다.",
+    "source_hash": "facf8d7bd587"
+  },
+  "wizard.provider.credential_label": {
+    "text": "자격 증명: {label}",
+    "source_hash": "8b458229f825"
+  },
+  "wizard.provider.credential_unusable": {
+    "text": "사용할 수 없는 자격 증명: {label}",
+    "source_hash": "d431bbfadbd4"
+  },
+  "wizard.provider.model_list_unavailable": {
+    "text": "모델 목록을 사용할 수 없거나 비어 있습니다. 정확한 모델 ID를 입력하세요. 검증되지 않은 상태로 남습니다.",
+    "source_hash": "00dff5896fd5"
+  },
+  "wizard.provider.choose_or_enter": {
+    "text": "이 엔드포인트의 모델을 선택하거나 정확한 ID를 입력하세요.",
+    "source_hash": "cfad129610d3"
+  },
+  "wizard.provider.fetch_or_test": {
+    "text": "서버의 모델 목록을 가져오거나, 불완전한 목록에서 빠진 ID를 테스트하세요.",
+    "source_hash": "c320f93cb08b"
+  },
+  "wizard.provider.choose_reported": {
+    "text": "{label}: 보고된 모델을 선택하거나 불완전한 목록에서 빠진 ID를 테스트하세요.",
+    "source_hash": "a77913382c56"
+  },
+  "wizard.provider.pi_test_first": {
+    "text": "Pi: 먼저 이 사용자 지정 연결을 테스트하세요. 승인된 요청만 저장할 수 있습니다.",
+    "source_hash": "161d742c4903"
+  },
+  "wizard.search.src_chat": {
+    "text": "채팅 제공자 자격 증명 사용",
+    "source_hash": "f775d3990dd0"
+  },
+  "wizard.memory.src_saved": {
+    "text": "저장된 메모리 키 유지",
+    "source_hash": "e5a0bc3ecc75"
+  },
+  "wizard.search.src_saved": {
+    "text": "저장된 Pi 자격 증명 사용",
+    "source_hash": "68823fc1dc94"
+  },
+  "wizard.memory.src_later": {
+    "text": "나중에 설정 (기존 설정 유지)",
+    "source_hash": "b9e8bb9af513"
+  },
+  "wizard.search.keep_unreadable": {
+    "text": "기존 검색 설정 유지 (읽을 수 없음)",
+    "source_hash": "03bfcd418f97"
+  },
+  "wizard.search.keep_chat": {
+    "text": "현재 유지: 채팅 모델 사용",
+    "source_hash": "c454fc0778ba"
+  },
+  "wizard.common.keep_current_model": {
+    "text": "현재 유지: {provider}/{model}",
+    "source_hash": "417283f9b64d"
+  },
+  "wizard.search.use_chat_unset": {
+    "text": "채팅 모델 사용 (아직 설정되지 않음)",
+    "source_hash": "e8b6ce6cb122"
+  },
+  "wizard.search.use_chat_model": {
+    "text": "채팅 모델 사용: {provider}/{model}",
+    "source_hash": "8d09d2b9f3dd"
+  },
+  "wizard.common.keep_or_later": {
+    "text": "기존 설정 유지 / 나중에 설정",
+    "source_hash": "4cec99ff32b6"
+  },
+  "wizard.provider.custom_endpoint": {
+    "text": "사용자 지정 엔드포인트",
+    "source_hash": "5fb0795eaf2e"
+  },
+  "wizard.common.keep_current_provider": {
+    "text": "현재 유지: {provider}",
+    "source_hash": "e0547b6f785f"
+  },
+  "wizard.common.set_up_later": {
+    "text": "나중에 설정",
+    "source_hash": "eb5e104944c1"
+  },
+  "wizard.common.currently_configured": {
+    "text": "(현재 설정됨)",
+    "source_hash": "fd8c4c2150d6"
+  },
+  "wizard.memory.enter_url": {
+    "text": "메모리: 모델을 가져오기 전에 엔드포인트 URL을 입력하세요.",
+    "source_hash": "4491f26c74d0"
+  },
+  "wizard.search.configure_chat_first": {
+    "text": "웹 검색: 먼저 채팅 모델을 설정하세요",
+    "source_hash": "f2d6fcb7ce5a"
+  },
+  "wizard.search.not_native": {
+    "text": "이 채팅 제공자는 기본 웹 검색을 제공하지 않습니다. 전용 검색 제공자를 선택하세요.",
+    "source_hash": "2ae0277a4bbb"
+  },
+  "wizard.search.enter_key_or_later": {
+    "text": "웹 검색: 키를 입력하거나 '나중에 Pi에서 로그인'을 선택하세요",
+    "source_hash": "ec8998bc8e73"
+  },
+  "wizard.search.credential_invalid": {
+    "text": "웹 검색: 기존 Pi 자격 증명이 올바르지 않습니다",
+    "source_hash": "2bdcb880250c"
+  },
+  "wizard.search.oauth_exists": {
+    "text": "웹 검색: OAuth 자격 증명이 이미 있습니다. Pi /login으로 관리하세요",
+    "source_hash": "789004e75d1e"
+  },
+  "wizard.search.azure_env_invalid": {
+    "text": "웹 검색: 기존 Azure 자격 증명의 환경 변수가 올바르지 않습니다",
+    "source_hash": "907c142da323"
+  },
+  "wizard.search.credential_on_model_page": {
+    "text": "웹 검색: 이 제공자의 자격 증명은 모델 제공자 페이지에서 설정됩니다. 여기서는 채팅 모델의 자격 증명을 사용하거나 다른 검색 제공자를 선택하세요.",
+    "source_hash": "9cb065a8fae4"
+  },
+  "wizard.provider.pi_signed_in": {
+    "text": "Pi: 이 제공자는 Pi /login으로 로그인되어 있습니다. 저장된 자격 증명을 유지하거나 대체하지 말고 Pi에서 다시 로그인하세요.",
+    "source_hash": "eb4d65ce6ad3"
+  },
+  "wizard.provider.credential_dir_unavailable": {
+    "text": "Pi 자격 증명 디렉터리를 사용할 수 없습니다",
+    "source_hash": "98f28d5f8b0b"
+  },
+  "wizard.provider.retest_before_apply": {
+    "text": "이 사용자 지정 연결의 자격 증명을 적용하기 전에 다시 테스트하세요.",
+    "source_hash": "33f016024d39"
+  },
+  "wizard.search.manage_oauth": {
+    "text": "웹 검색: 기존 OAuth 자격 증명은 Pi /login으로 관리하세요",
+    "source_hash": "9b1cb7045e7d"
+  },
+  "wizard.memory.config_missing": {
+    "text": "메모리 설정이 없습니다. Mash를 다시 열어 복원하세요",
+    "source_hash": "19b25e7d8997"
+  },
+  "wizard.provider.models_providers_invalid": {
+    "text": "Pi models.json의 providers 객체가 올바르지 않습니다",
+    "source_hash": "4e54bf06618d"
+  },
+  "wizard.provider.models_definition_invalid": {
+    "text": "Pi models.json의 제공자 정의가 올바르지 않습니다",
+    "source_hash": "0c2aec3a83b0"
+  },
+  "wizard.provider.models_list_invalid": {
+    "text": "Pi models.json의 모델 목록이 올바르지 않습니다",
+    "source_hash": "e653afbf6dc8"
+  },
+  "wizard.search.symlink": {
+    "text": "웹 검색: 심볼릭 링크로 연결된 설정은 거부합니다",
+    "source_hash": "b8dd10482ddf"
+  },
+  "wizard.search.regular_file": {
+    "text": "웹 검색: 일반 설정 파일이어야 합니다",
+    "source_hash": "b6b6243f6e7a"
+  },
+  "wizard.memory.credential_changed": {
+    "text": "메모리: 저장된 자격 증명의 제공자 또는 엔드포인트가 바뀌었습니다. 소스를 다시 선택하세요",
+    "source_hash": "67915097bd25"
+  },
+  "wizard.memory.key_unavailable": {
+    "text": "메모리: 저장된 키를 사용할 수 없습니다. 소스를 다시 선택하세요",
+    "source_hash": "a755ba277cc4"
+  },
+  "wizard.provider.test_for_api": {
+    "text": "Pi: API 유형을 알 수 있도록 연결을 테스트하세요",
+    "source_hash": "c15bc6eb37b4"
+  },
+  "wizard.provider.env_invalid": {
+    "text": "Pi: 기존 제공자 환경 변수가 올바르지 않습니다",
+    "source_hash": "11b3e98a566f"
+  },
+  "wizard.search.override_remove_failed": {
+    "text": "웹 검색: 전용 모델 재정의를 제거할 수 없습니다",
+    "source_hash": "4179191bf160"
+  },
+  "wizard.provider.list_title": {
+    "text": "모델 제공자",
+    "source_hash": "fbdc457db218"
+  },
+  "wizard.search.list_title": {
+    "text": "웹 검색 제공자",
+    "source_hash": "3f76c4cc3f0f"
+  },
+  "wizard.memory.list_title": {
+    "text": "메모리 제공자",
+    "source_hash": "f7ac1d2de59f"
+  },
+  "wizard.provider.preview_model": {
+    "text": "미리보기 모델",
+    "source_hash": "b6eb6b14ddad"
+  },
+  "wizard.provider.preview_small_model": {
+    "text": "미리보기 소형 모델",
+    "source_hash": "e552021200b5"
+  },
+  "wizard.provider.connection_details": {
+    "text": "연결 세부 정보",
+    "source_hash": "51bfffbcdbcf"
+  },
+  "wizard.provider.no_extra": {
+    "text": "추가 설정이 필요하지 않습니다.",
+    "source_hash": "a8523c5346ec"
+  },
+  "wizard.provider.fetch_models": {
+    "text": "모델 가져오기",
+    "source_hash": "812c98c992c6"
+  },
+  "wizard.provider.choose_model": {
+    "text": "모델 선택",
+    "source_hash": "f6e05dcfcfa8"
+  },
+  "wizard.provider.testing_short": {
+    "text": "테스트 중...",
+    "source_hash": "6c02a28421f8"
+  },
+  "wizard.provider.test_connection": {
+    "text": "연결 테스트",
+    "source_hash": "5bcf311b19d8"
+  },
+  "wizard.provider.not_tested": {
+    "text": "테스트되지 않음",
+    "source_hash": "51e3a01219f2"
+  },
+  "wizard.provider.lists_models": {
+    "text": "엔드포인트의 모델을 나열합니다. 추론이나 메모리 쓰기는 없습니다.",
+    "source_hash": "ade190bd0811"
+  },
+  "wizard.provider.browse_or_enter": {
+    "text": "제안 목록을 보거나 정확한 모델 ID를 입력하세요.",
+    "source_hash": "ea1aef31b165"
+  },
+  "wizard.provider.sends_request": {
+    "text": "짧은 요청을 보냅니다. 제공자 요금이 부과될 수 있습니다.",
+    "source_hash": "29e67ff448f6"
+  },
+  "wizard.shell.next": {
+    "text": "다음 — {page}",
+    "source_hash": "827f82fa3edf"
+  },
+  "wizard.provider.catalog_truncated": {
+    "text": "카탈로그가 잘렸습니다. 빠진 ID는 직접 입력 단계에서 입력하세요",
+    "source_hash": "a74d0cf6f9ec"
+  },
+  "wizard.search.catalog_note": {
+    "text": "기본 검색 카탈로그입니다. 사용 가능 여부는 확인되지 않았습니다",
+    "source_hash": "6dc5683dbdc3"
+  },
+  "wizard.memory.catalog_note": {
+    "text": "모델 제안입니다. 메모리와의 호환성은 확인되지 않았습니다",
+    "source_hash": "39137a61ed43"
+  },
+  "wizard.provider.fetching": {
+    "text": "선택한 엔드포인트에서 모델을 가져오는 중...",
+    "source_hash": "0230b84d9b0c"
+  },
+  "wizard.provider.loading_local": {
+    "text": "로컬 모델 카탈로그를 불러오는 중...",
+    "source_hash": "fb9cfdb82b65"
+  },
+  "wizard.provider.no_auth_check": {
+    "text": "서버 인증이나 계정 사용 권한 확인은 수행하지 않습니다.",
+    "source_hash": "48043c00d31d"
+  },
+  "wizard.provider.credentials_changed": {
+    "text": "Pi 자격 증명이 변경되었거나 저장할 수 없습니다. 선택한 소스를 확인하고 사용자 지정 연결을 다시 테스트하세요.",
+    "source_hash": "76a2cf9164f0"
+  },
+  "wizard.search.enter_model": {
+    "text": "웹 검색: 정확한 모델 ID를 입력하세요",
+    "source_hash": "a5abb7475ed0"
+  },
+  "wizard.search.key_invalid": {
+    "text": "웹 검색: 공백이나 제어 문자가 없는 API 키를 입력하세요",
+    "source_hash": "904667c8779a"
+  },
+  "wizard.search.azure_url": {
+    "text": "웹 검색: 자격 증명이 없는 HTTPS Azure 기본 URL을 입력하세요",
+    "source_hash": "88c2de75ba77"
+  },
+  "wizard.search.azure_both": {
+    "text": "웹 검색: Azure 기본 URL과 함께 API 키를 입력하거나, 둘 다 나중에 Pi에서 설정하세요",
+    "source_hash": "d82f956e9ea6"
+  },
+  "wizard.provider.pi_url": {
+    "text": "Pi: HTTPS 기본 URL 또는 로컬 서버 주소를 입력하세요",
+    "source_hash": "961be0bfd948"
+  },
+  "wizard.common.enter_model_id": {
+    "text": "{label}: 정확한 모델 ID를 입력하세요",
+    "source_hash": "686e504338e0"
+  },
+  "wizard.common.https_no_credentials": {
+    "text": "{label}: 자격 증명이 없는 HTTPS 기본 URL을 입력하세요",
+    "source_hash": "5ab56666492c"
+  },
+  "wizard.common.key_invalid": {
+    "text": "{label}: 공백이나 제어 문자가 없는 API 키를 입력하세요",
+    "source_hash": "06cb71707873"
+  },
+  "wizard.provider.unique_id": {
+    "text": "Pi: 고유한 소문자 제공자 ID를 사용하세요 (예: omniroute)",
+    "source_hash": "a5d12f69f254"
+  },
+  "wizard.memory.symlink": {
+    "text": "메모리: 심볼릭 링크 설정은 거부합니다",
+    "source_hash": "408cc1d5eca7"
+  },
+  "wizard.memory.config_unavailable": {
+    "text": "메모리 설정을 사용할 수 없습니다",
+    "source_hash": "5facb5204c8b"
+  },
+  "wizard.memory.config_too_large": {
+    "text": "메모리 설정이 너무 큽니다",
+    "source_hash": "0abce5fa7620"
+  },
+  "wizard.common.symlink_at": {
+    "text": "{path}의 심볼릭 링크는 거부합니다",
+    "source_hash": "2d1d6d9229be"
+  },
+  "wizard.common.invalid_json": {
+    "text": "{path}의 JSON이 올바르지 않습니다: {error}",
+    "source_hash": "cb1c0852dda4"
+  },
+  "wizard.common.expected_object": {
+    "text": "{path}에는 JSON 객체가 필요합니다",
+    "source_hash": "b40e836032c5"
+  },
+  "wizard.memory.symlink_config": {
+    "text": "메모리 설정의 심볼릭 링크는 거부합니다",
+    "source_hash": "7093970b6456"
+  },
+  "wizard.memory.config_error": {
+    "text": "메모리 설정: {error}",
+    "source_hash": "0d2dd39a2d90"
+  },
+  "wizard.common.missing_dir": {
+    "text": "설정 디렉터리가 없습니다",
+    "source_hash": "35701334e8bf"
+  },
+  "wizard.provider.partly_saved": {
+    "text": "{error} (일부 자격 증명은 이미 Pi에 저장되었습니다. 설정이 일부만 적용되었을 수 있습니다)",
+    "source_hash": "69266b7404df"
+  },
+  "wizard.provider.partly_applied": {
+    "text": "{error} (설정이 일부만 적용되었을 수 있습니다. 설정을 다시 시도하기 전에 확인하세요)",
+    "source_hash": "93e84daad133"
+  },
+  "wizard.provider.list_hint": {
+    "text": "↑/↓ 이동 · Space 선택 · Tab 세부 정보  {index}/{count}",
+    "source_hash": "6f4e925e84b1"
+  },
+  "wizard.form.provider_id": {
+    "text": "제공자 ID:",
+    "source_hash": "e035a2e312e7"
+  },
+  "wizard.form.provider_id_hint": {
+    "text": "예: omniroute",
+    "source_hash": "474364acdb88"
+  },
+  "wizard.form.base_url": {
+    "text": "기본 URL:",
+    "source_hash": "d34c1f38253c"
+  },
+  "wizard.form.base_url_hint": {
+    "text": "API 기본 URL",
+    "source_hash": "a45474ea09c3"
+  },
+  "wizard.form.api_type": {
+    "text": "API 유형:",
+    "source_hash": "ef56d0b93d30"
+  },
+  "wizard.form.api_type_hint": {
+    "text": "API 계열",
+    "source_hash": "921463d37e58"
+  },
+  "wizard.form.model_id": {
+    "text": "모델 ID:",
+    "source_hash": "93139b7fb881"
+  },
+  "wizard.form.model_id_exact": {
+    "text": "정확한 모델 ID",
+    "source_hash": "b0d6631bddc5"
+  },
+  "wizard.form.credential": {
+    "text": "자격 증명:",
+    "source_hash": "c410f0de5633"
+  },
+  "wizard.form.use_login": {
+    "text": "Pi에서 /login 사용",
+    "source_hash": "9b741fe3564a"
+  },
+  "wizard.form.saved_or_new": {
+    "text": "저장됨 또는 새로 입력",
+    "source_hash": "12374a1d011c"
+  },
+  "wizard.form.api_key": {
+    "text": "API 키:",
+    "source_hash": "2f77effde67c"
+  },
+  "wizard.form.kept_private": {
+    "text": "비공개로 유지",
+    "source_hash": "187c44112cef"
+  },
+  "wizard.form.pick_or_enter": {
+    "text": "ID 선택 또는 입력",
+    "source_hash": "d04d70878e87"
+  },
+  "wizard.form.stored_in_pi": {
+    "text": "Pi에 저장됨",
+    "source_hash": "d25575aa94b0"
+  },
+  "wizard.form.azure_endpoint": {
+    "text": "Azure 엔드포인트",
+    "source_hash": "9083377a277e"
+  },
+  "wizard.form.memory_only": {
+    "text": "메모리 전용",
+    "source_hash": "32e44d486399"
+  },
+  "wizard.provider.settings_unchanged": {
+    "text": "현재 제공자 설정은 그대로 유지됩니다.",
+    "source_hash": "dfb133c06e72"
+  },
+  "wizard.search.keeps_unchanged": {
+    "text": "기존 검색 설정과 자격 증명은 변경되지 않습니다.",
+    "source_hash": "58aa4df1275c"
+  },
+  "wizard.search.removes_override": {
+    "text": "전용 검색 재정의를 제거하고 대화 모델을 따릅니다. 해당 모델은 기본 검색을 지원해야 하며 자동 대체는 없습니다.",
+    "source_hash": "a8414fd4c8f2"
+  },
+  "wizard.search.shares_chat": {
+    "text": "이 제공자의 Pi 자격 증명을 채팅과 공유합니다. 다른 제공자로 키가 복사되지 않습니다.",
+    "source_hash": "a8c1b3542f7e"
+  },
+  "wizard.search.uses_saved": {
+    "text": "이 제공자의 저장된 Pi 자격 증명을 그대로 사용합니다. 다른 모델을 선택해도 키는 바뀌지 않습니다.",
+    "source_hash": "df913b2221e3"
+  },
+  "wizard.search.new_key_note": {
+    "text": "새 키는 최종 적용 시 Pi에 저장됩니다. 카탈로그에는 기본 검색 모델만 나오며 모든 채팅 모델이 나오지는 않습니다.",
+    "source_hash": "6cb0b2fd20b7"
+  },
+  "wizard.search.later_note": {
+    "text": "자격 증명을 바꾸지 않고 모델을 설정했습니다. 설정 후 Pi에서 /login {id}를 실행하세요.",
+    "source_hash": "ef6b5edfbe81"
+  },
+  "wizard.search.azure_note": {
+    "text": "Azure에는 엔드포인트 설정도 필요합니다.",
+    "source_hash": "3c0a05a844aa"
+  },
+  "wizard.memory.not_enabled": {
+    "text": "메모리는 Programming Skills의 일부이며 Tools에서 선택되지 않았습니다. 이 페이지의 내용은 저장되지 않습니다.",
+    "source_hash": "5f38d8d9f142"
+  },
+  "wizard.memory.keep": {
+    "text": "기존 메모리 설정은 그대로 유지됩니다.",
+    "source_hash": "8747d4c2d994"
+  },
+  "wizard.memory.no_llm": {
+    "text": "메모리는 LLM을 사용하지 않습니다.",
+    "source_hash": "85197fc97e6b"
+  },
+  "wizard.memory.keeps_saved": {
+    "text": "이 제공자와 엔드포인트의 저장된 메모리 키를 유지합니다. 모델만 변경해도 키는 보존됩니다.",
+    "source_hash": "dec480d705ed"
+  },
+  "wizard.memory.deferred": {
+    "text": "메모리 설정은 보류되었습니다. 기존 설정과 자격 증명은 그대로 유지되며, Pi /login은 메모리를 인증하지 않습니다.",
+    "source_hash": "56476111c257"
+  },
+  "wizard.memory.own_key": {
+    "text": "메모리는 자체 키를 사용하며 Pi 로그인은 사용하지 않습니다. 모델 제안이 메모리와의 호환성을 보장하지는 않습니다.",
+    "source_hash": "5e9f06b7afef"
   }
 }

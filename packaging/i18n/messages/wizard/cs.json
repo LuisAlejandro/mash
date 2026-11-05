@@ -586,5 +586,769 @@
   "wizard.shell.setup_label": {
     "text": "NASTAVENÍ",
     "source_hash": "7175b03373a2"
+  },
+  "wizard.github.config_inside": {
+    "text": "Konfigurace GitHubu musí zůstat uvnitř Mash.",
+    "source_hash": "2b038878bb44"
+  },
+  "wizard.github.cli_unavailable": {
+    "text": "GitHub CLI není v této verzi dostupné.",
+    "source_hash": "929b978e3fa2"
+  },
+  "wizard.github.incomplete": {
+    "text": "Přihlášení ke GitHubu nebylo dokončeno.",
+    "source_hash": "d7fb51538ef3"
+  },
+  "wizard.github.start_failed": {
+    "text": "Nepodařilo se spustit GitHub CLI: {error}",
+    "source_hash": "77cc54ecbb65"
+  },
+  "wizard.model.local_catalog": {
+    "text": "Místní katalog; přihlašovací údaje nejsou ověřeny serverem",
+    "source_hash": "b90b73d51076"
+  },
+  "wizard.model.filter": {
+    "text": "Filtrovat modely",
+    "source_hash": "9a35e606cd37"
+  },
+  "wizard.model.choose": {
+    "text": "Vyberte model (Enter nebo klik)",
+    "source_hash": "b67e2354ebe6"
+  },
+  "wizard.model.enter_manual": {
+    "text": "Zadat ručně",
+    "source_hash": "ad876beba8ac"
+  },
+  "wizard.model.use_model": {
+    "text": "Použít model",
+    "source_hash": "cb1c1ca37393"
+  },
+  "wizard.connection.unavailable": {
+    "text": "Kontrola připojení není k dispozici. Zadejte údaje ručně; nastavení může pokračovat.",
+    "source_hash": "df66e4e70112"
+  },
+  "wizard.connection.mode.existing": {
+    "text": "Použít uložené přihlašovací údaje",
+    "source_hash": "a8f3c9ed4b75"
+  },
+  "wizard.common.new_api_key": {
+    "text": "Zadat nový klíč API",
+    "source_hash": "9b6cc5e19d07"
+  },
+  "wizard.connection.mode.none": {
+    "text": "Bez klíče (místní server)",
+    "source_hash": "327d8a7f069e"
+  },
+  "wizard.common.sign_in_later": {
+    "text": "Přihlásit se později v Pi",
+    "source_hash": "9e6b7094c00b"
+  },
+  "wizard.connection.local_server": {
+    "text": "{name} (místní)",
+    "source_hash": "60d0adb8ca44"
+  },
+  "wizard.connection.reason.unauthorized": {
+    "text": "Koncový bod tyto přihlašovací údaje odmítl.",
+    "source_hash": "5c67730adff0"
+  },
+  "wizard.connection.reason.not_found": {
+    "text": "Koncový bod nemá takový model nebo cestu API.",
+    "source_hash": "92e6a1ef02b9"
+  },
+  "wizard.connection.reason.timeout": {
+    "text": "Koncový bod neodpověděl včas.",
+    "source_hash": "824104c212df"
+  },
+  "wizard.connection.reason.unreachable": {
+    "text": "Na této adrese neodpověděl žádný server.",
+    "source_hash": "91cf761f6798"
+  },
+  "wizard.connection.reason.blocked": {
+    "text": "Tato adresa není povolena; použijte koncový bod HTTPS nebo adresu místního serveru.",
+    "source_hash": "91672c928382"
+  },
+  "wizard.connection.reason.redirected": {
+    "text": "Koncový bod přesměroval jinam; zadejte konečnou adresu.",
+    "source_hash": "6f5c4d2db072"
+  },
+  "wizard.connection.reason.not_json": {
+    "text": "Tato adresa odpověděla stránkou, nikoli modelovým API.",
+    "source_hash": "caa45c7a5c14"
+  },
+  "wizard.connection.reason.wrong_api": {
+    "text": "Tato adresa odpověděla pro jiný typ API; zkontrolujte adresu a zvolené API.",
+    "source_hash": "4214079dbe1b"
+  },
+  "wizard.connection.reason.no_models": {
+    "text": "Server běží, ale nemá načtený žádný chatovací model.",
+    "source_hash": "a1655be795a4"
+  },
+  "wizard.connection.reason.stale": {
+    "text": "Připojení se během kontroly změnilo. Otestujte ho znovu.",
+    "source_hash": "270cbc62e785"
+  },
+  "wizard.connection.reason.consent": {
+    "text": "Test odešle jeden krátký požadavek. Potvrďte pokračování.",
+    "source_hash": "8210811701c1"
+  },
+  "wizard.connection.reason.command_secret": {
+    "text": "Tyto údaje spouštějí příkaz; spravujte je raději v Pi.",
+    "source_hash": "07c5bdb147b9"
+  },
+  "wizard.connection.reason.oauth_expired": {
+    "text": "Uložené přihlášení vypršelo; přihlaste se znovu přes Pi.",
+    "source_hash": "d5ce40555415"
+  },
+  "wizard.connection.reason.endpoint_changed": {
+    "text": "Uložené přihlašovací údaje patří jinému koncovému bodu.",
+    "source_hash": "c8ac0862d7b2"
+  },
+  "wizard.connection.reason.additional_setup": {
+    "text": "Tento poskytovatel vyžaduje další nastavení; dokončete ho v Pi.",
+    "source_hash": "b02eeda9e214"
+  },
+  "wizard.connection.reason.fallback": {
+    "text": "Připojení nebylo možné ověřit.",
+    "source_hash": "a329289ba9b5"
+  },
+  "wizard.connection.saved": {
+    "text": "Uložené přihlašovací údaje",
+    "source_hash": "cd3c6826c368"
+  },
+  "wizard.connection.deferred": {
+    "text": "Ověření je odloženo na Pi /login",
+    "source_hash": "48ed1207e344"
+  },
+  "wizard.connection.http_status": {
+    "text": "{message} (HTTP {status})",
+    "source_hash": "28b2090559db"
+  },
+  "wizard.models.unavailable": {
+    "text": "Kontrola modelů v Pi není k dispozici. Nastavte model ručně nebo použijte Pi /login po nastavení.",
+    "source_hash": "b446b49932ad"
+  },
+  "wizard.models.helper_unavailable": {
+    "text": "Pomocný nástroj pro nastavení není k dispozici. Zadejte údaje ručně; nastavení může pokračovat.",
+    "source_hash": "c105bfa9119a"
+  },
+  "wizard.models.not_in_catalog": {
+    "text": "Uložený model není v místním katalogu Pi. Jeho přesné ID bylo zachováno.",
+    "source_hash": "3a377429f23a"
+  },
+  "wizard.models.no_catalog": {
+    "text": "Pro uložený model není dostupný místní katalog; jeho ID není ověřeno.",
+    "source_hash": "41e3d45585a9"
+  },
+  "wizard.models.not_ready": {
+    "text": "Pro poskytovatele uloženého modelu nejsou nastavené žádné přihlašovací údaje. Po nastavení použijte Pi /login.",
+    "source_hash": "27dc6e44bc1e"
+  },
+  "wizard.models.unverified": {
+    "text": "Přihlašovací údaje uloženého poskytovatele nebylo možné místně ověřit. Po nastavení použijte Pi /login.",
+    "source_hash": "eb785e842362"
+  },
+  "wizard.providers.invalid_catalog": {
+    "text": "Neplatný přibalený katalog poskytovatelů Pi",
+    "source_hash": "bbcc3cc163f5"
+  },
+  "wizard.providers.hint.azure": {
+    "text": "Nejprve nastavte AZURE_OPENAI_BASE_URL nebo AZURE_OPENAI_RESOURCE_NAME.",
+    "source_hash": "2decf0bd1d6b"
+  },
+  "wizard.providers.hint.cloudflare_gateway": {
+    "text": "Cloudflare také vyžaduje ID účtu a ID brány.",
+    "source_hash": "c6bb32d55e90"
+  },
+  "wizard.providers.hint.cloudflare_workers": {
+    "text": "Cloudflare také vyžaduje ID účtu.",
+    "source_hash": "487cf2bed2ad"
+  },
+  "wizard.providers.hint.bedrock": {
+    "text": "Místo toho mohou přihlašovací údaje poskytnout profily AWS a IAM.",
+    "source_hash": "d4ddd86cd093"
+  },
+  "wizard.providers.hint.vertex": {
+    "text": "Přístup přes ADC nebo servisní účet také vyžaduje projekt a umístění.",
+    "source_hash": "a382011b4183"
+  },
+  "wizard.providers.guidance.azure": {
+    "text": "Nastavte AZURE_OPENAI_BASE_URL nebo AZURE_OPENAI_RESOURCE_NAME a poté použijte /login azure v Pi. Pokračovat ponechá vaši stávající konfiguraci Pi.",
+    "source_hash": "5834561a0d12"
+  },
+  "wizard.providers.guidance.cloudflare_gateway": {
+    "text": "Vyžaduje token, ID účtu a ID brány. V Pi použijte /login cloudflare-ai-gateway. Pokračovat ponechá vaši stávající konfiguraci Pi.",
+    "source_hash": "2c4fdf840f5a"
+  },
+  "wizard.providers.guidance.cloudflare_workers": {
+    "text": "Vyžaduje token a ID účtu. V Pi použijte /login cloudflare-workers-ai. Pokračovat ponechá vaši stávající konfiguraci Pi.",
+    "source_hash": "95b2361c0b9a"
+  },
+  "wizard.providers.guidance.bedrock": {
+    "text": "Zadejte bearer token Bedrock, nikoli ID přístupového klíče AWS. Pro profily AWS nebo IAM použijte /login amazon-bedrock v Pi.",
+    "source_hash": "869163e8c80d"
+  },
+  "wizard.providers.guidance.vertex": {
+    "text": "Zadejte klíč API Google Cloud. Pro ADC nebo soubor servisního účtu použijte /login google-vertex v Pi.",
+    "source_hash": "786382a710f6"
+  },
+  "wizard.providers.guidance.generic": {
+    "text": "Po nastavení použijte /login {id} v Pi. Pokračovat ponechá vaši stávající konfiguraci Pi.",
+    "source_hash": "558591c917f8"
+  },
+  "wizard.providers.guidance.oauth": {
+    "text": "Zde použijte klíč API. Pro přihlášení v prohlížeči nebo zařízení použijte /login {id} v Pi po nastavení.",
+    "source_hash": "c50e0a9f050c"
+  },
+  "wizard.providers.login_deferred": {
+    "text": "Ověření odloženo. Po nastavení spusťte /login {id} v Pi.",
+    "source_hash": "de2f18975d71"
+  },
+  "wizard.providers.key_api": {
+    "text": "Klíč API {name}",
+    "source_hash": "a07eb1509dcd"
+  },
+  "wizard.providers.key_token": {
+    "text": "Token {name}",
+    "source_hash": "ba35265f1f56"
+  },
+  "wizard.providers.key_aws": {
+    "text": "Přihlašovací údaje AWS nebo bearer token",
+    "source_hash": "cdfc8a182045"
+  },
+  "wizard.providers.key_gcloud": {
+    "text": "Přihlašovací údaje Google Cloud",
+    "source_hash": "1757285aa598"
+  },
+  "wizard.providers.key_bedrock": {
+    "text": "Bedrock bearer token",
+    "source_hash": "56b93e9ece96"
+  },
+  "wizard.provider.none_llm": {
+    "text": "Žádný (bez LLM)",
+    "source_hash": "8756f88be90d"
+  },
+  "wizard.provider.custom": {
+    "text": "Vlastní poskytovatel",
+    "source_hash": "fee405014d78"
+  },
+  "wizard.provider.openai_compatible": {
+    "text": "Kompatibilní s OpenAI (Chat Completions)",
+    "source_hash": "d53238670c07"
+  },
+  "wizard.search.keep": {
+    "text": "Ponechat stávající nastavení vyhledávání",
+    "source_hash": "5e67d2e2b08e"
+  },
+  "wizard.search.use_chat": {
+    "text": "Použít chatovací model",
+    "source_hash": "a3132658890a"
+  },
+  "wizard.provider.auto_api": {
+    "text": "Automaticky (zjistí se při testu)",
+    "source_hash": "88afbf0096a7"
+  },
+  "wizard.provider.enter_id": {
+    "text": "Nejprve zadejte ID poskytovatele.",
+    "source_hash": "0c037db27d29"
+  },
+  "wizard.provider.preview_only": {
+    "text": "Pouze náhled: žádný požadavek se neodešle a nic se neuloží.",
+    "source_hash": "0ebb19deae89"
+  },
+  "wizard.provider.testing": {
+    "text": "Testování připojení… odešle se jeden krátký požadavek.",
+    "source_hash": "1676396cacd0"
+  },
+  "wizard.provider.connected": {
+    "text": "Připojeno: koncový bod odpověděl na {label}.",
+    "source_hash": "7ad0b1549289"
+  },
+  "wizard.provider.models_reported": {
+    "text": "Server nahlásil modelů: {count}.",
+    "source_hash": "f31fe95a9707"
+  },
+  "wizard.provider.list_incomplete": {
+    "text": "Seznam je neúplný; chybějící ID zadejte ručně a otestujte ho.",
+    "source_hash": "2d588d0ed045"
+  },
+  "wizard.provider.no_chat_model": {
+    "text": "Server odpověděl, ale nenahlásil žádný chatovací model.",
+    "source_hash": "facf8d7bd587"
+  },
+  "wizard.provider.credential_label": {
+    "text": "Přihlašovací údaje: {label}",
+    "source_hash": "8b458229f825"
+  },
+  "wizard.provider.credential_unusable": {
+    "text": "Přihlašovací údaje nelze použít: {label}",
+    "source_hash": "d431bbfadbd4"
+  },
+  "wizard.provider.model_list_unavailable": {
+    "text": "Seznam modelů není dostupný nebo je prázdný. Zadejte přesné ID modelu; zůstane neověřený.",
+    "source_hash": "00dff5896fd5"
+  },
+  "wizard.provider.choose_or_enter": {
+    "text": "Vyberte model z tohoto koncového bodu nebo zadejte jeho přesné ID.",
+    "source_hash": "cfad129610d3"
+  },
+  "wizard.provider.fetch_or_test": {
+    "text": "Načtěte seznam modelů serveru nebo otestujte chybějící ID z neúplného seznamu.",
+    "source_hash": "c320f93cb08b"
+  },
+  "wizard.provider.choose_reported": {
+    "text": "{label}: vyberte nahlášený model nebo otestujte chybějící ID z neúplného seznamu.",
+    "source_hash": "a77913382c56"
+  },
+  "wizard.provider.pi_test_first": {
+    "text": "Pi: nejprve otestujte toto vlastní připojení; uložit lze jen přijatý požadavek.",
+    "source_hash": "161d742c4903"
+  },
+  "wizard.search.src_chat": {
+    "text": "Použít přihlašovací údaje chatovacího poskytovatele",
+    "source_hash": "f775d3990dd0"
+  },
+  "wizard.memory.src_saved": {
+    "text": "Ponechat uložený klíč paměti",
+    "source_hash": "e5a0bc3ecc75"
+  },
+  "wizard.search.src_saved": {
+    "text": "Použít uložené přihlašovací údaje Pi",
+    "source_hash": "68823fc1dc94"
+  },
+  "wizard.memory.src_later": {
+    "text": "Nastavit později (ponechat stávající)",
+    "source_hash": "b9e8bb9af513"
+  },
+  "wizard.search.keep_unreadable": {
+    "text": "Ponechat stávající nastavení vyhledávání (nečitelné)",
+    "source_hash": "03bfcd418f97"
+  },
+  "wizard.search.keep_chat": {
+    "text": "Ponechat: používá chatovací model",
+    "source_hash": "c454fc0778ba"
+  },
+  "wizard.common.keep_current_model": {
+    "text": "Ponechat: {provider}/{model}",
+    "source_hash": "417283f9b64d"
+  },
+  "wizard.search.use_chat_unset": {
+    "text": "Použít chatovací model (zatím nenastaven)",
+    "source_hash": "e8b6ce6cb122"
+  },
+  "wizard.search.use_chat_model": {
+    "text": "Použít chatovací model: {provider}/{model}",
+    "source_hash": "8d09d2b9f3dd"
+  },
+  "wizard.common.keep_or_later": {
+    "text": "Ponechat stávající / nastavit později",
+    "source_hash": "4cec99ff32b6"
+  },
+  "wizard.provider.custom_endpoint": {
+    "text": "Vlastní koncový bod",
+    "source_hash": "5fb0795eaf2e"
+  },
+  "wizard.common.keep_current_provider": {
+    "text": "Ponechat: {provider}",
+    "source_hash": "e0547b6f785f"
+  },
+  "wizard.common.set_up_later": {
+    "text": "Nastavit později",
+    "source_hash": "eb5e104944c1"
+  },
+  "wizard.common.currently_configured": {
+    "text": "(v současnosti nastaveno)",
+    "source_hash": "fd8c4c2150d6"
+  },
+  "wizard.memory.enter_url": {
+    "text": "Paměť: před načtením modelů zadejte URL koncového bodu.",
+    "source_hash": "4491f26c74d0"
+  },
+  "wizard.search.configure_chat_first": {
+    "text": "Webové vyhledávání: nejprve nastavte chatovací model",
+    "source_hash": "f2d6fcb7ce5a"
+  },
+  "wizard.search.not_native": {
+    "text": "Tento poskytovatel chatu nenabízí nativní webové vyhledávání. Vyberte samostatného poskytovatele vyhledávání.",
+    "source_hash": "2ae0277a4bbb"
+  },
+  "wizard.search.enter_key_or_later": {
+    "text": "Webové vyhledávání: zadejte klíč nebo vyberte „Přihlásit se později v Pi“",
+    "source_hash": "ec8998bc8e73"
+  },
+  "wizard.search.credential_invalid": {
+    "text": "Webové vyhledávání: stávající přihlašovací údaje Pi jsou neplatné",
+    "source_hash": "2bdcb880250c"
+  },
+  "wizard.search.oauth_exists": {
+    "text": "Webové vyhledávání: přihlašovací údaje OAuth již existují; spravujte je přes Pi /login",
+    "source_hash": "789004e75d1e"
+  },
+  "wizard.search.azure_env_invalid": {
+    "text": "Webové vyhledávání: stávající přihlašovací údaje Azure mají neplatné prostředí",
+    "source_hash": "907c142da323"
+  },
+  "wizard.search.credential_on_model_page": {
+    "text": "Webové vyhledávání: přihlašovací údaje tohoto poskytovatele jsou nastaveny na stránce Poskytovatel modelu. Použijte zde přihlašovací údaje chatovacího modelu nebo zvolte jiného poskytovatele vyhledávání.",
+    "source_hash": "9cb065a8fae4"
+  },
+  "wizard.provider.pi_signed_in": {
+    "text": "Pi: tento poskytovatel je přihlášen přes Pi /login. Ponechte uložené přihlašovací údaje, nebo se v Pi přihlaste znovu namísto jejich nahrazení.",
+    "source_hash": "eb4d65ce6ad3"
+  },
+  "wizard.provider.credential_dir_unavailable": {
+    "text": "Adresář přihlašovacích údajů Pi není dostupný",
+    "source_hash": "98f28d5f8b0b"
+  },
+  "wizard.provider.retest_before_apply": {
+    "text": "Před použitím přihlašovacích údajů tohoto vlastního připojení jej otestujte znovu.",
+    "source_hash": "33f016024d39"
+  },
+  "wizard.search.manage_oauth": {
+    "text": "Webové vyhledávání: spravujte stávající přihlašovací údaje OAuth přes Pi /login",
+    "source_hash": "9b1cb7045e7d"
+  },
+  "wizard.memory.config_missing": {
+    "text": "Chybí konfigurace paměti; pro obnovení znovu otevřete Mash",
+    "source_hash": "19b25e7d8997"
+  },
+  "wizard.provider.models_providers_invalid": {
+    "text": "Soubor models.json v Pi má neplatný objekt providers",
+    "source_hash": "4e54bf06618d"
+  },
+  "wizard.provider.models_definition_invalid": {
+    "text": "Soubor models.json v Pi má neplatnou definici poskytovatele",
+    "source_hash": "0c2aec3a83b0"
+  },
+  "wizard.provider.models_list_invalid": {
+    "text": "Soubor models.json v Pi má neplatný seznam modelů",
+    "source_hash": "e653afbf6dc8"
+  },
+  "wizard.search.symlink": {
+    "text": "Webové vyhledávání: odmítám konfiguraci přes symbolický odkaz",
+    "source_hash": "b8dd10482ddf"
+  },
+  "wizard.search.regular_file": {
+    "text": "Webové vyhledávání: očekáván běžný konfigurační soubor",
+    "source_hash": "b6b6243f6e7a"
+  },
+  "wizard.memory.credential_changed": {
+    "text": "Paměť: poskytovatel nebo koncový bod uložených přihlašovacích údajů se změnil; znovu vyberte jejich zdroj",
+    "source_hash": "67915097bd25"
+  },
+  "wizard.memory.key_unavailable": {
+    "text": "Paměť: uložený klíč není dostupný; znovu vyberte jeho zdroj",
+    "source_hash": "a755ba277cc4"
+  },
+  "wizard.provider.test_for_api": {
+    "text": "Pi: otestujte připojení, aby byl znám jeho typ API",
+    "source_hash": "c15bc6eb37b4"
+  },
+  "wizard.provider.env_invalid": {
+    "text": "Pi: stávající prostředí poskytovatele je neplatné",
+    "source_hash": "11b3e98a566f"
+  },
+  "wizard.search.override_remove_failed": {
+    "text": "Webové vyhledávání: nelze odstranit přepsání vyhrazeného modelu",
+    "source_hash": "4179191bf160"
+  },
+  "wizard.provider.list_title": {
+    "text": "Poskytovatelé modelů",
+    "source_hash": "fbdc457db218"
+  },
+  "wizard.search.list_title": {
+    "text": "Poskytovatelé webového vyhledávání",
+    "source_hash": "3f76c4cc3f0f"
+  },
+  "wizard.memory.list_title": {
+    "text": "Poskytovatelé paměti",
+    "source_hash": "f7ac1d2de59f"
+  },
+  "wizard.provider.preview_model": {
+    "text": "Model pro náhled",
+    "source_hash": "b6eb6b14ddad"
+  },
+  "wizard.provider.preview_small_model": {
+    "text": "Malý model pro náhled",
+    "source_hash": "e552021200b5"
+  },
+  "wizard.provider.connection_details": {
+    "text": "Údaje o připojení",
+    "source_hash": "51bfffbcdbcf"
+  },
+  "wizard.provider.no_extra": {
+    "text": "Není třeba žádné další nastavení.",
+    "source_hash": "a8523c5346ec"
+  },
+  "wizard.provider.fetch_models": {
+    "text": "Načíst modely",
+    "source_hash": "812c98c992c6"
+  },
+  "wizard.provider.choose_model": {
+    "text": "Vybrat model",
+    "source_hash": "f6e05dcfcfa8"
+  },
+  "wizard.provider.testing_short": {
+    "text": "Testování...",
+    "source_hash": "6c02a28421f8"
+  },
+  "wizard.provider.test_connection": {
+    "text": "Otestovat připojení",
+    "source_hash": "5bcf311b19d8"
+  },
+  "wizard.provider.not_tested": {
+    "text": "Netestováno",
+    "source_hash": "51e3a01219f2"
+  },
+  "wizard.provider.lists_models": {
+    "text": "Vypíše modely koncového bodu; neprovádí inference ani zápisy do paměti.",
+    "source_hash": "ade190bd0811"
+  },
+  "wizard.provider.browse_or_enter": {
+    "text": "Procházejte návrhy nebo zadejte přesné ID modelu.",
+    "source_hash": "ea1aef31b165"
+  },
+  "wizard.provider.sends_request": {
+    "text": "Odešle krátký požadavek; mohou být účtovány poplatky poskytovatele.",
+    "source_hash": "29e67ff448f6"
+  },
+  "wizard.shell.next": {
+    "text": "Další — {page}",
+    "source_hash": "827f82fa3edf"
+  },
+  "wizard.provider.catalog_truncated": {
+    "text": "Katalog je zkrácen; chybějící ID zadejte v ručním kroku",
+    "source_hash": "a74d0cf6f9ec"
+  },
+  "wizard.search.catalog_note": {
+    "text": "Katalog nativního vyhledávání; dostupnost není ověřena",
+    "source_hash": "6dc5683dbdc3"
+  },
+  "wizard.memory.catalog_note": {
+    "text": "Návrhy modelů; kompatibilita s pamětí není ověřena",
+    "source_hash": "39137a61ed43"
+  },
+  "wizard.provider.fetching": {
+    "text": "Načítání modelů z vybraného koncového bodu…",
+    "source_hash": "0230b84d9b0c"
+  },
+  "wizard.provider.loading_local": {
+    "text": "Načítání místního katalogu modelů...",
+    "source_hash": "fb9cfdb82b65"
+  },
+  "wizard.provider.no_auth_check": {
+    "text": "Neprovádí se ověření serveru ani kontrola oprávnění účtu.",
+    "source_hash": "48043c00d31d"
+  },
+  "wizard.provider.credentials_changed": {
+    "text": "Přihlašovací údaje Pi se změnily nebo je nelze uložit. Zkontrolujte vybraný zdroj a znovu otestujte vlastní připojení.",
+    "source_hash": "76a2cf9164f0"
+  },
+  "wizard.search.enter_model": {
+    "text": "Webové vyhledávání: zadejte přesné ID modelu",
+    "source_hash": "a5abb7475ed0"
+  },
+  "wizard.search.key_invalid": {
+    "text": "Webové vyhledávání: zadejte klíč API bez mezer a řídicích znaků",
+    "source_hash": "904667c8779a"
+  },
+  "wizard.search.azure_url": {
+    "text": "Webové vyhledávání: zadejte základní URL Azure přes HTTPS bez přihlašovacích údajů",
+    "source_hash": "88c2de75ba77"
+  },
+  "wizard.search.azure_both": {
+    "text": "Webové vyhledávání: zadejte klíč API spolu se základní URL Azure, nebo obojí nastavte později v Pi",
+    "source_hash": "d82f956e9ea6"
+  },
+  "wizard.provider.pi_url": {
+    "text": "Pi: zadejte základní URL přes HTTPS nebo adresu místního serveru",
+    "source_hash": "961be0bfd948"
+  },
+  "wizard.common.enter_model_id": {
+    "text": "{label}: zadejte přesné ID modelu",
+    "source_hash": "686e504338e0"
+  },
+  "wizard.common.https_no_credentials": {
+    "text": "{label}: zadejte základní URL přes HTTPS bez přihlašovacích údajů",
+    "source_hash": "5ab56666492c"
+  },
+  "wizard.common.key_invalid": {
+    "text": "{label}: zadejte klíč API bez mezer a řídicích znaků",
+    "source_hash": "06cb71707873"
+  },
+  "wizard.provider.unique_id": {
+    "text": "Pi: použijte jedinečné ID poskytovatele malými písmeny (např. omniroute)",
+    "source_hash": "a5d12f69f254"
+  },
+  "wizard.memory.symlink": {
+    "text": "Paměť: odmítám konfiguraci přes symbolický odkaz",
+    "source_hash": "408cc1d5eca7"
+  },
+  "wizard.memory.config_unavailable": {
+    "text": "Konfigurace paměti není dostupná",
+    "source_hash": "5facb5204c8b"
+  },
+  "wizard.memory.config_too_large": {
+    "text": "Konfigurace paměti je příliš velká",
+    "source_hash": "0abce5fa7620"
+  },
+  "wizard.common.symlink_at": {
+    "text": "odmítnut symbolický odkaz na {path}",
+    "source_hash": "2d1d6d9229be"
+  },
+  "wizard.common.invalid_json": {
+    "text": "neplatný JSON v {path}: {error}",
+    "source_hash": "cb1c0852dda4"
+  },
+  "wizard.common.expected_object": {
+    "text": "očekáván objekt JSON v {path}",
+    "source_hash": "b40e836032c5"
+  },
+  "wizard.memory.symlink_config": {
+    "text": "odmítnut symbolický odkaz v konfiguraci paměti",
+    "source_hash": "7093970b6456"
+  },
+  "wizard.memory.config_error": {
+    "text": "Konfigurace paměti: {error}",
+    "source_hash": "0d2dd39a2d90"
+  },
+  "wizard.common.missing_dir": {
+    "text": "chybí konfigurační adresář",
+    "source_hash": "35701334e8bf"
+  },
+  "wizard.provider.partly_saved": {
+    "text": "{error} (některé přihlašovací údaje už byly uloženy v Pi; nastavení mohla být částečně použita)",
+    "source_hash": "69266b7404df"
+  },
+  "wizard.provider.partly_applied": {
+    "text": "{error} (nastavení mohla být částečně použita; před dalším pokusem o nastavení je zkontrolujte)",
+    "source_hash": "93e84daad133"
+  },
+  "wizard.provider.list_hint": {
+    "text": "↑/↓ procházet · Space vybrat · Tab podrobnosti  {index}/{count}",
+    "source_hash": "6f4e925e84b1"
+  },
+  "wizard.form.provider_id": {
+    "text": "ID poskytovatele:",
+    "source_hash": "e035a2e312e7"
+  },
+  "wizard.form.provider_id_hint": {
+    "text": "např. omniroute",
+    "source_hash": "474364acdb88"
+  },
+  "wizard.form.base_url": {
+    "text": "Základní URL:",
+    "source_hash": "d34c1f38253c"
+  },
+  "wizard.form.base_url_hint": {
+    "text": "Základní URL API",
+    "source_hash": "a45474ea09c3"
+  },
+  "wizard.form.api_type": {
+    "text": "Typ API:",
+    "source_hash": "ef56d0b93d30"
+  },
+  "wizard.form.api_type_hint": {
+    "text": "Rodina API",
+    "source_hash": "921463d37e58"
+  },
+  "wizard.form.model_id": {
+    "text": "ID modelu:",
+    "source_hash": "93139b7fb881"
+  },
+  "wizard.form.model_id_exact": {
+    "text": "Přesné ID modelu",
+    "source_hash": "b0d6631bddc5"
+  },
+  "wizard.form.credential": {
+    "text": "Přihlašovací údaje:",
+    "source_hash": "c410f0de5633"
+  },
+  "wizard.form.use_login": {
+    "text": "Použijte /login v Pi",
+    "source_hash": "9b741fe3564a"
+  },
+  "wizard.form.saved_or_new": {
+    "text": "Uložené nebo nové",
+    "source_hash": "12374a1d011c"
+  },
+  "wizard.form.api_key": {
+    "text": "Klíč API:",
+    "source_hash": "2f77effde67c"
+  },
+  "wizard.form.kept_private": {
+    "text": "Zachováno v soukromí",
+    "source_hash": "187c44112cef"
+  },
+  "wizard.form.pick_or_enter": {
+    "text": "Vyberte nebo zadejte ID",
+    "source_hash": "d04d70878e87"
+  },
+  "wizard.form.stored_in_pi": {
+    "text": "Uloženo v Pi",
+    "source_hash": "d25575aa94b0"
+  },
+  "wizard.form.azure_endpoint": {
+    "text": "Koncový bod Azure",
+    "source_hash": "9083377a277e"
+  },
+  "wizard.form.memory_only": {
+    "text": "Pouze pro paměť",
+    "source_hash": "32e44d486399"
+  },
+  "wizard.provider.settings_unchanged": {
+    "text": "Stávající nastavení poskytovatele zůstanou beze změny.",
+    "source_hash": "dfb133c06e72"
+  },
+  "wizard.search.keeps_unchanged": {
+    "text": "Ponechá stávající nastavení vyhledávání a přihlašovací údaje beze změny.",
+    "source_hash": "58aa4df1275c"
+  },
+  "wizard.search.removes_override": {
+    "text": "Odstraní vyhrazené přepsání vyhledávání a bude používat model vaší konverzace. Tento model musí podporovat nativní vyhledávání; neexistuje automatická záloha.",
+    "source_hash": "a8414fd4c8f2"
+  },
+  "wizard.search.shares_chat": {
+    "text": "Sdílí přihlašovací údaje tohoto poskytovatele v Pi s chatem; žádný klíč se nekopíruje k jinému poskytovateli.",
+    "source_hash": "a8c1b3542f7e"
+  },
+  "wizard.search.uses_saved": {
+    "text": "Používá uložené přihlašovací údaje Pi tohoto poskytovatele beze změny. Výběr jiného modelu klíč nenahradí.",
+    "source_hash": "df913b2221e3"
+  },
+  "wizard.search.new_key_note": {
+    "text": "Nový klíč se uloží do Pi při závěrečném použití. Katalog uvádí modely s nativním vyhledáváním, nikoli všechny chatovací modely.",
+    "source_hash": "6cb0b2fd20b7"
+  },
+  "wizard.search.later_note": {
+    "text": "Model je nastaven bez změny přihlašovacích údajů. Po nastavení spusťte /login {id} v Pi.",
+    "source_hash": "ef6b5edfbe81"
+  },
+  "wizard.search.azure_note": {
+    "text": "Azure také vyžaduje nastavený koncový bod.",
+    "source_hash": "3c0a05a844aa"
+  },
+  "wizard.memory.not_enabled": {
+    "text": "Paměť je součástí Programming Skills, které nejsou na stránce Tools zaškrtnuty: nic na této stránce se neuloží.",
+    "source_hash": "5f38d8d9f142"
+  },
+  "wizard.memory.keep": {
+    "text": "Stávající nastavení paměti zůstane beze změny.",
+    "source_hash": "8747d4c2d994"
+  },
+  "wizard.memory.no_llm": {
+    "text": "Paměť nebude používat LLM.",
+    "source_hash": "85197fc97e6b"
+  },
+  "wizard.memory.keeps_saved": {
+    "text": "Ponechá uložený klíč paměti pro tohoto poskytovatele a koncový bod. Úpravy pouze modelu jej zachovají.",
+    "source_hash": "dec480d705ed"
+  },
+  "wizard.memory.deferred": {
+    "text": "Nastavení paměti je odloženo. Stávající nastavení a přihlašovací údaje zůstanou beze změny; Pi /login paměť neověřuje.",
+    "source_hash": "56476111c257"
+  },
+  "wizard.memory.own_key": {
+    "text": "Paměť používá vlastní klíč, nikdy přihlášení do Pi. Návrhy modelů nezaručují kompatibilitu s pamětí.",
+    "source_hash": "5e9f06b7afef"
   }
 }

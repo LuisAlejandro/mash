@@ -249,17 +249,7 @@ pub const SURFACE: Color = Color::Rgb(52, 53, 47); // surface0, for section head
 const BACKGROUND: Color = Color::Rgb(39, 40, 34); // Ghostty's Monokai Cursor
 const ACCENT: Color = Color::Rgb(204, 204, 204);
 const ACTIVE_ROW: Color = Color::Rgb(51, 51, 51);
-pub const PAGES: [&str; 7] = [
-    "Identity",
-    "Tools",
-    "Model provider",
-    "Web search",
-    "Memory",
-    "Appearance",
-    "Dictation",
-];
-
-pub const PAGE_COUNT: usize = PAGES.len();
+pub const PAGE_COUNT: usize = 7;
 
 pub fn page_title(title: &str, index: usize) -> String {
     i18n::t("wizard.shell.page_title")
@@ -269,23 +259,15 @@ pub fn page_title(title: &str, index: usize) -> String {
 }
 
 pub fn page_label(index: usize) -> String {
-    let (key, label) = match index {
-        0 => ("wizard.identity.title", i18n::t("wizard.identity.title")),
-        1 => ("wizard.tools.title", i18n::t("wizard.tools.title")),
-        2 => (
-            "wizard.page.model_provider",
-            i18n::t("wizard.page.model_provider"),
-        ),
-        3 => ("wizard.page.web_search", i18n::t("wizard.page.web_search")),
-        4 => ("wizard.page.memory", i18n::t("wizard.page.memory")),
-        5 => ("wizard.font.title", i18n::t("wizard.font.title")),
-        6 => ("wizard.voice.title", i18n::t("wizard.voice.title")),
-        _ => return String::new(),
-    };
-    if label == key {
-        PAGES[index].to_string()
-    } else {
-        label
+    match index {
+        0 => i18n::t("wizard.identity.title"),
+        1 => i18n::t("wizard.tools.title"),
+        2 => i18n::t("wizard.page.model_provider"),
+        3 => i18n::t("wizard.page.web_search"),
+        4 => i18n::t("wizard.page.memory"),
+        5 => i18n::t("wizard.font.title"),
+        6 => i18n::t("wizard.voice.title"),
+        _ => String::new(),
     }
 }
 
@@ -444,7 +426,7 @@ pub fn page_area(frame: &mut Frame, page: Option<usize>) -> Rect {
                     "Mash  ›  {} {}/{}  ›  {}",
                     i18n::t("wizard.shell.setup"),
                     index + 1,
-                    PAGES.len(),
+                    PAGE_COUNT,
                     page_label(index)
                 )
             },
@@ -497,7 +479,7 @@ pub fn page_area(frame: &mut Frame, page: Option<usize>) -> Rect {
     };
     lines.push(Line::default());
     let first_page = inner.y + lines.len() as u16;
-    for index in 0..PAGES.len() {
+    for index in 0..PAGE_COUNT {
         let label = page_label(index);
         let active = page == Some(index);
         let completed = page.is_none_or(|current| index < current);
@@ -770,7 +752,7 @@ pub mod tests {
     #[test]
     fn page_split_exposes_seven_named_pages() {
         assert_eq!(
-            PAGES,
+            (0..PAGE_COUNT).map(page_label).collect::<Vec<_>>(),
             [
                 "Identity",
                 "Tools",

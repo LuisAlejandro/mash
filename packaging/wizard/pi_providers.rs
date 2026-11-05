@@ -2,8 +2,12 @@
 use serde_json::Value;
 use std::{collections::HashSet, sync::OnceLock};
 
+use crate::i18n;
+
 const CATALOG: &str = include_str!("data/pi-providers.json");
-const INVALID: &str = "Invalid bundled Pi provider catalog";
+fn invalid() -> String {
+    i18n::t("wizard.providers.invalid_catalog")
+}
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Api {
@@ -44,39 +48,36 @@ pub struct Provider {
 }
 
 /// Per-provider setup facts in one place: the deferred-login note and the form
-/// hint describe the same requirement and must not drift apart.
-const SETUP: [(&str, &str, &str); 5] = [
-    (
-        "azure",
-        " First configure AZURE_OPENAI_BASE_URL or AZURE_OPENAI_RESOURCE_NAME.",
-        "Set AZURE_OPENAI_BASE_URL or AZURE_OPENAI_RESOURCE_NAME, then use /login azure in Pi. Continue keeps your current Pi configuration.",
-    ),
-    (
-        "cloudflare-ai-gateway",
-        " Cloudflare also needs an account ID and gateway ID.",
-        "Requires a token, account ID and gateway ID. Use /login cloudflare-ai-gateway in Pi. Continue keeps your current Pi configuration.",
-    ),
-    (
-        "cloudflare-workers-ai",
-        " Cloudflare also needs an account ID.",
-        "Requires a token and account ID. Use /login cloudflare-workers-ai in Pi. Continue keeps your current Pi configuration.",
-    ),
-    (
-        "amazon-bedrock",
-        " AWS profiles and IAM can instead supply ambient credentials.",
-        "Enter a Bedrock bearer token, not an AWS access-key ID. For AWS profiles or IAM, use /login amazon-bedrock in Pi.",
-    ),
-    (
-        "google-vertex",
-        " ADC or service-account access also needs a project and location.",
-        "Enter a Google Cloud API key. For ADC or a service-account file, use /login google-vertex in Pi.",
-    ),
-];
+/// hint describe the same requirement and must not drift apart. Text is looked
+/// up per language, so each lookup is a literal catalog key.
+fn setup_row(id: &str) -> Option<(String, String)> {
+    let row = match id {
+        "azure" => (
+            i18n::t("wizard.providers.hint.azure"),
+            i18n::t("wizard.providers.guidance.azure"),
+        ),
+        "cloudflare-ai-gateway" => (
+            i18n::t("wizard.providers.hint.cloudflare_gateway"),
+            i18n::t("wizard.providers.guidance.cloudflare_gateway"),
+        ),
+        "cloudflare-workers-ai" => (
+            i18n::t("wizard.providers.hint.cloudflare_workers"),
+            i18n::t("wizard.providers.guidance.cloudflare_workers"),
+        ),
+        "amazon-bedrock" => (
+            i18n::t("wizard.providers.hint.bedrock"),
+            i18n::t("wizard.providers.guidance.bedrock"),
+        ),
+        "google-vertex" => (
+            i18n::t("wizard.providers.hint.vertex"),
+            i18n::t("wizard.providers.guidance.vertex"),
+        ),
+        _ => return None,
+    };
+    Some(row)
+}
 
 impl Provider {
-    fn setup_row(&self) -> Option<&'static (&'static str, &'static str, &'static str)> {
-        SETUP.iter().find(|(id, ..)| *id == self.id)
-    }
     pub fn can_configure(&self) -> bool {
         self.api_key
             && !matches!(
@@ -85,39 +86,51 @@ impl Provider {
             )
     }
 
-    pub fn key_label(&self) -> &str {
+    pub fn key_label(&self) -> String {
         match self.id.as_str() {
-            "amazon-bedrock" => "Bedrock bearer token",
-            "google-vertex" => "Google Cloud API key",
-            _ => &self.key_name,
+            "amazon-bedrock" => i18n::t("wizard.providers.key_bedrock"),
+            "google-vertex" => {
+                i18n::t("wizard.providers.key_api").replace("{name}", "Google Cloud")
+            }
+            _ => localized_key_name(&self.key_name),
         }
     }
 
     pub fn login_guidance(&self) -> String {
-        let setup = self.setup_row().map_or("", |row| row.1);
-        format!(
-            "Authentication deferred. After setup, run /login {} in Pi.{}",
-            self.id, setup
-        )
+        let base = i18n::t("wizard.providers.login_deferred").replace("{id}", &self.id);
+        match setup_row(&self.id) {
+            Some((hint, _)) => format!("{base} {hint}"),
+            None => base,
+        }
     }
 
     pub fn guidance(&self) -> Option<String> {
-        if let Some(row) = self.setup_row() {
-            return Some(row.2.into());
+        if let Some((_, guidance)) = setup_row(&self.id) {
+            return Some(guidance);
         }
         if !self.api_key {
-            return Some(format!(
-                "After setup, use /login {} in Pi. Continue keeps your current Pi configuration.",
-                self.id
-            ));
+            return Some(i18n::t("wizard.providers.guidance.generic").replace("{id}", &self.id));
         }
         if self.oauth {
-            return Some(format!(
-                "Use an API key here. For browser/device sign-in, use /login {} in Pi after setup.",
-                self.id
-            ));
+            return Some(i18n::t("wizard.providers.guidance.oauth").replace("{id}", &self.id));
         }
         None
+    }
+}
+
+/// Key names come from the bundled catalog. Common shapes are translated by
+/// pattern; any other name is shown as the catalog gives it.
+fn localized_key_name(key_name: &str) -> String {
+    if let Some(name) = key_name.strip_suffix(" API key") {
+        return i18n::t("wizard.providers.key_api").replace("{name}", name);
+    }
+    if let Some(name) = key_name.strip_suffix(" token") {
+        return i18n::t("wizard.providers.key_token").replace("{name}", name);
+    }
+    match key_name {
+        "AWS credentials or bearer token" => i18n::t("wizard.providers.key_aws"),
+        "Google Cloud credentials" => i18n::t("wizard.providers.key_gcloud"),
+        other => other.to_string(),
     }
 }
 
@@ -128,38 +141,38 @@ pub fn rank(id: &str) -> usize {
         .unwrap_or(usize::MAX)
 }
 
-fn parse(text: &str) -> Result<Vec<Provider>, &'static str> {
-    let value: Value = serde_json::from_str(text).map_err(|_| INVALID)?;
+fn parse(text: &str) -> Result<Vec<Provider>, String> {
+    let value: Value = serde_json::from_str(text).map_err(|_| invalid())?;
     if value["version"] != 1 || value["status"] != "ok" || value["serverVerified"] != false {
-        return Err(INVALID);
+        return Err(invalid());
     }
-    let string = |v: &Value, empty: bool| -> Result<String, &'static str> {
-        let s = v.as_str().ok_or(INVALID)?;
+    let string = |v: &Value, empty: bool| -> Result<String, String> {
+        let s = v.as_str().ok_or_else(invalid)?;
         if (!empty && s.is_empty()) || s.len() > 1024 || s.chars().any(char::is_control) {
-            return Err(INVALID);
+            return Err(invalid());
         }
         Ok(s.into())
     };
     string(&value["piVersion"], false)?;
-    let rows = value["providers"].as_array().ok_or(INVALID)?;
+    let rows = value["providers"].as_array().ok_or_else(invalid)?;
     if rows.is_empty() {
-        return Err(INVALID);
+        return Err(invalid());
     }
     let mut ids = HashSet::new();
     rows.iter()
         .map(|row| {
             let id = string(&row["id"], false)?;
             if !ids.insert(id.clone()) {
-                return Err(INVALID);
+                return Err(invalid());
             }
-            let api_key = row["apiKey"].as_bool().ok_or(INVALID)?;
+            let api_key = row["apiKey"].as_bool().ok_or_else(invalid)?;
             Ok(Provider {
                 id,
                 name: string(&row["name"], false)?,
-                chat: row["chat"].as_bool().ok_or(INVALID)?,
+                chat: row["chat"].as_bool().ok_or_else(invalid)?,
                 api_key,
                 key_name: string(&row["keyName"], !api_key)?,
-                oauth: row["oauth"].as_bool().ok_or(INVALID)?,
+                oauth: row["oauth"].as_bool().ok_or_else(invalid)?,
             })
         })
         .collect()
@@ -167,7 +180,7 @@ fn parse(text: &str) -> Result<Vec<Provider>, &'static str> {
 
 pub fn all() -> &'static [Provider] {
     static DATA: OnceLock<Vec<Provider>> = OnceLock::new();
-    DATA.get_or_init(|| parse(CATALOG).expect(INVALID))
+    DATA.get_or_init(|| parse(CATALOG).expect(&invalid()))
 }
 
 pub fn get(id: &str) -> Option<&'static Provider> {

@@ -1,4 +1,5 @@
 use crate::{
+    i18n,
     model_picker::{Action, ModelPicker},
     pi_connection::{self, Connection, Mode, Outcome, Preset},
     pi_models::{Job, Model, Report},
@@ -94,22 +95,22 @@ impl Choice {
         }
     }
 
-    fn label(self, pi: bool) -> &'static str {
+    fn label(self, pi: bool) -> String {
         if pi {
             if let Some(provider) = self.pi_provider() {
-                return &provider.name;
+                return provider.name.clone();
             }
         }
         match self {
-            Choice::Keep => "Keep existing / set up later",
-            Choice::None => "None (no LLM)",
-            Choice::OpenAi => "OpenAI",
-            Choice::Anthropic => "Anthropic",
-            Choice::OpenRouter => "OpenRouter",
-            Choice::Compatible if pi => "Custom provider",
-            Choice::Compatible => "OpenAI-compatible (Chat Completions)",
-            Choice::Builtin(provider) => &provider.name,
-            Choice::Local(preset) => preset.name,
+            Choice::Keep => i18n::t("wizard.common.keep_or_later"),
+            Choice::None => i18n::t("wizard.provider.none_llm"),
+            Choice::OpenAi => "OpenAI".into(),
+            Choice::Anthropic => "Anthropic".into(),
+            Choice::OpenRouter => "OpenRouter".into(),
+            Choice::Compatible if pi => i18n::t("wizard.provider.custom"),
+            Choice::Compatible => i18n::t("wizard.provider.openai_compatible"),
+            Choice::Builtin(provider) => provider.name.clone(),
+            Choice::Local(preset) => preset.display_name(),
         }
     }
 
@@ -183,19 +184,19 @@ const SEARCH_CHOICES: &[SearchChoice] = &[
 ];
 
 impl SearchChoice {
-    fn label(self) -> &'static str {
+    fn label(self) -> String {
         match self {
-            SearchChoice::Keep => "Keep existing search configuration",
-            SearchChoice::Chat => "Use chat model",
-            SearchChoice::Google => "Google Gemini",
-            SearchChoice::OpenAi => "OpenAI",
-            SearchChoice::Anthropic => "Anthropic",
-            SearchChoice::Xai => "xAI Grok",
-            SearchChoice::OpenAiCodex => "OpenAI Codex",
-            SearchChoice::Azure => "Azure OpenAI",
-            SearchChoice::Copilot => "GitHub Copilot",
-            SearchChoice::OpenCode => "OpenCode Zen",
-            SearchChoice::OpenCodeGo => "OpenCode Go",
+            SearchChoice::Keep => i18n::t("wizard.search.keep"),
+            SearchChoice::Chat => i18n::t("wizard.search.use_chat"),
+            SearchChoice::Google => "Google Gemini".into(),
+            SearchChoice::OpenAi => "OpenAI".into(),
+            SearchChoice::Anthropic => "Anthropic".into(),
+            SearchChoice::Xai => "xAI Grok".into(),
+            SearchChoice::OpenAiCodex => "OpenAI Codex".into(),
+            SearchChoice::Azure => "Azure OpenAI".into(),
+            SearchChoice::Copilot => "GitHub Copilot".into(),
+            SearchChoice::OpenCode => "OpenCode Zen".into(),
+            SearchChoice::OpenCodeGo => "OpenCode Go".into(),
         }
     }
 
@@ -291,7 +292,6 @@ pub enum Decision {
     Save,
 }
 
-const AUTO_API: &str = "Auto (detect when tested)";
 const MENU_BASE: usize = 100; // distinct from field indices and sidebar targets
 const MENU_ROWS: usize = 6;
 const PROVIDER_BASE: usize = 200; // radio rows, separate from fields and menus
@@ -314,8 +314,8 @@ impl Page {
         self as usize + 2
     }
 
-    fn title(self) -> &'static str {
-        wizard_style::PAGES[self.index()]
+    fn title(self) -> String {
+        wizard_style::page_label(self.index())
     }
 
     fn provider_field(self) -> Field {
@@ -505,7 +505,7 @@ impl ProviderPage {
         }
         let base = self.configured_provider();
         if !valid_identity(&base) {
-            return Err("Enter a provider ID first.".into());
+            return Err(i18n::t("wizard.provider.enter_id").into());
         }
         let models = read_json_object(&agent.join("models.json"))?;
         let auth = read_json_object(&agent.join("auth.json"))?;
@@ -601,8 +601,11 @@ impl ProviderPage {
         })
     }
 
-    fn api_label(&self) -> &'static str {
-        self.pi_api.map_or(AUTO_API, |api| api.label())
+    fn api_label(&self) -> String {
+        self.pi_api.map_or_else(
+            || i18n::t("wizard.provider.auto_api"),
+            |api| api.label().to_string(),
+        )
     }
 
     fn target(&self) -> pi_connection::Target {
@@ -675,8 +678,7 @@ impl ProviderPage {
     /// Run the action the Test control asks for: list local models, or probe.
     fn start_connection(&mut self, resources: &Path, agent: &Path, preview: bool) {
         if preview {
-            self.connection_status =
-                Some("Preview only: no request is sent and nothing is saved.".into());
+            self.connection_status = Some(i18n::t("wizard.provider.preview_only").into());
             return;
         }
         if let Err(message) = self
@@ -715,10 +717,7 @@ impl ProviderPage {
             ),
         };
         match result {
-            Ok(()) => {
-                self.connection_status =
-                    Some("Testing the connection... one short request is sent.".into())
-            }
+            Ok(()) => self.connection_status = Some(i18n::t("wizard.provider.testing").into()),
             Err(message) => self.connection_status = Some(message),
         }
     }
@@ -735,7 +734,7 @@ impl ProviderPage {
                     .find(|candidate| candidate.id() == api)
                     .map_or(api.clone(), |candidate| candidate.label().into());
                 self.accepted_api = Some(api);
-                format!("Connected: the endpoint answered on {label}.")
+                i18n::t("wizard.provider.connected").replace("{label}", &label)
             }
             Ok(Outcome::Models {
                 ids,
@@ -758,17 +757,15 @@ impl ProviderPage {
                     &self.configured_provider(),
                     self.current.as_ref(),
                 ));
-                format!(
-                    "{} models reported by this server.{}",
-                    self.local_models.len(),
-                    if complete {
-                        ""
-                    } else {
-                        " The list is incomplete; enter an omitted ID manually and test it."
-                    }
-                )
+                let mut text = i18n::t("wizard.provider.models_reported")
+                    .replace("{count}", &self.local_models.len().to_string());
+                if !complete {
+                    text.push(' ');
+                    text.push_str(&i18n::t("wizard.provider.list_incomplete"));
+                }
+                text
             }
-            Ok(Outcome::Models { .. }) => "The server answered but reported no chat model.".into(),
+            Ok(Outcome::Models { .. }) => i18n::t("wizard.provider.no_chat_model").into(),
             Ok(Outcome::Source {
                 label,
                 ready: true,
@@ -776,16 +773,16 @@ impl ProviderPage {
                 ..
             }) => {
                 self.source_revision = Some(revision);
-                format!("Credential: {label}")
+                i18n::t("wizard.provider.credential_label").replace("{label}", &label)
             }
             Ok(Outcome::Source {
                 reason: Some(reason),
                 ..
-            }) => format!(
-                "Credential unusable: {}",
-                pi_connection::explain_saved(&reason)
-            ),
-            Ok(Outcome::Source { label, .. }) => format!("Credential unusable: {label}"),
+            }) => i18n::t("wizard.provider.credential_unusable")
+                .replace("{label}", &pi_connection::explain_saved(&reason)),
+            Ok(Outcome::Source { label, .. }) => {
+                i18n::t("wizard.provider.credential_unusable").replace("{label}", &label)
+            }
             Ok(Outcome::Refused { message }) | Err(message) => message,
         });
     }
@@ -830,7 +827,7 @@ impl ProviderPage {
             _ => {
                 self.model_step = ModelStep::Manual;
                 self.focus = self.model_field();
-                self.error = Some("Model list unavailable or empty. Enter the exact model ID; it remains unverified.".into());
+                self.error = Some(i18n::t("wizard.provider.model_list_unavailable").into());
             }
         }
     }
@@ -840,9 +837,7 @@ impl ProviderPage {
             Page::Model => {
                 if self.pi.choice().endpoint() {
                     if model.provider != self.configured_provider() {
-                        self.error = Some(
-                            "Choose a model from this endpoint, or enter its exact ID.".into(),
-                        );
+                        self.error = Some(i18n::t("wizard.provider.choose_or_enter").into());
                         return;
                     }
                     if model.id != self.pi.model {
@@ -924,10 +919,7 @@ impl ProviderPage {
                 .is_some_and(|preset| preset.requires_model)
             && !self.local_model_allowed()
         {
-            self.error = Some(
-                "Fetch the server's model list, or test an omitted ID from an incomplete list."
-                    .into(),
-            );
+            self.error = Some(i18n::t("wizard.provider.fetch_or_test").into());
             return false;
         }
         if self.model_step != ModelStep::Credentials {
@@ -958,7 +950,7 @@ impl ProviderPage {
                 vec![Model {
                     provider: self.configured_provider(),
                     id: "preview-model".into(),
-                    name: "Preview model".into(),
+                    name: i18n::t("wizard.provider.preview_model").into(),
                 }],
                 &self.configured_provider(),
                 None,
@@ -1034,17 +1026,12 @@ impl ProviderPage {
             .filter(|preset| preset.requires_model)
         {
             if !self.local_model_allowed() {
-                return Err(format!(
-                    "{}: choose a reported model, or test an omitted ID from an incomplete list.",
-                    preset.name
-                ));
+                return Err(i18n::t("wizard.provider.choose_reported")
+                    .replace("{label}", &preset.display_name()));
             }
         }
         if self.needs_probe() {
-            return Err(
-                "Pi: test this custom connection first; only an accepted request can be saved."
-                    .into(),
-            );
+            return Err(i18n::t("wizard.provider.pi_test_first").into());
         }
         Ok(())
     }
@@ -1281,14 +1268,14 @@ impl ProviderPage {
         self.service_source_for(self.page)
     }
 
-    fn service_source_label(&self, source: ServiceSource) -> &'static str {
+    fn service_source_label(&self, source: ServiceSource) -> String {
         match (self.page, source) {
-            (_, ServiceSource::Chat) => "Use chat provider credentials",
-            (Page::Hindsight, ServiceSource::Saved) => "Keep saved memory key",
-            (_, ServiceSource::Saved) => "Use saved Pi credentials",
-            (_, ServiceSource::New) => "Enter a new API key",
-            (Page::Hindsight, ServiceSource::Later) => "Configure later (keep existing)",
-            (_, ServiceSource::Later) => "Sign in later in Pi",
+            (_, ServiceSource::Chat) => i18n::t("wizard.search.src_chat"),
+            (Page::Hindsight, ServiceSource::Saved) => i18n::t("wizard.memory.src_saved"),
+            (_, ServiceSource::Saved) => i18n::t("wizard.search.src_saved"),
+            (_, ServiceSource::New) => i18n::t("wizard.common.new_api_key"),
+            (Page::Hindsight, ServiceSource::Later) => i18n::t("wizard.memory.src_later"),
+            (_, ServiceSource::Later) => i18n::t("wizard.common.sign_in_later"),
         }
     }
 
@@ -1297,16 +1284,24 @@ impl ProviderPage {
             SearchChoice::Keep => self.current_search.as_ref().map_or_else(
                 || {
                     if self.search_config_present {
-                        "Keep existing search configuration (unreadable)".into()
+                        i18n::t("wizard.search.keep_unreadable").into()
                     } else {
-                        "Keep current: uses chat model".into()
+                        i18n::t("wizard.search.keep_chat").into()
                     }
                 },
-                |(provider, model)| format!("Keep current: {provider}/{model}"),
+                |(provider, model)| {
+                    i18n::t("wizard.common.keep_current_model")
+                        .replace("{provider}", &provider)
+                        .replace("{model}", &model)
+                },
             ),
             SearchChoice::Chat => self.chat_model().map_or_else(
-                || "Use chat model (not configured yet)".into(),
-                |(provider, model)| format!("Use chat model: {provider}/{model}"),
+                || i18n::t("wizard.search.use_chat_unset").into(),
+                |(provider, model)| {
+                    i18n::t("wizard.search.use_chat_model")
+                        .replace("{provider}", &provider)
+                        .replace("{model}", &model)
+                },
             ),
             _ => choice.label().into(),
         }
@@ -1317,17 +1312,19 @@ impl ProviderPage {
             return choice.label(false).into();
         }
         self.current_hindsight.as_ref().map_or_else(
-            || "Keep existing / set up later".into(),
+            || i18n::t("wizard.common.keep_or_later").into(),
             |saved| {
                 let provider = if saved.base_url.is_empty() {
-                    saved.provider.as_str()
+                    saved.provider.clone()
                 } else {
-                    "Custom endpoint"
+                    i18n::t("wizard.provider.custom_endpoint")
                 };
                 if saved.model.is_empty() {
-                    format!("Keep current: {provider}")
+                    i18n::t("wizard.common.keep_current_provider").replace("{provider}", &provider)
                 } else {
-                    format!("Keep current: {provider}/{}", saved.model)
+                    i18n::t("wizard.common.keep_current_model")
+                        .replace("{provider}", &provider)
+                        .replace("{model}", &saved.model)
                 }
             },
         )
@@ -1368,9 +1365,11 @@ impl ProviderPage {
     fn pi_label(&self, choice: Choice) -> String {
         if choice == Choice::Keep {
             return self.current.as_ref().map_or_else(
-                || "Set up later".into(),
+                || i18n::t("wizard.common.set_up_later").into(),
                 |(provider, model)| {
-                    format!("Keep current: {provider}/{model}")
+                    i18n::t("wizard.common.keep_current_model")
+                        .replace("{provider}", provider)
+                        .replace("{model}", model)
                         .chars()
                         .filter(|c| !c.is_control())
                         .collect()
@@ -1384,7 +1383,10 @@ impl ProviderPage {
                 .as_ref()
                 .is_some_and(|(id, _)| id == choice.provider_id())
         {
-            label.push_str(" (currently configured)");
+            label.push_str(&format!(
+                " {}",
+                i18n::t("wizard.common.currently_configured")
+            ));
         }
         label
     }
@@ -1395,7 +1397,7 @@ impl ProviderPage {
                 .iter()
                 .map(|choice| self.pi_label(*choice))
                 .collect(),
-            Field::PiApi => std::iter::once(AUTO_API.to_string())
+            Field::PiApi => std::iter::once(i18n::t("wizard.provider.auto_api"))
                 .chain(pi_providers::Api::ALL.iter().map(|api| api.label().into()))
                 .collect(),
             Field::PiSource => self
@@ -1827,12 +1829,12 @@ impl ProviderPage {
                     Model {
                         provider: provider.clone(),
                         id: format!("preview-{kind}-model"),
-                        name: "Preview model".into(),
+                        name: i18n::t("wizard.provider.preview_model").into(),
                     },
                     Model {
                         provider: provider.clone(),
                         id: format!("preview-{kind}-model-small"),
-                        name: "Preview small model".into(),
+                        name: i18n::t("wizard.provider.preview_small_model").into(),
                     },
                 ],
                 &provider,
@@ -1841,40 +1843,39 @@ impl ProviderPage {
             self.model_step = ModelStep::Picker;
             return;
         }
-        let result = if self.page == Page::Hindsight
-            && self.hindsight.choice() == Choice::Compatible
-        {
-            if !valid_https_url(self.hindsight.url.trim()) {
-                self.error = Some("Memory: enter the endpoint URL before fetching models.".into());
-                return;
-            }
-            let mode = if self.service_source() == ServiceSource::Saved {
-                "existing"
-            } else {
-                "new"
-            };
-            let request = serde_json::json!({"version":1,"action":"discover","asCatalog":true,
+        let result =
+            if self.page == Page::Hindsight && self.hindsight.choice() == Choice::Compatible {
+                if !valid_https_url(self.hindsight.url.trim()) {
+                    self.error = Some(i18n::t("wizard.memory.enter_url").into());
+                    return;
+                }
+                let mode = if self.service_source() == ServiceSource::Saved {
+                    "existing"
+                } else {
+                    "new"
+                };
+                let request = serde_json::json!({"version":1,"action":"discover","asCatalog":true,
                 "scope":"hindsight","agentDir":agent,"provider":"openai",
                 "baseUrl":self.hindsight.url.trim(),"mode":mode,"key":self.hindsight.key,
                 "nonce":self.nonce,"selfHosted":false});
-            Job::start_helper(
-                resources,
-                "bin/mash-pi-connect.mjs",
-                request,
-                std::time::Duration::from_secs(15),
-            )
-        } else {
-            let purpose = if self.page == Page::WebSearch {
-                "search"
+                Job::start_helper(
+                    resources,
+                    "bin/mash-pi-connect.mjs",
+                    request,
+                    std::time::Duration::from_secs(15),
+                )
             } else {
-                "hindsight"
-            };
-            Job::start(
-                resources,
-                serde_json::json!({"version":1,"action":"catalog",
+                let purpose = if self.page == Page::WebSearch {
+                    "search"
+                } else {
+                    "hindsight"
+                };
+                Job::start(
+                    resources,
+                    serde_json::json!({"version":1,"action":"catalog",
                 "agentDir":agent,"provider":provider,"purpose":purpose}),
-            )
-        };
+                )
+            };
         match result {
             Ok(job) => {
                 self.model_job = Some((self.generation, job));
@@ -1916,18 +1917,18 @@ impl ProviderPage {
         if self.search.choice() == SearchChoice::Chat {
             let (provider, _) = self
                 .chat_model()
-                .ok_or("Web search: configure a chat model first")?;
+                .ok_or(i18n::t("wizard.search.configure_chat_first"))?;
             if !SEARCH_CHOICES
                 .iter()
                 .any(|choice| choice.configured() && choice.provider_id() == provider)
             {
-                return Err("This chat provider is not offered for native web search. Choose a dedicated search provider.".into());
+                return Err(i18n::t("wizard.search.not_native").into());
             }
             return Ok(());
         }
         let needs_key = self.service_source_for(Page::WebSearch) == ServiceSource::New;
         if self.search.choice().configured() && needs_key && self.search.key.trim().is_empty() {
-            return Err("Web search: enter a key or select Sign in later in Pi".into());
+            return Err(i18n::t("wizard.search.enter_key_or_later").into());
         }
         validate_search(&self.search, !needs_key)
     }
@@ -1968,14 +1969,11 @@ impl ProviderPage {
         let provider = choice.provider_id();
         let mut entry = match auth.get(provider) {
             Some(Value::Object(entry)) => entry.clone(),
-            Some(_) => return Err("Web search: existing Pi credential is invalid".into()),
+            Some(_) => return Err(i18n::t("wizard.search.credential_invalid").into()),
             None => Map::new(),
         };
         if entry.get("type").and_then(Value::as_str) == Some("oauth") {
-            return Err(
-                "Web search: an OAuth credential already exists; manage it through Pi /login"
-                    .into(),
-            );
+            return Err(i18n::t("wizard.search.oauth_exists").into());
         }
         entry.insert("type".into(), Value::String("api_key".into()));
         entry.insert("key".into(), Value::String(literal_key(key)));
@@ -1984,7 +1982,7 @@ impl ProviderPage {
                 .entry("env")
                 .or_insert_with(|| Value::Object(Map::new()))
                 .as_object_mut()
-                .ok_or("Web search: existing Azure credential has invalid env")?;
+                .ok_or(i18n::t("wizard.search.azure_env_invalid"))?;
             env.insert(
                 "AZURE_OPENAI_BASE_URL".into(),
                 Value::String(self.search.endpoint.trim().into()),
@@ -2012,10 +2010,7 @@ impl ProviderPage {
             && self.writes_search_credential()
             && self.search.choice().provider_id() == self.configured_provider();
         shared.then_some(()).map_or(Ok(()), |()| {
-            Err(
-                "Web search: this provider's credential is set on the Model provider page. Use the chat model's credential here, or choose a different search provider."
-                    .into(),
-            )
+            Err(i18n::t("wizard.search.credential_on_model_page").into())
         })
     }
 
@@ -2030,22 +2025,17 @@ impl ProviderPage {
             .get(&self.configured_provider())
             .and_then(|entry| entry.get("type"))
             .and_then(Value::as_str);
-        (saved != Some("oauth")).then_some(()).map_or_else(
-            || {
-                Err(
-                    "Pi: this provider is signed in through Pi /login. Keep the saved credential, or sign in again in Pi instead of replacing it."
-                        .into(),
-                )
-            },
-            Ok,
-        )
+        (saved != Some("oauth"))
+            .then_some(())
+            .map_or_else(|| Err(i18n::t("wizard.provider.pi_signed_in").into()), Ok)
     }
 
     /// The shipped apply path always uses Pi's shared lock and private writer.
     pub fn save_with_runtime(&self, root: &Path, resources: &Path) -> Result<(), String> {
         self.preflight_targets(root)?;
         let agent = root.join("pi/agent");
-        fs::create_dir_all(&agent).map_err(|_| "Pi credential directory unavailable")?;
+        fs::create_dir_all(&agent)
+            .map_err(|_| i18n::t("wizard.provider.credential_dir_unavailable"))?;
         let requests = [
             self.pi_credential_request(&agent)?,
             self.search_credential_request(&agent)?,
@@ -2063,9 +2053,9 @@ impl ProviderPage {
         // point says what already changed rather than rolling back Pi's file.
         result.map_err(|error| {
             if wrote_credentials {
-                format!("{error} (some credentials were already saved in Pi; settings may be partly applied)")
+                i18n::t("wizard.provider.partly_saved").replace("{error}", &error)
             } else if saving_files {
-                format!("{error} (settings may be partly applied; review them before retrying setup)")
+                i18n::t("wizard.provider.partly_applied").replace("{error}", &error)
             } else {
                 error
             }
@@ -2080,9 +2070,7 @@ impl ProviderPage {
             return Ok(None);
         };
         if self.pi.choice() == Choice::Compatible && self.probe_revision.is_none() {
-            return Err(
-                "Test this custom connection again before applying its credentials.".into(),
-            );
+            return Err(i18n::t("wizard.provider.retest_before_apply").into());
         }
         let mut request = serde_json::json!({"version":1,"action":"apply","agentDir":agent,
             "provider":self.configured_provider(),"mode":mode,"key":self.pi.key,"nonce":self.nonce,
@@ -2107,9 +2095,7 @@ impl ProviderPage {
             .and_then(Value::as_str)
             == Some("oauth")
         {
-            return Err(
-                "Web search: manage the existing OAuth credential through Pi /login".into(),
-            );
+            return Err(i18n::t("wizard.search.manage_oauth").into());
         }
         let mut request = serde_json::json!({"version":1,"action":"apply","agentDir":agent,
             "provider":self.search.choice().provider_id(),"mode":"new","key":self.search.key,"nonce":self.nonce});
@@ -2140,7 +2126,7 @@ impl ProviderPage {
             let path = root.join(".hindsight/embed");
             read_hindsight_values(&path)?;
             if !path.is_file() {
-                return Err("Memory configuration is missing; reopen Mash to restore it".into());
+                return Err(i18n::t("wizard.memory.config_missing").into());
             }
             self.check_saved_hindsight(root)?;
         }
@@ -2153,16 +2139,16 @@ impl ProviderPage {
                 if let Some(providers) = models.get("providers") {
                     let providers = providers
                         .as_object()
-                        .ok_or("Pi models.json has an invalid providers object")?;
+                        .ok_or(i18n::t("wizard.provider.models_providers_invalid"))?;
                     if let Some(definition) = providers.get(&self.configured_provider()) {
                         let definition = definition
                             .as_object()
-                            .ok_or("Pi models.json has an invalid provider definition")?;
+                            .ok_or(i18n::t("wizard.provider.models_definition_invalid"))?;
                         if definition
                             .get("models")
                             .is_some_and(|value| !value.is_array())
                         {
-                            return Err("Pi models.json has an invalid model list".into());
+                            return Err(i18n::t("wizard.provider.models_list_invalid").into());
                         }
                     }
                 }
@@ -2171,10 +2157,10 @@ impl ProviderPage {
         let search = agent.join("web-search.json");
         if self.search.choice() == SearchChoice::Chat {
             if search.is_symlink() {
-                return Err("Web search: refusing a symlinked configuration".into());
+                return Err(i18n::t("wizard.search.symlink").into());
             }
             if search.exists() && !search.is_file() {
-                return Err("Web search: expected a regular configuration file".into());
+                return Err(i18n::t("wizard.search.regular_file").into());
             }
         }
         if self.search.choice().configured() {
@@ -2206,14 +2192,14 @@ impl ProviderPage {
         if provider != Some(self.hindsight.choice().provider_id())
             || base.trim_end_matches('/') != self.hindsight.url.trim_end_matches('/')
         {
-            return Err("Memory: the saved credential's provider or endpoint changed; choose its source again".into());
+            return Err(i18n::t("wizard.memory.credential_changed").into());
         }
         let key = values
             .get("HINDSIGHT_API_LLM_API_KEY")
             .and_then(Value::as_str)
             .unwrap_or_default();
         if key.is_empty() || key == "unused" {
-            return Err("Memory: the saved key is unavailable; choose its source again".into());
+            return Err(i18n::t("wizard.memory.key_unavailable").into());
         }
         Ok(())
     }
@@ -2230,7 +2216,7 @@ impl ProviderPage {
                     .entry("providers")
                     .or_insert_with(|| Value::Object(Map::new()))
                     .as_object_mut()
-                    .ok_or("Pi models.json has an invalid providers object")?;
+                    .ok_or(i18n::t("wizard.provider.models_providers_invalid"))?;
                 let mut model_definitions = providers
                     .get(&id)
                     .and_then(|p| p.get("models"))
@@ -2253,7 +2239,7 @@ impl ProviderPage {
                     // Auto never persists as "auto"; the save gate needs a probe.
                     (None, None) => self
                         .pi_api
-                        .ok_or("Pi: test the connection so its API type is known")?
+                        .ok_or(i18n::t("wizard.provider.test_for_api"))?
                         .id()
                         .to_string(),
                 };
@@ -2287,7 +2273,7 @@ impl ProviderPage {
                             serde_json::json!({"type": "api_key", "key": literal_key(key)});
                         if let Some(env) = auth.get(&id).and_then(|entry| entry.get("env")) {
                             if !env.is_object() {
-                                return Err("Pi: existing provider environment is invalid".into());
+                                return Err(i18n::t("wizard.provider.env_invalid").into());
                             }
                             credential["env"] = env.clone();
                         }
@@ -2324,9 +2310,7 @@ impl ProviderPage {
             match fs::remove_file(&path) {
                 Ok(()) => {}
                 Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-                Err(_) => {
-                    return Err("Web search: could not remove the dedicated-model override".into())
-                }
+                Err(_) => return Err(i18n::t("wizard.search.override_remove_failed").into()),
             }
         } else if self.search.choice().configured() {
             if !auth_prepared {
@@ -2374,11 +2358,11 @@ impl ProviderPage {
 
     fn draw_providers(&self, frame: &mut Frame, area: Rect) {
         let title = match self.page {
-            Page::Model => "Model providers",
-            Page::WebSearch => "Web search providers",
-            Page::Hindsight => "Memory providers",
+            Page::Model => i18n::t("wizard.provider.list_title"),
+            Page::WebSearch => i18n::t("wizard.search.list_title"),
+            Page::Hindsight => i18n::t("wizard.memory.list_title"),
         };
-        let body = wizard_style::section(frame, area, title);
+        let body = wizard_style::section(frame, area, &title);
         let list_area = Rect::new(body.x, body.y, body.width, body.height.saturating_sub(1));
         let options = self.options(self.page.provider_field());
         let selected = self.selected_provider_row();
@@ -2412,69 +2396,101 @@ impl ProviderPage {
         }
         if body.height > 0 {
             frame.render_widget(
-                Paragraph::new(format!(
-                    "↑/↓ browse · Space select · Tab details  {}/{}",
-                    self.provider_row() + 1,
-                    options.len()
-                ))
+                Paragraph::new(
+                    i18n::t("wizard.provider.list_hint")
+                        .replace("{index}", &(self.provider_row() + 1).to_string())
+                        .replace("{count}", &options.len().to_string()),
+                )
                 .style(Style::default().fg(wizard_style::MUTED)),
                 Rect::new(body.x, body.bottom() - 1, body.width, 1),
             );
         }
     }
 
-    fn connection_inputs(&self) -> Vec<(Field, &'static str, String, &'static str)> {
+    fn connection_inputs(&self) -> Vec<(Field, String, String, String)> {
         self.fields()
             .into_iter()
             .filter_map(|field| {
                 let (label, value, hint) = match field {
-                    Field::PiId => ("Provider ID:", self.pi.id.clone(), "e.g. omniroute"),
-                    Field::PiUrl => ("Base URL:", self.endpoint_url(), "API base URL"),
-                    Field::PiApi => ("API type:", self.api_label().to_string(), "API family"),
-                    Field::PiModel => ("Model ID:", self.pi.model.clone(), "Exact model ID"),
+                    Field::PiId => (
+                        i18n::t("wizard.form.provider_id"),
+                        self.pi.id.clone(),
+                        i18n::t("wizard.form.provider_id_hint"),
+                    ),
+                    Field::PiUrl => (
+                        i18n::t("wizard.form.base_url"),
+                        self.endpoint_url(),
+                        i18n::t("wizard.form.base_url_hint"),
+                    ),
+                    Field::PiApi => (
+                        i18n::t("wizard.form.api_type"),
+                        self.api_label().to_string(),
+                        i18n::t("wizard.form.api_type_hint"),
+                    ),
+                    Field::PiModel => (
+                        i18n::t("wizard.form.model_id"),
+                        self.pi.model.clone(),
+                        i18n::t("wizard.form.model_id_exact"),
+                    ),
                     Field::PiSource => (
-                        "Credential:",
+                        i18n::t("wizard.form.credential"),
                         self.source().label().to_string(),
                         if self.source() == Mode::Later {
-                            "Use /login in Pi"
+                            i18n::t("wizard.form.use_login")
                         } else {
-                            "Saved or new"
+                            i18n::t("wizard.form.saved_or_new")
                         },
                     ),
                     Field::PiKey => (
-                        "API key:",
+                        i18n::t("wizard.form.api_key"),
                         masked(&self.pi.key),
                         self.pi
                             .choice()
                             .pi_provider()
-                            .map_or("Kept private", |provider| provider.key_label()),
+                            .map_or(i18n::t("wizard.form.kept_private"), |provider| {
+                                provider.key_label()
+                            }),
                     ),
-                    Field::WebSearchModel => {
-                        ("Model ID:", self.search.model.clone(), "Pick or enter ID")
-                    }
+                    Field::WebSearchModel => (
+                        i18n::t("wizard.form.model_id"),
+                        self.search.model.clone(),
+                        i18n::t("wizard.form.pick_or_enter"),
+                    ),
                     Field::WebSearchSource => (
-                        "Credential:",
+                        i18n::t("wizard.form.credential"),
                         self.service_source_label(self.service_source()).into(),
-                        "Stored in Pi",
+                        i18n::t("wizard.form.stored_in_pi"),
                     ),
-                    Field::WebSearchKey => ("API key:", masked(&self.search.key), "Stored in Pi"),
-                    Field::WebSearchEndpoint => {
-                        ("Base URL:", self.search.endpoint.clone(), "Azure endpoint")
-                    }
-                    Field::HindsightUrl => {
-                        ("Base URL:", self.hindsight.url.clone(), "Chat Completions")
-                    }
+                    Field::WebSearchKey => (
+                        i18n::t("wizard.form.api_key"),
+                        masked(&self.search.key),
+                        i18n::t("wizard.form.stored_in_pi"),
+                    ),
+                    Field::WebSearchEndpoint => (
+                        i18n::t("wizard.form.base_url"),
+                        self.search.endpoint.clone(),
+                        i18n::t("wizard.form.azure_endpoint"),
+                    ),
+                    Field::HindsightUrl => (
+                        i18n::t("wizard.form.base_url"),
+                        self.hindsight.url.clone(),
+                        "Chat Completions".to_string(),
+                    ),
                     Field::HindsightModel => (
-                        "Model ID:",
+                        i18n::t("wizard.form.model_id"),
                         self.hindsight.model.clone(),
-                        "Pick or enter ID",
+                        i18n::t("wizard.form.pick_or_enter"),
                     ),
                     Field::HindsightSource => (
-                        "Credential:",
+                        i18n::t("wizard.form.credential"),
                         self.service_source_label(self.service_source()).into(),
-                        "Memory only",
+                        i18n::t("wizard.form.memory_only"),
                     ),
-                    Field::HindsightKey => ("API key:", masked(&self.hindsight.key), "Memory only"),
+                    Field::HindsightKey => (
+                        i18n::t("wizard.form.api_key"),
+                        masked(&self.hindsight.key),
+                        i18n::t("wizard.form.memory_only"),
+                    ),
                     _ => return None,
                 };
                 Some((field, label, value, hint))
@@ -2484,42 +2500,62 @@ impl ProviderPage {
 
     fn details_hint(&self) -> Option<String> {
         match self.page {
-            Page::Model => self.login_later_hint()
-                .or_else(|| self.pi.choice().pi_provider().and_then(|provider| provider.guidance()))
-                .or_else(|| (self.pi.choice() == Choice::Keep)
-                    .then(|| "Current provider settings stay unchanged.".into())),
+            Page::Model => self
+                .login_later_hint()
+                .or_else(|| {
+                    self.pi
+                        .choice()
+                        .pi_provider()
+                        .and_then(|provider| provider.guidance())
+                })
+                .or_else(|| {
+                    (self.pi.choice() == Choice::Keep)
+                        .then(|| i18n::t("wizard.provider.settings_unchanged").into())
+                }),
             Page::WebSearch => {
                 let choice = self.search.choice();
                 if choice == SearchChoice::Keep {
-                    return Some("Keeps the existing search configuration and credentials unchanged.".into());
+                    return Some(i18n::t("wizard.search.keeps_unchanged").into());
                 }
                 if choice == SearchChoice::Chat {
-                    return Some("Removes the dedicated search override and follows your conversation model. That model must support native search; there is no automatic fallback.".into());
+                    return Some(i18n::t("wizard.search.removes_override").into());
                 }
                 let id = choice.provider_id();
                 Some(match self.service_source() {
-                    ServiceSource::Chat => "Shares this provider's Pi credentials with chat; no key is copied to another provider.".into(),
-                    ServiceSource::Saved => "Uses this provider's saved Pi credentials unchanged. Selecting another model does not replace the key.".into(),
-                    ServiceSource::New => "The new key is saved in Pi on final apply. The catalog lists native-search models, not every chat model.".into(),
-                    ServiceSource::Later => format!("Model configured without changing credentials. After setup, run /login {id} in Pi.{}",
-                        if choice == SearchChoice::Azure { " Azure also needs its endpoint configured." } else { "" }),
+                    ServiceSource::Chat => i18n::t("wizard.search.shares_chat").into(),
+                    ServiceSource::Saved => i18n::t("wizard.search.uses_saved").into(),
+                    ServiceSource::New => i18n::t("wizard.search.new_key_note").into(),
+                    ServiceSource::Later => {
+                        let mut text = i18n::t("wizard.search.later_note").replace("{id}", id);
+                        if choice == SearchChoice::Azure {
+                            text.push(' ');
+                            text.push_str(&i18n::t("wizard.search.azure_note"));
+                        }
+                        text.into()
+                    }
                 })
             }
-            Page::Hindsight if !self.memory_enabled => Some("Memory is part of Programming Skills, which is unchecked on Tools: nothing on this page will be saved.".into()),
-            Page::Hindsight => Some(match self.hindsight.choice() {
-                Choice::Keep => "Existing memory configuration stays unchanged.",
-                Choice::None => "Memory will not use an LLM.",
-                _ => match self.service_source() {
-                    ServiceSource::Saved => "Keeps memory's saved key for this provider and endpoint. Model-only edits preserve it.",
-                    ServiceSource::Later => "Memory configuration is deferred. Existing settings and credentials stay unchanged; Pi /login does not authenticate memory.",
-                    _ => "Memory uses its own key, never a Pi login. Model suggestions are not a memory compatibility guarantee.",
-                },
-            }.into()),
+            Page::Hindsight if !self.memory_enabled => {
+                Some(i18n::t("wizard.memory.not_enabled").into())
+            }
+            Page::Hindsight => Some(
+                match self.hindsight.choice() {
+                    Choice::Keep => i18n::t("wizard.memory.keep"),
+                    Choice::None => i18n::t("wizard.memory.no_llm"),
+                    _ => match self.service_source() {
+                        ServiceSource::Saved => i18n::t("wizard.memory.keeps_saved"),
+                        ServiceSource::Later => i18n::t("wizard.memory.deferred"),
+                        _ => i18n::t("wizard.memory.own_key"),
+                    },
+                }
+                .into(),
+            ),
         }
     }
 
     fn draw_connection_details(&self, frame: &mut Frame, area: Rect) {
-        let body = wizard_style::section(frame, area, "Connection details");
+        let body =
+            wizard_style::section(frame, area, &i18n::t("wizard.provider.connection_details"));
         if body.height == 0 || body.width == 0 {
             return;
         }
@@ -2563,7 +2599,7 @@ impl ProviderPage {
         let rows: Vec<_> = fields
             .iter()
             .map(|(field, _, _, hint)| {
-                let height = Paragraph::new(*hint)
+                let height = Paragraph::new(hint.as_str())
                     .wrap(Wrap { trim: true })
                     .line_count(help_width.max(1))
                     .max(1) as u16;
@@ -2609,7 +2645,7 @@ impl ProviderPage {
             let focused = self.focus == *field;
             let input = Rect::new(form.x + label_width, y, input_width, 1);
             frame.render_widget(
-                Paragraph::new(*label).style(Style::default().add_modifier(Modifier::BOLD)),
+                Paragraph::new(label.as_str()).style(Style::default().add_modifier(Modifier::BOLD)),
                 Rect::new(form.x, y, label_width, 1),
             );
             let selector = Self::is_selector(*field);
@@ -2649,7 +2685,7 @@ impl ProviderPage {
                 wizard_style::target(Rect::new(form.x, y, label_width + input_width, 1), id);
             }
             frame.render_widget(
-                Paragraph::new(*hint)
+                Paragraph::new(hint.as_str())
                     .wrap(Wrap { trim: true })
                     .style(Style::default().fg(wizard_style::MUTED)),
                 Rect::new(help_x, y, help_width, height.min(form.bottom() - y)),
@@ -2679,7 +2715,7 @@ impl ProviderPage {
         }
         if fields.is_empty() {
             frame.render_widget(
-                Paragraph::new(note.unwrap_or("No additional configuration needed."))
+                Paragraph::new(note.unwrap_or(&i18n::t("wizard.provider.no_extra")))
                     .wrap(Wrap { trim: true })
                     .style(Style::default().fg(if self.error.is_some() {
                         wizard_style::RED
@@ -2697,14 +2733,14 @@ impl ProviderPage {
                 Paragraph::new(if has_picker {
                     if self.page == Page::Hindsight && self.hindsight.choice() == Choice::Compatible
                     {
-                        "Fetch models"
+                        i18n::t("wizard.provider.fetch_models")
                     } else {
-                        "Choose model"
+                        i18n::t("wizard.provider.choose_model")
                     }
                 } else if self.connection.busy() {
-                    "Testing..."
+                    i18n::t("wizard.provider.testing_short")
                 } else {
-                    "Test connection"
+                    i18n::t("wizard.provider.test_connection")
                 })
                 .alignment(Alignment::Center)
                 .style(
@@ -2727,6 +2763,7 @@ impl ProviderPage {
                 wizard_style::target(button, id);
             }
             let note_x = button.right() + 3;
+            let not_tested = i18n::t("wizard.provider.not_tested");
             let note = self
                 .error
                 .as_deref()
@@ -2735,7 +2772,7 @@ impl ProviderPage {
                 } else {
                     self.connection_status.as_deref()
                 })
-                .unwrap_or("Not tested");
+                .unwrap_or(&not_tested);
             let color = if self.error.is_some() {
                 wizard_style::RED
             } else if self.connection.busy() {
@@ -2760,12 +2797,12 @@ impl ProviderPage {
                 let summary = if has_picker {
                     if self.page == Page::Hindsight && self.hindsight.choice() == Choice::Compatible
                     {
-                        "Lists endpoint models; no inference or memory writes."
+                        i18n::t("wizard.provider.lists_models")
                     } else {
-                        "Browse suggestions or enter an exact model ID."
+                        i18n::t("wizard.provider.browse_or_enter")
                     }
                 } else {
-                    "Sends a short request; provider charges may apply."
+                    i18n::t("wizard.provider.sends_request")
                 };
                 frame.render_widget(
                     Paragraph::new(summary).style(Style::default().fg(wizard_style::MUTED)),
@@ -2832,7 +2869,7 @@ impl ProviderPage {
         wizard_style::header(
             frame,
             parts[0],
-            &wizard_style::page_title(self.page.title(), self.page.index()),
+            &wizard_style::page_title(&self.page.title(), self.page.index()),
         );
         if show_providers {
             self.draw_providers(frame, parts[1]);
@@ -2845,20 +2882,35 @@ impl ProviderPage {
             *parts.last().expect("page footer"),
             &[
                 (
-                    wizard_style::button(self.focus == Field::Back, " Back "),
+                    wizard_style::button(
+                        self.focus == Field::Back,
+                        &format!(" {} ", i18n::t("wizard.tools.back")),
+                    ),
                     position(Field::Back),
                 ),
                 (Span::raw("    "), None),
                 (
                     wizard_style::button(
                         self.focus == Field::Save,
-                        match self.page {
+                        &match self.page {
                             Page::Model if show_providers && self.pi.choice().configured() => {
-                                " Choose model "
+                                format!(" {} ", i18n::t("wizard.provider.choose_model"))
                             }
-                            Page::Model => " Next — Web search ",
-                            Page::WebSearch => " Next — Memory ",
-                            Page::Hindsight => " Next — Appearance ",
+                            Page::Model => format!(
+                                " {} ",
+                                i18n::t("wizard.shell.next")
+                                    .replace("{page}", &i18n::t("wizard.page.web_search"))
+                            ),
+                            Page::WebSearch => format!(
+                                " {} ",
+                                i18n::t("wizard.shell.next")
+                                    .replace("{page}", &i18n::t("wizard.page.memory"))
+                            ),
+                            Page::Hindsight => format!(
+                                " {} ",
+                                i18n::t("wizard.shell.next")
+                                    .replace("{page}", &i18n::t("wizard.font.title"))
+                            ),
                         },
                     ),
                     position(Field::Save),
@@ -2878,22 +2930,18 @@ impl ProviderPage {
                     } else {
                         picker.draw_for(
                             frame,
-                            "Model provider",
+                            &i18n::t("wizard.page.model_provider"),
                             2,
-                            "Catalog truncated; enter an omitted ID on the manual step",
+                            &i18n::t("wizard.provider.catalog_truncated"),
                         );
                     }
                 } else {
-                    picker.draw_for(
-                        frame,
-                        self.page.title(),
-                        self.page.index(),
-                        if self.page == Page::WebSearch {
-                            "Native-search catalog; availability is not verified"
-                        } else {
-                            "Model suggestions; memory compatibility is not verified"
-                        },
-                    );
+                    let catalog_note = if self.page == Page::WebSearch {
+                        i18n::t("wizard.search.catalog_note")
+                    } else {
+                        i18n::t("wizard.memory.catalog_note")
+                    };
+                    picker.draw_for(frame, &self.page.title(), self.page.index(), &catalog_note);
                 }
                 return;
             }
@@ -2908,27 +2956,26 @@ impl ProviderPage {
             wizard_style::header(
                 frame,
                 parts[0],
-                &wizard_style::page_title(self.page.title(), self.page.index()),
+                &wizard_style::page_title(&self.page.title(), self.page.index()),
             );
-            let body = wizard_style::section(
-                frame,
-                parts[1],
+            let loading_note =
                 if self.page == Page::Hindsight && self.hindsight.choice() == Choice::Compatible {
-                    "Fetching models from the selected endpoint..."
+                    i18n::t("wizard.provider.fetching")
                 } else {
-                    "Loading the local model catalog..."
-                },
-            );
+                    i18n::t("wizard.provider.loading_local")
+                };
+            let body = wizard_style::section(frame, parts[1], &loading_note);
             frame.render_widget(
-                Paragraph::new(
-                    "No server authentication or account entitlement check is performed.",
-                ),
+                Paragraph::new(i18n::t("wizard.provider.no_auth_check")),
                 body,
             );
             wizard_style::render_buttons(
                 frame,
                 parts[2],
-                &[(wizard_style::button(true, " Back "), Some(0))],
+                &[(
+                    wizard_style::button(true, &format!(" {} ", i18n::t("wizard.tools.back"))),
+                    Some(0),
+                )],
             );
             return;
         }
@@ -3011,7 +3058,7 @@ fn apply_credential_request(resources: &Path, request: Value) -> Result<bool, St
                 || value["status"] != "ok"
                 || value["wrote"].as_bool().is_none()
             {
-                return Err("Pi credentials changed or could not be saved. Review the selected source and test custom connections again.".into());
+                return Err(i18n::t("wizard.provider.credentials_changed").into());
             }
             return Ok(value["wrote"].as_bool().expect("checked above"));
         }
@@ -3024,21 +3071,21 @@ fn validate_search(input: &SearchInput, uses_pi_key: bool) -> Result<(), String>
         return Ok(());
     }
     if input.model.trim().is_empty() || input.model.contains(['\n', '\r']) {
-        return Err("Web search: enter an exact model ID".into());
+        return Err(i18n::t("wizard.search.enter_model").into());
     }
     if input.choice().accepts_key()
         && !uses_pi_key
         && !input.key.is_empty()
         && !input.key.chars().all(|c| c.is_ascii_graphic())
     {
-        return Err("Web search: enter an API key without spaces or control characters".into());
+        return Err(i18n::t("wizard.search.key_invalid").into());
     }
     if input.choice() == SearchChoice::Azure && !input.endpoint.trim().is_empty() {
         if !valid_https_url(input.endpoint.trim()) {
-            return Err("Web search: enter an HTTPS Azure base URL without credentials".into());
+            return Err(i18n::t("wizard.search.azure_url").into());
         }
         if input.key.is_empty() {
-            return Err("Web search: enter an API key with the Azure base URL, or configure both later in Pi".into());
+            return Err(i18n::t("wizard.search.azure_both").into());
         }
     }
     Ok(())
@@ -3069,7 +3116,7 @@ fn validate_endpoint(input: &Input, url: &str) -> Result<(), String> {
     }
     valid_https_url(url)
         .then_some(())
-        .ok_or_else(|| "Pi: enter an HTTPS base URL, or a local server address".into())
+        .ok_or_else(|| i18n::t("wizard.provider.pi_url").into())
 }
 
 /// Pi reads "$" as a reference and a leading "!" as a command; escape both.
@@ -3099,10 +3146,12 @@ fn validate_input(input: &Input, pi: bool, needs_key: bool) -> Result<(), String
     if input.choice().configured()
         && (input.model.trim().is_empty() || input.model.chars().any(char::is_control))
     {
-        return Err(format!(
-            "{}: enter an exact model ID",
-            if pi { "Pi" } else { "Memory" }
-        ));
+        let label = if pi {
+            "Pi".to_string()
+        } else {
+            i18n::t("wizard.page.memory")
+        };
+        return Err(i18n::t("wizard.common.enter_model_id").replace("{label}", &label));
     }
     Ok(())
 }
@@ -3110,7 +3159,11 @@ fn validate_input(input: &Input, pi: bool, needs_key: bool) -> Result<(), String
 /// `needs_key` is the credential source: only a new key must be typed here.
 /// The endpoint and its identity are checked whatever the source is.
 fn validate_credentials(input: &Input, pi: bool, needs_key: bool) -> Result<(), String> {
-    let label = if pi { "Pi" } else { "Memory" };
+    let label = if pi {
+        "Pi".to_string()
+    } else {
+        i18n::t("wizard.page.memory")
+    };
     let choice = input.choice();
     if !choice.configured() {
         return Ok(());
@@ -3133,18 +3186,14 @@ fn validate_credentials(input: &Input, pi: bool, needs_key: bool) -> Result<(), 
                 .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-' || c == '_')
             || pi_providers::reserved(id)
         {
-            return Err("Pi: use a unique lowercase provider ID (e.g. omniroute)".into());
+            return Err(i18n::t("wizard.provider.unique_id").into());
         }
     }
     if choice == Choice::Compatible && !valid_https_url(input.url.trim()) {
-        return Err(format!(
-            "{label}: enter an HTTPS base URL without credentials"
-        ));
+        return Err(i18n::t("wizard.common.https_no_credentials").replace("{label}", &label));
     }
     if needs_key && (input.key.is_empty() || !input.key.chars().all(|c| c.is_ascii_graphic())) {
-        return Err(format!(
-            "{label}: enter an API key without spaces or control characters"
-        ));
+        return Err(i18n::t("wizard.common.key_invalid").replace("{label}", &label));
     }
     Ok(())
 }
@@ -3158,19 +3207,19 @@ fn valid_identity(value: &str) -> bool {
 fn read_hindsight_values(path: &Path) -> Result<Map<String, Value>, String> {
     use std::io::Read;
     if path.is_symlink() || path.parent().is_some_and(Path::is_symlink) {
-        return Err("Memory: refusing a symlinked configuration".into());
+        return Err(i18n::t("wizard.memory.symlink").into());
     }
     let file = match fs::File::open(path) {
         Ok(file) => file,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Map::new()),
-        Err(_) => return Err("Memory configuration unavailable".into()),
+        Err(_) => return Err(i18n::t("wizard.memory.config_unavailable").into()),
     };
     let mut text = String::new();
     file.take(1024 * 1024 + 1)
         .read_to_string(&mut text)
-        .map_err(|_| "Memory configuration unavailable")?;
+        .map_err(|_| i18n::t("wizard.memory.config_unavailable"))?;
     if text.len() > 1024 * 1024 {
-        return Err("Memory configuration is too large".into());
+        return Err(i18n::t("wizard.memory.config_too_large").into());
     }
     let mut values = Map::new();
     for line in text.lines() {
@@ -3201,17 +3250,25 @@ fn read_hindsight_values(path: &Path) -> Result<Map<String, Value>, String> {
 
 fn read_json_object(path: &Path) -> Result<Map<String, Value>, String> {
     if path.is_symlink() {
-        return Err(format!("refusing a symlink at {}", path.display()));
+        return Err(
+            i18n::t("wizard.common.symlink_at").replace("{path}", &path.display().to_string())
+        );
     }
     if !path.exists() {
         return Ok(Map::new());
     }
     let text = fs::read_to_string(path).map_err(|e| e.to_string())?;
     serde_json::from_str::<Value>(&text)
-        .map_err(|e| format!("invalid JSON in {}: {e}", path.display()))?
+        .map_err(|e| {
+            i18n::t("wizard.common.invalid_json")
+                .replace("{path}", &path.display().to_string())
+                .replace("{error}", &e.to_string())
+        })?
         .as_object()
         .cloned()
-        .ok_or_else(|| format!("expected JSON object in {}", path.display()))
+        .ok_or_else(|| {
+            i18n::t("wizard.common.expected_object").replace("{path}", &path.display().to_string())
+        })
 }
 
 fn save_json(path: &Path, data: &Map<String, Value>) -> Result<(), String> {
@@ -3227,9 +3284,10 @@ fn save_hindsight(
     key: Option<&str>,
 ) -> Result<(), String> {
     if path.is_symlink() {
-        return Err("refusing a symlink in memory config".into());
+        return Err(i18n::t("wizard.memory.symlink_config").into());
     }
-    let original = fs::read_to_string(path).map_err(|e| format!("Memory config: {e}"))?;
+    let original = fs::read_to_string(path)
+        .map_err(|e| i18n::t("wizard.memory.config_error").replace("{error}", &e.to_string()))?;
     let values = [
         ("HINDSIGHT_API_LLM_PROVIDER", Some(provider)),
         ("HINDSIGHT_API_LLM_MODEL", model),
@@ -3277,9 +3335,11 @@ fn save_hindsight(
 
 pub(crate) fn write_private(path: &Path, text: &str) -> Result<(), String> {
     if path.is_symlink() {
-        return Err(format!("refusing a symlink at {}", path.display()));
+        return Err(
+            i18n::t("wizard.common.symlink_at").replace("{path}", &path.display().to_string())
+        );
     }
-    let parent = path.parent().ok_or("missing config directory")?;
+    let parent = path.parent().ok_or(i18n::t("wizard.common.missing_dir"))?;
     fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     let stamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)

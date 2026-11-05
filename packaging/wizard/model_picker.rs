@@ -1,4 +1,5 @@
 //! Searchable local-catalog picker. Identity is never parsed from its label.
+use crate::i18n;
 use crate::{pi_models::Model, wizard_style};
 use ratatui::{
     crossterm::event::{KeyCode, KeyModifiers},
@@ -147,9 +148,9 @@ impl ModelPicker {
     pub fn draw(&self, frame: &mut Frame) {
         self.draw_for(
             frame,
-            "Model provider",
+            &i18n::t("wizard.page.model_provider"),
             2,
-            "Local catalog; credentials are not server-verified",
+            &i18n::t("wizard.model.local_catalog"),
         );
     }
 
@@ -167,12 +168,16 @@ impl ModelPicker {
             frame,
             filter,
             vec![(
-                wizard_style::text_field(self.focus == 0, "Filter models", self.filter.clone()),
+                wizard_style::text_field(
+                    self.focus == 0,
+                    &i18n::t("wizard.model.filter"),
+                    self.filter.clone(),
+                ),
                 Some(self.models.len() + 3),
             )],
             false,
         );
-        let body = wizard_style::section(frame, parts[2], "Choose a model (Enter or click)");
+        let body = wizard_style::section(frame, parts[2], &i18n::t("wizard.model.choose"));
         let matches: Vec<_> = self
             .matching()
             .into_iter()
@@ -204,11 +209,13 @@ impl ModelPicker {
             let row = Rect::new(body.x, body.bottom() - 1, body.width, 1);
             wizard_style::target(row, self.models.len());
             frame.render_widget(
-                Paragraph::new("Enter manually").style(if self.selected == self.models.len() {
-                    wizard_style::selected()
-                } else {
-                    ratatui::style::Style::default()
-                }),
+                Paragraph::new(i18n::t("wizard.model.enter_manual")).style(
+                    if self.selected == self.models.len() {
+                        wizard_style::selected()
+                    } else {
+                        ratatui::style::Style::default()
+                    },
+                ),
                 row,
             );
         }
@@ -217,12 +224,18 @@ impl ModelPicker {
             parts[3],
             &[
                 (
-                    wizard_style::button(self.focus == 1, " Back "),
+                    wizard_style::button(
+                        self.focus == 1,
+                        &format!(" {} ", i18n::t("wizard.tools.back")),
+                    ),
                     Some(self.models.len() + 1),
                 ),
                 (Span::raw("    "), None),
                 (
-                    wizard_style::button(self.focus == 2, " Use model "),
+                    wizard_style::button(
+                        self.focus == 2,
+                        &format!(" {} ", i18n::t("wizard.model.use_model")),
+                    ),
                     Some(self.models.len() + 2),
                 ),
             ],
