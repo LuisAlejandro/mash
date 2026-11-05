@@ -1,0 +1,36 @@
+── Arbeitsbereiche ──                                           ── Agenten ──
+  ⌘⌃N        Neuer Arbeitsbereich (Layout-Profil)                 ⌃⇧↑ / ⌃⇧↓  Vorheriger / nächster Agent
+  ⌘⌃⇧N       Neuer Worktree (Layout-Profil)                       ⌃⇧1-9      Agent N fokussieren
+  ⌘⌃R        Arbeitsbereich umbenennen                            Esc        Unterbrechen
+  ⌘⌃W        Arbeitsbereich schließen                             ⌃C         Leeren / beenden
+  ⌘⌃⌫        Worktree entfernen                                   ⇧Tab       Denkstufe wechseln
+  ⌘⌃[ / ⌘⌃]  Vorheriger / nächster Arbeitsbereich                 ⌃O         Werkzeugausgabe aufklappen
+  ⌘⌃1-9      Zu Arbeitsbereich N wechseln                         ⌃P         Modelle wechseln
+  ⌘⌃G        Gehe zu (Sitzungsnavigator)                          ⌃G         Externer Editor
+  ⌘⌃O        Arbeitsbereichswahl (Sitzungen / Arbeitsbereiche)    ⌃⇧F        Transkript durchsuchen
+── Tabs ──                                                        ⌥↵         Folgefrage einreihen
+  ⌘T / ⌘⇧N   neuer Entwicklungs-Tab (Editor + Agent)              ⌃⌥Z        Diktat (Pi Voice)
+  ⌘⌥T / ⌘⌥N  neuer Agent-Tab
+  ⌘⇧R        neuer Review-Tab (Diff + Agent)                    ── Erweiterungen ──
+  ⌘⇧T        neuer einfacher Terminal-Tab                         ⌃⇧G        Versionskontrolle
+  ⌘⇧[ / ⌘⇧]  Vorheriger / nächster Tab                            ⌘⇧O        Container-Status
+  ⌘⇧1-9      Zu Tab N wechseln                                    ⌘⌥P        Snippets (Snippet-Ausführer)
+  ⌘⇧M        Tab umbenennen                                       ⌘P         Dateisuche
+  ⌘⇧W        Tab schließen                                        ⌘⇧P        Befehlspalette
+── Bereiche ──                                                    ⌘⌥L        Sitzungssuche
+  ⌘⌥← ↓ ↑ →  Bereich links / unten / oben / rechts fokussieren    ⌘K / ⌘L    Anmerken -- aufnehmen / einfügen
+  ⌘⌥[ / ⌘⌥]  Vorherigen / nächsten Bereich wählen                 ⌘⇧L        Anmerkungen verwalten
+  ⌘⌥\ ⌘⌥-    Vertikal / horizontal teilen                         ⌥G         Link oder ID wählen
+  ⌘⌥W        Bereich schließen                                    ⌘⇧X        Plugin-Verwaltung
+  ⌘⌥Z        Bereich zoomen                                       ⌘⌥Y        Agent aus Nachricht abzweigen
+  ⌘⌥R        Größenmodus
+                                                                ── Global ──
+── Editor ──                                                      ⌘⇧I        Hilfe
+  ⌘O         Datei öffnen                                         ⌘I         Einstellungen
+  ⌘S         Speichern                                            ⌘U         Trennen
+  ⌘F         Suchen / ersetzen im Puffer                          ⌘R         Konfiguration neu laden
+  ⌘⇧F        Suchen / ersetzen in Dateien                         ⌘Y         Benachrichtigungsziel öffnen
+  ⌘⇧E        Dateiexplorer umschalten                             ⌘B         Seitenleiste umschalten
+  ⌘D         Cursor zur nächsten Fundstelle                       ⌘⇧U        Nach Updates suchen
+  ⌘⌥C        Dateipfad kopieren
+  ⌥⇧↓        Zeile duplizieren

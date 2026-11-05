@@ -1,0 +1,67 @@
+Mash on Linux — bàn phím
+
+Ctrl là phím sửa, nên các họ phím riêng của Mash nằm ở Ctrl+Alt và Ctrl+Shift.
+GNOME giữ hai tổ hợp đó và không trả lại -- GNOME đọc phím trong bộ tổ hợp
+trước khi Mash tồn tại -- nên di chuyển ô dùng Ctrl+Super, và đổi tên không
+gian làm việc tránh Ctrl+Alt+Shift+R. Trong ô, shell giữ mỗi tổ hợp Ctrl đơn
+(Ctrl+C, Ctrl+R, Ctrl+U) và Fresh giữ các tổ hợp soạn thảo.
+
+  Ctrl+Alt+W           Đóng ô
+  Ctrl+Shift+W         Đóng thẻ
+  Ctrl+Alt+Shift+W     Đóng không gian làm việc
+  Ctrl+Alt+U           Tách
+  Ctrl+Super+Down      Tới ô bên dưới
+  Ctrl+Super+Left      Tới ô bên trái
+  Ctrl+Super+Right     Tới ô bên phải
+  Ctrl+Super+Up        Tới ô bên trên
+  Ctrl+Alt+Shift+G     Đi tới phiên
+  Ctrl+Shift+I         Trợ giúp
+  Ctrl+Shift+Down      Tác nhân tiếp theo
+  Ctrl+Alt+]           Ô tiếp theo
+  Ctrl+Tab             Thẻ tiếp theo
+  Ctrl+Alt+Shift+]     Không gian làm việc tiếp theo
+  Ctrl+Alt+Y           Mở thông báo
+  Ctrl+Alt+Shift+U     Kiểm tra bản cập nhật
+  Ctrl+Shift+Up        Tác nhân trước
+  Ctrl+Alt+[           Ô trước
+  Ctrl+Shift+Tab       Thẻ trước
+  Ctrl+Alt+Shift+[     Không gian làm việc trước
+  Ctrl+Shift+,         Tải lại cấu hình
+  Ctrl+Alt+Shift+⌫     Gỡ cây làm việc
+  Ctrl+Shift+M         Đổi tên thẻ
+  Ctrl+Alt+Shift+M     Đổi tên không gian làm việc
+  Ctrl+Alt+R           Đổi kích thước
+  Ctrl+,               Cài đặt
+  Ctrl+Alt+-           Chia ô theo chiều ngang
+  Ctrl+Alt+\           Chia ô theo chiều dọc
+  Alt+1..9             Chuyển tới thẻ N
+  Ctrl+Alt+Shift+1..9  Chuyển tới không gian làm việc N
+  Ctrl+Alt+B           Bật tắt thanh bên
+  Ctrl+Alt+Z           Phóng ô
+
+  ── Khởi chạy ──
+  Ctrl+Shift+T         tab shell đơn giản mới
+  Ctrl+Alt+T           tab phát triển mới (trình soạn thảo + tác tử)
+  Ctrl+Alt+Shift+T     tab tác tử mới
+  Ctrl+Alt+P           Tìm tệp
+  Ctrl+Shift+G         Quản lý phiên bản
+  Ctrl+Shift+O         Trạng thái container
+  Ctrl+Alt+Shift+P     Đoạn mã
+  Ctrl+Shift+R         tab đánh giá mới (diff + tác tử)
+  Ctrl+Alt+K           chú thích văn bản
+  Ctrl+Alt+L           dán chú thích vào tác tử của tab này và lưu trữ
+  Ctrl+Shift+L         quản lý chú thích
+  Alt+G                Chọn liên kết hoặc ID
+  Ctrl+Shift+X         Trình quản lý plugin
+  Ctrl+Alt+Shift+N     Không gian làm việc mới (hồ sơ bố cục)
+  Ctrl+Alt+Shift+E     Cây làm việc mới (hồ sơ bố cục)
+  Ctrl+Alt+Shift+O     Chọn không gian làm việc
+  Ctrl+Shift+P         Bảng lệnh
+  Ctrl+Alt+Shift+Y     Tách tác tử từ tin nhắn
+  Ctrl+Alt+Shift+L     Tìm kiếm phiên
+
+Sao chép / dán: Ctrl+Shift+C / Ctrl+Shift+V, hoặc dùng chuột. Tổ hợp soạn thảo
+riêng của Fresh phụ thuộc chế độ phím bạn chọn lúc khởi động đầu tiên:
+Mash/Cursor ghi ánh xạ của Mash, Native giữ phím tích hợp của Fresh. Chạy
+`fresh --cmd config paths` hoặc mở bản đồ phím của Fresh để xem bộ nào đang
+dùng.

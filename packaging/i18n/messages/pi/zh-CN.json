@@ -1,0 +1,98 @@
+{
+  "pi.header.restore": {
+    "text": "恢复内置的 pi 标题栏",
+    "source_hash": "afcd79f821af"
+  },
+  "pi.header.restored": {
+    "text": "已恢复内置标题栏",
+    "source_hash": "c1e44d719693"
+  },
+  "pi.orchestration.answered": {
+    "text": "协调者已回答：{reply}",
+    "source_hash": "fc659f7aea92"
+  },
+  "pi.orchestration.cancelled": {
+    "text": "问题已取消。",
+    "source_hash": "4c742263cfe3"
+  },
+  "pi.orchestration.failed": {
+    "text": "向协调者提出的问题失败了。",
+    "source_hash": "1036eb4b3272"
+  },
+  "pi.orchestration.label": {
+    "text": "询问协调者",
+    "source_hash": "5369ae08b587"
+  },
+  "pi.orchestration.lookup-failed": {
+    "text": "无法查询 Dispatch。",
+    "source_hash": "e8a8ac97005c"
+  },
+  "pi.orchestration.no-dispatch": {
+    "text": "此窗格没有打开的 Dispatch。请用 ask_user 询问此人。",
+    "source_hash": "045255c705e5"
+  },
+  "pi.orchestration.pending": {
+    "text": "问题 {id} 仍在等待。请将 resume 设为该 id 后再次调用 ask_coordinator。",
+    "source_hash": "a70e26ec54e8"
+  },
+  "pi.orchestration.unavailable": {
+    "text": "mash-orchestration 不可用（{message}）。请用 ask_user 询问此人。",
+    "source_hash": "ee1fa62200a8"
+  },
+  "pi.orchestration.waiting": {
+    "text": "正在等待协调者",
+    "source_hash": "41e36ff21f8a"
+  },
+  "pi.show-file.is-directory": {
+    "text": "{path} 是目录，不是文件。",
+    "source_hash": "51405f5a7722"
+  },
+  "pi.show-file.label": {
+    "text": "向此人显示文件",
+    "source_hash": "1c16c0d820b1"
+  },
+  "pi.show-file.needs-path": {
+    "text": "show_file 需要路径。",
+    "source_hash": "2709bc3725aa"
+  },
+  "pi.show-file.no-reason": {
+    "text": "未给出原因",
+    "source_hash": "bdb1872e7703"
+  },
+  "pi.show-file.no-such-file": {
+    "text": "没有此文件：{path}",
+    "source_hash": "6b07882ca274"
+  },
+  "pi.show-file.not-shown-daemon": {
+    "text": "未显示：{name} 的 Fresh 守护进程不可用。",
+    "source_hash": "eee33afb1233"
+  },
+  "pi.show-file.not-shown-fresh": {
+    "text": "未显示：无法在 Fresh 中打开 {name}（{detail}）。",
+    "source_hash": "38000d407a37"
+  },
+  "pi.show-file.not-shown-herdr": {
+    "text": "未显示：无法在 Herdr 中打开 {name}（{detail}）。",
+    "source_hash": "ef35d0eb229e"
+  },
+  "pi.show-file.not-shown-no-editor": {
+    "text": "未显示：此标签页中没有用于 {name} 的 Fresh 编辑器。",
+    "source_hash": "dd6f54bd1990"
+  },
+  "pi.show-file.not-shown-no-pane": {
+    "text": "未显示：没有可用于 {name} 的 Herdr 窗格。",
+    "source_hash": "b810ed171fce"
+  },
+  "pi.show-file.not-shown-other": {
+    "text": "未显示：没有用于 {name} 的内部查看器。",
+    "source_hash": "c38cbe4e26f6"
+  },
+  "pi.show-file.shown-image": {
+    "text": "已显示：{name} 已在编辑器旁的垂直分栏中以实际分辨率打开。",
+    "source_hash": "bbf2a8758fc7"
+  },
+  "pi.show-file.shown-text": {
+    "text": "已显示：{name} 已在此窗格旁的 Fresh 编辑器中打开。",
+    "source_hash": "ac958177710d"
+  }
+}

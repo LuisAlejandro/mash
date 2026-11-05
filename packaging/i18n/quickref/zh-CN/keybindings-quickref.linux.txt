@@ -1,0 +1,66 @@
+Mash on Linux — 键盘
+
+Ctrl 是编辑修饰键，所以 Mash 自己的键位家族放在 Ctrl+Alt 和 Ctrl+Shift。GNOME
+占用了其中两个组合，无法要回 -- GNOME 在 Mash 存在之前就在合成器里读取按键 --
+因此窗格聚焦使用 Ctrl+Super，重命名工作区则避开
+Ctrl+Alt+Shift+R。在窗格内，外壳保留每个单独的 Ctrl
+组合（Ctrl+C、Ctrl+R、Ctrl+U），Fresh 保留编辑组合。
+
+  Ctrl+Alt+W           关闭窗格
+  Ctrl+Shift+W         关闭标签页
+  Ctrl+Alt+Shift+W     关闭工作区
+  Ctrl+Alt+U           分离
+  Ctrl+Super+Down      聚焦下方窗格
+  Ctrl+Super+Left      聚焦左侧窗格
+  Ctrl+Super+Right     聚焦右侧窗格
+  Ctrl+Super+Up        聚焦上方窗格
+  Ctrl+Alt+Shift+G     跳转到会话
+  Ctrl+Shift+I         帮助
+  Ctrl+Shift+Down      下一个代理
+  Ctrl+Alt+]           下一个窗格
+  Ctrl+Tab             下一个标签页
+  Ctrl+Alt+Shift+]     下一个工作区
+  Ctrl+Alt+Y           打开通知
+  Ctrl+Alt+Shift+U     检查更新
+  Ctrl+Shift+Up        上一个代理
+  Ctrl+Alt+[           上一个窗格
+  Ctrl+Shift+Tab       上一个标签页
+  Ctrl+Alt+Shift+[     上一个工作区
+  Ctrl+Shift+,         重新加载配置
+  Ctrl+Alt+Shift+⌫     移除工作树
+  Ctrl+Shift+M         重命名标签页
+  Ctrl+Alt+Shift+M     重命名工作区
+  Ctrl+Alt+R           调整大小
+  Ctrl+,               设置
+  Ctrl+Alt+-           水平分割窗格
+  Ctrl+Alt+\           垂直分割窗格
+  Alt+1..9             切换到标签页 N
+  Ctrl+Alt+Shift+1..9  切换到工作区 N
+  Ctrl+Alt+B           切换侧边栏
+  Ctrl+Alt+Z           放大窗格
+
+  ── 启动 ──
+  Ctrl+Shift+T         新建终端标签页
+  Ctrl+Alt+T           新建开发标签页（编辑器 + 代理）
+  Ctrl+Alt+Shift+T     新建代理标签页
+  Ctrl+Alt+P           文件查找
+  Ctrl+Shift+G         版本控制
+  Ctrl+Shift+O         容器状态
+  Ctrl+Alt+Shift+P     代码片段
+  Ctrl+Shift+R         新建审查标签页（diff + 代理）
+  Ctrl+Alt+K           标注文本
+  Ctrl+Alt+L           将标注粘贴到此标签页的代理并归档
+  Ctrl+Shift+L         管理标注
+  Alt+G                选择链接或 ID
+  Ctrl+Shift+X         插件管理器
+  Ctrl+Alt+Shift+N     新建工作区（布局配置）
+  Ctrl+Alt+Shift+E     新建工作树（布局配置）
+  Ctrl+Alt+Shift+O     工作区选择器
+  Ctrl+Shift+P         命令面板
+  Ctrl+Alt+Shift+Y     从消息分叉代理
+  Ctrl+Alt+Shift+L     会话搜索
+
+复制/粘贴：Ctrl+Shift+C / Ctrl+Shift+V，或使用鼠标。Fresh
+自己的编辑组合取决于首次启动时选择的键位模式：Mash/Cursor 风格会写入 Mash
+的映射，Native 保留 Fresh 的内置键。运行 `fresh --cmd config paths` 或打开
+Fresh 的键位表，查看当前生效的是哪一套。

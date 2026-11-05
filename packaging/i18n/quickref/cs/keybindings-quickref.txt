@@ -1,0 +1,36 @@
+── Pracovní prostory ──                                     ── Agenti ──
+  ⌘⌃N        Nový pracovní prostor (profil rozvržení)         ⌃⇧↑ / ⌃⇧↓  Předchozí / další agent
+  ⌘⌃⇧N       Nový pracovní strom (profil rozvržení)           ⌃⇧1-9      Zaměřit agenta N
+  ⌘⌃R        Přejmenovat pracovní prostor                     Esc        Přerušit
+  ⌘⌃W        Zavřít pracovní prostor                          ⌃C         Vymazat / ukončit
+  ⌘⌃⌫        Odebrat pracovní strom                           ⇧Tab       Přepnout úroveň uvažování
+  ⌘⌃[ / ⌘⌃]  Předchozí / další pracovní prostor               ⌃O         Rozbalit výstup nástroje
+  ⌘⌃1-9      Přepnout na pracovní prostor N                   ⌃P         Přepnout modely
+  ⌘⌃G        Přejít (navigace relací)                         ⌃G         Externí editor
+  ⌘⌃O        Výběr pracovního prostoru (relace / prostory)    ⌃⇧F        Hledat v záznamu
+── Karty ──                                                   ⌥↵         Zařadit navazující zprávu
+  ⌘T / ⌘⇧N   nová karta vývoje (editor + agent)               ⌃⌥Z        Diktování (Pi Voice)
+  ⌘⌥T / ⌘⌥N  nová karta agenta
+  ⌘⇧R        nová karta revize (diff + agent)               ── Doplňky ──
+  ⌘⇧T        nová karta jednoduchého shellu                   ⌃⇧G        Správa verzí
+  ⌘⇧[ / ⌘⇧]  Předchozí / další karta                          ⌘⇧O        Stav kontejnerů
+  ⌘⇧1-9      Přepnout na kartu N                              ⌘⌥P        Úryvky (spuštění)
+  ⌘⇧M        Přejmenovat kartu                                ⌘P         Hledání souborů
+  ⌘⇧W        Zavřít kartu                                     ⌘⇧P        Paleta příkazů
+── Panely ──                                                  ⌘⌥L        Hledání v relacích
+  ⌘⌥← ↓ ↑ →  Zaměřit panel vlevo / dolů / nahoru / vpravo     ⌘K / ⌘L    Poznámka -- zachytit / vložit
+  ⌘⌥[ / ⌘⌥]  Předchozí / další panel                          ⌘⇧L        Poznámka -- spravovat
+  ⌘⌥\ ⌘⌥-    Rozdělit svisle / vodorovně                      ⌥G         Vybrat odkaz nebo ID
+  ⌘⌥W        Zavřít panel                                     ⌘⇧X        Správce pluginů
+  ⌘⌥Z        Zvětšit panel                                    ⌘⌥Y        Odbočit agenta ze zprávy
+  ⌘⌥R        Změna velikosti
+                                                            ── Globální ──
+── Editor ──                                                  ⌘⇧I        Nápověda
+  ⌘O         Otevřít soubor                                   ⌘I         Nastavení
+  ⌘S         Uložit                                           ⌘U         Odpojit
+  ⌘F         Najít / nahradit ve vyrovnávací paměti           ⌘R         Znovu načíst nastavení
+  ⌘⇧F        Najít / nahradit v souborech                     ⌘Y         Otevřít cíl oznámení
+  ⌘⇧E        Přepnout průzkumník souborů                      ⌘B         Přepnout postranní panel
+  ⌘D         Kurzor na další shodu                            ⌘⇧U        Zkontrolovat aktualizace
+  ⌘⌥C        Kopírovat cestu k souboru
+  ⌥⇧↓        Duplikovat řádek

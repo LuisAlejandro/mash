@@ -1,0 +1,71 @@
+Mash on macOS — 키보드 (Native)
+
+각 도구는 자신의 키를 쓱니다. Herdr는 기본 Ctrl+B 접두어를 쓱니다. Ctrl+B를
+눌렀다 놓고 그다음 키를 누릅니다. Ctrl+B는 창으로 가지 않으므로 Fresh의
+Ctrl+B(파일 탐색기), Pi의 Ctrl+B(커서 왼쪽), OpenCode의 Ctrl+B(백그라운드
+세션)는 쓸 수 없습니다. Fresh는 Ctrl+E나 메뉴를, Pi는 왼쪽 화살표를 쓰세요.
+
+  ── Herdr (Ctrl+B 다음) ──
+  n / p            다음 / 이전 탭
+  c                새 탭
+  1..9             탭 N으로 전환
+  Shift+T          탭 이름 바꾸기
+  Shift+X          탭 닫기
+  h j k l          창 좌 / 하 / 상 / 우
+  Shift+H J K L    창을 좌 / 하 / 상 / 우와 바꾸기
+  Tab / Shift+Tab  다음 / 이전 창
+  v / -            세로 / 가로로 나누기
+  x                창 닫기
+  z                창 확대
+  r                크기 조정
+  [                복사 모드
+  e                스크롤백 편집
+  Shift+P          창 이름 바꾸기
+  w                워크스페이스 선택 (기본)
+  Shift+W          워크스페이스 이름 바꾸기
+  Shift+D          워크스페이스 닫기
+  g                세션으로 이동
+  b                사이드바 전환
+  o                알림 열기
+  s                설정
+  Shift+R          설정 다시 불러오기
+  q                분리
+  ?                도움말
+
+  ── Mash 추가 (Ctrl+B 다음) ──
+  t                새 개발 탭 (편집기 + 에이전트)
+  a                새 에이전트 탭
+  Shift+C          새 셸 탭
+  Shift+V          새 리뷰 탭 (diff + 에이전트)
+  `                Fresh 아래 새 셸 창
+  f                파일 찾기
+  y                버전 관리
+  Shift+O          컨테이너 상태
+  Shift+S          스니펫
+  i                텍스트에 주석 달기
+  Shift+I          주석을 이 탭의 에이전트에 붙여 넣기
+  m                주석 관리
+  u                링크 또는 ID 선택
+  Shift+U          플러그인 관리자
+  Shift+Z          업데이트 확인
+  Shift+N          새 작업 공간 (레이아웃 프로필)
+  Shift+G          새 작업 트리 (레이아웃 프로필)
+  Shift+F          워크스페이스 선택 (세션)
+  ;                명령 팔레트
+  Shift+Y          메시지에서 에이전트 분기
+  Shift+E          세션 검색
+
+  ── Fresh (기본 단축키) ──
+  Ctrl+S           저장
+  Ctrl+O           파일 열기
+  Ctrl+P           빠른 열기
+  Ctrl+F           찾기
+  Alt+A            찾고 바꾸기
+  F3 / Shift+F3    다음 / 이전 찾기
+  Ctrl+G           줄로 이동
+  Ctrl+D           다음 일치에 커서
+  Ctrl+E           파일 탐색기로
+  Ctrl+Z / Ctrl+Y  실행 취소 / 다시 실행
+
+터미널에서 복사 / 붙여 넣기: Cmd+C / Cmd+V, 또는 마우스. Pi와 셸은 자신의 기본
+키를 쓱니다.

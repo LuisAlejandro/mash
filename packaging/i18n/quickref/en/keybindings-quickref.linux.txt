@@ -1,0 +1,67 @@
+Mash on Linux — keyboard
+
+Ctrl is the editing modifier, so Mash's own families live on Ctrl+Alt and
+Ctrl+Shift. Two GNOME grabs sit in that space and cannot be won back -- GNOME
+reads the key in the compositor, before Mash exists -- so pane focus uses
+Ctrl+Super instead, and workspace rename avoids Ctrl+Alt+Shift+R. Inside a pane
+the shell keeps every bare Ctrl chord (Ctrl+C, Ctrl+R, Ctrl+U) and Fresh keeps
+the editing ones.
+
+  Ctrl+Alt+W       Close pane
+  Ctrl+Shift+W     Close tab
+  Ctrl+Alt+Shift+W Close workspace
+  Ctrl+Alt+U       Detach
+  Ctrl+Super+Down  Focus pane down
+  Ctrl+Super+Left  Focus pane left
+  Ctrl+Super+Right Focus pane right
+  Ctrl+Super+Up    Focus pane up
+  Ctrl+Alt+Shift+G Go to session
+  Ctrl+Shift+I     Help
+  Ctrl+Shift+Down  Next agent
+  Ctrl+Alt+]       Next pane
+  Ctrl+Tab         Next tab
+  Ctrl+Alt+Shift+] Next workspace
+  Ctrl+Alt+Y       Open notification
+  Ctrl+Alt+Shift+U Check for updates
+  Ctrl+Shift+Up    Previous agent
+  Ctrl+Alt+[       Previous pane
+  Ctrl+Shift+Tab   Previous tab
+  Ctrl+Alt+Shift+[ Previous workspace
+  Ctrl+Shift+,     Reload config
+  Ctrl+Alt+Shift+⌫ Remove worktree
+  Ctrl+Shift+M     Rename tab
+  Ctrl+Alt+Shift+M Rename workspace
+  Ctrl+Alt+R       Resize mode
+  Ctrl+,           Settings
+  Ctrl+Alt+-       Split pane horizontally
+  Ctrl+Alt+\       Split pane vertically
+  Alt+1..9         Switch to tab N
+  Ctrl+Alt+Shift+1..9 Switch to workspace N
+  Ctrl+Alt+B       Toggle sidebar
+  Ctrl+Alt+Z       Zoom pane
+
+  ── Launchers ──
+  Ctrl+Shift+T     new plain shell tab
+  Ctrl+Alt+T       new dev tab (editor + agent)
+  Ctrl+Alt+Shift+T new agent tab
+  Ctrl+Alt+P       File finder
+  Ctrl+Shift+G     Source control
+  Ctrl+Shift+O     Container status
+  Ctrl+Alt+Shift+P Snippets
+  Ctrl+Shift+R     new review tab (diff + agent)
+  Ctrl+Alt+K       annotate text
+  Ctrl+Alt+L       paste annotations into this tab's agent and archive them
+  Ctrl+Shift+L     manage annotations
+  Alt+G            Pick link or ID
+  Ctrl+Shift+X     Plugin manager
+  Ctrl+Alt+Shift+N New workspace (layout profile)
+  Ctrl+Alt+Shift+E New worktree (layout profile)
+  Ctrl+Alt+Shift+O Workspace picker
+  Ctrl+Shift+P     Command palette
+  Ctrl+Alt+Shift+Y Fork agent from message
+  Ctrl+Alt+Shift+L Session search
+
+Copy/paste: Ctrl+Shift+C / Ctrl+Shift+V, or the mouse. Fresh's own editing
+chords depend on the keybinding mode chosen at first launch: Mash/Cursor-style
+seeds Mash's map, Native leaves Fresh's built-in keys. Run `fresh --cmd config
+paths` or open Fresh's keymap to see which is in effect.

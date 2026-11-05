@@ -1,0 +1,68 @@
+Mash on Linux — キーボード
+
+Ctrl は編集の修飾キーなので、Mash 自身の系統は Ctrl+Alt と Ctrl+Shift
+に置きます。GNOME がその領域のキーを二つ押さえており、取り戻せません -- GNOME
+は Mash が存在する前にコンポジタでキーを読みます -- そのためペインの移動は
+Ctrl+Super を使い、ワークスペースの名前変更は Ctrl+Alt+Shift+R
+を避けます。ペインの中ではシェルが Ctrl
+単体のコード（Ctrl+C、Ctrl+R、Ctrl+U）を、Fresh が編集のコードを保ちます。
+
+  Ctrl+Alt+W           ペインを閉じる
+  Ctrl+Shift+W         タブを閉じる
+  Ctrl+Alt+Shift+W     ワークスペースを閉じる
+  Ctrl+Alt+U           切り離す
+  Ctrl+Super+Down      下のペインへ
+  Ctrl+Super+Left      左のペインへ
+  Ctrl+Super+Right     右のペインへ
+  Ctrl+Super+Up        上のペインへ
+  Ctrl+Alt+Shift+G     セッションへ移動
+  Ctrl+Shift+I         ヘルプ
+  Ctrl+Shift+Down      次のエージェント
+  Ctrl+Alt+]           次のペイン
+  Ctrl+Tab             次のタブ
+  Ctrl+Alt+Shift+]     次のワークスペース
+  Ctrl+Alt+Y           通知を開く
+  Ctrl+Alt+Shift+U     アップデートを確認
+  Ctrl+Shift+Up        前のエージェント
+  Ctrl+Alt+[           前のペイン
+  Ctrl+Shift+Tab       前のタブ
+  Ctrl+Alt+Shift+[     前のワークスペース
+  Ctrl+Shift+,         設定を再読み込み
+  Ctrl+Alt+Shift+⌫     ワークツリーを削除
+  Ctrl+Shift+M         タブの名前を変更
+  Ctrl+Alt+Shift+M     ワークスペースの名前を変更
+  Ctrl+Alt+R           サイズ変更
+  Ctrl+,               設定
+  Ctrl+Alt+-           ペインを横に分割
+  Ctrl+Alt+\           ペインを縦に分割
+  Alt+1..9             タブ N へ切り替え
+  Ctrl+Alt+Shift+1..9  ワークスペース N へ切り替え
+  Ctrl+Alt+B           サイドバーを切り替え
+  Ctrl+Alt+Z           ペインをズーム
+
+  ── 起動 ──
+  Ctrl+Shift+T         新しいシェルタブ
+  Ctrl+Alt+T           新しい開発タブ（エディター＋エージェント）
+  Ctrl+Alt+Shift+T     新しいエージェントタブ
+  Ctrl+Alt+P           ファイル検索
+  Ctrl+Shift+G         バージョン管理
+  Ctrl+Shift+O         コンテナの状態
+  Ctrl+Alt+Shift+P     スニペット
+  Ctrl+Shift+R         新しいレビュータブ（diff＋エージェント）
+  Ctrl+Alt+K           テキストに注釈を付ける
+  Ctrl+Alt+L           注釈をこのタブのエージェントに貼り付けて保管
+  Ctrl+Shift+L         注釈を管理
+  Alt+G                リンクまたは ID を選択
+  Ctrl+Shift+X         プラグイン管理
+  Ctrl+Alt+Shift+N     新しいワークスペース（レイアウトプロファイル）
+  Ctrl+Alt+Shift+E     新しいワークツリー（レイアウトプロファイル）
+  Ctrl+Alt+Shift+O     ワークスペースの選択
+  Ctrl+Shift+P         コマンドパレット
+  Ctrl+Alt+Shift+Y     メッセージからエージェントを分岐
+  Ctrl+Alt+Shift+L     セッション検索
+
+コピー / 貼り付け: Ctrl+Shift+C / Ctrl+Shift+V、またはマウス。Fresh
+の編集コードは初回起動時に選んだキーバインドモードによります。Mash/Cursor 式は
+Mash の配置を入れ、Native は Fresh の組み込みキーを残します。`fresh --cmd
+config paths` を実行するか、Fresh
+のキーマップを開いて、どちらかを確認してください。

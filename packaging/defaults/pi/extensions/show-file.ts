@@ -31,8 +31,9 @@
  */
 
 import { spawn } from "node:child_process";
-import { existsSync, statSync } from "node:fs";
-import { basename, extname, isAbsolute, resolve } from "node:path";
+import { existsSync, readFileSync, statSync } from "node:fs";
+import { basename, dirname, extname, isAbsolute, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
@@ -51,6 +52,59 @@ const TEXT_EXTENSIONS = new Set([
 	"c", "h", "cpp", "hpp", "css", "scss", "html", "xml", "svg", "sql", "zig", "swift", "lua",
 	"diff", "patch", "ini", "cfg", "env",
 ]);
+
+const PLACEHOLDER = /\{([A-Za-z_][A-Za-z0-9_]*)\}/g;
+const catalogs = new Map<string, Record<string, unknown>>();
+
+function i18nDirectories(): string[] {
+	const dirs: string[] = [];
+	const configured = (process.env.MASH_I18N_DIR || "").trim();
+	if (configured) dirs.push(configured);
+	const beside = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "i18n");
+	if (!dirs.includes(beside) && existsSync(join(beside, "languages.json"))) dirs.push(beside);
+	return dirs;
+}
+
+function catalog(dir: string, code: string): Record<string, unknown> {
+	const cacheKey = `${dir}\0${code}`;
+	const cached = catalogs.get(cacheKey);
+	if (cached) return cached;
+	let data: Record<string, unknown> = {};
+	try {
+		const loaded = JSON.parse(readFileSync(join(dir, "messages", "pi", `${code}.json`), "utf8"));
+		if (loaded && typeof loaded === "object") data = loaded;
+	} catch {
+		data = {};
+	}
+	catalogs.set(cacheKey, data);
+	return data;
+}
+
+function entryText(entry: unknown): string | undefined {
+	if (typeof entry === "string" && entry) return entry;
+	if (entry && typeof entry === "object" && "text" in entry) {
+		const text = (entry as { text?: unknown }).text;
+		if (typeof text === "string" && text) return text;
+	}
+	return undefined;
+}
+
+function t(key: string, values: Record<string, string> = {}): string {
+	const language = (process.env.MASH_LANGUAGE || "en").trim() || "en";
+	const codes = language === "en" ? ["en"] : [language, "en"];
+	let text: string | undefined;
+	for (const code of codes) {
+		for (const dir of i18nDirectories()) {
+			text = entryText(catalog(dir, code)[key]);
+			if (text) break;
+		}
+		if (text) break;
+	}
+	if (!text) return key;
+	return text.replace(PLACEHOLDER, (match, name: string) =>
+		Object.prototype.hasOwnProperty.call(values, name) ? values[name] : match,
+	);
+}
 
 function textResult(text: string, isError = false) {
 	return {
@@ -187,7 +241,7 @@ function freshLocation(path: string, note: string | undefined, line?: number): s
 export default function (pi: ExtensionAPI) {
 	pi.registerTool({
 		name: "show_file",
-		label: "Show file to the person",
+		label: t("pi.show-file.label"),
 		description:
 			"Show a file to the person you are working for, instead of describing it. " +
 			"Text opens in the Fresh editor beside this pane with an optional note; an image opens as a vertical split with real pixels; other files are not shown. No external app is opened. " +
@@ -213,21 +267,22 @@ export default function (pi: ExtensionAPI) {
 
 		async execute(_toolCallId, params) {
 			const raw = typeof params.path === "string" ? params.path.trim() : "";
-			if (!raw) return textResult("show_file needs a path.", true);
+			if (!raw) return textResult(t("pi.show-file.needs-path"), true);
 
 			const path = isAbsolute(raw) ? raw : resolve(process.cwd(), raw);
-			if (!existsSync(path)) return textResult(`No such file: ${path}`, true);
-			if (statSync(path).isDirectory()) return textResult(`${path} is a directory, not a file.`, true);
+			if (!existsSync(path)) return textResult(t("pi.show-file.no-such-file", { path }), true);
+			if (statSync(path).isDirectory()) return textResult(t("pi.show-file.is-directory", { path }), true);
 
 			const kind = classify(path);
 			const name = basename(path);
+			const note = params.note ? ` (${params.note})` : "";
 
 			// --- images: a vertical split with real pixels -------------------
 			// Fresh cannot render these, so there is no point looking for an
 			// editor. The popup plugin draws the picture in its own pane.
 			if (kind === "image") {
 				const target = (await freshPaneBeside()) || selfPaneId();
-				if (!target) return textResult(`Not shown: no Herdr pane available for ${name}.`, true);
+				if (!target) return textResult(t("pi.show-file.not-shown-no-pane", { name }), true);
 				const opened = await run(herdrBin(), [
 					"plugin", "pane", "open",
 					"--plugin", "image-popup",
@@ -239,21 +294,18 @@ export default function (pi: ExtensionAPI) {
 					"--focus",
 				], { timeoutMs: 10_000 });
 				if (opened.code !== 0) {
-					const detail = opened.stderr.trim() || opened.stdout.trim();
-					return textResult(`Not shown: could not open ${name} in Herdr (${detail || "no reason given"}).`, true);
+					const detail = opened.stderr.trim() || opened.stdout.trim() || t("pi.show-file.no-reason");
+					return textResult(t("pi.show-file.not-shown-herdr", { name, detail }), true);
 				}
-				return textResult(
-					`Shown: ${name} is open in a vertical split beside the editor, at real resolution.` +
-						(params.note ? ` (${params.note})` : ""),
-				);
+				return textResult(t("pi.show-file.shown-image", { name }) + note);
 			}
 
 			// --- text: the Fresh editor beside this pane --------------------
 			if (kind === "text") {
 				const pane = await freshPaneBeside();
-				if (!pane) return textResult(`Not shown: no Fresh editor in this tab for ${name}.`, true);
+				if (!pane) return textResult(t("pi.show-file.not-shown-no-editor", { name }), true);
 				const session = await freshSessionFor(pane);
-				if (!session) return textResult(`Not shown: Fresh daemon unavailable for ${name}.`, true);
+				if (!session) return textResult(t("pi.show-file.not-shown-daemon", { name }), true);
 				const opened = await run(freshBin(), [
 					"--cmd", "daemon", "open-file", session, freshLocation(path, params.note, params.line),
 				], {
@@ -261,16 +313,14 @@ export default function (pi: ExtensionAPI) {
 					timeoutMs: 10_000,
 				});
 				if (opened.code !== 0) {
-					return textResult(`Not shown: could not open ${name} in Fresh (${opened.stderr.trim() || "no reason given"}).`, true);
+					const detail = opened.stderr.trim() || t("pi.show-file.no-reason");
+					return textResult(t("pi.show-file.not-shown-fresh", { name, detail }), true);
 				}
-				return textResult(
-					`Shown: ${name} is open in the Fresh editor beside this pane.` +
-						(params.note ? ` (${params.note})` : ""),
-				);
+				return textResult(t("pi.show-file.shown-text", { name }) + note);
 			}
 
 			// --- anything else: no internal viewer ----------------------------
-			return textResult(`Not shown: no internal viewer for ${name}.`, true);
+			return textResult(t("pi.show-file.not-shown-other", { name }), true);
 		},
 	});
 }

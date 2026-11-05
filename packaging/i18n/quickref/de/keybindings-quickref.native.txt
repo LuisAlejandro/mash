@@ -1,0 +1,72 @@
+Mash unter macOS — Tastatur (Native)
+
+Jedes Werkzeug behält seine eigenen Tasten. Herdr läuft mit seinem üblichen
+Ctrl+B-Präfix: Ctrl+B drücken, loslassen, dann die Taste. Ctrl+B erreicht den
+Bereich daher nie, also sind Freshs Ctrl+B (Dateiexplorer), Pis Ctrl+B (Cursor
+links) und OpenCodes Ctrl+B (Hintergrundsitzung) nicht verfügbar; Freshs
+Ctrl+E oder sein Menü verwenden, und bei Pi die Pfeiltaste links.
+
+  ── Herdr (Ctrl+B, dann) ──
+  n / p            Nächster / vorheriger Tab
+  c                Neuer Tab
+  1..9             Zu Tab N wechseln
+  Shift+T          Tab umbenennen
+  Shift+X          Tab schließen
+  h j k l          Bereich links / unten / oben / rechts fokussieren
+  Shift+H J K L    Bereich links / unten / oben / rechts tauschen
+  Tab / Shift+Tab  Nächsten / vorherigen Bereich wählen
+  v / -            Vertikal / horizontal teilen
+  x                Bereich schließen
+  z                Bereich zoomen
+  r                Größenmodus
+  [                Kopiermodus
+  e                Scrollback bearbeiten
+  Shift+P          Bereich umbenennen
+  w                Arbeitsbereichswahl (nativ)
+  Shift+W          Arbeitsbereich umbenennen
+  Shift+D          Arbeitsbereich schließen
+  g                Zur Sitzung gehen
+  b                Seitenleiste umschalten
+  o                Benachrichtigung öffnen
+  s                Einstellungen
+  Shift+R          Konfiguration neu laden
+  q                Trennen
+  ?                Hilfe
+
+  ── Mash-Extras (Ctrl+B, dann) ──
+  t                neuer Entwicklungs-Tab (Editor + Agent)
+  a                neuer Agent-Tab
+  Shift+C          neuer einfacher Terminal-Tab
+  Shift+V          neuer Review-Tab (Diff + Agent)
+  `                neuer Terminal-Bereich unter Fresh
+  f                Dateisuche
+  y                Versionskontrolle
+  Shift+O          Container-Status
+  Shift+S          Snippets
+  i                Text annotieren
+  Shift+I          Anmerkungen in den Agenten dieses Tabs einfügen
+  m                Anmerkungen verwalten
+  u                Link oder ID wählen
+  Shift+U          Plugin-Verwaltung
+  Shift+Z          Nach Updates suchen
+  Shift+N          Neuer Arbeitsbereich (Layout-Profil)
+  Shift+G          Neuer Worktree (Layout-Profil)
+  Shift+F          Arbeitsbereichswahl (Sitzungen)
+  ;                Befehlspalette
+  Shift+Y          Agent aus Nachricht abzweigen
+  Shift+E          Sitzungssuche
+
+  ── Fresh (eigene Standardtasten) ──
+  Ctrl+S           Speichern
+  Ctrl+O           Datei öffnen
+  Ctrl+P           Schnell öffnen
+  Ctrl+F           Suchen
+  Alt+A            Suchen und ersetzen
+  F3 / Shift+F3    Nächstes / vorheriges suchen
+  Ctrl+G           Zur Zeile gehen
+  Ctrl+D           Cursor zur nächsten Fundstelle
+  Ctrl+E           Dateiexplorer fokussieren
+  Ctrl+Z / Ctrl+Y  Rückgängig / wiederholen
+
+Kopieren/Einfügen im Terminal: Cmd+C / Cmd+V oder die Maus. Pi und die Shells
+nutzen ihre eigenen Standardtasten.

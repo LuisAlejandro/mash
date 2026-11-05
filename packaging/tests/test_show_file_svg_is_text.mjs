@@ -8,6 +8,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { registerHooks } from "node:module";
 
+delete process.env.MASH_LANGUAGE;
+
 // The tool only needs TypeBox to declare its parameter schema.
 registerHooks({
   resolve(specifier, context, nextResolve) {

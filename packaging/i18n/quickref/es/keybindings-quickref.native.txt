@@ -1,0 +1,72 @@
+Mash en macOS — teclado (Native)
+
+Cada herramienta conserva sus teclas. Herdr usa su prefijo habitual Ctrl+B:
+pulsa Ctrl+B, suelta y luego la tecla. Ctrl+B nunca llega al panel, así que
+Ctrl+B de Fresh (explorador de archivos), Ctrl+B de Pi (cursor a la izquierda)
+y Ctrl+B de OpenCode (sesión en segundo plano) no están disponibles; usa
+Ctrl+E de Fresh o su menú, y la flecha izquierda de Pi.
+
+  ── Herdr (Ctrl+B, luego) ──
+  n / p            Pestaña siguiente / anterior
+  c                Nueva pestaña
+  1..9             Cambiar a la pestaña N
+  Shift+T          Renombrar pestaña
+  Shift+X          Cerrar pestaña
+  h j k l          Enfocar panel izquierda / abajo / arriba / derecha
+  Shift+H J K L    Intercambiar panel izquierda / abajo / arriba / derecha
+  Tab / Shift+Tab  Panel siguiente / anterior
+  v / -            Dividir vertical / horizontalmente
+  x                Cerrar panel
+  z                Ampliar panel
+  r                Modo de tamaño
+  [                Modo de copia
+  e                Editar historial de desplazamiento
+  Shift+P          Renombrar panel
+  w                Selector de espacios (nativo)
+  Shift+W          Renombrar espacio de trabajo
+  Shift+D          Cerrar espacio de trabajo
+  g                Ir a la sesión
+  b                Alternar barra lateral
+  o                Abrir notificación
+  s                Ajustes
+  Shift+R          Recargar configuración
+  q                Desconectar
+  ?                Ayuda
+
+  ── Extras de Mash (Ctrl+B, luego) ──
+  t                nueva pestaña de desarrollo (editor + agente)
+  a                nueva pestaña de agente
+  Shift+C          nueva pestaña de terminal simple
+  Shift+V          nueva pestaña de revisión (diff + agente)
+  `                nuevo panel de terminal bajo Fresh
+  f                Buscador de archivos
+  y                Control de versiones
+  Shift+O          Estado de contenedores
+  Shift+S          Fragmentos
+  i                anotar texto
+  Shift+I          Pegar anotaciones en el agente de esta pestaña
+  m                gestionar anotaciones
+  u                Elegir enlace o ID
+  Shift+U          Gestor de plugins
+  Shift+Z          Buscar actualizaciones
+  Shift+N          Nuevo espacio de trabajo (perfil de diseño)
+  Shift+G          Nuevo árbol de trabajo (perfil de diseño)
+  Shift+F          Selector de espacios (sesiones)
+  ;                Paleta de comandos
+  Shift+Y          Bifurcar agente desde un mensaje
+  Shift+E          Buscar en sesiones
+
+  ── Fresh (sus teclas predeterminadas) ──
+  Ctrl+S           Guardar
+  Ctrl+O           Abrir archivo
+  Ctrl+P           Apertura rápida
+  Ctrl+F           Buscar
+  Alt+A            Buscar y reemplazar
+  F3 / Shift+F3    Buscar siguiente / anterior
+  Ctrl+G           Ir a la línea
+  Ctrl+D           Cursor en la siguiente coincidencia
+  Ctrl+E           Enfocar explorador de archivos
+  Ctrl+Z / Ctrl+Y  Deshacer / rehacer
+
+Copiar/pegar en la terminal: Cmd+C / Cmd+V, o el ratón. Pi y los shells usan
+sus propias teclas.

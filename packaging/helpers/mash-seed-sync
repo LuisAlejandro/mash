@@ -207,6 +207,24 @@ TREES = [
     ("defaults/mash-config/venvs", "config/mash/venvs"),
 ]
 
+def quickref_source():
+    """The cheat sheet for this mode, platform and language.
+
+    English stays the historical file under defaults, which is also the
+    fallback when a translated sheet was not staged. Every other language
+    reads packaging/i18n/quickref/<code>/, one sheet per mode and platform.
+    """
+    name = (
+        "keybindings-quickref"
+        + (".native" if NATIVE else "")
+        + (".linux.txt" if LINUX else ".txt")
+    )
+    translated = os.path.join("i18n", "quickref", LANGUAGE, name)
+    if LANGUAGE != "en" and os.path.isfile(os.path.join(res, translated)):
+        return translated
+    return os.path.join("defaults", "pi", "extensions", name)
+
+
 # Source, destination, template substitutions. These are the single files the
 # launchers used to seed conditionally with cp/sed. Keep the list aligned with
 # mash_seed_configs(), mash_seed_programming_skills() and mash_seed_hindsight().
@@ -223,11 +241,9 @@ SINGLE_SEEDS = [
     ("defaults/pet/config.toml", "config/pet/config.toml", "pet"),
     ("defaults/pet/snippet.toml", "config/pet/snippet.toml", None),
     (f"defaults/fresh/config{SUFFIX}.json", "config/fresh/config.json", "fresh"),
-    # Each mode has its own sheet per platform.
+    # Each mode has its own sheet per platform, and each language has its own copy.
     (
-        "defaults/pi/extensions/keybindings-quickref"
-        + (".native" if NATIVE else "")
-        + (".linux.txt" if LINUX else ".txt"),
+        quickref_source(),
         "pi/agent/extensions/keybindings-quickref.txt",
         "quickref",
     ),

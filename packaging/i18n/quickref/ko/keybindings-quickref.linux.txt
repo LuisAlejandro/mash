@@ -1,0 +1,66 @@
+Mash on Linux — 키보드
+
+Ctrl은 편집 수식키이므로 Mash 자체의 키 가족은 Ctrl+Alt와 Ctrl+Shift에
+두었습니다. GNOME이 그중 두 조합을 잡고 되돌리지 않습니다. GNOME은 Mash가 있기
+전에 키를 조성기에서 읽기 때문입니다. 그래서 창 이동은 Ctrl+Super를 쓰고,
+워크스페이스 이름 바꾸기는 Ctrl+Alt+Shift+R을 피합니다. 창 안에서는 셸이 Ctrl
+하나짜리 조합(Ctrl+C, Ctrl+R, Ctrl+U)을, Fresh가 편집 조합을 그대로 가집니다.
+
+  Ctrl+Alt+W           창 닫기
+  Ctrl+Shift+W         탭 닫기
+  Ctrl+Alt+Shift+W     워크스페이스 닫기
+  Ctrl+Alt+U           분리
+  Ctrl+Super+Down      아래 창으로
+  Ctrl+Super+Left      왼쪽 창으로
+  Ctrl+Super+Right     오른쪽 창으로
+  Ctrl+Super+Up        위 창으로
+  Ctrl+Alt+Shift+G     세션으로 이동
+  Ctrl+Shift+I         도움말
+  Ctrl+Shift+Down      다음 에이전트
+  Ctrl+Alt+]           다음 창
+  Ctrl+Tab             다음 탭
+  Ctrl+Alt+Shift+]     다음 워크스페이스
+  Ctrl+Alt+Y           알림 열기
+  Ctrl+Alt+Shift+U     업데이트 확인
+  Ctrl+Shift+Up        이전 에이전트
+  Ctrl+Alt+[           이전 창
+  Ctrl+Shift+Tab       이전 탭
+  Ctrl+Alt+Shift+[     이전 워크스페이스
+  Ctrl+Shift+,         설정 다시 불러오기
+  Ctrl+Alt+Shift+⌫     워크트리 제거
+  Ctrl+Shift+M         탭 이름 바꾸기
+  Ctrl+Alt+Shift+M     워크스페이스 이름 바꾸기
+  Ctrl+Alt+R           크기 조정
+  Ctrl+,               설정
+  Ctrl+Alt+-           창을 가로로 나누기
+  Ctrl+Alt+\           창을 세로로 나누기
+  Alt+1..9             탭 N으로 전환
+  Ctrl+Alt+Shift+1..9  워크스페이스 N으로 전환
+  Ctrl+Alt+B           사이드바 전환
+  Ctrl+Alt+Z           창 확대
+
+  ── 실행 ──
+  Ctrl+Shift+T         새 셸 탭
+  Ctrl+Alt+T           새 개발 탭 (편집기 + 에이전트)
+  Ctrl+Alt+Shift+T     새 에이전트 탭
+  Ctrl+Alt+P           파일 찾기
+  Ctrl+Shift+G         버전 관리
+  Ctrl+Shift+O         컨테이너 상태
+  Ctrl+Alt+Shift+P     스니펫
+  Ctrl+Shift+R         새 리뷰 탭 (diff + 에이전트)
+  Ctrl+Alt+K           텍스트에 주석 달기
+  Ctrl+Alt+L           이 탭의 에이전트에 주석을 붙여 넣고 보관
+  Ctrl+Shift+L         주석 관리
+  Alt+G                링크 또는 ID 선택
+  Ctrl+Shift+X         플러그인 관리자
+  Ctrl+Alt+Shift+N     새 작업 공간 (레이아웃 프로필)
+  Ctrl+Alt+Shift+E     새 작업 트리 (레이아웃 프로필)
+  Ctrl+Alt+Shift+O     작업 공간 선택
+  Ctrl+Shift+P         명령 팔레트
+  Ctrl+Alt+Shift+Y     메시지에서 에이전트 분기
+  Ctrl+Alt+Shift+L     세션 검색
+
+복사 / 붙여 넣기: Ctrl+Shift+C / Ctrl+Shift+V, 또는 마우스. Fresh 자체의 편집
+조합은 첫 실행 때 고른 키바인딩 모드에 따릅니다. Mash/Cursor 풍은 Mash 매핑을
+넣고, Native는 Fresh의 내장 키를 남깁니다. `fresh --cmd config paths`를
+실행하거나 Fresh의 키맵을 열어 어느 쪽인지 확인하세요.

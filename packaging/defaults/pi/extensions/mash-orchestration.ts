@@ -8,9 +8,65 @@
  */
 
 import { spawn } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
+
+const PLACEHOLDER = /\{([A-Za-z_][A-Za-z0-9_]*)\}/g;
+const catalogs = new Map<string, Record<string, unknown>>();
+
+function i18nDirectories(): string[] {
+	const dirs: string[] = [];
+	const configured = (process.env.MASH_I18N_DIR || "").trim();
+	if (configured) dirs.push(configured);
+	const beside = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "i18n");
+	if (!dirs.includes(beside) && existsSync(join(beside, "languages.json"))) dirs.push(beside);
+	return dirs;
+}
+
+function catalog(dir: string, code: string): Record<string, unknown> {
+	const cacheKey = `${dir}\0${code}`;
+	const cached = catalogs.get(cacheKey);
+	if (cached) return cached;
+	let data: Record<string, unknown> = {};
+	try {
+		const loaded = JSON.parse(readFileSync(join(dir, "messages", "pi", `${code}.json`), "utf8"));
+		if (loaded && typeof loaded === "object") data = loaded;
+	} catch {
+		data = {};
+	}
+	catalogs.set(cacheKey, data);
+	return data;
+}
+
+function entryText(entry: unknown): string | undefined {
+	if (typeof entry === "string" && entry) return entry;
+	if (entry && typeof entry === "object" && "text" in entry) {
+		const text = (entry as { text?: unknown }).text;
+		if (typeof text === "string" && text) return text;
+	}
+	return undefined;
+}
+
+function t(key: string, values: Record<string, string> = {}): string {
+	const language = (process.env.MASH_LANGUAGE || "en").trim() || "en";
+	const codes = language === "en" ? ["en"] : [language, "en"];
+	let text: string | undefined;
+	for (const code of codes) {
+		for (const dir of i18nDirectories()) {
+			text = entryText(catalog(dir, code)[key]);
+			if (text) break;
+		}
+		if (text) break;
+	}
+	if (!text) return key;
+	return text.replace(PLACEHOLDER, (match, name: string) =>
+		Object.prototype.hasOwnProperty.call(values, name) ? values[name] : match,
+	);
+}
 
 const DEFAULT_TIMEOUT_MS = 600_000;
 
@@ -67,7 +123,7 @@ function parseJson(raw: string): Record<string, unknown> | undefined {
 export default function (pi: ExtensionAPI) {
 	pi.registerTool({
 		name: "ask_coordinator",
-		label: "Ask coordinator",
+		label: t("pi.orchestration.label"),
 		description:
 			"Ask the Herdr orchestration coordinator one question and wait for its reply. Use this only while this pane has an open Dispatch. If this pane has no Dispatch, the tool returns an error: ask the person with ask_user instead.",
 		promptSnippet:
@@ -93,29 +149,23 @@ export default function (pi: ExtensionAPI) {
 		}),
 		async execute(_toolCallId, params, signal, _onUpdate, _ctx) {
 			if (signal?.aborted) {
-				return textResult("The question was cancelled.", true);
+				return textResult(t("pi.orchestration.cancelled"), true);
 			}
 			let lookup;
 			try {
 				lookup = await runCli(["dispatch-for-pane"], signal);
 			} catch (error) {
 				const message = error instanceof Error ? error.message : String(error);
-				return textResult(
-					`mash-orchestration is not available (${message}). Ask the person with ask_user.`,
-					true,
-				);
+				return textResult(t("pi.orchestration.unavailable", { message }), true);
 			}
 			const found = parseJson(lookup.stdout);
 			if (lookup.code !== 0 || !found) {
 				const err = parseJson(lookup.stderr);
 				const message = typeof err?.error === "string" ? err.error : lookup.stderr.trim();
-				return textResult(message || "Could not look up the Dispatch.", true);
+				return textResult(message || t("pi.orchestration.lookup-failed"), true);
 			}
 			if (!found.dispatch) {
-				return textResult(
-					"No open Dispatch for this pane. Ask the person with ask_user.",
-					true,
-				);
+				return textResult(t("pi.orchestration.no-dispatch"), true);
 			}
 
 			const args = ["ask", "--question", params.question];
@@ -130,23 +180,21 @@ export default function (pi: ExtensionAPI) {
 
 			let announced = false;
 			try {
-				pi.events.emit("herdr:blocked", { active: true, label: "Waiting for coordinator" });
+				pi.events.emit("herdr:blocked", { active: true, label: t("pi.orchestration.waiting") });
 				announced = true;
 				const result = await runCli(args, signal);
 				if (signal?.aborted) {
-					return textResult("The question was cancelled.", true);
+					return textResult(t("pi.orchestration.cancelled"), true);
 				}
 				const body = parseJson(result.code === 0 ? result.stdout : result.stderr);
 				if (result.code !== 0 || !body) {
 					const message = typeof body?.error === "string" ? body.error : result.stderr.trim();
-					return textResult(message || "The coordinator question failed.", true);
+					return textResult(message || t("pi.orchestration.failed"), true);
 				}
 				if (body.status === "answered") {
-					return textResult(`Coordinator answered: ${String(body.reply ?? "")}`);
+					return textResult(t("pi.orchestration.answered", { reply: String(body.reply ?? "") }));
 				}
-				return textResult(
-					`Question ${String(body.id)} is still pending. Call ask_coordinator again with resume set to that id.`,
-				);
+				return textResult(t("pi.orchestration.pending", { id: String(body.id) }));
 			} finally {
 				if (announced) {
 					pi.events.emit("herdr:blocked", { active: false });

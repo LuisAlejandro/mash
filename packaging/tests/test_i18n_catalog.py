@@ -191,6 +191,26 @@ def _check_translations(component: str, english: dict, catalogs: dict[str, dict]
                 errors.append(f"{component}/{code}: {key!r} has a placeholder mismatch")
 
 
+QUICKREF_SHEETS = (
+    "keybindings-quickref.txt",
+    "keybindings-quickref.linux.txt",
+    "keybindings-quickref.native.txt",
+    "keybindings-quickref.native.linux.txt",
+)
+
+
+def _check_quickref(i18n_dir: Path) -> list[str]:
+    """Every language ships each keybinding sheet mash-seed-sync may install."""
+    errors: list[str] = []
+    quickref = i18n_dir / "quickref"
+    for code in EXPECTED_CODES:
+        for sheet in QUICKREF_SHEETS:
+            path = quickref / code / sheet
+            if not path.is_file():
+                errors.append(f"quickref/{code}/{sheet}: missing quick-reference sheet")
+    return errors
+
+
 def validate_i18n(i18n_dir: Path, source_files: dict[str, str] | None = None) -> list[str]:
     """Check every component catalog under messages/<component>/<lang>.json.
 
@@ -226,6 +246,8 @@ def validate_i18n(i18n_dir: Path, source_files: dict[str, str] | None = None) ->
             elif isinstance(value, str):
                 combined[key] = value
         _check_translations(component, english, catalogs, errors)
+
+    errors.extend(_check_quickref(i18n_dir))
 
     sources = discover_sources(REPO) if source_files is None else source_files
     used: dict[str, str] = {}
@@ -376,6 +398,18 @@ class I18nCatalogTest(unittest.TestCase):
                 )
             problems = self.problems(root, {"packaging/helpers/x.sh": "mash-t helper.example\n"})
         self.assertTrue(any("also defined in another component" in problem for problem in problems), problems)
+
+    def test_missing_quickref_sheet_fails(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = _fixture_catalogs(Path(tmp), {"helper.example": "Hello"})
+            for code in EXPECTED_CODES:
+                sheet_dir = root / "quickref" / code
+                sheet_dir.mkdir(parents=True)
+                for sheet in QUICKREF_SHEETS:
+                    (sheet_dir / sheet).write_text("x\n", encoding="utf-8")
+            (root / "quickref" / "th" / "keybindings-quickref.native.txt").unlink()
+            problems = self.problems(root, {"packaging/helpers/x.sh": "mash-t helper.example\n"})
+        self.assertTrue(any("quickref/th/keybindings-quickref.native.txt" in problem for problem in problems), problems)
 
     def test_repository_catalogs_are_complete(self):
         self.assertEqual([], validate_i18n(I18N), "\n".join(validate_i18n(I18N)))

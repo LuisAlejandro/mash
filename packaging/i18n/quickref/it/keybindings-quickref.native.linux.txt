@@ -1,0 +1,79 @@
+Mash su Linux — tastiera (Native)
+
+Ogni strumento tiene i propri tasti. Herdr usa il suo prefisso abituale
+Ctrl+B: premi Ctrl+B, rilascia, poi il tasto. Ctrl+B non raggiunge mai il
+riquadro, quindi Ctrl+B di Fresh (esploratore file), Ctrl+B di Pi (cursore a
+sinistra) e Ctrl+B di OpenCode (sessione in background) non sono disponibili;
+usa Ctrl+E di Fresh o il suo menu, e la freccia sinistra di Pi.
+
+  ── Herdr (Ctrl+B, poi) ──
+  n / p            Scheda successiva / precedente
+  c                Nuova scheda
+  1..9             Passa alla scheda N
+  Shift+T          Rinomina scheda
+  Shift+X          Chiudi scheda
+  h j k l          Fuoco riquadro sinistra / giù / su / destra
+  Shift+H J K L    Scambia riquadro sinistra / giù / su / destra
+  Tab / Shift+Tab  Riquadro successivo / precedente
+  v / -            Dividi in verticale / in orizzontale
+  x                Chiudi riquadro
+  z                Zoom riquadro
+  r                Modalità dimensione
+  [                Modalità copia
+  e                Modifica lo scrollback
+  Shift+P          Rinomina riquadro
+  w                Scelta spazio (nativo)
+  Shift+W          Rinomina spazio di lavoro
+  Shift+D          Chiudi spazio di lavoro
+  g                Vai alla sessione
+  b                Attiva/disattiva barra laterale
+  o                Apri notifica
+  s                Impostazioni
+  Shift+R          Ricarica configurazione
+  q                Scollega
+  ?                Aiuto
+
+  ── Extra di Mash (Ctrl+B, poi) ──
+  t                nuova scheda di sviluppo (editor + agente)
+  a                nuova scheda agente
+  Shift+C          nuova scheda terminale semplice
+  Shift+V          nuova scheda di revisione (diff + agente)
+  `                nuovo pannello terminale sotto Fresh
+  f                Ricerca file
+  y                Controllo di versione
+  Shift+O          Stato dei container
+  Shift+S          Snippet
+  i                annota testo
+  Shift+I          Incolla le annotazioni nell'agente di questa scheda
+  m                gestisci annotazioni
+  u                Scegli link o ID
+  Shift+U          Gestore plugin
+  Shift+Z          Controlla aggiornamenti
+  Shift+N          Nuovo spazio di lavoro (profilo di layout)
+  Shift+G          Nuovo worktree (profilo di layout)
+  Shift+F          Scelta spazio (sessioni)
+  ;                Palette dei comandi
+  Shift+Y          Deriva agente da messaggio
+  Shift+E          Ricerca sessioni
+
+  ── Fresh (i suoi tasti predefiniti) ──
+  Ctrl+S           Salva
+  Ctrl+O           Apri file
+  Ctrl+P           Apertura rapida
+  Ctrl+F           Trova
+  Alt+A            Trova e sostituisci
+  F3 / Shift+F3    Trova successivo / precedente
+  Ctrl+G           Vai alla riga
+  Ctrl+D           Cursore sulla corrispondenza successiva
+  Ctrl+E           Fuoco sull'esploratore file
+  Ctrl+Z / Ctrl+Y  Annulla / ripeti
+
+  ── Pi (i suoi tasti predefiniti) ──
+  Ctrl+↑ / Ctrl+↓  Vai al messaggio precedente / successivo
+
+Pi accetta anche Ctrl+Shift+↑/↓ per questo, ma il terminale reclama quei due
+tasti per il salto del proprio prompt, quindi in Native non arrivano mai a Pi.
+Usa Ctrl+↑/↓. Ogni altro tasto di Pi resta invariato.
+
+Copia/incolla nel terminale: Ctrl+Shift+C / Ctrl+Shift+V, o il mouse. Pi e le
+shell usano altrimenti i propri tasti.

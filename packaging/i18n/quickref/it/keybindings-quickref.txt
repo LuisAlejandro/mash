@@ -1,0 +1,36 @@
+── Spazi di lavoro ──                                     ── Agenti ──
+  ⌘⌃N        Nuovo spazio di lavoro (profilo di layout)     ⌃⇧↑ / ⌃⇧↓  Agente precedente / successivo
+  ⌘⌃⇧N       Nuovo worktree (profilo di layout)             ⌃⇧1-9      Fuoco sull'agente N
+  ⌘⌃R        Rinomina spazio di lavoro                      Esc        Interrompi
+  ⌘⌃W        Chiudi spazio di lavoro                        ⌃C         Pulisci / esci
+  ⌘⌃⌫        Rimuovi worktree                               ⇧Tab       Cambia livello di ragionamento
+  ⌘⌃[ / ⌘⌃]  Spazio di lavoro precedente / successivo       ⌃O         Espandi l'output dello strumento
+  ⌘⌃1-9      Passa allo spazio di lavoro N                  ⌃P         Cambia modello
+  ⌘⌃G        Vai a (navigatore sessioni)                    ⌃G         Editor esterno
+  ⌘⌃O        Scelta spazio (sessioni / spazi)               ⌃⇧F        Cerca nella trascrizione
+── Schede ──                                                ⌥↵         Metti in coda un seguito
+  ⌘T / ⌘⇧N   nuova scheda di sviluppo (editor + agente)     ⌃⌥Z        Dettatura (Pi Voice)
+  ⌘⌥T / ⌘⌥N  nuova scheda agente
+  ⌘⇧R        nuova scheda di revisione (diff + agente)    ── Componenti ──
+  ⌘⇧T        nuova scheda terminale semplice                ⌃⇧G        Controllo di versione
+  ⌘⇧[ / ⌘⇧]  Scheda precedente / successiva                 ⌘⇧O        Stato dei container
+  ⌘⇧1-9      Passa alla scheda N                            ⌘⌥P        Snippet (esecutore di snippet)
+  ⌘⇧M        Rinomina scheda                                ⌘P         Ricerca file
+  ⌘⇧W        Chiudi scheda                                  ⌘⇧P        Palette dei comandi
+── Riquadri ──                                              ⌘⌥L        Ricerca sessioni
+  ⌘⌥← ↓ ↑ →  Fuoco riquadro sinistra / giù / su / destra    ⌘K / ⌘L    Annota -- cattura / incolla
+  ⌘⌥[ / ⌘⌥]  Riquadro precedente / successivo               ⌘⇧L        Annotazioni -- gestisci
+  ⌘⌥\ ⌘⌥-    Dividi verticale / orizzontale                 ⌥G         Scegli link o ID
+  ⌘⌥W        Chiudi riquadro                                ⌘⇧X        Gestore plugin
+  ⌘⌥Z        Zoom riquadro                                  ⌘⌥Y        Deriva agente da messaggio
+  ⌘⌥R        Modalità dimensione
+                                                          ── Globale ──
+── Editor ──                                                ⌘⇧I        Aiuto
+  ⌘O         Apri file                                      ⌘I         Impostazioni
+  ⌘S         Salva                                          ⌘U         Scollega
+  ⌘F         Trova / sostituisci nel buffer                 ⌘R         Ricarica configurazione
+  ⌘⇧F        Trova / sostituisci nei file                   ⌘Y         Apri destinazione notifica
+  ⌘⇧E        Attiva/disattiva esploratore file              ⌘B         Attiva/disattiva barra laterale
+  ⌘D         Cursore sulla corrispondenza successiva        ⌘⇧U        Controlla aggiornamenti
+  ⌘⌥C        Copia percorso del file
+  ⌥⇧↓        Duplica riga
