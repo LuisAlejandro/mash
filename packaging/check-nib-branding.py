@@ -34,6 +34,10 @@ KEEP = {
 
 NIB_FILES = ("MainMenu.nib", "About.nib")
 
+# A localization can reintroduce the old name in a language the base nib never
+# showed: every translated sheet is scanned too, not only the compiled nib.
+LOCALIZED_SUFFIXES = (".strings", ".stringsdict")
+
 
 def inline_strings(data):
     """Yield every inline nib string."""
@@ -79,6 +83,25 @@ def main(argv):
             print(f"  {name}: still says Ghostty: {survivors}", file=sys.stderr)
         else:
             print(f"  {name}: no Ghostty display strings")
+
+    for path in sorted(root.rglob("*")):
+        if path.suffix not in LOCALIZED_SUFFIXES or not path.is_file():
+            continue
+        seen += 1
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as exc:
+            failed = True
+            print(f"  {path.name}: unreadable localization: {exc}", file=sys.stderr)
+            continue
+        survivors = sorted(
+            {line.strip() for line in text.splitlines() if "Ghostty" in line and line.strip() not in KEEP}
+        )
+        if survivors:
+            failed = True
+            print(f"  {path.name}: still says Ghostty: {survivors}", file=sys.stderr)
+        else:
+            print(f"  {path.name}: no Ghostty display strings")
 
     if not seen:
         raise SystemExit(f"no nibs found under {root}")
