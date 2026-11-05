@@ -295,7 +295,8 @@ mash_ghostty_trim_check() {
     return 1
   }
 
-  "$root/packaging/helpers/mash-ghostty-patch-menu" "$src" || return 1
+  # The menu and update code are in the fork at the pinned commit; nothing is
+  # patched into the source here.
 
   # The shared rejection, which is what covers both platforms.
   grep -q 'mash_removed_ui' "$src/src/Surface.zig" 2>/dev/null || {

@@ -90,7 +90,7 @@
       "install": "bundled",
       "repo": "LuisAlejandro/ghostty",
       "ref": "mash-multilingual",
-      "commit": "502211a6874ec60a82ec08757a8309d04affb093",
+      "commit": "4f6d42cc331e33d655b1d39173092eb70d3bbcd7",
       "frontends": {
         "macos-arm64": "swift",
         "linux-amd64": "gtk",
