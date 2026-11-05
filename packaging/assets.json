@@ -89,8 +89,8 @@
       "strategy": "git",
       "install": "bundled",
       "repo": "LuisAlejandro/ghostty",
-      "ref": "fork-main",
-      "commit": "6bbdef76dce3d841bcbacaa3fea7a1bcf5ddce1f",
+      "ref": "mash-multilingual",
+      "commit": "ccdd53e577dbb25e583ba5c9dbb40796dfcd3840",
       "frontends": {
         "macos-arm64": "swift",
         "linux-amd64": "gtk",

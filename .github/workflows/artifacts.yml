@@ -34,11 +34,11 @@ env:
   # 0.16.0; the fork commit is what makes a release reproducible.
   ZIG_VERSION: "0.16.0"
   GHOSTTY_FORK: "LuisAlejandro/ghostty"
-  GHOSTTY_FORK_REF: "fork-main"
+  GHOSTTY_FORK_REF: "mash-multilingual"
   # Full SHA, compared exactly: a short prefix could collide, and this pin is
   # what makes a released DMG traceable to a specific terminal build. Move it
   # whenever the fork gains a commit.
-  GHOSTTY_FORK_COMMIT: "6bbdef76dce3d841bcbacaa3fea7a1bcf5ddce1f"
+  GHOSTTY_FORK_COMMIT: "ccdd53e577dbb25e583ba5c9dbb40796dfcd3840"
   # Mash Programming Skills, whose skills and agents are copied into the app.
   # The build refuses any other version. Both skills repos now cut releases and
   # tag them, so the pin is the tag rather than a commit SHA: a tag names a
