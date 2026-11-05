@@ -48,6 +48,12 @@ def fixture(root: Path, english: dict[str, str]) -> Path:
     component = i18n / "messages" / "helpers"
     component.mkdir(parents=True)
     shutil.copyfile(LANGUAGES, i18n / "languages.json")
+    # The gate also requires every keybinding sheet in every language.
+    for code in gate.EXPECTED_CODES:
+        sheets = i18n / "quickref" / code
+        sheets.mkdir(parents=True)
+        for sheet in gate.QUICKREF_SHEETS:
+            (sheets / sheet).write_text("sheet\n", encoding="utf-8")
     (component / "en.json").write_text(
         json.dumps(english, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
