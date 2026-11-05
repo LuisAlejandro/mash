@@ -24,6 +24,7 @@ From a **clean** `develop`:
 
 | Step | Command / skill |
 |------|-----------------|
+| Translations | `python3 scripts/translate.py` (**before** the gate) |
 | Interactive | `mash-release` (default **patch**; `minor` / `major` when needed) |
 | Manual | `make release-preflight` then `make release-patch` (or `-minor` / `-major`) |
 | Rollback | `VERSION=<version> make undo-release` |
@@ -35,6 +36,28 @@ cannot drift. It needs no Apple tooling, no Docker and no network.
 
 `make release-*` runs that same gate automatically before bumping anything, so a
 bad tree stops the release instead of producing a tag that only CI rejects.
+
+### Translations
+
+Every user-facing string Mash owns lives in `packaging/i18n/messages/<component>/`,
+one JSON catalog per language. English is the source of truth; the other 14 are
+generated, never written by hand:
+
+```bash
+python3 scripts/translate.py --dry-run   # list missing, stale or mismatched keys
+python3 scripts/translate.py             # translate them with the configured Pi model
+```
+
+**Order: translate, then `make release-preflight`.** The gate
+(`packaging/tests/test_i18n_catalog.py --check`) fails on a missing key, a stale
+entry (its English text changed after it was translated), a translation-only key,
+an empty value or a changed `{placeholder}`, so a release with incomplete
+catalogs never gets past preflight. `scripts/translate.py` imports that same
+check, so it repairs exactly what the gate would reject; it never edits
+`en.json`, and a rejected reply (malformed JSON, wrong keys, dropped
+placeholder) leaves every catalog byte-identical.
+
+Completeness is the gate, not review: translations ship unreviewed by design.
 
 **The release ships three artifacts.** `make release-*` creates the release as a
 **draft** and dispatches `release.yml` at that tag. It re-runs the gate and hands
