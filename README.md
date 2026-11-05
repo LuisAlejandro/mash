@@ -29,6 +29,16 @@ Use `linux-arm64` in the filename on arm64. The package configures Mash's [signe
 
 On first launch, the setup wizard configures your workspace. Mash keeps its data under `~/.mash`; upgrades preserve user-edited configuration and user-installed resources. Removing the app or package does not delete that directory.
 
+## Language
+
+Set `~/.mash/setup/language` to one line, `language=<code>`, to choose a language:
+`bg` Български, `cs` Čeština, `de` Deutsch, `en` English, `es` Español,
+`fr` Français, `it` Italiano, `ja` 日本語, `ko` 한국어,
+`pt-BR` Português (Brasil), `ru` Русский, `th` ไทย, `uk` Українська,
+`vi` Tiếng Việt, or `zh-CN` 简体中文. It takes effect on the next launch.
+Herdr UI, Pi's own interface, third-party CLI tools, and language servers stay
+in English.
+
 ## Source layout
 
 - `packaging/build.sh` assembles the macOS app; `packaging/build-linux.sh` assembles Linux packages. `packaging/build-common.sh` and `packaging/carry.sh` stage shared and platform-specific components.
