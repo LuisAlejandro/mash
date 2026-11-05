@@ -101,6 +101,17 @@ else
     fi
 fi
 
+echo "preflight: language catalogs"
+if command -v python3 >/dev/null 2>&1; then
+    if python3 packaging/tests/test_i18n_catalog.py --check; then
+        ok "language catalogs are complete"
+    else
+        bad "language catalog check failed"
+    fi
+else
+    bad "python3 is required to validate language catalogs"
+fi
+
 echo "preflight: release inputs are present"
 
 files=(
