@@ -1,0 +1,79 @@
+Mash on Linux — bàn phím (Native)
+
+Mỗi công cụ giữ phím của mình. Herdr dùng tiền tố Ctrl+B tích hợp: nhấn
+Ctrl+B, thả, rồi nhấn phím. Ctrl+B không tới ô, nên Ctrl+B của Fresh (trình
+duyệt tệp), Ctrl+B của Pi (con trỏ sang trái) và Ctrl+B của OpenCode (phiên
+nền) không dùng được; hãy dùng Ctrl+E hoặc trình đơn trong Fresh và phím mũi
+tên trái trong Pi.
+
+  ── Herdr (Ctrl+B, rồi) ──
+  n / p            Thẻ sau / trước
+  c                Thẻ mới
+  1..9             Chuyển tới thẻ N
+  Shift+T          Đổi tên thẻ
+  Shift+X          Đóng thẻ
+  h j k l          Tới ô trái / xuống / lên / phải
+  Shift+H J K L    Đổi ô trái / xuống / lên / phải
+  Tab / Shift+Tab  Ô sau / trước
+  v / -            Chia dọc / ngang
+  x                Đóng ô
+  z                Phóng ô
+  r                Đổi kích thước
+  [                Chế độ sao chép
+  e                Sửa lịch sử cuộn
+  Shift+P          Đổi tên ô
+  w                Chọn không gian làm việc (gốc)
+  Shift+W          Đổi tên không gian làm việc
+  Shift+D          Đóng không gian làm việc
+  g                Đi tới phiên
+  b                Bật tắt thanh bên
+  o                Mở thông báo
+  s                Cài đặt
+  Shift+R          Tải lại cấu hình
+  q                Tách
+  ?                Trợ giúp
+
+  ── Phần bổ sung Mash (Ctrl+B, rồi) ──
+  t                tab phát triển mới (trình soạn thảo + tác tử)
+  a                tab tác tử mới
+  Shift+C          tab shell đơn giản mới
+  Shift+V          tab đánh giá mới (diff + tác tử)
+  `                khung shell mới dưới Fresh
+  f                Tìm tệp
+  y                Quản lý phiên bản
+  Shift+O          Trạng thái container
+  Shift+S          Đoạn mã
+  i                chú thích văn bản
+  Shift+I          Dán chú thích vào tác nhân của thẻ này
+  m                quản lý chú thích
+  u                Chọn liên kết hoặc ID
+  Shift+U          Trình quản lý plugin
+  Shift+Z          Kiểm tra bản cập nhật
+  Shift+N          Không gian làm việc mới (hồ sơ bố cục)
+  Shift+G          Cây làm việc mới (hồ sơ bố cục)
+  Shift+F          Chọn không gian làm việc (phiên)
+  ;                Bảng lệnh
+  Shift+Y          Tách tác tử từ tin nhắn
+  Shift+E          Tìm kiếm phiên
+
+  ── Fresh (phím mặc định riêng) ──
+  Ctrl+S           Lưu
+  Ctrl+O           Mở tệp
+  Ctrl+P           Mở nhanh
+  Ctrl+F           Tìm
+  Alt+A            Tìm và thay
+  F3 / Shift+F3    Tìm tiếp / trước
+  Ctrl+G           Tới dòng
+  Ctrl+D           Con trỏ tới khớp tiếp theo
+  Ctrl+E           Tới trình duyệt tệp
+  Ctrl+Z / Ctrl+Y  Hoàn tác / làm lại
+
+  ── Pi (phím mặc định riêng) ──
+  Ctrl+↑ / Ctrl+↓  Tới tin trước / sau
+
+Pi cũng nhận Ctrl+Shift+↑/↓ cho việc này, nhưng terminal dùng hai phím đó để
+nhảy lời nhắc của chính nó, nên ở Native chúng không tới Pi. Hãy dùng
+Ctrl+↑/↓. Các phím khác của Pi vẫn giữ nguyên.
+
+Sao chép / dán trong terminal: Ctrl+Shift+C / Ctrl+Shift+V, hoặc dùng chuột.
+Còn lại, Pi và shell dùng phím mặc định của chúng.

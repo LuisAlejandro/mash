@@ -1,6 +1,7 @@
 //! The file finder: pick a file under the origin cwd, then open it in a new
 //! pane (split) or a new window (tab) with `$EDITOR`.
 
+use crate::i18n::{fill, t};
 use crate::tty::{die, pick_lines, pick_lines_q, run_cli};
 
 struct Picked {
@@ -13,7 +14,10 @@ struct Picked {
 /// (used when jumping in from the "Search files…" row).
 pub fn run(cwd: &str, origin_pane: &str, _origin_workspace: &str, prefill: &str) {
     if cwd.is_empty() || !std::path::Path::new(cwd).is_dir() {
-        die("telescope: no usable origin directory to search files under.");
+        die(&format!(
+            "telescope: {}",
+            t("plugin.telescope.empty.no_origin_dir")
+        ));
         return;
     }
 
@@ -33,10 +37,10 @@ pub fn confirm_and_open(file: &str, origin_pane: &str) {
         .unwrap_or_else(|| file.to_string());
 
     let opts = vec![
-        "pane\tNew pane (split, right)".to_string(),
-        "window\tNew window (tab)".to_string(),
+        format!("pane\t{}", t("plugin.telescope.file.pane")),
+        format!("window\t{}", t("plugin.telescope.file.window")),
     ];
-    let Some(choice) = pick_lines(&opts, "open in ▸ ") else {
+    let Some(choice) = pick_lines(&opts, &t("plugin.telescope.prompt.open_in")) else {
         return; // cancelled
     };
     let target = choice.split('\t').next().unwrap_or("").to_string();
@@ -88,7 +92,7 @@ fn pick_file(cwd: &str, prefill: &str) -> Option<Picked> {
     let mut paths = Vec::new();
     collect_files(cwd, &mut paths);
     if paths.is_empty() {
-        die("telescope: no files found under the origin directory.");
+        die(&format!("telescope: {}", t("plugin.telescope.empty.files")));
         return None;
     }
     // rows: "path<tab>relative display" — we match on the path and show the
@@ -99,7 +103,11 @@ fn pick_file(cwd: &str, prefill: &str) -> Option<Picked> {
         .map(|p| format!("{p}\t{}", rel_to(cwd, p)))
         .collect();
 
-    let prompt = format!("telescope files ▸  ({} files)", rows.len());
+    let count = rows.len().to_string();
+    let prompt = fill(
+        &t("plugin.telescope.prompt.files_count"),
+        &[("count", &count)],
+    );
     pick_lines_q(&rows, &prompt, prefill).map(|line| {
         let abs = line.split('\t').next().unwrap_or("").to_string();
         Picked { path: abs }

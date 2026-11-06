@@ -1,0 +1,72 @@
+Mash sous macOS — clavier (Native)
+
+Chaque outil garde ses touches. Herdr utilise son préfixe habituel Ctrl+B :
+appuie sur Ctrl+B, relâche, puis la touche. Ctrl+B n'atteint donc jamais le
+volet, donc Ctrl+B de Fresh (explorateur de fichiers), Ctrl+B de Pi (curseur à
+gauche) et Ctrl+B d'OpenCode (session en arrière-plan) ne sont pas disponibles
+; utilise Ctrl+E de Fresh ou son menu, et la flèche gauche de Pi.
+
+  ── Herdr (Ctrl+B, puis) ──
+  n / p            Onglet suivant / précédent
+  c                Nouvel onglet
+  1..9             Aller à l'onglet N
+  Shift+T          Renommer l'onglet
+  Shift+X          Fermer l'onglet
+  h j k l          Focus volet gauche / bas / haut / droite
+  Shift+H J K L    Échanger le volet gauche / bas / haut / droite
+  Tab / Shift+Tab  Volet suivant / précédent
+  v / -            Diviser verticalement / horizontalement
+  x                Fermer le volet
+  z                Zoomer le volet
+  r                Mode de taille
+  [                Mode copie
+  e                Modifier l'historique
+  Shift+P          Renommer le volet
+  w                Choix d'espace (natif)
+  Shift+W          Renommer l'espace de travail
+  Shift+D          Fermer l'espace de travail
+  g                Aller à la session
+  b                Basculer la barre latérale
+  o                Ouvrir la notification
+  s                Réglages
+  Shift+R          Recharger la configuration
+  q                Détacher
+  ?                Aide
+
+  ── Extras Mash (Ctrl+B, puis) ──
+  t                nouvel onglet de développement (éditeur + agent)
+  a                nouvel onglet d'agent
+  Shift+C          nouvel onglet de terminal simple
+  Shift+V          nouvel onglet de revue (diff + agent)
+  `                nouveau volet de terminal sous Fresh
+  f                Recherche de fichiers
+  y                Gestion de versions
+  Shift+O          État des conteneurs
+  Shift+S          Extraits
+  i                annoter le texte
+  Shift+I          Coller les annotations dans l'agent de cet onglet
+  m                gérer les annotations
+  u                Choisir un lien ou un ID
+  Shift+U          Gestionnaire de plugins
+  Shift+Z          Rechercher des mises à jour
+  Shift+N          Nouvel espace de travail (profil de disposition)
+  Shift+G          Nouvel arbre de travail (profil de disposition)
+  Shift+F          Choix d'espace (sessions)
+  ;                Palette de commandes
+  Shift+Y          Détacher un agent depuis un message
+  Shift+E          Recherche de sessions
+
+  ── Fresh (ses touches par défaut) ──
+  Ctrl+S           Enregistrer
+  Ctrl+O           Ouvrir un fichier
+  Ctrl+P           Ouverture rapide
+  Ctrl+F           Chercher
+  Alt+A            Chercher et remplacer
+  F3 / Shift+F3    Occurrence suivante / précédente
+  Ctrl+G           Aller à la ligne
+  Ctrl+D           Curseur sur l'occurrence suivante
+  Ctrl+E           Focus explorateur de fichiers
+  Ctrl+Z / Ctrl+Y  Annuler / rétablir
+
+Copier/coller dans le terminal : Cmd+C / Cmd+V, ou la souris. Pi et les shells
+utilisent leurs propres touches.

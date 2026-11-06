@@ -1,0 +1,78 @@
+Mash on Linux — 键盘（Native）
+
+每个工具保留自己的键。Herdr 使用自带的 Ctrl+B 前缀：按下
+Ctrl+B，松开，再按目标键。Ctrl+B 因此不会进入窗格，Fresh 的
+Ctrl+B（文件浏览器）、Pi 的 Ctrl+B（光标左移）和 OpenCode 的
+Ctrl+B（后台会话）都不可用；请用 Fresh 的 Ctrl+E 或菜单，以及 Pi 的左方向键。
+
+  ── Herdr（先 Ctrl+B） ──
+  n / p            下一个 / 上一个标签页
+  c                新建标签页
+  1..9             切换到标签页 N
+  Shift+T          重命名标签页
+  Shift+X          关闭标签页
+  h j k l          聚焦窗格 左 / 下 / 上 / 右
+  Shift+H J K L    与左 / 下 / 上 / 右窗格交换
+  Tab / Shift+Tab  下一个 / 上一个窗格
+  v / -            纵向 / 横向分割
+  x                关闭窗格
+  z                放大窗格
+  r                调整大小
+  [                复制模式
+  e                编辑回滚记录
+  Shift+P          重命名窗格
+  w                工作区选择（原生）
+  Shift+W          重命名工作区
+  Shift+D          关闭工作区
+  g                跳转到会话
+  b                切换侧边栏
+  o                打开通知
+  s                设置
+  Shift+R          重新加载配置
+  q                分离
+  ?                帮助
+
+  ── Mash 附加（先 Ctrl+B） ──
+  t                新建开发标签页（编辑器 + 代理）
+  a                新建代理标签页
+  Shift+C          新建终端标签页
+  Shift+V          新建审查标签页（diff + 代理）
+  `                在 Fresh 下方新建终端窗格
+  f                文件查找
+  y                版本控制
+  Shift+O          容器状态
+  Shift+S          代码片段
+  i                标注文本
+  Shift+I          将标注粘贴到此标签页的代理
+  m                管理标注
+  u                选择链接或 ID
+  Shift+U          插件管理器
+  Shift+Z          检查更新
+  Shift+N          新建工作区（布局配置）
+  Shift+G          新建工作树（布局配置）
+  Shift+F          工作区选择（会话）
+  ;                命令面板
+  Shift+Y          从消息分叉代理
+  Shift+E          会话搜索
+
+  ── Fresh（自带默认键） ──
+  Ctrl+S           保存
+  Ctrl+O           打开文件
+  Ctrl+P           快速打开
+  Ctrl+F           查找
+  Alt+A            查找并替换
+  F3 / Shift+F3    查找下一处 / 上一处
+  Ctrl+G           跳转到行
+  Ctrl+D           光标加到下一处匹配
+  Ctrl+E           聚焦文件浏览器
+  Ctrl+Z / Ctrl+Y  撤销 / 重做
+
+  ── Pi（自带默认键） ──
+  Ctrl+↑ / Ctrl+↓  跳到上一条 / 下一条消息
+
+Pi 也接受 Ctrl+Shift+↑/↓
+来做这件事，但终端把这两个键用于自己的提示符跳转，因此在 Native 下它们到不了
+Pi。请用 Ctrl+↑/↓。Pi 的其余键不受影响。
+
+终端中复制/粘贴：Ctrl+Shift+C / Ctrl+Shift+V，或使用鼠标。其余情况下，Pi
+和外壳使用自己的默认键。

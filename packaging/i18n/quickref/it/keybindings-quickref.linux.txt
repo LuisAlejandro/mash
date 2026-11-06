@@ -1,0 +1,68 @@
+Mash su Linux — tastiera
+
+Ctrl è il modificatore di modifica, quindi le famiglie di Mash stanno su
+Ctrl+Alt e Ctrl+Shift. Due associazioni di GNOME occupano quello spazio e non
+si possono riprendere -- GNOME legge il tasto nel compositor, prima che Mash
+esista -- perciò il fuoco dei riquadri usa Ctrl+Super, e rinominare lo spazio
+di lavoro evita Ctrl+Alt+Shift+R. Dentro un riquadro la shell tiene ogni
+accordo Ctrl nudo (Ctrl+C, Ctrl+R, Ctrl+U) e Fresh tiene quelli di modifica.
+
+  Ctrl+Alt+W           Chiudi riquadro
+  Ctrl+Shift+W         Chiudi scheda
+  Ctrl+Alt+Shift+W     Chiudi spazio di lavoro
+  Ctrl+Alt+U           Scollega
+  Ctrl+Super+Down      Fuoco riquadro in basso
+  Ctrl+Super+Left      Fuoco riquadro a sinistra
+  Ctrl+Super+Right     Fuoco riquadro a destra
+  Ctrl+Super+Up        Fuoco riquadro in alto
+  Ctrl+Alt+Shift+G     Vai alla sessione
+  Ctrl+Shift+I         Aiuto
+  Ctrl+Shift+Down      Agente successivo
+  Ctrl+Alt+]           Riquadro successivo
+  Ctrl+Tab             Scheda successiva
+  Ctrl+Alt+Shift+]     Spazio di lavoro successivo
+  Ctrl+Alt+Y           Apri notifica
+  Ctrl+Alt+Shift+U     Controlla aggiornamenti
+  Ctrl+Shift+Up        Agente precedente
+  Ctrl+Alt+[           Riquadro precedente
+  Ctrl+Shift+Tab       Scheda precedente
+  Ctrl+Alt+Shift+[     Spazio di lavoro precedente
+  Ctrl+Shift+,         Ricarica configurazione
+  Ctrl+Alt+Shift+⌫     Rimuovi worktree
+  Ctrl+Shift+M         Rinomina scheda
+  Ctrl+Alt+Shift+M     Rinomina spazio di lavoro
+  Ctrl+Alt+R           Modalità dimensione
+  Ctrl+,               Impostazioni
+  Ctrl+Alt+-           Dividi riquadro in orizzontale
+  Ctrl+Alt+\           Dividi riquadro in verticale
+  Alt+1..9             Passa alla scheda N
+  Ctrl+Alt+Shift+1..9  Passa allo spazio di lavoro N
+  Ctrl+Alt+B           Attiva/disattiva barra laterale
+  Ctrl+Alt+Z           Zoom riquadro
+
+  ── Avvii ──
+  Ctrl+Shift+T         nuova scheda terminale semplice
+  Ctrl+Alt+T           nuova scheda di sviluppo (editor + agente)
+  Ctrl+Alt+Shift+T     nuova scheda agente
+  Ctrl+Alt+P           Ricerca file
+  Ctrl+Shift+G         Controllo di versione
+  Ctrl+Shift+O         Stato dei container
+  Ctrl+Alt+Shift+P     Snippet
+  Ctrl+Shift+R         nuova scheda di revisione (diff + agente)
+  Ctrl+Alt+K           annota testo
+  Ctrl+Alt+L           incolla le annotazioni nell'agente di questa scheda e archiviale
+  Ctrl+Shift+L         gestisci annotazioni
+  Alt+G                Scegli link o ID
+  Ctrl+Shift+X         Gestore plugin
+  Ctrl+Alt+Shift+N     Nuovo spazio di lavoro (profilo di layout)
+  Ctrl+Alt+Shift+E     Nuovo worktree (profilo di layout)
+  Ctrl+Alt+Shift+O     Selettore spazi di lavoro
+  Ctrl+Shift+P         Palette dei comandi
+  Ctrl+Alt+Shift+Y     Deriva agente da messaggio
+  Ctrl+Alt+Shift+L     Ricerca sessioni
+
+Copia/incolla: Ctrl+Shift+C / Ctrl+Shift+V, o il mouse. Gli accordi di
+modifica di Fresh dipendono dal modo scelto al primo avvio: lo stile
+Mash/Cursor installa la mappa di Mash, Native lascia i tasti integrati di
+Fresh. Esegui `fresh --cmd config paths` o apri la mappa di Fresh per vedere
+quale è attiva.

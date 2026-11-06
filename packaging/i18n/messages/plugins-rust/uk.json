@@ -1,0 +1,362 @@
+{
+  "plugin.herdr-workspace.button.cancel": {
+    "text": "[ Скасувати ]",
+    "source_hash": "e730ebdef196"
+  },
+  "plugin.herdr-workspace.button.save": {
+    "text": "[ Зберегти ]",
+    "source_hash": "8f41c85fd49c"
+  },
+  "plugin.herdr-workspace.error.no_directory": {
+    "text": "у робочого простору немає теки",
+    "source_hash": "09507f73e42e"
+  },
+  "plugin.herdr-workspace.error.no_profiles": {
+    "text": "у config.yaml немає профілів",
+    "source_hash": "386b24a0cbc2"
+  },
+  "plugin.herdr-workspace.error.no_workspace": {
+    "text": "немає поточного робочого простору; спершу відкрийте git-робочий простір",
+    "source_hash": "469ff9786131"
+  },
+  "plugin.herdr-workspace.error.select_profile": {
+    "text": "виберіть профіль",
+    "source_hash": "48087492edf9"
+  },
+  "plugin.herdr-workspace.form.directory": {
+    "text": "Тека",
+    "source_hash": "c8f84c3c5378"
+  },
+  "plugin.herdr-workspace.form.error.name_empty": {
+    "text": "назва робочого простору порожня",
+    "source_hash": "900d774ffa7f"
+  },
+  "plugin.herdr-workspace.form.error.not_directory": {
+    "text": "це не тека",
+    "source_hash": "3b2a43e3a5b1"
+  },
+  "plugin.herdr-workspace.form.hint": {
+    "text": "↑↓/pgup/pgdn/ctrl+j/k вибрати теку · tab доповнити · enter далі · esc скасувати",
+    "source_hash": "177fb8ddb1f6"
+  },
+  "plugin.herdr-workspace.form.name": {
+    "text": "Назва",
+    "source_hash": "dcd1d5223f73"
+  },
+  "plugin.herdr-workspace.form.no_matches": {
+    "text": "немає відповідних тек",
+    "source_hash": "8a0b7eb98806"
+  },
+  "plugin.herdr-workspace.progress.footer": {
+    "text": "застосування макета — вікно закриється після завершення",
+    "source_hash": "c4d428e38f1b"
+  },
+  "plugin.herdr-workspace.progress.gauge": {
+    "text": "Поступ",
+    "source_hash": "4664827f8e89"
+  },
+  "plugin.herdr-workspace.progress.working": {
+    "text": "Виконується",
+    "source_hash": "a92f0449a9f7"
+  },
+  "plugin.herdr-workspace.worktree.base_ref": {
+    "text": "Базове посилання",
+    "source_hash": "9c6c10f9d4c6"
+  },
+  "plugin.herdr-workspace.worktree.branch": {
+    "text": "Гілка",
+    "source_hash": "52656e8104ee"
+  },
+  "plugin.herdr-workspace.worktree.error.base_empty": {
+    "text": "базове посилання порожнє",
+    "source_hash": "fc7621cfcebf"
+  },
+  "plugin.herdr-workspace.worktree.error.branch_empty": {
+    "text": "назва гілки порожня",
+    "source_hash": "50f256f07996"
+  },
+  "plugin.herdr-workspace.worktree.error.unknown_ref": {
+    "text": "невідоме посилання `{ref}`",
+    "source_hash": "bc8df133c5c1"
+  },
+  "plugin.herdr-workspace.worktree.hint": {
+    "text": "↑↓/pgup/pgdn/ctrl+j/k вибрати посилання · tab доповнити · enter далі · esc скасувати",
+    "source_hash": "a7a9383e0b70"
+  },
+  "plugin.herdr-workspace.worktree.no_matches": {
+    "text": "немає відповідних посилань",
+    "source_hash": "342b4bc4ea99"
+  },
+  "plugin.telescope.ask.agent_name": {
+    "text": "Назва агента (a-z0-9_-): ",
+    "source_hash": "c282b483b831"
+  },
+  "plugin.telescope.ask.base_ref": {
+    "text": "Базове посилання (порожньо = типове): ",
+    "source_hash": "83dcd25e5dd8"
+  },
+  "plugin.telescope.ask.branch_name": {
+    "text": "Назва гілки: ",
+    "source_hash": "73b89f123311"
+  },
+  "plugin.telescope.ask.new_pane_name": {
+    "text": "Нова назва панелі: ",
+    "source_hash": "f0d8ca6fb8fb"
+  },
+  "plugin.telescope.ask.new_tab_name": {
+    "text": "Назва нової вкладки: ",
+    "source_hash": "ab715f5eeefd"
+  },
+  "plugin.telescope.ask.new_workspace_name": {
+    "text": "Назва нового робочого простору: ",
+    "source_hash": "1f1c54f1f88f"
+  },
+  "plugin.telescope.ask.prompt": {
+    "text": "Запит: ",
+    "source_hash": "45ea9812454c"
+  },
+  "plugin.telescope.ask.remove_worktree": {
+    "text": "Видалити worktree для {name}? [y/N] ",
+    "source_hash": "f70c7f093467"
+  },
+  "plugin.telescope.ask.rename_agent_name": {
+    "text": "Нова назва агента (a-z0-9_-): ",
+    "source_hash": "7a151ffa422b"
+  },
+  "plugin.telescope.empty.agents": {
+    "text": "немає активних агентів.",
+    "source_hash": "64a644e8fa2a"
+  },
+  "plugin.telescope.empty.files": {
+    "text": "у вихідній теці файлів не знайдено.",
+    "source_hash": "1a35fa2322e9"
+  },
+  "plugin.telescope.empty.no_origin_dir": {
+    "text": "немає придатної вихідної теки для пошуку файлів.",
+    "source_hash": "9bf01c7629b4"
+  },
+  "plugin.telescope.empty.no_other_tab": {
+    "text": "немає іншої вкладки, куди можна перемістити панель.",
+    "source_hash": "63852167a39a"
+  },
+  "plugin.telescope.entry.files": {
+    "text": "Пошук файлів…",
+    "source_hash": "149a9d15d113"
+  },
+  "plugin.telescope.entry.files_hint": {
+    "text": "введіть @, щоб перейти сюди, і виберіть файл",
+    "source_hash": "709da3a1cc6f"
+  },
+  "plugin.telescope.entry.search": {
+    "text": "Пошук у вмісті…",
+    "source_hash": "f59229c80c91"
+  },
+  "plugin.telescope.entry.search_hint": {
+    "text": "введіть /, щоб перейти сюди й шукати через ripgrep",
+    "source_hash": "5902de0f0b06"
+  },
+  "plugin.telescope.entry.workspace": {
+    "text": "робочий простір:",
+    "source_hash": "26a6b9a1e72f"
+  },
+  "plugin.telescope.file.pane": {
+    "text": "Нова панель (поділити, праворуч)",
+    "source_hash": "79d6a04fe6a4"
+  },
+  "plugin.telescope.file.window": {
+    "text": "Нове вікно (вкладка)",
+    "source_hash": "228471da3a5e"
+  },
+  "plugin.telescope.header.actions": {
+    "text": "↑↓ вибір · enter запуск · @ файли · / пошук · esc скасувати",
+    "source_hash": "f378fe331346"
+  },
+  "plugin.telescope.header.actions_only": {
+    "text": "↑↓ вибір · enter запуск · esc скасувати",
+    "source_hash": "358b2735de9b"
+  },
+  "plugin.telescope.header.files": {
+    "text": "↑↓ вибір · enter відкрити · backspace назад",
+    "source_hash": "09937a318485"
+  },
+  "plugin.telescope.header.search": {
+    "text": "↑↓ вибір · enter відкрити · rg наживо · backspace назад",
+    "source_hash": "92e50a4cbc77"
+  },
+  "plugin.telescope.native.close_pane": {
+    "text": "Закрити панель",
+    "source_hash": "7fa0f9613d91"
+  },
+  "plugin.telescope.native.close_tab": {
+    "text": "Закрити вкладку",
+    "source_hash": "50a3f9523122"
+  },
+  "plugin.telescope.native.close_workspace": {
+    "text": "Закрити робочий простір",
+    "source_hash": "e5086f0455d5"
+  },
+  "plugin.telescope.native.focus_down": {
+    "text": "Фокус на панель внизу",
+    "source_hash": "634e72370a91"
+  },
+  "plugin.telescope.native.focus_left": {
+    "text": "Фокус на панель ліворуч",
+    "source_hash": "2703127d3921"
+  },
+  "plugin.telescope.native.focus_right": {
+    "text": "Фокус на панель праворуч",
+    "source_hash": "bf3836bedbb7"
+  },
+  "plugin.telescope.native.focus_up": {
+    "text": "Фокус на панель угорі",
+    "source_hash": "f0ad95b3b130"
+  },
+  "plugin.telescope.native.interrupt_agent": {
+    "text": "Перервати агента (esc)…",
+    "source_hash": "c02ae808d617"
+  },
+  "plugin.telescope.native.move_pane_new_tab": {
+    "text": "Винести панель у нову вкладку",
+    "source_hash": "4b21a13e2c84"
+  },
+  "plugin.telescope.native.move_pane_new_workspace": {
+    "text": "Винести панель у новий робочий простір",
+    "source_hash": "f451f1754798"
+  },
+  "plugin.telescope.native.move_pane_tab": {
+    "text": "Перемістити панель в іншу вкладку…",
+    "source_hash": "663cea16681b"
+  },
+  "plugin.telescope.native.new_tab": {
+    "text": "Нова вкладка",
+    "source_hash": "1e08fda9c966"
+  },
+  "plugin.telescope.native.new_tab_named": {
+    "text": "Нова вкладка (з назвою)…",
+    "source_hash": "a8670dddf8c6"
+  },
+  "plugin.telescope.native.new_workspace": {
+    "text": "Новий робочий простір",
+    "source_hash": "df0caf1b27bd"
+  },
+  "plugin.telescope.native.new_workspace_here": {
+    "text": "Новий робочий простір тут (з назвою)…",
+    "source_hash": "41bf4921641c"
+  },
+  "plugin.telescope.native.new_worktree": {
+    "text": "Новий worktree тут",
+    "source_hash": "e22dc2615464"
+  },
+  "plugin.telescope.native.new_worktree_branch": {
+    "text": "Новий worktree на гілці…",
+    "source_hash": "b32c49f90359"
+  },
+  "plugin.telescope.native.prompt_agent": {
+    "text": "Надіслати запит агенту…",
+    "source_hash": "e7678c0d781d"
+  },
+  "plugin.telescope.native.reload_config": {
+    "text": "Перезавантажити конфігурацію herdr",
+    "source_hash": "3540ced939eb"
+  },
+  "plugin.telescope.native.remove_worktree": {
+    "text": "Видалити цей worktree",
+    "source_hash": "01ca8116273b"
+  },
+  "plugin.telescope.native.rename_agent": {
+    "text": "Перейменувати агента…",
+    "source_hash": "27dfb3075d0c"
+  },
+  "plugin.telescope.native.rename_pane": {
+    "text": "Перейменувати панель",
+    "source_hash": "405cae1ccaa7"
+  },
+  "plugin.telescope.native.rename_tab": {
+    "text": "Перейменувати вкладку",
+    "source_hash": "29365ea1847d"
+  },
+  "plugin.telescope.native.rename_workspace": {
+    "text": "Перейменувати робочий простір",
+    "source_hash": "34f5e996c30f"
+  },
+  "plugin.telescope.native.resize_down": {
+    "text": "Змінити розмір панелі вниз",
+    "source_hash": "77ed5a2e7fb0"
+  },
+  "plugin.telescope.native.resize_left": {
+    "text": "Змінити розмір панелі ліворуч",
+    "source_hash": "defda04803d1"
+  },
+  "plugin.telescope.native.resize_right": {
+    "text": "Змінити розмір панелі праворуч",
+    "source_hash": "f2910218c90b"
+  },
+  "plugin.telescope.native.resize_up": {
+    "text": "Змінити розмір панелі вгору",
+    "source_hash": "f19c067a8289"
+  },
+  "plugin.telescope.native.split_horizontal": {
+    "text": "Поділити панель донизу (горизонтально)",
+    "source_hash": "004b1057ce44"
+  },
+  "plugin.telescope.native.split_vertical": {
+    "text": "Поділити панель праворуч (вертикально)",
+    "source_hash": "f0dd18b413a3"
+  },
+  "plugin.telescope.native.start_agent": {
+    "text": "Запустити агента в новому поділі…",
+    "source_hash": "b32fe7c2fbf1"
+  },
+  "plugin.telescope.native.swap_down": {
+    "text": "Поміняти панель місцями з нижньою",
+    "source_hash": "9a8ad9aab9f6"
+  },
+  "plugin.telescope.native.swap_left": {
+    "text": "Поміняти панель місцями з лівою",
+    "source_hash": "1510339a92f2"
+  },
+  "plugin.telescope.native.swap_right": {
+    "text": "Поміняти панель місцями з правою",
+    "source_hash": "65cbd7e247ee"
+  },
+  "plugin.telescope.native.swap_up": {
+    "text": "Поміняти панель місцями з верхньою",
+    "source_hash": "44b80631af06"
+  },
+  "plugin.telescope.native.zoom_pane": {
+    "text": "Перемкнути масштаб (панель на весь екран)",
+    "source_hash": "105f4ae38609"
+  },
+  "plugin.telescope.prompt.actions": {
+    "text": "herdr telescope ▸ ",
+    "source_hash": "7c5f98437004"
+  },
+  "plugin.telescope.prompt.agent": {
+    "text": "агент ▸ ",
+    "source_hash": "d85334454461"
+  },
+  "plugin.telescope.prompt.agent_kind": {
+    "text": "тип агента ▸ ",
+    "source_hash": "125a5c4df55e"
+  },
+  "plugin.telescope.prompt.files": {
+    "text": "herdr файли ▸ ",
+    "source_hash": "528da619324c"
+  },
+  "plugin.telescope.prompt.files_count": {
+    "text": "telescope файли ▸  ({count} файлів)",
+    "source_hash": "bc69f7b01e49"
+  },
+  "plugin.telescope.prompt.move_to_tab": {
+    "text": "перемістити до вкладки ▸ ",
+    "source_hash": "cf64824d1647"
+  },
+  "plugin.telescope.prompt.open_in": {
+    "text": "відкрити в ▸ ",
+    "source_hash": "53a1a50464e7"
+  },
+  "plugin.telescope.prompt.search": {
+    "text": "herdr пошук ▸ ",
+    "source_hash": "7114dbae5e91"
+  }
+}

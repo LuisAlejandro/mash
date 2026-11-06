@@ -1,0 +1,98 @@
+{
+  "pi.header.restore": {
+    "text": "Khôi phục phần đầu tích hợp của pi",
+    "source_hash": "afcd79f821af"
+  },
+  "pi.header.restored": {
+    "text": "Đã khôi phục phần đầu tích hợp",
+    "source_hash": "c1e44d719693"
+  },
+  "pi.orchestration.answered": {
+    "text": "Điều phối viên đã trả lời: {reply}",
+    "source_hash": "fc659f7aea92"
+  },
+  "pi.orchestration.cancelled": {
+    "text": "Câu hỏi đã bị hủy.",
+    "source_hash": "4c742263cfe3"
+  },
+  "pi.orchestration.failed": {
+    "text": "Câu hỏi tới điều phối viên thất bại.",
+    "source_hash": "1036eb4b3272"
+  },
+  "pi.orchestration.label": {
+    "text": "Hỏi điều phối viên",
+    "source_hash": "5369ae08b587"
+  },
+  "pi.orchestration.lookup-failed": {
+    "text": "Không tra được Dispatch.",
+    "source_hash": "e8a8ac97005c"
+  },
+  "pi.orchestration.no-dispatch": {
+    "text": "Không có Dispatch đang mở cho khung này. Hãy hỏi người đó bằng ask_user.",
+    "source_hash": "045255c705e5"
+  },
+  "pi.orchestration.pending": {
+    "text": "Câu hỏi {id} vẫn đang chờ. Gọi lại ask_coordinator với resume đặt thành id đó.",
+    "source_hash": "a70e26ec54e8"
+  },
+  "pi.orchestration.unavailable": {
+    "text": "mash-orchestration không sẵn sàng ({message}). Hãy hỏi người đó bằng ask_user.",
+    "source_hash": "ee1fa62200a8"
+  },
+  "pi.orchestration.waiting": {
+    "text": "Đang chờ điều phối viên",
+    "source_hash": "41e36ff21f8a"
+  },
+  "pi.show-file.is-directory": {
+    "text": "{path} là thư mục, không phải tệp.",
+    "source_hash": "51405f5a7722"
+  },
+  "pi.show-file.label": {
+    "text": "Hiện tệp cho người đó",
+    "source_hash": "1c16c0d820b1"
+  },
+  "pi.show-file.needs-path": {
+    "text": "show_file cần một đường dẫn.",
+    "source_hash": "2709bc3725aa"
+  },
+  "pi.show-file.no-reason": {
+    "text": "không nêu lý do",
+    "source_hash": "bdb1872e7703"
+  },
+  "pi.show-file.no-such-file": {
+    "text": "Không có tệp này: {path}",
+    "source_hash": "6b07882ca274"
+  },
+  "pi.show-file.not-shown-daemon": {
+    "text": "Không hiện: daemon Fresh không sẵn sàng cho {name}.",
+    "source_hash": "eee33afb1233"
+  },
+  "pi.show-file.not-shown-fresh": {
+    "text": "Không hiện: không mở được {name} trong Fresh ({detail}).",
+    "source_hash": "38000d407a37"
+  },
+  "pi.show-file.not-shown-herdr": {
+    "text": "Không hiện: không mở được {name} trong Herdr ({detail}).",
+    "source_hash": "ef35d0eb229e"
+  },
+  "pi.show-file.not-shown-no-editor": {
+    "text": "Không hiện: không có trình sửa Fresh trong tab này cho {name}.",
+    "source_hash": "dd6f54bd1990"
+  },
+  "pi.show-file.not-shown-no-pane": {
+    "text": "Không hiện: không có khung Herdr cho {name}.",
+    "source_hash": "b810ed171fce"
+  },
+  "pi.show-file.not-shown-other": {
+    "text": "Không hiện: không có trình xem nội bộ cho {name}.",
+    "source_hash": "c38cbe4e26f6"
+  },
+  "pi.show-file.shown-image": {
+    "text": "Đã hiện: {name} đang mở trong một phần chia dọc cạnh trình sửa, ở độ phân giải thật.",
+    "source_hash": "bbf2a8758fc7"
+  },
+  "pi.show-file.shown-text": {
+    "text": "Đã hiện: {name} đang mở trong trình sửa Fresh cạnh khung này.",
+    "source_hash": "ac958177710d"
+  }
+}

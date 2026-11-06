@@ -559,6 +559,13 @@ mash_stage_portable_payload() {
     cp -R "$root/packaging/defaults/." "$res/defaults/"
   fi
 
+  [ -f "$root/packaging/i18n/languages.json" ] || {
+    echo "missing language table packaging/i18n/languages.json" >&2
+    return 1
+  }
+  mkdir -p "$res/i18n"
+  cp -R "$root/packaging/i18n/." "$res/i18n/"
+
   tr -d '[:space:]' <"$root/VERSION" >"$res/VERSION"
 
   # The artifact manifest and its resolver travel with the payload: the

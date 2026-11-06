@@ -1,5 +1,7 @@
 mod font_page;
 mod github_login;
+mod i18n;
+mod language_page;
 mod model_picker;
 mod pi_connection;
 mod pi_models;
@@ -48,8 +50,10 @@ struct IdentityPage {
     name: String,
     email: String,
     signing_key: String,
-    /// Why a host signing key was not prefilled, shown as the field's help.
-    signing_note: Option<&'static str>,
+    /// Why a host signing key was not prefilled, drawn as the field's help.
+    /// Recorded here and translated when the page is drawn, so the explanation
+    /// follows the language chosen on the wizard's first page.
+    signing_note: Option<SigningNote>,
     github: github_login::GithubLogin,
     focus: usize,
 }
@@ -203,7 +207,7 @@ fn main() {
     match run() {
         Ok(outcome) => std::process::exit(outcome),
         Err(error) => {
-            eprintln!("Mash setup: {error}");
+            eprintln!("{}: {error}", i18n::t("wizard.setup.title"));
             std::process::exit(1);
         }
     }
@@ -259,6 +263,8 @@ fn run() -> Result<i32, String> {
 }
 
 fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<i32, String> {
+    let mut language = language_page::LanguagePage::new();
+    let mut language_chosen = false;
     let mut identity = IdentityPage::new(github_login(preview));
     let mut tools = tools_page::ToolsPage::new();
     let mut providers = provider_page::ProviderPage::new();
@@ -302,7 +308,9 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
         }
         terminal
             .draw(|frame| {
-                if started {
+                if !language_chosen {
+                    language.draw(frame);
+                } else if started {
                     match page {
                         0 => draw_identity(frame, &identity),
                         1 => tools.draw(frame),
@@ -328,6 +336,39 @@ fn interactive<B: Backend>(terminal: &mut Terminal<B>, preview: bool) -> Result<
             continue;
         }
         let event = event::read().map_err(|e| e.to_string())?;
+        if !language_chosen {
+            let decision = if let Some(id) = wizard_style::clicked(&event) {
+                language.on_click(id)
+            } else if let Some(direction) = wizard_style::wheel(&event) {
+                language.on_key(
+                    if direction < 0 {
+                        KeyCode::Up
+                    } else {
+                        KeyCode::Down
+                    },
+                    KeyModifiers::NONE,
+                )
+            } else if let Event::Key(key) = event {
+                if key.kind == KeyEventKind::Press {
+                    language.on_key(key.code, key.modifiers)
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+            match decision {
+                Some(language_page::Decision::Continue) => {
+                    language_chosen = true;
+                    voice = voice_page::VoicePage::new();
+                }
+                Some(language_page::Decision::Cancel) if preview || confirm_quit(terminal)? => {
+                    return Ok(EXIT_NOT_DONE);
+                }
+                _ => {}
+            }
+            continue;
+        }
         if !started {
             if welcome_page::starts_on(&event, start_button) {
                 started = true;
@@ -663,12 +704,12 @@ fn confirm_quit_answer(code: KeyCode) -> bool {
 fn draw_confirm_quit(frame: &mut Frame) {
     let text = vec![
         Line::from(Span::styled(
-            "Quit Mash setup?",
+            i18n::t("wizard.setup.quit_title"),
             Style::default().add_modifier(Modifier::BOLD),
         )),
         Line::from(""),
-        Line::from("Setup is not finished, so Mash will not open yet."),
-        Line::from("Open Mash again to start setup from the beginning."),
+        Line::from(i18n::t("wizard.setup.not_finished")),
+        Line::from(i18n::t("wizard.setup.reopen")),
         Line::from(""),
         Line::from(vec![
             Span::styled(
@@ -677,14 +718,14 @@ fn draw_confirm_quit(frame: &mut Frame) {
                     .fg(wizard_style::YELLOW)
                     .add_modifier(Modifier::BOLD),
             ),
-            Span::raw(" quit setup    "),
+            Span::raw(format!(" {}    ", i18n::t("wizard.setup.quit_action"))),
             Span::styled(
-                "any other key",
+                i18n::t("wizard.setup.other_key"),
                 Style::default()
                     .fg(wizard_style::YELLOW)
                     .add_modifier(Modifier::BOLD),
             ),
-            Span::raw(" keep going"),
+            Span::raw(format!(" {}", i18n::t("wizard.setup.keep_going"))),
         ]),
     ];
     let area = frame.area();
@@ -694,7 +735,7 @@ fn draw_confirm_quit(frame: &mut Frame) {
         Constraint::Fill(1),
     ])
     .areas(area);
-    let body = wizard_style::section(frame, middle, "Mash setup");
+    let body = wizard_style::section(frame, middle, &i18n::t("wizard.setup.title"));
     frame.render_widget(
         Paragraph::new(text)
             .alignment(Alignment::Center)
@@ -760,6 +801,7 @@ fn prepare_setup(
     // map for it, and the launcher opens Mash right after this returns.
     fonts.save_mode(root)?;
     tools.save_selection(root)?;
+    language_page::LanguagePage::save_selection(root, i18n::language())?;
     seed_selected_skills(resources, root)?;
     providers.save_with_runtime(root, resources)
 }
@@ -827,9 +869,9 @@ fn wait_for_acknowledgement<B: Backend>(terminal: &mut Terminal<B>, draw: impl F
 
 fn setup_failure_lines(error: &str, log: &Path) -> Vec<String> {
     let error = if error.trim().is_empty() {
-        "An unknown error stopped setup."
+        i18n::t("wizard.setup.unknown_error")
     } else {
-        error.trim()
+        error.trim().to_string()
     };
     vec![
         // Keep the cause readable without letting a long installer error push
@@ -842,15 +884,18 @@ fn setup_failure_lines(error: &str, log: &Path) -> Vec<String> {
             .take(400)
             .collect(),
         String::new(),
-        format!("Details: {}", log.display()),
-        "Some choices may already be saved. Setup reopens on the next launch.".to_string(),
+        i18n::fill(
+            &i18n::t("wizard.setup.details"),
+            &[("path", &&log.display().to_string())],
+        ),
+        i18n::t("wizard.setup.saved_reopen"),
     ]
 }
 
 fn draw_setup_failure(frame: &mut Frame, lines: &[String]) {
     let mut text = vec![
         Line::from(Span::styled(
-            "Setup could not finish",
+            i18n::t("wizard.setup.could_not_finish"),
             Style::default().add_modifier(Modifier::BOLD),
         )),
         Line::from(""),
@@ -858,11 +903,11 @@ fn draw_setup_failure(frame: &mut Frame, lines: &[String]) {
     text.extend(lines.iter().map(|line| Line::from(line.clone())));
     text.push(Line::from(""));
     text.push(Line::from(Span::styled(
-        "Press Enter to continue",
+        i18n::t("wizard.setup.press_enter"),
         Style::default().fg(wizard_style::YELLOW),
     )));
     let parts = Layout::vertical([Constraint::Min(4), Constraint::Length(3)]).split(frame.area());
-    let body = wizard_style::section(frame, parts[0], "Mash setup");
+    let body = wizard_style::section(frame, parts[0], &i18n::t("wizard.setup.title"));
     frame.render_widget(
         Paragraph::new(text).wrap(Wrap { trim: false }).style(
             Style::default()
@@ -875,7 +920,10 @@ fn draw_setup_failure(frame: &mut Frame, lines: &[String]) {
         frame,
         parts[1],
         &[(
-            wizard_style::button(true, " Continue — open Mash "),
+            wizard_style::button(
+                true,
+                &format!(" {} ", i18n::t("wizard.setup.continue_open")),
+            ),
             Some(0),
         )],
     );
@@ -905,15 +953,15 @@ fn check_saved_model<B: Backend>(terminal: &mut Terminal<B>, deferred_login: Opt
     } else {
         None
     };
+    let unavailable = || i18n::t("wizard.setup.model_unavailable");
     let notes = if let Some(hint) = deferred_login {
-        vec![
-            "Model configured; authentication was not attempted.".into(),
-            hint,
-        ]
+        vec![i18n::t("wizard.setup.auth_skipped"), hint]
     } else if let Some(job) = job.as_mut() {
         loop {
             if let Some(result) = job.poll() {
-                break result.map(|report| report.warnings()).unwrap_or_else(|_| vec!["Pi model check unavailable. Your configuration was kept; use Pi /model and /login after setup.".into()]);
+                break result
+                    .map(|report| report.warnings())
+                    .unwrap_or_else(|_| vec![unavailable()]);
             }
             if terminal
                 .draw(|frame| {
@@ -933,7 +981,7 @@ fn check_saved_model<B: Backend>(terminal: &mut Terminal<B>, deferred_login: Opt
             }
         }
     } else {
-        vec!["Pi model check unavailable. Your configuration was kept; use Pi /model and /login after setup.".into()]
+        vec![unavailable()]
     };
     drop(job);
     if notes.is_empty() {
@@ -954,23 +1002,21 @@ fn draw_model_check(frame: &mut Frame, notes: &[String], loading: bool) {
         Constraint::Length(3),
     ])
     .split(wizard_style::page_area(frame, None));
-    wizard_style::header(frame, parts[0], "Model check");
+    wizard_style::header(frame, parts[0], &i18n::t("wizard.setup.model_check"));
     let body = wizard_style::section(
         frame,
         parts[1],
-        if loading {
-            "Checking saved local configuration..."
+        &if loading {
+            i18n::t("wizard.setup.checking")
         } else {
-            "Configuration notes (non-blocking)"
+            i18n::t("wizard.setup.notes")
         },
     );
     let mut lines: Vec<Line> = notes
         .iter()
         .flat_map(|note| [Line::from(note.clone()), Line::default()])
         .collect();
-    lines.push(Line::from(
-        "No server authentication or account entitlement was checked.",
-    ));
+    lines.push(Line::from(i18n::t("wizard.setup.no_auth_checked")));
     frame.render_widget(Paragraph::new(lines).wrap(Wrap { trim: true }), body);
     wizard_style::render_buttons(
         frame,
@@ -978,10 +1024,10 @@ fn draw_model_check(frame: &mut Frame, notes: &[String], loading: bool) {
         &[(
             wizard_style::button(
                 true,
-                if loading {
-                    " Skip check "
+                &if loading {
+                    format!(" {} ", i18n::t("wizard.setup.skip_check"))
                 } else {
-                    " Continue "
+                    format!(" {} ", i18n::t("wizard.setup.continue"))
                 },
             ),
             Some(0),
@@ -1199,10 +1245,10 @@ fn start_hindsight_daemon<B: Backend>(
     let _ = command.status();
     for _ in 0..60 {
         if hindsight_is_up() {
-            return Ok("daemon up, models cached".into());
+            return Ok(i18n::t("wizard.setup.result.daemon_up"));
         }
         let mut shown = messages.to_vec();
-        shown.push("  ...waiting for the daemon to answer on its port".to_string());
+        shown.push(format!("  {}", i18n::t("wizard.setup.waiting_daemon")));
         draw_apply(terminal, completed, total, step, &shown);
         std::thread::sleep(Duration::from_secs(10));
     }
@@ -1269,7 +1315,9 @@ fn install_helper_with_progress<B: Backend>(
     let mut child = command.spawn().map_err(|e| e.to_string())?;
     loop {
         match child.try_wait() {
-            Ok(Some(status)) if status.success() => return Ok("installed".into()),
+            Ok(Some(status)) if status.success() => {
+                return Ok(i18n::t("wizard.setup.result.installed"))
+            }
             Ok(Some(_)) => {
                 return Err(format!(
                     "{script_name} failed; see {}",
@@ -1318,7 +1366,9 @@ fn install_voice_model<B: Backend>(
     let mut child = command.spawn().map_err(|e| e.to_string())?;
     loop {
         match child.try_wait() {
-            Ok(Some(status)) if status.success() => return Ok("model installed".into()),
+            Ok(Some(status)) if status.success() => {
+                return Ok(i18n::t("wizard.setup.result.model_installed"))
+            }
             Ok(Some(_)) => {
                 return Err(format!(
                     "mash-voice-model failed; see {}",
@@ -1384,7 +1434,11 @@ fn install_mash_tools<B: Backend>(
             Some(3) => {
                 provided += 1;
                 shown.push(format!(
-                    "  {component}: provided by the system, not installed by Mash"
+                    "  {}",
+                    i18n::fill(
+                        &i18n::t("wizard.setup.report.system_provided"),
+                        &[("component", &component)]
+                    )
                 ));
             }
             Some(code) => {
@@ -1396,8 +1450,12 @@ fn install_mash_tools<B: Backend>(
             None => return Err(format!("{component} ended without an exit status")),
         }
     }
-    Ok(format!(
-        "{installed} installed, {provided} provided by the system"
+    Ok(i18n::fill(
+        &i18n::t("wizard.setup.report.counts"),
+        &[
+            ("installed", &&installed.to_string()),
+            ("provided", &&provided.to_string()),
+        ],
     ))
 }
 
@@ -1468,16 +1526,23 @@ fn apply_steps<B: Backend>(
                     && plan.pinned.is_empty()
                     && plan.python.is_empty())
             {
-                "Host tools are present; installing Mash's pinned tools.".to_string()
+                i18n::t("wizard.setup.report.host_tools")
             } else if missing.is_empty() {
-                "Everything selected is already installed.".to_string()
+                i18n::t("wizard.setup.report.all_installed")
             } else {
-                format!("Missing: {}", missing.join(", "))
+                i18n::fill(
+                    &i18n::t("wizard.setup.report.missing"),
+                    &[("tools", &&missing.join(", "))],
+                )
             };
             for tool in &plan.apple {
                 if !apple_tool_available(tool) {
                     report.push_str(&format!(
-                        " {tool} comes with Apple's developer tools (run xcode-select --install)."
+                        " {}",
+                        i18n::fill(
+                            &i18n::t("wizard.setup.report.apple_tools"),
+                            &[("tool", &tool)]
+                        )
                     ));
                 }
             }
@@ -1523,21 +1588,40 @@ fn apply_steps<B: Backend>(
         let message = match result {
             Ok(message) => message,
             Err(_) if host_presence_excuses(step) && tools_available(&plan.tools) => {
-                "already installed".to_string()
+                i18n::t("wizard.setup.result.already_installed")
             }
             Err(error) => return Err(error),
         };
-        messages.push(format!("  {step}: {message}"));
+        messages.push(format!("  {}: {message}", step_label(step)));
         let _ = write_log(&mut log, &messages);
     }
     draw_apply(
         terminal,
         steps.len(),
         steps.len(),
-        "Ready to launch Mash",
+        &i18n::t("wizard.setup.ready"),
         &messages,
     );
     Ok(())
+}
+
+/// An install step keeps its English name as the identifier the dispatch below
+/// matches and the log records; only what reaches the screen is translated, so
+/// every language installs the same tools.
+fn step_label(step: &str) -> String {
+    match step {
+        "Check selected tools" => i18n::t("wizard.setup.step.check_tools"),
+        STEP_LINUX_TOOLS => i18n::t("wizard.setup.step.mash_tools"),
+        "Install Homebrew packages" => i18n::t("wizard.setup.step.brew"),
+        "Install npm packages" => i18n::t("wizard.setup.step.npm"),
+        STEP_PINNED_TOOLS => i18n::t("wizard.setup.step.pinned"),
+        "Install Python packages" => i18n::t("wizard.setup.step.python"),
+        "Install CUA Driver" => i18n::t("wizard.setup.step.cua"),
+        STEP_HINDSIGHT => i18n::t("wizard.setup.step.memory"),
+        STEP_HINDSIGHT_DAEMON => i18n::t("wizard.setup.step.memory_models"),
+        STEP_VOICE => i18n::t("wizard.setup.step.dictation"),
+        other => other.to_string(),
+    }
 }
 
 // Only host installers may treat an already-present tool as success. Mash-owned
@@ -1642,11 +1726,27 @@ fn connect_github_mcp() {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum SigningNote {
+    /// The host signs with SSH or X.509, which Mash does not use.
+    OpenPgpOnly,
+}
+
+impl SigningNote {
+    /// Translated here rather than when the page is built: the language is
+    /// chosen on the wizard's first page, after this page's state is prepared.
+    fn text(self) -> String {
+        match self {
+            SigningNote::OpenPgpOnly => i18n::t("wizard.identity.key_openpgp_only"),
+        }
+    }
+}
+
 struct HostIdentity {
     name: String,
     email: String,
     signing_key: String,
-    signing_note: Option<&'static str>,
+    signing_note: Option<SigningNote>,
 }
 
 fn host_home() -> PathBuf {
@@ -1655,13 +1755,10 @@ fn host_home() -> PathBuf {
 
 // Mash signs with OpenPGP only. An SSH or X.509 key copied without its
 // gpg.format would make every signed commit fail, so it is explained instead.
-fn openpgp_only(key: String, format: &str) -> (String, Option<&'static str>) {
+fn openpgp_only(key: String, format: &str) -> (String, Option<SigningNote>) {
     let ssh_key = key.starts_with("ssh-") || key.starts_with("key::") || key.ends_with(".pub");
     if !key.is_empty() && (ssh_key || !matches!(format, "" | "openpgp")) {
-        return (
-            String::new(),
-            Some("Your Git signs with SSH or X.509; Mash signs with OpenPGP keys only"),
-        );
+        return (String::new(), Some(SigningNote::OpenPgpOnly));
     }
     (key, None)
 }
@@ -1792,20 +1889,43 @@ fn draw_identity(frame: &mut Frame, page: &IdentityPage) {
         Constraint::Length(3),
     ])
     .split(area);
-    wizard_style::header(frame, chunks[0], &wizard_style::page_title("Identity", 0));
+    let identity_title = i18n::t("wizard.identity.title");
+    wizard_style::header(
+        frame,
+        chunks[0],
+        &wizard_style::page_title(&identity_title, 0),
+    );
 
-    let body = wizard_style::section(frame, chunks[1], "Identity");
+    let body = wizard_style::section(frame, chunks[1], &identity_title);
     let fields = [
-        (FOCUS_NAME, "Name:", &page.name, "Name on commits"),
-        (FOCUS_EMAIL, "Email:", &page.email, "Email on commits"),
+        (
+            FOCUS_NAME,
+            i18n::t("wizard.identity.name_label"),
+            &page.name,
+            i18n::t("wizard.identity.name_help"),
+        ),
+        (
+            FOCUS_EMAIL,
+            i18n::t("wizard.identity.email_label"),
+            &page.email,
+            i18n::t("wizard.identity.email_help"),
+        ),
         (
             FOCUS_SIGNING_KEY,
-            "Signing key:",
+            i18n::t("wizard.identity.key_label"),
             &page.signing_key,
-            page.signing_note.unwrap_or("Empty disables signing"),
+            page.signing_note
+                .map(SigningNote::text)
+                .unwrap_or_else(|| i18n::t("wizard.identity.key_help")),
         ),
     ];
-    let label_width = 13.min(body.width);
+    let label_width = fields
+        .iter()
+        .map(|(_, label, _, _)| Line::from(label.as_str()).width())
+        .max()
+        .unwrap_or(0)
+        .saturating_add(1)
+        .min(body.width as usize) as u16;
     let input_width = fields
         .iter()
         .map(|(_, _, value, _)| Line::from((*value).clone()).width() + 3)
@@ -1819,7 +1939,7 @@ fn draw_identity(frame: &mut Frame, page: &IdentityPage) {
     let rows: Vec<_> = fields
         .iter()
         .map(|(_, _, _, hint)| {
-            let height = Paragraph::new(*hint)
+            let height = Paragraph::new(hint.as_str())
                 .wrap(Wrap { trim: true })
                 .line_count(help_width.max(1)) as u16;
             let start = row;
@@ -1849,7 +1969,7 @@ fn draw_identity(frame: &mut Frame, page: &IdentityPage) {
         let focused = page.focus == *focus;
         let input = Rect::new(body.x + label_width, y, input_width, 1);
         frame.render_widget(
-            Paragraph::new(*label).style(Style::default().add_modifier(Modifier::BOLD)),
+            Paragraph::new(label.as_str()).style(Style::default().add_modifier(Modifier::BOLD)),
             Rect::new(body.x, y, label_width, 1),
         );
         let text = Line::from(vec![
@@ -1880,7 +2000,7 @@ fn draw_identity(frame: &mut Frame, page: &IdentityPage) {
         );
         wizard_style::target(Rect::new(body.x, y, label_width + input_width, 1), *focus);
         frame.render_widget(
-            Paragraph::new(*hint)
+            Paragraph::new(hint.as_str())
                 .wrap(Wrap { trim: true })
                 .style(Style::default().fg(wizard_style::MUTED)),
             Rect::new(help_x, y, help_width, height.min(body.bottom() - y)),
@@ -1902,10 +2022,22 @@ fn draw_identity(frame: &mut Frame, page: &IdentityPage) {
         frame,
         chunks[2],
         &[(
-            wizard_style::button(page.focus == FOCUS_IDENTITY_NEXT, " Next — choose tools "),
+            wizard_style::button(
+                page.focus == FOCUS_IDENTITY_NEXT,
+                &format!(" {} ", i18n::t("wizard.identity.next")),
+            ),
             Some(FOCUS_IDENTITY_NEXT),
         )],
     );
+}
+
+/// Why GitHub sign-in cannot run here, translated when the button is drawn
+/// rather than cached when the page is built.
+fn unavailable_reason(reason: github_login::UnavailableReason) -> String {
+    match reason {
+        github_login::UnavailableReason::ConfigInside => i18n::t("wizard.github.config_inside"),
+        github_login::UnavailableReason::CliUnavailable => i18n::t("wizard.github.cli_unavailable"),
+    }
 }
 
 /// A filled GitHub action like the welcome button, with status outside its hit area.
@@ -1915,22 +2047,23 @@ fn draw_github(frame: &mut Frame, area: Rect, github: &github_login::GithubLogin
         return;
     }
     frame.render_widget(
-        Paragraph::new("GitHub (optional)").style(Style::default().add_modifier(Modifier::BOLD)),
+        Paragraph::new(i18n::t("wizard.github.section"))
+            .style(Style::default().add_modifier(Modifier::BOLD)),
         Rect::new(area.x, area.y, area.width, 1),
     );
     if area.height <= 2 {
         return;
     }
     let (note, color) = match github.status() {
-        Status::Unavailable(reason) => (reason.clone(), wizard_style::MUTED),
-        Status::SignedOut => ("Not signed in".to_string(), wizard_style::MUTED),
-        Status::Starting => ("Contacting GitHub…".to_string(), wizard_style::MUTED),
-        Status::Waiting { .. } => (
-            "Waiting for approval in your browser".to_string(),
-            wizard_style::YELLOW,
+        Status::Unavailable(reason) => (unavailable_reason(*reason), wizard_style::MUTED),
+        Status::SignedOut => (i18n::t("wizard.github.signed_out"), wizard_style::MUTED),
+        Status::Starting => (i18n::t("wizard.github.starting"), wizard_style::MUTED),
+        Status::Waiting { .. } => (i18n::t("wizard.github.waiting"), wizard_style::YELLOW),
+        Status::SignedIn(Some(user)) => (
+            i18n::fill(&i18n::t("wizard.github.signed_in_as"), &[("user", &user)]),
+            wizard_style::GREEN,
         ),
-        Status::SignedIn(Some(user)) => (format!("✓ Signed in as {user}"), wizard_style::GREEN),
-        Status::SignedIn(None) => ("✓ Signed in".to_string(), wizard_style::GREEN),
+        Status::SignedIn(None) => (i18n::t("wizard.github.signed_in"), wizard_style::GREEN),
         Status::Failed(reason) => (reason.clone(), wizard_style::RED),
     };
     if matches!(github.status(), Status::Unavailable(_)) {
@@ -1942,10 +2075,15 @@ fn draw_github(frame: &mut Frame, area: Rect, github: &github_login::GithubLogin
         );
         return;
     }
-    // Same 23-column, centred, filled treatment as Start config wizard.
-    let button = Rect::new(area.x, area.y + 2, 23.min(area.width), 1);
+    // Same filled, centred treatment as Start config wizard, and sized the same
+    // way: from the label, so a longer translation is never clipped.
+    let button_text = format!(" {} ", i18n::t(github.button_label_key()));
+    let button_width = 23
+        .max(Line::from(button_text.as_str()).width() as u16)
+        .min(area.width);
+    let button = Rect::new(area.x, area.y + 2, button_width, 1);
     frame.render_widget(
-        Paragraph::new(github.button_label())
+        Paragraph::new(button_text)
             .alignment(Alignment::Center)
             .style(if focused {
                 wizard_style::selected().add_modifier(Modifier::BOLD)
@@ -1978,16 +2116,17 @@ fn draw_github(frame: &mut Frame, area: Rect, github: &github_login::GithubLogin
                     .add_modifier(Modifier::BOLD),
             ),
             Span::raw(if *copied {
-                "   copied to clipboard"
+                format!("   {}", i18n::t("wizard.github.copied"))
             } else {
-                ""
+                String::new()
             }),
         ]));
-        details.push(Line::from(format!("Enter it at {url} to approve Mash.")));
+        details.push(Line::from(i18n::fill(
+            &i18n::t("wizard.github.approve"),
+            &[("url", &url)],
+        )));
     } else if matches!(github.status(), Status::SignedOut | Status::Failed(_)) {
-        details.push(Line::from(
-            "Used by Git over HTTPS, pull requests and the agents' GitHub tools.",
-        ));
+        details.push(Line::from(i18n::t("wizard.github.usage")));
     }
     let details_y = button.y + note_height + 1;
     frame.render_widget(
@@ -2018,20 +2157,20 @@ fn draw_apply<B: Backend>(
             Constraint::Min(5),
         ])
         .split(area);
-        wizard_style::header(frame, chunks[0], "Mash installation");
+        wizard_style::header(frame, chunks[0], &i18n::t("wizard.setup.installing"));
         let ratio = if total == 0 {
             1.0
         } else {
             completed as f64 / total as f64
         };
-        let progress = wizard_style::section(frame, chunks[1], current);
+        let progress = wizard_style::section(frame, chunks[1], &step_label(current));
         frame.render_widget(
             Gauge::default()
                 .gauge_style(Style::default().fg(wizard_style::GREEN))
                 .ratio(ratio),
             progress,
         );
-        let log = wizard_style::section(frame, chunks[2], "Progress");
+        let log = wizard_style::section(frame, chunks[2], &i18n::t("wizard.setup.progress"));
         frame.render_widget(
             Paragraph::new(messages.join("\n")).wrap(Wrap { trim: true }),
             log,
@@ -3071,5 +3210,80 @@ mod tests {
         });
         let steps = install_steps(&plan, &[]);
         assert_eq!(steps.last().map(String::as_str), Some(STEP_VOICE));
+    }
+
+    // A fixed-width button clipped the longest translation. Every language has
+    // to fit its own label, on screen, in a terminal as small as 80 columns.
+    #[test]
+    fn the_github_button_fits_its_label_in_every_language() {
+        let github = github_login::GithubLogin::new(
+            PathBuf::from("/nonexistent/gh"),
+            env::temp_dir().join("mash-wizard-test-gh-button"),
+            OsString::new(),
+            true,
+        );
+        let selected = wizard_style::selected().bg.unwrap();
+        for code in i18n::language_codes() {
+            let _language = i18n::override_language(code);
+            let mut terminal =
+                ratatui::Terminal::new(ratatui::backend::TestBackend::new(80, 24)).unwrap();
+            terminal
+                .draw(|frame| {
+                    let area = wizard_style::page_area(frame, Some(0));
+                    draw_github(frame, area, &github, false);
+                })
+                .unwrap();
+            let buffer = terminal.backend().buffer();
+            // The filled rectangle is the button: its width is what a clipped
+            // label loses, so measure it rather than the text inside it. Wide
+            // characters fill two cells but only the first carries the colour.
+            let width = (0..buffer.area.height)
+                .find_map(|y| {
+                    let filled: Vec<u16> = (0..buffer.area.width)
+                        .filter(|x| buffer[(*x, y)].bg == selected)
+                        .collect();
+                    filled
+                        .first()
+                        .zip(filled.last())
+                        .map(|(first, last)| last - first + 1)
+                })
+                .unwrap_or_else(|| panic!("{code}: no GitHub button drawn"));
+            // One space of padding either side of the label has to fit inside.
+            let label = i18n::t("wizard.github.sign_in");
+            let needed = Line::from(label.as_str()).width() as u16 + 2;
+            assert!(
+                width >= needed,
+                "{code}: {width}-column button for a {needed}-column label"
+            );
+            assert_eq!(width, needed.max(23), "{code}");
+        }
+    }
+
+    // The progress and finish screens used to stay English in every language.
+    // The step keeps its English identifier; only what is drawn is translated.
+    #[test]
+    fn the_setup_progress_screen_speaks_the_chosen_language() {
+        let _language = i18n::override_language("es");
+        let mut terminal =
+            ratatui::Terminal::new(ratatui::backend::TestBackend::new(100, 30)).unwrap();
+        draw_apply(
+            &mut terminal,
+            1,
+            4,
+            "Install npm packages",
+            &["  missing; see setup.log".to_string()],
+        );
+        let rendered = terminal
+            .backend()
+            .buffer()
+            .content()
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(rendered.contains(&i18n::t("wizard.setup.installing")));
+        assert!(rendered.contains(&i18n::t("wizard.setup.progress")));
+        assert!(rendered.contains(&i18n::t("wizard.setup.step.npm")));
+        assert!(!rendered.contains("Mash installation"));
+        assert!(!rendered.contains("Install npm packages"));
     }
 }

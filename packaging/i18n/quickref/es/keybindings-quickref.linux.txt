@@ -1,0 +1,68 @@
+Mash en Linux — teclado
+
+Ctrl es el modificador de edición, así que las familias propias de Mash viven
+en Ctrl+Alt y Ctrl+Shift. Dos capturas de GNOME ocupan ese espacio y no se
+pueden recuperar -- GNOME lee la tecla en el compositor, antes de que exista
+Mash -- por eso el foco del panel usa Ctrl+Super, y renombrar el espacio de
+trabajo evita Ctrl+Alt+Shift+R. Dentro de un panel el shell conserva cada
+acorde Ctrl solo (Ctrl+C, Ctrl+R, Ctrl+U) y Fresh conserva los de edición.
+
+  Ctrl+Alt+W           Cerrar panel
+  Ctrl+Shift+W         Cerrar pestaña
+  Ctrl+Alt+Shift+W     Cerrar espacio de trabajo
+  Ctrl+Alt+U           Desconectar
+  Ctrl+Super+Down      Enfocar panel de abajo
+  Ctrl+Super+Left      Enfocar panel de la izquierda
+  Ctrl+Super+Right     Enfocar panel de la derecha
+  Ctrl+Super+Up        Enfocar panel de arriba
+  Ctrl+Alt+Shift+G     Ir a la sesión
+  Ctrl+Shift+I         Ayuda
+  Ctrl+Shift+Down      Agente siguiente
+  Ctrl+Alt+]           Panel siguiente
+  Ctrl+Tab             Pestaña siguiente
+  Ctrl+Alt+Shift+]     Espacio de trabajo siguiente
+  Ctrl+Alt+Y           Abrir notificación
+  Ctrl+Alt+Shift+U     Buscar actualizaciones
+  Ctrl+Shift+Up        Agente anterior
+  Ctrl+Alt+[           Panel anterior
+  Ctrl+Shift+Tab       Pestaña anterior
+  Ctrl+Alt+Shift+[     Espacio de trabajo anterior
+  Ctrl+Shift+,         Recargar configuración
+  Ctrl+Alt+Shift+⌫     Quitar árbol de trabajo
+  Ctrl+Shift+M         Renombrar pestaña
+  Ctrl+Alt+Shift+M     Renombrar espacio de trabajo
+  Ctrl+Alt+R           Modo de tamaño
+  Ctrl+,               Ajustes
+  Ctrl+Alt+-           Dividir panel horizontalmente
+  Ctrl+Alt+\           Dividir panel verticalmente
+  Alt+1..9             Cambiar a la pestaña N
+  Ctrl+Alt+Shift+1..9  Cambiar al espacio de trabajo N
+  Ctrl+Alt+B           Alternar barra lateral
+  Ctrl+Alt+Z           Ampliar panel
+
+  ── Lanzadores ──
+  Ctrl+Shift+T         nueva pestaña de terminal simple
+  Ctrl+Alt+T           nueva pestaña de desarrollo (editor + agente)
+  Ctrl+Alt+Shift+T     nueva pestaña de agente
+  Ctrl+Alt+P           Buscador de archivos
+  Ctrl+Shift+G         Control de versiones
+  Ctrl+Shift+O         Estado de contenedores
+  Ctrl+Alt+Shift+P     Fragmentos
+  Ctrl+Shift+R         nueva pestaña de revisión (diff + agente)
+  Ctrl+Alt+K           anotar texto
+  Ctrl+Alt+L           pegar anotaciones en el agente de esta pestaña y archivarlas
+  Ctrl+Shift+L         gestionar anotaciones
+  Alt+G                Elegir enlace o ID
+  Ctrl+Shift+X         Gestor de plugins
+  Ctrl+Alt+Shift+N     Nuevo espacio de trabajo (perfil de diseño)
+  Ctrl+Alt+Shift+E     Nuevo árbol de trabajo (perfil de diseño)
+  Ctrl+Alt+Shift+O     Selector de espacios de trabajo
+  Ctrl+Shift+P         Paleta de comandos
+  Ctrl+Alt+Shift+Y     Bifurcar agente desde un mensaje
+  Ctrl+Alt+Shift+L     Buscar en sesiones
+
+Copiar/pegar: Ctrl+Shift+C / Ctrl+Shift+V, o el ratón. Los acordes de edición
+de Fresh dependen del modo de teclas elegido al primer inicio: el estilo
+Mash/Cursor instala el mapa de Mash, Native deja las teclas integradas de
+Fresh. Ejecuta `fresh --cmd config paths` o abre el mapa de Fresh para ver
+cuál está activo.

@@ -19,6 +19,7 @@ Usage: check-nib-branding.py <Ghostty.app or its Contents/Resources>
 """
 
 import pathlib
+import plistlib
 import sys
 
 # Strings that legitimately keep the word Ghostty: the Swift module name,
@@ -33,6 +34,10 @@ KEEP = {
 }
 
 NIB_FILES = ("MainMenu.nib", "About.nib")
+
+# A localization can reintroduce the old name in a language the base nib never
+# showed: every translated sheet is scanned too, not only the compiled nib.
+LOCALIZED_SUFFIXES = (".strings", ".stringsdict")
 
 
 def inline_strings(data):
@@ -53,6 +58,29 @@ def inline_strings(data):
             continue
 
 
+def localized_text(data):
+    """The text of a .strings or .stringsdict file as Xcode ships it.
+
+    The source sheets are UTF-8, but the built bundle carries UTF-16 (with a
+    byte-order mark) or a binary property list, so all three are read.
+    """
+    if data.startswith(b"bplist"):
+        def strings(value):
+            if isinstance(value, dict):
+                for key, item in value.items():
+                    yield str(key)
+                    yield from strings(item)
+            elif isinstance(value, list):
+                for item in value:
+                    yield from strings(item)
+            elif isinstance(value, str):
+                yield value
+        return "\n".join(strings(plistlib.loads(data)))
+    if data.startswith((b"\xff\xfe", b"\xfe\xff")):
+        return data.decode("utf-16")
+    return data.decode("utf-8-sig")
+
+
 def main(argv):
     if len(argv) != 2:
         raise SystemExit(f"usage: {argv[0]} <Ghostty.app or its Contents/Resources>")
@@ -63,7 +91,9 @@ def main(argv):
     seen = 0
     failed = False
     for name in NIB_FILES:
-        path = root / name
+        path = root / "Base.lproj" / name
+        if not path.is_file():
+            path = root / name
         if not path.is_file():
             continue
         seen += 1
@@ -79,6 +109,25 @@ def main(argv):
             print(f"  {name}: still says Ghostty: {survivors}", file=sys.stderr)
         else:
             print(f"  {name}: no Ghostty display strings")
+
+    for path in sorted(root.rglob("*")):
+        if path.suffix not in LOCALIZED_SUFFIXES or not path.is_file():
+            continue
+        seen += 1
+        try:
+            text = localized_text(path.read_bytes())
+        except (OSError, UnicodeDecodeError, plistlib.InvalidFileException) as exc:
+            failed = True
+            print(f"  {path.name}: unreadable localization: {exc}", file=sys.stderr)
+            continue
+        survivors = sorted(
+            {line.strip() for line in text.splitlines() if "Ghostty" in line and line.strip() not in KEEP}
+        )
+        if survivors:
+            failed = True
+            print(f"  {path.name}: still says Ghostty: {survivors}", file=sys.stderr)
+        else:
+            print(f"  {path.name}: no Ghostty display strings")
 
     if not seen:
         raise SystemExit(f"no nibs found under {root}")

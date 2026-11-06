@@ -1,0 +1,66 @@
+Mash on Linux — แป้นพิมพ์
+
+Ctrl เป็นปุ่มแก้ไข ดังนั้นชุดปุ่มของ Mash จึงอยู่ที่ Ctrl+Alt และ Ctrl+Shift
+GNOME ยึดสองชุดนั้นไว้และคืนไม่ให้ -- GNOME อ่านปุ่มในตัวประกอบก่อนที่ Mash
+จะมี -- ดังนั้นการย้ายบานใช้ Ctrl+Super
+และการเปลี่ยนชื่อพื้นที่ทำงานหลีกเลี่ยง Ctrl+Alt+Shift+R ในบาน เชลล์เก็บชุด
+Ctrl เดี่ยวๆ (Ctrl+C, Ctrl+R, Ctrl+U) ไว้ และ Fresh เก็บชุดแก้ไขไว้
+
+  Ctrl+Alt+W           ปิดบาน
+  Ctrl+Shift+W         ปิดแท็บ
+  Ctrl+Alt+Shift+W     ปิดพื้นที่ทำงาน
+  Ctrl+Alt+U           แยกออก
+  Ctrl+Super+Down      ไปที่บานด้านล่าง
+  Ctrl+Super+Left      ไปที่บานด้านซ้าย
+  Ctrl+Super+Right     ไปที่บานด้านขวา
+  Ctrl+Super+Up        ไปที่บานด้านบน
+  Ctrl+Alt+Shift+G     ไปที่เซสชัน
+  Ctrl+Shift+I         วิธีใช้
+  Ctrl+Shift+Down      เอเจนต์ถัดไป
+  Ctrl+Alt+]           บานถัดไป
+  Ctrl+Tab             แท็บถัดไป
+  Ctrl+Alt+Shift+]     พื้นที่ทำงานถัดไป
+  Ctrl+Alt+Y           เปิดการแจ้งเตือน
+  Ctrl+Alt+Shift+U     ตรวจหาการอัปเดต
+  Ctrl+Shift+Up        เอเจนต์ก่อนหน้า
+  Ctrl+Alt+[           บานก่อนหน้า
+  Ctrl+Shift+Tab       แท็บก่อนหน้า
+  Ctrl+Alt+Shift+[     พื้นที่ทำงานก่อนหน้า
+  Ctrl+Shift+,         โหลดการตั้งค่าใหม่
+  Ctrl+Alt+Shift+⌫     เอาวอร์กทรีออก
+  Ctrl+Shift+M         เปลี่ยนชื่อแท็บ
+  Ctrl+Alt+Shift+M     เปลี่ยนชื่อพื้นที่ทำงาน
+  Ctrl+Alt+R           ปรับขนาด
+  Ctrl+,               การตั้งค่า
+  Ctrl+Alt+-           แยกบานแนวนอน
+  Ctrl+Alt+\           แยกบานแนวตั้ง
+  Alt+1..9             สลับไปแท็บ N
+  Ctrl+Alt+Shift+1..9  สลับไปพื้นที่ทำงาน N
+  Ctrl+Alt+B           สลับแถบข้าง
+  Ctrl+Alt+Z           ขยายบาน
+
+  ── การเปิด ──
+  Ctrl+Shift+T         แท็บเชลล์ใหม่
+  Ctrl+Alt+T           แท็บพัฒนาใหม่ (เอดิเตอร์ + เอเจนต์)
+  Ctrl+Alt+Shift+T     แท็บเอเจนต์ใหม่
+  Ctrl+Alt+P           ค้นหาไฟล์
+  Ctrl+Shift+G         ควบคุมเวอร์ชัน
+  Ctrl+Shift+O         สถานะคอนเทนเนอร์
+  Ctrl+Alt+Shift+P     สนิปเพต
+  Ctrl+Shift+R         แท็บรีวิวใหม่ (diff + เอเจนต์)
+  Ctrl+Alt+K           ใส่คำอธิบายในข้อความ
+  Ctrl+Alt+L           วางคำอธิบายลงในเอเจนต์ของแท็บนี้และเก็บถาวร
+  Ctrl+Shift+L         จัดการคำอธิบาย
+  Alt+G                เลือกลิงก์หรือ ID
+  Ctrl+Shift+X         ตัวจัดการปลั๊กอิน
+  Ctrl+Alt+Shift+N     พื้นที่ทำงานใหม่ (โปรไฟล์เลย์เอาต์)
+  Ctrl+Alt+Shift+E     เวิร์กทรีใหม่ (โปรไฟล์เลย์เอาต์)
+  Ctrl+Alt+Shift+O     เลือกพื้นที่ทำงาน
+  Ctrl+Shift+P         พาเลตคำสั่ง
+  Ctrl+Alt+Shift+Y     แยกเอเจนต์จากข้อความ
+  Ctrl+Alt+Shift+L     ค้นหาเซสชัน
+
+คัดลอก / วาง: Ctrl+Shift+C / Ctrl+Shift+V หรือใช้เมาส์ ชุดแก้ไขของ Fresh
+ขึ้นกับโหมดปุ่มที่เลือกตอนเปิดครั้งแรก: Mash/Cursor ใส่แผงของ Mash ส่วน Native
+เก็บปุ่มในตัวของ Fresh รัน `fresh --cmd config paths` หรือเปิดแผงปุ่มของ Fresh
+เพื่อดูว่าชุดใดใช้งานอยู่

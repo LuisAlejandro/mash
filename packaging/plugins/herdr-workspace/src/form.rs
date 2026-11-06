@@ -4,6 +4,7 @@ use crate::apply;
 use crate::complete;
 use crate::config::{self, Profile};
 use crate::edit;
+use crate::i18n::t;
 use crate::popup;
 use crate::theme::Theme;
 use ratatui::backend::CrosstermBackend;
@@ -363,7 +364,7 @@ impl App {
     fn apply_dir(&mut self, path: &str) {
         let trimmed = path.trim();
         if !complete::is_existing_dir(trimmed) {
-            self.error = "not a directory".into();
+            self.error = t("plugin.herdr-workspace.form.error.not_directory");
             return;
         }
         let expanded = complete::expand_user(trimmed);
@@ -394,14 +395,14 @@ impl App {
             }
         }
         if self.name.trim().is_empty() {
-            self.error = "workspace name is empty".into();
+            self.error = t("plugin.herdr-workspace.form.error.name_empty");
             return;
         }
         self.name = self.name.trim().to_string();
         self.name_committed = true;
         self.error.clear();
         if self.profiles.is_empty() {
-            self.error = "no profiles in config.yaml".into();
+            self.error = t("plugin.herdr-workspace.error.no_profiles");
             return;
         }
         self.focus = Focus::Profile;
@@ -418,7 +419,7 @@ impl App {
             return;
         }
         let Some(profile) = self.profiles.get(self.profile_idx).cloned() else {
-            self.error = "select a profile".into();
+            self.error = t("plugin.herdr-workspace.error.select_profile");
             return;
         };
         let cwd = complete::expand_user(self.dir.trim())
@@ -500,7 +501,7 @@ impl App {
         let body = pad(inner[0], 1, 2);
         f.render_widget(
             Paragraph::new(Span::styled(
-                "  ↑↓/pgup/pgdn/ctrl+j/k select dir · tab complete · enter next · esc cancel",
+                format!("  {}", t("plugin.herdr-workspace.form.hint")),
                 self.theme.muted(),
             )),
             inner[1],
@@ -528,7 +529,7 @@ impl App {
         self.draw_input(
             f,
             chunks[0],
-            "Directory",
+            &t("plugin.herdr-workspace.form.directory"),
             &self.dir,
             self.focus == Focus::Dir,
             "",
@@ -541,7 +542,7 @@ impl App {
         self.draw_input(
             f,
             chunks[3],
-            "Name",
+            &t("plugin.herdr-workspace.form.name"),
             &self.name,
             self.focus == Focus::Name,
             "",
@@ -600,7 +601,7 @@ impl App {
         if self.suggestions.is_empty() {
             f.render_widget(
                 Paragraph::new(Span::styled(
-                    "  no matching directories",
+                    format!("  {}", t("plugin.herdr-workspace.form.no_matches")),
                     self.theme.muted(),
                 )),
                 area,
@@ -687,18 +688,21 @@ impl App {
     }
 
     fn draw_buttons(&mut self, f: &mut Frame, area: Rect) {
+        let cancel = t("plugin.herdr-workspace.button.cancel");
+        let save = t("plugin.herdr-workspace.button.save");
+        let width = crate::theme::button_width(&[&cancel, &save]);
         let row = Layout::horizontal([
             Constraint::Fill(1),
-            Constraint::Length(12),
+            Constraint::Length(width),
             Constraint::Length(1),
-            Constraint::Length(12),
+            Constraint::Length(width),
         ])
         .split(area);
         self.cancel_box = row[1];
         self.save_box = row[3];
         f.render_widget(
             Paragraph::new(Line::from(Span::styled(
-                "[ Cancel ]",
+                cancel,
                 self.theme.button(self.focus == Focus::Cancel, false),
             )))
             .centered(),
@@ -707,7 +711,7 @@ impl App {
         let save_ok = self.dir_committed && self.name_committed && !self.profiles.is_empty();
         f.render_widget(
             Paragraph::new(Line::from(Span::styled(
-                "[ Save ]",
+                save,
                 self.theme.button(self.focus == Focus::Save, save_ok),
             )))
             .centered(),
@@ -802,7 +806,10 @@ pub(crate) fn draw_progress(f: &mut Frame, area: Rect, theme: &Theme, progress: 
     ])
     .split(body);
     f.render_widget(
-        Paragraph::new(Span::styled("Working", theme.input(true))),
+        Paragraph::new(Span::styled(
+            t("plugin.herdr-workspace.progress.working"),
+            theme.input(true),
+        )),
         chunks[0],
     );
     let ratio = if progress.total == 0 {
@@ -815,7 +822,7 @@ pub(crate) fn draw_progress(f: &mut Frame, area: Rect, theme: &Theme, progress: 
             .block(
                 Block::bordered()
                     .borders(Borders::ALL)
-                    .title(" Progress ")
+                    .title(format!(" {} ", t("plugin.herdr-workspace.progress.gauge")))
                     .border_style(theme.input_border(true))
                     .style(theme.base()),
             )
@@ -831,7 +838,7 @@ pub(crate) fn draw_progress(f: &mut Frame, area: Rect, theme: &Theme, progress: 
     );
     f.render_widget(
         Paragraph::new(Span::styled(
-            "  applying layout — popup closes when this finishes",
+            format!("  {}", t("plugin.herdr-workspace.progress.footer")),
             theme.muted(),
         )),
         chunks[4],
@@ -893,7 +900,6 @@ mod tests {
         assert_eq!(step(75, 1, n), 0, "wraps forward at the end");
         assert_eq!(step(0, -1, n), 75, "wraps backward from the start");
     }
-
 
     /// A roomy window shows one row per candidate, up to the cap.
     #[test]

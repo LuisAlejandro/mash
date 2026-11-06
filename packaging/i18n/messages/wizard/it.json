@@ -1,0 +1,1538 @@
+{
+  "wizard.language.title": {
+    "text": "Scegli la lingua",
+    "source_hash": "8e2d0664dbbb"
+  },
+  "wizard.language.prompt": {
+    "text": "Lingua di configurazione",
+    "source_hash": "6a37bc86eb31"
+  },
+  "wizard.language.continue": {
+    "text": "Continua",
+    "source_hash": "31fbef162594"
+  },
+  "wizard.welcome.start": {
+    "text": "Avvia la procedura guidata",
+    "source_hash": "0fe79b066746"
+  },
+  "wizard.identity.title": {
+    "text": "Identità",
+    "source_hash": "999f23fcd7be"
+  },
+  "wizard.identity.name_label": {
+    "text": "Nome:",
+    "source_hash": "2683cad48a14"
+  },
+  "wizard.identity.name_help": {
+    "text": "Nome nei commit",
+    "source_hash": "496635d99500"
+  },
+  "wizard.identity.email_label": {
+    "text": "E-mail:",
+    "source_hash": "17507dcf8457"
+  },
+  "wizard.identity.email_help": {
+    "text": "E-mail nei commit",
+    "source_hash": "c5b5196053ec"
+  },
+  "wizard.identity.key_label": {
+    "text": "Chiave di firma:",
+    "source_hash": "bbfbc9ee3f2d"
+  },
+  "wizard.identity.key_help": {
+    "text": "Lascia vuoto per disattivare la firma",
+    "source_hash": "89da89efcf12"
+  },
+  "wizard.identity.next": {
+    "text": "Avanti — scegli gli strumenti",
+    "source_hash": "a3dc8180c38c"
+  },
+  "wizard.tools.title": {
+    "text": "Strumenti",
+    "source_hash": "ea93d6a262ec"
+  },
+  "wizard.tools.intro": {
+    "text": "Scegli gli strumenti da installare. Quelli attenuati sono sempre disponibili.",
+    "source_hash": "5428fc58e4db"
+  },
+  "wizard.tools.mash_only": {
+    "text": "Solo Mash: salvati in ~/.mash; non visibili fuori da Mash.",
+    "source_hash": "c1401b334c12"
+  },
+  "wizard.tools.shared": {
+    "text": "Sul tuo computer: installati a livello di sistema e condivisi con le altre app.",
+    "source_hash": "ffd57efffb24"
+  },
+  "wizard.tools.no_homebrew": {
+    "text": "Homebrew non trovato: installalo da brew.sh prima di scegliere i suoi strumenti.",
+    "source_hash": "59e2e7cd4988"
+  },
+  "wizard.tools.choices": {
+    "text": "Scelte di installazione",
+    "source_hash": "ab5a2f64781a"
+  },
+  "wizard.tools.skills": {
+    "text": "Competenze",
+    "source_hash": "66d0f523a379"
+  },
+  "wizard.tools.skills_check": {
+    "text": "Installa Programming Skills (include la memoria)",
+    "source_hash": "7accde9f1e3d"
+  },
+  "wizard.tools.skills_help": {
+    "text": "Flussi di lavoro Pi per idee, piani, lavoro, QA e release, con memoria locale.",
+    "source_hash": "bd9f35e51cb5"
+  },
+  "wizard.tools.back": {
+    "text": "Indietro",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.tools.next": {
+    "text": "Avanti — configura i provider",
+    "source_hash": "1168b9d2c2a3"
+  },
+  "wizard.tools.route.bundled": {
+    "text": "incluso in Mash",
+    "source_hash": "ef935c70d966"
+  },
+  "wizard.tools.route.apt": {
+    "text": "apt",
+    "source_hash": "5009a047a11f"
+  },
+  "wizard.tools.route.homebrew": {
+    "text": "Homebrew",
+    "source_hash": "bc49b968dbe4"
+  },
+  "wizard.tools.route.download": {
+    "text": "download fissato",
+    "source_hash": "33093fa51037"
+  },
+  "wizard.tools.route.npm": {
+    "text": "npm fissato",
+    "source_hash": "a903155cf3fd"
+  },
+  "wizard.tools.route.pip": {
+    "text": "pip fissato",
+    "source_hash": "34399ac2dcb4"
+  },
+  "wizard.tools.route.cua": {
+    "text": "programma di installazione CUA",
+    "source_hash": "34c982365b95"
+  },
+  "wizard.tools.route.xcode": {
+    "text": "strumenti Xcode",
+    "source_hash": "80c6d0b53bee"
+  },
+  "wizard.tools.scope.shared": {
+    "text": "il tuo computer",
+    "source_hash": "dced8f39fb9d"
+  },
+  "wizard.tools.scope.mash_only": {
+    "text": "Solo Mash",
+    "source_hash": "3011913d5cb4"
+  },
+  "wizard.font.title": {
+    "text": "Aspetto",
+    "source_hash": "3907fa7f8072"
+  },
+  "wizard.font.fonts_section": {
+    "text": "Font su questo computer",
+    "source_hash": "48ceedcfd9eb"
+  },
+  "wizard.font.filter": {
+    "text": "Filtra font",
+    "source_hash": "b86e7b247be1"
+  },
+  "wizard.font.filter_hint": {
+    "text": "↑/↓ font · Tab per la dimensione",
+    "source_hash": "356ea9afc4bf"
+  },
+  "wizard.font.family_section": {
+    "text": "Famiglia di font (Meslo è incluso)",
+    "source_hash": "7445920f6507"
+  },
+  "wizard.font.no_fonts": {
+    "text": "Nessun font corrispondente — usa Backspace per ampliare la ricerca",
+    "source_hash": "8d7931285de0"
+  },
+  "wizard.font.keybindings_section": {
+    "text": "Scorciatoie da tastiera (definitive al termine della configurazione)",
+    "source_hash": "92dc99e05387"
+  },
+  "wizard.font.keybindings_note": {
+    "text": "Scorciatoie di Cursor o i tasti propri di ogni app (Herdr usa Ctrl+B).",
+    "source_hash": "8658dfe96d6a"
+  },
+  "wizard.font.theme_section": {
+    "text": "Tema (Herdr, Mash Terminal, Fresh, Pi, reviewr)",
+    "source_hash": "396f9810c847"
+  },
+  "wizard.font.theme_switch": {
+    "text": "←/→ cambia",
+    "source_hash": "06a1545f5045"
+  },
+  "wizard.font.size_section": {
+    "text": "Dimensione font (punti)",
+    "source_hash": "31b2eb5d3b2c"
+  },
+  "wizard.font.size_adjust": {
+    "text": "←/→ regola (6–72)",
+    "source_hash": "976de7024dc8"
+  },
+  "wizard.font.preview_suffix": {
+    "text": "anteprima in questa finestra",
+    "source_hash": "b086c32f40d5"
+  },
+  "wizard.font.back": {
+    "text": "Indietro",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.font.next": {
+    "text": "Continua alla dettatura",
+    "source_hash": "ec7a0ff60525"
+  },
+  "wizard.theme.dark": {
+    "text": "Tema scuro",
+    "source_hash": "3f11a5cc643a"
+  },
+  "wizard.theme.light": {
+    "text": "Tema chiaro",
+    "source_hash": "3669a1b2770f"
+  },
+  "wizard.voice.title": {
+    "text": "Dettatura",
+    "source_hash": "25ce1a09ddc1"
+  },
+  "wizard.voice.languages_section": {
+    "text": "Lingue in cui dettare",
+    "source_hash": "7287a2bc2529"
+  },
+  "wizard.voice.empty_notice": {
+    "text": "Nessuna lingua selezionata: la dettatura non sarà configurata. Pi può aggiungerla più tardi con /voice.",
+    "source_hash": "b903d36755f6"
+  },
+  "wizard.voice.no_match": {
+    "text": "Nessun modello copre questa combinazione. Rimuovi una lingua.",
+    "source_hash": "b8b167ba3990"
+  },
+  "wizard.voice.best": {
+    "text": "Migliore",
+    "source_hash": "c47d21c643c0"
+  },
+  "wizard.voice.fast": {
+    "text": "Veloce",
+    "source_hash": "6c582b62e0e5"
+  },
+  "wizard.voice.best_summary": {
+    "text": "il compromesso consigliato tra velocità e precisione",
+    "source_hash": "2fde20c2ddd6"
+  },
+  "wizard.voice.fast_summary": {
+    "text": "la trascrizione più rapida ancora utilizzabile",
+    "source_hash": "9f01f55f16dc"
+  },
+  "wizard.voice.same_model": {
+    "text": "Qui entrambi i ruoli usano lo stesso modello.",
+    "source_hash": "6a800db5cff9"
+  },
+  "wizard.voice.detector_notice": {
+    "text": "aggiunge il rilevatore di lingua da {size} per il rilevamento automatico",
+    "source_hash": "3c9c1859e707"
+  },
+  "wizard.voice.model_section": {
+    "text": "Modello da scaricare",
+    "source_hash": "e90982e6cea9"
+  },
+  "wizard.voice.continue_without": {
+    "text": "Continua senza dettatura",
+    "source_hash": "25309b666263"
+  },
+  "wizard.voice.download_continue": {
+    "text": "Scarica e continua",
+    "source_hash": "0a12deea1f8d"
+  },
+  "wizard.voice.back": {
+    "text": "Indietro",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.voice.more": {
+    "text": "Altri {count} — scorri o continua verso il basso",
+    "source_hash": "00703aa3c372"
+  },
+  "wizard.voice.name.bg": {
+    "text": "Bulgaro",
+    "source_hash": "ecd986094baf"
+  },
+  "wizard.voice.name.cs": {
+    "text": "Ceco",
+    "source_hash": "8b463ea23a7e"
+  },
+  "wizard.voice.name.de": {
+    "text": "Tedesco",
+    "source_hash": "a659b60d246d"
+  },
+  "wizard.voice.name.en": {
+    "text": "Inglese",
+    "source_hash": "ba118bf7fc9c"
+  },
+  "wizard.voice.name.es": {
+    "text": "Spagnolo",
+    "source_hash": "3411059cb8e0"
+  },
+  "wizard.voice.name.fr": {
+    "text": "Francese",
+    "source_hash": "7458199fe97a"
+  },
+  "wizard.voice.name.it": {
+    "text": "Italiano",
+    "source_hash": "fe1d9c7db376"
+  },
+  "wizard.voice.name.ja": {
+    "text": "Giapponese",
+    "source_hash": "be4ee906d3ef"
+  },
+  "wizard.voice.name.ko": {
+    "text": "Coreano",
+    "source_hash": "04656c6fe003"
+  },
+  "wizard.voice.name.pt": {
+    "text": "Portoghese",
+    "source_hash": "98b01b890687"
+  },
+  "wizard.voice.name.ru": {
+    "text": "Russo",
+    "source_hash": "5bcc40adf6e0"
+  },
+  "wizard.voice.name.th": {
+    "text": "Tailandese",
+    "source_hash": "ad705ee19c04"
+  },
+  "wizard.voice.name.uk": {
+    "text": "Ucraino",
+    "source_hash": "6f424303fa12"
+  },
+  "wizard.voice.name.vi": {
+    "text": "Vietnamita",
+    "source_hash": "f25499e9df5c"
+  },
+  "wizard.voice.name.zh": {
+    "text": "Cinese mandarino",
+    "source_hash": "b4d3ec443738"
+  },
+  "wizard.github.section": {
+    "text": "GitHub (facoltativo)",
+    "source_hash": "d02de70d7691"
+  },
+  "wizard.github.signed_out": {
+    "text": "Accesso non effettuato",
+    "source_hash": "491fc91cd76e"
+  },
+  "wizard.github.starting": {
+    "text": "Connessione a GitHub…",
+    "source_hash": "e7018ff9b61a"
+  },
+  "wizard.github.waiting": {
+    "text": "In attesa dell’approvazione nel browser",
+    "source_hash": "0e591354e538"
+  },
+  "wizard.github.signed_in": {
+    "text": "✓ Accesso effettuato",
+    "source_hash": "a6bc36f81df5"
+  },
+  "wizard.github.signed_in_as": {
+    "text": "✓ Accesso effettuato come {user}",
+    "source_hash": "33cfe2e60aae"
+  },
+  "wizard.github.sign_in": {
+    "text": "Accedi a GitHub",
+    "source_hash": "47e9895d1d76"
+  },
+  "wizard.github.cancel": {
+    "text": "Annulla",
+    "source_hash": "19766ed6ccb2"
+  },
+  "wizard.github.sign_out": {
+    "text": "Esci",
+    "source_hash": "48f0d3d397d4"
+  },
+  "wizard.github.retry": {
+    "text": "Riprova",
+    "source_hash": "d8b8392e2c54"
+  },
+  "wizard.github.copied": {
+    "text": "copiato negli appunti",
+    "source_hash": "9a6d3fb1a8f5"
+  },
+  "wizard.github.approve": {
+    "text": "Inserisci il codice su {url} per autorizzare Mash.",
+    "source_hash": "0811fcc61af8"
+  },
+  "wizard.github.usage": {
+    "text": "Usato da Git tramite HTTPS, pull request e strumenti GitHub degli agenti.",
+    "source_hash": "687743c41d86"
+  },
+  "wizard.font.keybindings.mash": {
+    "text": "Mash / stile Cursor",
+    "source_hash": "50c4eaf509a5"
+  },
+  "wizard.font.keybindings.native": {
+    "text": "Nativo",
+    "source_hash": "d509e4938852"
+  },
+  "wizard.tools.description.agent-browser": {
+    "text": "Automazione del browser per lavorare sulle pagine",
+    "source_hash": "17a3b5d9e891"
+  },
+  "wizard.tools.description.atuin": {
+    "text": "Cronologia della shell consultabile",
+    "source_hash": "f1667e433eff"
+  },
+  "wizard.tools.description.bash-language-server": {
+    "text": "Server di linguaggio Bash",
+    "source_hash": "8bb3d3483973"
+  },
+  "wizard.tools.description.bat": {
+    "text": "Anteprima file con evidenziazione",
+    "source_hash": "65f67ed05fd4"
+  },
+  "wizard.tools.description.clangd": {
+    "text": "Server di linguaggio C e C++",
+    "source_hash": "eb55e1c1e2fc"
+  },
+  "wizard.tools.description.cua-driver": {
+    "text": "Controllo desktop nativo per le app",
+    "source_hash": "875a66659bbe"
+  },
+  "wizard.tools.description.delta": {
+    "text": "Diff Git e pager",
+    "source_hash": "0a5ab9622ca0"
+  },
+  "wizard.tools.description.eza": {
+    "text": "Elenchi di file",
+    "source_hash": "90065d6d509a"
+  },
+  "wizard.tools.description.fd": {
+    "text": "Ricerca file",
+    "source_hash": "401934824f5c"
+  },
+  "wizard.tools.description.fresh": {
+    "text": "Editor di Mash",
+    "source_hash": "07a3ce240a97"
+  },
+  "wizard.tools.description.fzf": {
+    "text": "Selettore fuzzy interattivo",
+    "source_hash": "74befff772fe"
+  },
+  "wizard.tools.description.gh": {
+    "text": "CLI GitHub e gestione credenziali",
+    "source_hash": "7f9081e6b668"
+  },
+  "wizard.tools.description.git": {
+    "text": "Controllo versione Git",
+    "source_hash": "04ecfc4b2a56"
+  },
+  "wizard.tools.description.gopls": {
+    "text": "Server di linguaggio Go",
+    "source_hash": "7c830acbe2df"
+  },
+  "wizard.tools.description.herdr": {
+    "text": "Spazi di lavoro, schede e pannelli",
+    "source_hash": "ae8e873192bf"
+  },
+  "wizard.tools.description.jq": {
+    "text": "Utilità JSON",
+    "source_hash": "8f8b7b35919d"
+  },
+  "wizard.tools.description.latexindent": {
+    "text": "Formattazione LaTeX",
+    "source_hash": "2d27bc2aed62"
+  },
+  "wizard.tools.description.lazydocker": {
+    "text": "Docker nel terminale",
+    "source_hash": "a1ea900f50dc"
+  },
+  "wizard.tools.description.lazygit": {
+    "text": "Git nel terminale",
+    "source_hash": "56280a7e33fa"
+  },
+  "wizard.tools.description.marksman": {
+    "text": "Server di linguaggio Markdown",
+    "source_hash": "acd246ea56cd"
+  },
+  "wizard.tools.description.node": {
+    "text": "Runtime JavaScript e npm",
+    "source_hash": "257e5fc25d9c"
+  },
+  "wizard.tools.description.pet": {
+    "text": "Frammenti di comandi",
+    "source_hash": "2c7046aea68e"
+  },
+  "wizard.tools.description.pi": {
+    "text": "Agente di programmazione Mash",
+    "source_hash": "1e3348dc35ec"
+  },
+  "wizard.tools.description.prettier": {
+    "text": "Formattazione JavaScript, JSON, Markdown, CSS e Svelte",
+    "source_hash": "0a196b7eee63"
+  },
+  "wizard.tools.description.python": {
+    "text": "Runtime Python e pip",
+    "source_hash": "d378a966a298"
+  },
+  "wizard.tools.description.python-lsp-server": {
+    "text": "Server di linguaggio Python",
+    "source_hash": "45689d922173"
+  },
+  "wizard.tools.description.rg": {
+    "text": "Ricerca nel contenuto",
+    "source_hash": "364c20f57972"
+  },
+  "wizard.tools.description.rust-analyzer": {
+    "text": "Server di linguaggio Rust",
+    "source_hash": "59af4ee7c852"
+  },
+  "wizard.tools.description.sentrux": {
+    "text": "Analisi strutturale di piani, lavoro e QA",
+    "source_hash": "cdadc36df319"
+  },
+  "wizard.tools.description.shfmt": {
+    "text": "Formattazione shell",
+    "source_hash": "ef675cf302a8"
+  },
+  "wizard.tools.description.sourcekit-lsp": {
+    "text": "Server di linguaggio Swift",
+    "source_hash": "bf29ee422d2f"
+  },
+  "wizard.tools.description.starship": {
+    "text": "Prompt della shell",
+    "source_hash": "ef8740639be1"
+  },
+  "wizard.tools.description.svelte-language-server": {
+    "text": "Server di linguaggio Svelte",
+    "source_hash": "5f0011a9203a"
+  },
+  "wizard.tools.description.tailwindcss-language-server": {
+    "text": "Server di linguaggio Tailwind CSS",
+    "source_hash": "b33fd822317e"
+  },
+  "wizard.tools.description.texlab": {
+    "text": "Server di linguaggio LaTeX",
+    "source_hash": "3388b1a9bd89"
+  },
+  "wizard.tools.description.typescript-language-server": {
+    "text": "Server di linguaggio TypeScript e JavaScript",
+    "source_hash": "199f12a09d18"
+  },
+  "wizard.tools.description.viu": {
+    "text": "Immagini nel terminale",
+    "source_hash": "6068123d4bf5"
+  },
+  "wizard.tools.description.vscode-css-language-server": {
+    "text": "Server CSS (pacchetto condiviso CSS/HTML/JSON)",
+    "source_hash": "3ae9cafca643"
+  },
+  "wizard.tools.description.vscode-html-language-server": {
+    "text": "Server HTML (pacchetto condiviso CSS/HTML/JSON)",
+    "source_hash": "4fdddbf99da0"
+  },
+  "wizard.tools.description.vscode-json-language-server": {
+    "text": "Server JSON (pacchetto condiviso CSS/HTML/JSON)",
+    "source_hash": "af757d93137e"
+  },
+  "wizard.tools.description.yaml-language-server": {
+    "text": "Server di linguaggio YAML",
+    "source_hash": "d56c118152ef"
+  },
+  "wizard.tools.description.zoxide": {
+    "text": "Ordinamento intelligente delle directory",
+    "source_hash": "82deb27f3f2d"
+  },
+  "wizard.font.warning_no_list": {
+    "text": "Impossibile elencare i font installati; Meslo incluso è ancora disponibile.",
+    "source_hash": "800ea442cefd"
+  },
+  "wizard.shell.setup": {
+    "text": "Configurazione",
+    "source_hash": "7013af4c42fe"
+  },
+  "wizard.shell.installing": {
+    "text": "Installazione…",
+    "source_hash": "530bcc355f0a"
+  },
+  "wizard.shell.navigation_hint": {
+    "text": "Tab per spostarsi · Invio per selezionare",
+    "source_hash": "fbe682a41063"
+  },
+  "wizard.shell.preview_hint": {
+    "text": "←/→ pagine · Esc indietro",
+    "source_hash": "9a1a64bc4c7d"
+  },
+  "wizard.shell.page_title": {
+    "text": "{title} — pagina {current}/{total}",
+    "source_hash": "26ddd83b8742"
+  },
+  "wizard.page.model_provider": {
+    "text": "Provider del modello",
+    "source_hash": "ea70384c465d"
+  },
+  "wizard.page.web_search": {
+    "text": "Ricerca web",
+    "source_hash": "7711faa74a10"
+  },
+  "wizard.page.memory": {
+    "text": "Memoria",
+    "source_hash": "c3963aedaac6"
+  },
+  "wizard.shell.setup_label": {
+    "text": "CONFIGURAZIONE",
+    "source_hash": "7175b03373a2"
+  },
+  "wizard.github.config_inside": {
+    "text": "La configurazione di GitHub deve restare all'interno di Mash.",
+    "source_hash": "2b038878bb44"
+  },
+  "wizard.github.cli_unavailable": {
+    "text": "La CLI di GitHub non è disponibile in questa build.",
+    "source_hash": "929b978e3fa2"
+  },
+  "wizard.github.incomplete": {
+    "text": "L'accesso a GitHub non è stato completato.",
+    "source_hash": "d7fb51538ef3"
+  },
+  "wizard.github.start_failed": {
+    "text": "Impossibile avviare la CLI di GitHub: {error}",
+    "source_hash": "77cc54ecbb65"
+  },
+  "wizard.model.local_catalog": {
+    "text": "Catalogo locale; le credenziali non sono verificate dal server",
+    "source_hash": "b90b73d51076"
+  },
+  "wizard.model.filter": {
+    "text": "Filtra modelli",
+    "source_hash": "9a35e606cd37"
+  },
+  "wizard.model.choose": {
+    "text": "Scegli un modello (Invio o clic)",
+    "source_hash": "b67e2354ebe6"
+  },
+  "wizard.model.enter_manual": {
+    "text": "Inserisci manualmente",
+    "source_hash": "ad876beba8ac"
+  },
+  "wizard.model.use_model": {
+    "text": "Usa modello",
+    "source_hash": "cb1c1ca37393"
+  },
+  "wizard.connection.unavailable": {
+    "text": "Verifica della connessione non disponibile. Inserisci i dettagli manualmente; la configurazione può proseguire.",
+    "source_hash": "df66e4e70112"
+  },
+  "wizard.connection.mode.existing": {
+    "text": "Riusa la credenziale salvata",
+    "source_hash": "a8f3c9ed4b75"
+  },
+  "wizard.common.new_api_key": {
+    "text": "Inserisci una nuova chiave API",
+    "source_hash": "9b6cc5e19d07"
+  },
+  "wizard.connection.mode.none": {
+    "text": "Nessuna chiave (server locale)",
+    "source_hash": "327d8a7f069e"
+  },
+  "wizard.common.sign_in_later": {
+    "text": "Accedi più tardi in Pi",
+    "source_hash": "9e6b7094c00b"
+  },
+  "wizard.connection.local_server": {
+    "text": "{name} (locale)",
+    "source_hash": "60d0adb8ca44"
+  },
+  "wizard.connection.reason.unauthorized": {
+    "text": "L'endpoint ha rifiutato queste credenziali.",
+    "source_hash": "5c67730adff0"
+  },
+  "wizard.connection.reason.not_found": {
+    "text": "L'endpoint non ha questo modello o questo percorso API.",
+    "source_hash": "92e6a1ef02b9"
+  },
+  "wizard.connection.reason.timeout": {
+    "text": "L'endpoint non ha risposto in tempo.",
+    "source_hash": "824104c212df"
+  },
+  "wizard.connection.reason.unreachable": {
+    "text": "Nessun server ha risposto a quell'indirizzo.",
+    "source_hash": "91cf761f6798"
+  },
+  "wizard.connection.reason.blocked": {
+    "text": "Questo indirizzo non è consentito; usa un endpoint HTTPS o un indirizzo di server locale.",
+    "source_hash": "91672c928382"
+  },
+  "wizard.connection.reason.redirected": {
+    "text": "L'endpoint ha reindirizzato altrove; inserisci l'indirizzo finale.",
+    "source_hash": "6f5c4d2db072"
+  },
+  "wizard.connection.reason.not_json": {
+    "text": "Questo indirizzo ha risposto con una pagina, non con un'API di modelli.",
+    "source_hash": "caa45c7a5c14"
+  },
+  "wizard.connection.reason.wrong_api": {
+    "text": "Questo indirizzo ha risposto per un altro tipo di API; controlla l'indirizzo e l'API selezionata.",
+    "source_hash": "4214079dbe1b"
+  },
+  "wizard.connection.reason.no_models": {
+    "text": "Il server è in esecuzione ma non ha alcun modello di chat caricato.",
+    "source_hash": "a1655be795a4"
+  },
+  "wizard.connection.reason.stale": {
+    "text": "La connessione è cambiata durante la verifica. Riprova il test.",
+    "source_hash": "270cbc62e785"
+  },
+  "wizard.connection.reason.consent": {
+    "text": "Il test invia una breve richiesta. Conferma per continuare.",
+    "source_hash": "8210811701c1"
+  },
+  "wizard.connection.reason.command_secret": {
+    "text": "Questa credenziale esegue un comando; gestiscila invece in Pi.",
+    "source_hash": "07c5bdb147b9"
+  },
+  "wizard.connection.reason.oauth_expired": {
+    "text": "L'accesso salvato è scaduto; accedi di nuovo tramite Pi.",
+    "source_hash": "d5ce40555415"
+  },
+  "wizard.connection.reason.endpoint_changed": {
+    "text": "La credenziale salvata appartiene a un altro endpoint.",
+    "source_hash": "c8ac0862d7b2"
+  },
+  "wizard.connection.reason.additional_setup": {
+    "text": "Questo provider richiede una configurazione aggiuntiva; completala in Pi.",
+    "source_hash": "b02eeda9e214"
+  },
+  "wizard.connection.reason.fallback": {
+    "text": "Impossibile verificare la connessione.",
+    "source_hash": "a329289ba9b5"
+  },
+  "wizard.connection.saved": {
+    "text": "Credenziale salvata",
+    "source_hash": "cd3c6826c368"
+  },
+  "wizard.connection.deferred": {
+    "text": "L'autenticazione è rinviata a Pi /login",
+    "source_hash": "48ed1207e344"
+  },
+  "wizard.connection.http_status": {
+    "text": "{message} (HTTP {status})",
+    "source_hash": "28b2090559db"
+  },
+  "wizard.models.unavailable": {
+    "text": "Ispezione dei modelli Pi non disponibile. Configura il modello manualmente o usa Pi /login dopo la configurazione.",
+    "source_hash": "b446b49932ad"
+  },
+  "wizard.models.helper_unavailable": {
+    "text": "Assistente di configurazione non disponibile. Inserisci i dettagli manualmente; la configurazione può proseguire.",
+    "source_hash": "c105bfa9119a"
+  },
+  "wizard.models.not_in_catalog": {
+    "text": "Il modello salvato non è nel catalogo locale di Pi. Il suo ID esatto è stato mantenuto.",
+    "source_hash": "3a377429f23a"
+  },
+  "wizard.models.no_catalog": {
+    "text": "Per il modello salvato non c'è un catalogo locale disponibile; il suo ID non è verificato.",
+    "source_hash": "41e3d45585a9"
+  },
+  "wizard.models.not_ready": {
+    "text": "Nessuna credenziale configurata per il provider del modello salvato. Usa Pi /login dopo la configurazione.",
+    "source_hash": "27dc6e44bc1e"
+  },
+  "wizard.models.unverified": {
+    "text": "Impossibile verificare localmente le credenziali del provider salvato. Usa Pi /login dopo la configurazione.",
+    "source_hash": "eb785e842362"
+  },
+  "wizard.providers.invalid_catalog": {
+    "text": "Catalogo dei provider Pi incluso non valido",
+    "source_hash": "bbcc3cc163f5"
+  },
+  "wizard.providers.hint.azure": {
+    "text": "Configura prima AZURE_OPENAI_BASE_URL o AZURE_OPENAI_RESOURCE_NAME.",
+    "source_hash": "2decf0bd1d6b"
+  },
+  "wizard.providers.hint.cloudflare_gateway": {
+    "text": "Cloudflare richiede anche un ID account e un ID gateway.",
+    "source_hash": "c6bb32d55e90"
+  },
+  "wizard.providers.hint.cloudflare_workers": {
+    "text": "Cloudflare richiede anche un ID account.",
+    "source_hash": "487cf2bed2ad"
+  },
+  "wizard.providers.hint.bedrock": {
+    "text": "In alternativa, profili AWS e IAM possono fornire credenziali di ambiente.",
+    "source_hash": "d4ddd86cd093"
+  },
+  "wizard.providers.hint.vertex": {
+    "text": "L'accesso tramite ADC o account di servizio richiede anche un progetto e una località.",
+    "source_hash": "a382011b4183"
+  },
+  "wizard.providers.guidance.azure": {
+    "text": "Imposta AZURE_OPENAI_BASE_URL o AZURE_OPENAI_RESOURCE_NAME, poi usa /login azure in Pi. Continua mantiene la configurazione attuale di Pi.",
+    "source_hash": "5834561a0d12"
+  },
+  "wizard.providers.guidance.cloudflare_gateway": {
+    "text": "Richiede un token, un ID account e un ID gateway. Usa /login cloudflare-ai-gateway in Pi. Continua mantiene la configurazione attuale di Pi.",
+    "source_hash": "2c4fdf840f5a"
+  },
+  "wizard.providers.guidance.cloudflare_workers": {
+    "text": "Richiede un token e un ID account. Usa /login cloudflare-workers-ai in Pi. Continua mantiene la configurazione attuale di Pi.",
+    "source_hash": "95b2361c0b9a"
+  },
+  "wizard.providers.guidance.bedrock": {
+    "text": "Inserisci un token bearer di Bedrock, non un ID di chiave di accesso AWS. Per profili AWS o IAM usa /login amazon-bedrock in Pi.",
+    "source_hash": "869163e8c80d"
+  },
+  "wizard.providers.guidance.vertex": {
+    "text": "Inserisci una chiave API di Google Cloud. Per ADC o un file di account di servizio usa /login google-vertex in Pi.",
+    "source_hash": "786382a710f6"
+  },
+  "wizard.providers.guidance.generic": {
+    "text": "Dopo la configurazione, usa /login {id} in Pi. Continua mantiene la configurazione attuale di Pi.",
+    "source_hash": "558591c917f8"
+  },
+  "wizard.providers.guidance.oauth": {
+    "text": "Qui usa una chiave API. Per l'accesso dal browser o dal dispositivo, usa /login {id} in Pi dopo la configurazione.",
+    "source_hash": "c50e0a9f050c"
+  },
+  "wizard.providers.login_deferred": {
+    "text": "Autenticazione rinviata. Dopo la configurazione, esegui /login {id} in Pi.",
+    "source_hash": "de2f18975d71"
+  },
+  "wizard.providers.key_api": {
+    "text": "Chiave API {name}",
+    "source_hash": "a07eb1509dcd"
+  },
+  "wizard.providers.key_token": {
+    "text": "Token {name}",
+    "source_hash": "ba35265f1f56"
+  },
+  "wizard.providers.key_aws": {
+    "text": "Credenziali AWS o token bearer",
+    "source_hash": "cdfc8a182045"
+  },
+  "wizard.providers.key_gcloud": {
+    "text": "Credenziali Google Cloud",
+    "source_hash": "1757285aa598"
+  },
+  "wizard.providers.key_bedrock": {
+    "text": "Token bearer di Bedrock",
+    "source_hash": "56b93e9ece96"
+  },
+  "wizard.provider.none_llm": {
+    "text": "Nessuno (nessun LLM)",
+    "source_hash": "8756f88be90d"
+  },
+  "wizard.provider.custom": {
+    "text": "Provider personalizzato",
+    "source_hash": "fee405014d78"
+  },
+  "wizard.provider.openai_compatible": {
+    "text": "Compatibile con OpenAI (Chat Completions)",
+    "source_hash": "d53238670c07"
+  },
+  "wizard.search.keep": {
+    "text": "Mantieni la configurazione di ricerca esistente",
+    "source_hash": "5e67d2e2b08e"
+  },
+  "wizard.search.use_chat": {
+    "text": "Usa modello di chat",
+    "source_hash": "a3132658890a"
+  },
+  "wizard.provider.auto_api": {
+    "text": "Automatico (rilevato al test)",
+    "source_hash": "88afbf0096a7"
+  },
+  "wizard.provider.enter_id": {
+    "text": "Inserisci prima un ID provider.",
+    "source_hash": "0c037db27d29"
+  },
+  "wizard.provider.preview_only": {
+    "text": "Solo anteprima: nessuna richiesta viene inviata e nulla viene salvato.",
+    "source_hash": "0ebb19deae89"
+  },
+  "wizard.provider.testing": {
+    "text": "Test della connessione… viene inviata una breve richiesta.",
+    "source_hash": "1676396cacd0"
+  },
+  "wizard.provider.connected": {
+    "text": "Connesso: l'endpoint ha risposto su {label}.",
+    "source_hash": "7ad0b1549289"
+  },
+  "wizard.provider.models_reported": {
+    "text": "Il server ha segnalato {count} modelli.",
+    "source_hash": "f31fe95a9707"
+  },
+  "wizard.provider.list_incomplete": {
+    "text": "L'elenco è incompleto; inserisci manualmente un ID mancante e provalo.",
+    "source_hash": "2d588d0ed045"
+  },
+  "wizard.provider.no_chat_model": {
+    "text": "Il server ha risposto ma non ha segnalato alcun modello di chat.",
+    "source_hash": "facf8d7bd587"
+  },
+  "wizard.provider.credential_label": {
+    "text": "Credenziale: {label}",
+    "source_hash": "8b458229f825"
+  },
+  "wizard.provider.credential_unusable": {
+    "text": "Credenziale non utilizzabile: {label}",
+    "source_hash": "d431bbfadbd4"
+  },
+  "wizard.provider.model_list_unavailable": {
+    "text": "Elenco modelli non disponibile o vuoto. Inserisci l'ID esatto del modello; resterà non verificato.",
+    "source_hash": "00dff5896fd5"
+  },
+  "wizard.provider.choose_or_enter": {
+    "text": "Scegli un modello da questo endpoint o inserisci il suo ID esatto.",
+    "source_hash": "cfad129610d3"
+  },
+  "wizard.provider.fetch_or_test": {
+    "text": "Recupera l'elenco modelli del server oppure prova un ID mancante da un elenco incompleto.",
+    "source_hash": "c320f93cb08b"
+  },
+  "wizard.provider.choose_reported": {
+    "text": "{label}: scegli un modello segnalato oppure prova un ID mancante da un elenco incompleto.",
+    "source_hash": "a77913382c56"
+  },
+  "wizard.provider.pi_test_first": {
+    "text": "Pi: prova prima questa connessione personalizzata; si può salvare solo una richiesta accettata.",
+    "source_hash": "161d742c4903"
+  },
+  "wizard.search.src_chat": {
+    "text": "Usa le credenziali del provider di chat",
+    "source_hash": "f775d3990dd0"
+  },
+  "wizard.memory.src_saved": {
+    "text": "Mantieni la chiave di memoria salvata",
+    "source_hash": "e5a0bc3ecc75"
+  },
+  "wizard.search.src_saved": {
+    "text": "Usa le credenziali Pi salvate",
+    "source_hash": "68823fc1dc94"
+  },
+  "wizard.memory.src_later": {
+    "text": "Configura più tardi (mantieni l'esistente)",
+    "source_hash": "b9e8bb9af513"
+  },
+  "wizard.search.keep_unreadable": {
+    "text": "Mantieni la configurazione di ricerca esistente (illeggibile)",
+    "source_hash": "03bfcd418f97"
+  },
+  "wizard.search.keep_chat": {
+    "text": "Mantieni attuale: usa il modello di chat",
+    "source_hash": "c454fc0778ba"
+  },
+  "wizard.common.keep_current_model": {
+    "text": "Mantieni attuale: {provider}/{model}",
+    "source_hash": "417283f9b64d"
+  },
+  "wizard.search.use_chat_unset": {
+    "text": "Usa modello di chat (non ancora configurato)",
+    "source_hash": "e8b6ce6cb122"
+  },
+  "wizard.search.use_chat_model": {
+    "text": "Usa modello di chat: {provider}/{model}",
+    "source_hash": "8d09d2b9f3dd"
+  },
+  "wizard.common.keep_or_later": {
+    "text": "Mantieni l'esistente / configura dopo",
+    "source_hash": "4cec99ff32b6"
+  },
+  "wizard.provider.custom_endpoint": {
+    "text": "Endpoint personalizzato",
+    "source_hash": "5fb0795eaf2e"
+  },
+  "wizard.common.keep_current_provider": {
+    "text": "Mantieni attuale: {provider}",
+    "source_hash": "e0547b6f785f"
+  },
+  "wizard.common.set_up_later": {
+    "text": "Configura più tardi",
+    "source_hash": "eb5e104944c1"
+  },
+  "wizard.common.currently_configured": {
+    "text": "(attualmente configurato)",
+    "source_hash": "fd8c4c2150d6"
+  },
+  "wizard.memory.enter_url": {
+    "text": "Memoria: inserisci l'URL dell'endpoint prima di recuperare i modelli.",
+    "source_hash": "4491f26c74d0"
+  },
+  "wizard.search.configure_chat_first": {
+    "text": "Ricerca web: configura prima un modello di chat",
+    "source_hash": "f2d6fcb7ce5a"
+  },
+  "wizard.search.not_native": {
+    "text": "Questo provider di chat non offre la ricerca web nativa. Scegli un provider di ricerca dedicato.",
+    "source_hash": "2ae0277a4bbb"
+  },
+  "wizard.search.enter_key_or_later": {
+    "text": "Ricerca web: inserisci una chiave o seleziona «Accedi più tardi in Pi»",
+    "source_hash": "ec8998bc8e73"
+  },
+  "wizard.search.credential_invalid": {
+    "text": "Ricerca web: la credenziale Pi esistente non è valida",
+    "source_hash": "2bdcb880250c"
+  },
+  "wizard.search.oauth_exists": {
+    "text": "Ricerca web: esiste già una credenziale OAuth; gestiscila con Pi /login",
+    "source_hash": "789004e75d1e"
+  },
+  "wizard.search.azure_env_invalid": {
+    "text": "Ricerca web: la credenziale Azure esistente ha un ambiente non valido",
+    "source_hash": "907c142da323"
+  },
+  "wizard.search.credential_on_model_page": {
+    "text": "Ricerca web: la credenziale di questo provider è impostata nella pagina Provider del modello. Usa qui la credenziale del modello di chat o scegli un altro provider di ricerca.",
+    "source_hash": "9cb065a8fae4"
+  },
+  "wizard.provider.pi_signed_in": {
+    "text": "Pi: questo provider è connesso tramite Pi /login. Mantieni la credenziale salvata o accedi di nuovo in Pi invece di sostituirla.",
+    "source_hash": "eb4d65ce6ad3"
+  },
+  "wizard.provider.credential_dir_unavailable": {
+    "text": "Directory delle credenziali Pi non disponibile",
+    "source_hash": "98f28d5f8b0b"
+  },
+  "wizard.provider.retest_before_apply": {
+    "text": "Prova di nuovo questa connessione personalizzata prima di applicare le sue credenziali.",
+    "source_hash": "33f016024d39"
+  },
+  "wizard.search.manage_oauth": {
+    "text": "Ricerca web: gestisci la credenziale OAuth esistente con Pi /login",
+    "source_hash": "9b1cb7045e7d"
+  },
+  "wizard.memory.config_missing": {
+    "text": "Configurazione della memoria mancante; riapri Mash per ripristinarla",
+    "source_hash": "19b25e7d8997"
+  },
+  "wizard.provider.models_providers_invalid": {
+    "text": "Il file models.json di Pi contiene un oggetto providers non valido",
+    "source_hash": "4e54bf06618d"
+  },
+  "wizard.provider.models_definition_invalid": {
+    "text": "Il file models.json di Pi contiene una definizione di provider non valida",
+    "source_hash": "0c2aec3a83b0"
+  },
+  "wizard.provider.models_list_invalid": {
+    "text": "Il file models.json di Pi contiene un elenco di modelli non valido",
+    "source_hash": "e653afbf6dc8"
+  },
+  "wizard.search.symlink": {
+    "text": "Ricerca web: configurazione collegata tramite link simbolico rifiutata",
+    "source_hash": "b8dd10482ddf"
+  },
+  "wizard.search.regular_file": {
+    "text": "Ricerca web: previsto un normale file di configurazione",
+    "source_hash": "b6b6243f6e7a"
+  },
+  "wizard.memory.credential_changed": {
+    "text": "Memoria: il provider o l'endpoint della credenziale salvata è cambiato; scegli di nuovo la sua origine",
+    "source_hash": "67915097bd25"
+  },
+  "wizard.memory.key_unavailable": {
+    "text": "Memoria: la chiave salvata non è disponibile; scegli di nuovo la sua origine",
+    "source_hash": "a755ba277cc4"
+  },
+  "wizard.provider.test_for_api": {
+    "text": "Pi: prova la connessione per conoscerne il tipo di API",
+    "source_hash": "c15bc6eb37b4"
+  },
+  "wizard.provider.env_invalid": {
+    "text": "Pi: l'ambiente esistente del provider non è valido",
+    "source_hash": "11b3e98a566f"
+  },
+  "wizard.search.override_remove_failed": {
+    "text": "Ricerca web: impossibile rimuovere la sostituzione del modello dedicato",
+    "source_hash": "4179191bf160"
+  },
+  "wizard.provider.list_title": {
+    "text": "Provider di modelli",
+    "source_hash": "fbdc457db218"
+  },
+  "wizard.search.list_title": {
+    "text": "Provider di ricerca web",
+    "source_hash": "3f76c4cc3f0f"
+  },
+  "wizard.memory.list_title": {
+    "text": "Provider di memoria",
+    "source_hash": "f7ac1d2de59f"
+  },
+  "wizard.provider.preview_model": {
+    "text": "Modello di anteprima",
+    "source_hash": "b6eb6b14ddad"
+  },
+  "wizard.provider.preview_small_model": {
+    "text": "Modello piccolo di anteprima",
+    "source_hash": "e552021200b5"
+  },
+  "wizard.provider.connection_details": {
+    "text": "Dettagli della connessione",
+    "source_hash": "51bfffbcdbcf"
+  },
+  "wizard.provider.no_extra": {
+    "text": "Non serve alcuna configurazione aggiuntiva.",
+    "source_hash": "a8523c5346ec"
+  },
+  "wizard.provider.fetch_models": {
+    "text": "Recupera modelli",
+    "source_hash": "812c98c992c6"
+  },
+  "wizard.provider.choose_model": {
+    "text": "Scegli modello",
+    "source_hash": "f6e05dcfcfa8"
+  },
+  "wizard.provider.testing_short": {
+    "text": "Test in corso...",
+    "source_hash": "6c02a28421f8"
+  },
+  "wizard.provider.test_connection": {
+    "text": "Prova connessione",
+    "source_hash": "5bcf311b19d8"
+  },
+  "wizard.provider.not_tested": {
+    "text": "Non testato",
+    "source_hash": "51e3a01219f2"
+  },
+  "wizard.provider.lists_models": {
+    "text": "Elenca i modelli dell'endpoint; nessuna inferenza o scrittura in memoria.",
+    "source_hash": "ade190bd0811"
+  },
+  "wizard.provider.browse_or_enter": {
+    "text": "Sfoglia i suggerimenti o inserisci un ID modello esatto.",
+    "source_hash": "ea1aef31b165"
+  },
+  "wizard.provider.sends_request": {
+    "text": "Invia una breve richiesta; possono applicarsi costi del provider.",
+    "source_hash": "29e67ff448f6"
+  },
+  "wizard.shell.next": {
+    "text": "Avanti — {page}",
+    "source_hash": "827f82fa3edf"
+  },
+  "wizard.provider.catalog_truncated": {
+    "text": "Catalogo troncato; inserisci un ID mancante nel passaggio manuale",
+    "source_hash": "a74d0cf6f9ec"
+  },
+  "wizard.search.catalog_note": {
+    "text": "Catalogo della ricerca nativa; la disponibilità non è verificata",
+    "source_hash": "6dc5683dbdc3"
+  },
+  "wizard.memory.catalog_note": {
+    "text": "Suggerimenti di modelli; la compatibilità con la memoria non è verificata",
+    "source_hash": "39137a61ed43"
+  },
+  "wizard.provider.fetching": {
+    "text": "Recupero dei modelli dall'endpoint selezionato…",
+    "source_hash": "0230b84d9b0c"
+  },
+  "wizard.provider.loading_local": {
+    "text": "Caricamento del catalogo locale dei modelli…",
+    "source_hash": "fb9cfdb82b65"
+  },
+  "wizard.provider.no_auth_check": {
+    "text": "Non viene eseguita alcuna autenticazione del server né verifica dei diritti dell'account.",
+    "source_hash": "48043c00d31d"
+  },
+  "wizard.provider.credentials_changed": {
+    "text": "Le credenziali Pi sono cambiate o non è stato possibile salvarle. Controlla l'origine selezionata e prova di nuovo le connessioni personalizzate.",
+    "source_hash": "76a2cf9164f0"
+  },
+  "wizard.search.enter_model": {
+    "text": "Ricerca web: inserisci un ID modello esatto",
+    "source_hash": "a5abb7475ed0"
+  },
+  "wizard.search.key_invalid": {
+    "text": "Ricerca web: inserisci una chiave API senza spazi o caratteri di controllo",
+    "source_hash": "904667c8779a"
+  },
+  "wizard.search.azure_url": {
+    "text": "Ricerca web: inserisci un URL base Azure HTTPS senza credenziali",
+    "source_hash": "88c2de75ba77"
+  },
+  "wizard.search.azure_both": {
+    "text": "Ricerca web: inserisci una chiave API con l'URL base di Azure, oppure configura entrambi più tardi in Pi",
+    "source_hash": "d82f956e9ea6"
+  },
+  "wizard.provider.pi_url": {
+    "text": "Pi: inserisci un URL base HTTPS o un indirizzo di server locale",
+    "source_hash": "961be0bfd948"
+  },
+  "wizard.common.enter_model_id": {
+    "text": "{label}: inserisci un ID modello esatto",
+    "source_hash": "686e504338e0"
+  },
+  "wizard.common.https_no_credentials": {
+    "text": "{label}: inserisci un URL base HTTPS senza credenziali",
+    "source_hash": "5ab56666492c"
+  },
+  "wizard.common.key_invalid": {
+    "text": "{label}: inserisci una chiave API senza spazi o caratteri di controllo",
+    "source_hash": "06cb71707873"
+  },
+  "wizard.provider.unique_id": {
+    "text": "Pi: usa un ID provider univoco in minuscolo (es. omniroute)",
+    "source_hash": "a5d12f69f254"
+  },
+  "wizard.memory.symlink": {
+    "text": "Memoria: configurazione collegata tramite link simbolico rifiutata",
+    "source_hash": "408cc1d5eca7"
+  },
+  "wizard.memory.config_unavailable": {
+    "text": "Configurazione della memoria non disponibile",
+    "source_hash": "5facb5204c8b"
+  },
+  "wizard.memory.config_too_large": {
+    "text": "La configurazione della memoria è troppo grande",
+    "source_hash": "0abce5fa7620"
+  },
+  "wizard.common.symlink_at": {
+    "text": "link simbolico rifiutato in {path}",
+    "source_hash": "2d1d6d9229be"
+  },
+  "wizard.common.invalid_json": {
+    "text": "JSON non valido in {path}: {error}",
+    "source_hash": "cb1c0852dda4"
+  },
+  "wizard.common.expected_object": {
+    "text": "previsto un oggetto JSON in {path}",
+    "source_hash": "b40e836032c5"
+  },
+  "wizard.memory.symlink_config": {
+    "text": "link simbolico rifiutato nella configurazione della memoria",
+    "source_hash": "7093970b6456"
+  },
+  "wizard.memory.config_error": {
+    "text": "Configurazione della memoria: {error}",
+    "source_hash": "0d2dd39a2d90"
+  },
+  "wizard.common.missing_dir": {
+    "text": "directory di configurazione mancante",
+    "source_hash": "35701334e8bf"
+  },
+  "wizard.provider.partly_saved": {
+    "text": "{error} (alcune credenziali sono già state salvate in Pi; le impostazioni potrebbero essere applicate in parte)",
+    "source_hash": "69266b7404df"
+  },
+  "wizard.provider.partly_applied": {
+    "text": "{error} (le impostazioni potrebbero essere state applicate in parte; controllale prima di riprovare la configurazione)",
+    "source_hash": "93e84daad133"
+  },
+  "wizard.provider.list_hint": {
+    "text": "↑/↓ sfoglia · Spazio seleziona · Tab dettagli  {index}/{count}",
+    "source_hash": "6f4e925e84b1"
+  },
+  "wizard.form.provider_id": {
+    "text": "ID provider:",
+    "source_hash": "e035a2e312e7"
+  },
+  "wizard.form.provider_id_hint": {
+    "text": "es. omniroute",
+    "source_hash": "474364acdb88"
+  },
+  "wizard.form.base_url": {
+    "text": "URL base:",
+    "source_hash": "d34c1f38253c"
+  },
+  "wizard.form.base_url_hint": {
+    "text": "URL base dell'API",
+    "source_hash": "a45474ea09c3"
+  },
+  "wizard.form.api_type": {
+    "text": "Tipo di API:",
+    "source_hash": "ef56d0b93d30"
+  },
+  "wizard.form.api_type_hint": {
+    "text": "Famiglia di API",
+    "source_hash": "921463d37e58"
+  },
+  "wizard.form.model_id": {
+    "text": "ID modello:",
+    "source_hash": "93139b7fb881"
+  },
+  "wizard.form.model_id_exact": {
+    "text": "ID esatto del modello",
+    "source_hash": "b0d6631bddc5"
+  },
+  "wizard.form.credential": {
+    "text": "Credenziale:",
+    "source_hash": "c410f0de5633"
+  },
+  "wizard.form.use_login": {
+    "text": "Usa /login in Pi",
+    "source_hash": "9b741fe3564a"
+  },
+  "wizard.form.saved_or_new": {
+    "text": "Salvata o nuova",
+    "source_hash": "12374a1d011c"
+  },
+  "wizard.form.api_key": {
+    "text": "Chiave API:",
+    "source_hash": "2f77effde67c"
+  },
+  "wizard.form.kept_private": {
+    "text": "Mantenuta privata",
+    "source_hash": "187c44112cef"
+  },
+  "wizard.form.pick_or_enter": {
+    "text": "Scegli o inserisci l'ID",
+    "source_hash": "d04d70878e87"
+  },
+  "wizard.form.stored_in_pi": {
+    "text": "Salvato in Pi",
+    "source_hash": "d25575aa94b0"
+  },
+  "wizard.form.azure_endpoint": {
+    "text": "Endpoint Azure",
+    "source_hash": "9083377a277e"
+  },
+  "wizard.form.memory_only": {
+    "text": "Solo memoria",
+    "source_hash": "32e44d486399"
+  },
+  "wizard.provider.settings_unchanged": {
+    "text": "Le impostazioni attuali del provider restano invariate.",
+    "source_hash": "dfb133c06e72"
+  },
+  "wizard.search.keeps_unchanged": {
+    "text": "Mantiene invariate la configurazione di ricerca e le credenziali esistenti.",
+    "source_hash": "58aa4df1275c"
+  },
+  "wizard.search.removes_override": {
+    "text": "Rimuove la sostituzione di ricerca dedicata e segue il tuo modello di conversazione. Quel modello deve supportare la ricerca nativa; non esiste un ripiego automatico.",
+    "source_hash": "a8414fd4c8f2"
+  },
+  "wizard.search.shares_chat": {
+    "text": "Condivide le credenziali Pi di questo provider con la chat; nessuna chiave viene copiata verso un altro provider.",
+    "source_hash": "a8c1b3542f7e"
+  },
+  "wizard.search.uses_saved": {
+    "text": "Usa invariate le credenziali Pi salvate di questo provider. Scegliere un altro modello non sostituisce la chiave.",
+    "source_hash": "df913b2221e3"
+  },
+  "wizard.search.new_key_note": {
+    "text": "La nuova chiave viene salvata in Pi all'applicazione finale. Il catalogo elenca i modelli con ricerca nativa, non tutti i modelli di chat.",
+    "source_hash": "6cb0b2fd20b7"
+  },
+  "wizard.search.later_note": {
+    "text": "Modello configurato senza modificare le credenziali. Dopo la configurazione, esegui /login {id} in Pi.",
+    "source_hash": "ef6b5edfbe81"
+  },
+  "wizard.search.azure_note": {
+    "text": "Azure richiede anche la configurazione del suo endpoint.",
+    "source_hash": "3c0a05a844aa"
+  },
+  "wizard.memory.not_enabled": {
+    "text": "La memoria fa parte di Programming Skills, non selezionato in Tools: nulla di questa pagina verrà salvato.",
+    "source_hash": "5f38d8d9f142"
+  },
+  "wizard.memory.keep": {
+    "text": "La configurazione della memoria esistente resta invariata.",
+    "source_hash": "8747d4c2d994"
+  },
+  "wizard.memory.no_llm": {
+    "text": "La memoria non userà un LLM.",
+    "source_hash": "85197fc97e6b"
+  },
+  "wizard.memory.keeps_saved": {
+    "text": "Mantiene la chiave di memoria salvata per questo provider ed endpoint. Le modifiche solo al modello la conservano.",
+    "source_hash": "dec480d705ed"
+  },
+  "wizard.memory.deferred": {
+    "text": "La configurazione della memoria è rinviata. Impostazioni e credenziali esistenti restano invariate; Pi /login non autentica la memoria.",
+    "source_hash": "56476111c257"
+  },
+  "wizard.memory.own_key": {
+    "text": "La memoria usa una chiave propria, mai un accesso Pi. I suggerimenti di modelli non garantiscono la compatibilità con la memoria.",
+    "source_hash": "5e9f06b7afef"
+  },
+  "wizard.setup.title": {
+    "text": "Configurazione di Mash",
+    "source_hash": "9a6b9e8768aa"
+  },
+  "wizard.setup.quit_title": {
+    "text": "Uscire dalla configurazione di Mash?",
+    "source_hash": "fca13bacb3db"
+  },
+  "wizard.setup.not_finished": {
+    "text": "La configurazione non è completa, quindi Mash non si apre ancora.",
+    "source_hash": "7126b47d6f0c"
+  },
+  "wizard.setup.reopen": {
+    "text": "Riapri Mash per ricominciare la configurazione dall'inizio.",
+    "source_hash": "3c08c76f274a"
+  },
+  "wizard.setup.quit_action": {
+    "text": "esci dalla configurazione",
+    "source_hash": "fbbf0c02026a"
+  },
+  "wizard.setup.other_key": {
+    "text": "qualsiasi altro tasto",
+    "source_hash": "53e6aac5af12"
+  },
+  "wizard.setup.keep_going": {
+    "text": "continua",
+    "source_hash": "6e7ecf10083e"
+  },
+  "wizard.setup.could_not_finish": {
+    "text": "La configurazione non è riuscita a terminare",
+    "source_hash": "923e2d2bfa67"
+  },
+  "wizard.setup.press_enter": {
+    "text": "Premi Invio per continuare",
+    "source_hash": "0a593337307e"
+  },
+  "wizard.setup.continue_open": {
+    "text": "Continua — apri Mash",
+    "source_hash": "08a87d4e2372"
+  },
+  "wizard.setup.details": {
+    "text": "Dettagli: {path}",
+    "source_hash": "a33894398867"
+  },
+  "wizard.setup.saved_reopen": {
+    "text": "Alcune scelte potrebbero essere già salvate. La configurazione si riapre al prossimo avvio.",
+    "source_hash": "0de801ae7cf2"
+  },
+  "wizard.setup.unknown_error": {
+    "text": "Un errore sconosciuto ha interrotto la configurazione.",
+    "source_hash": "eb9d67c96506"
+  },
+  "wizard.setup.model_check": {
+    "text": "Verifica del modello",
+    "source_hash": "2d2297acd2aa"
+  },
+  "wizard.setup.checking": {
+    "text": "Verifica della configurazione locale salvata...",
+    "source_hash": "c777a13b3e35"
+  },
+  "wizard.setup.notes": {
+    "text": "Note di configurazione (non bloccanti)",
+    "source_hash": "ffc8480c82a9"
+  },
+  "wizard.setup.no_auth_checked": {
+    "text": "Non sono stati verificati l'autenticazione del server né il diritto dell'account.",
+    "source_hash": "e148bf76d6d3"
+  },
+  "wizard.setup.skip_check": {
+    "text": "Salta la verifica",
+    "source_hash": "48e595221f47"
+  },
+  "wizard.setup.continue": {
+    "text": "Continua",
+    "source_hash": "31fbef162594"
+  },
+  "wizard.setup.auth_skipped": {
+    "text": "Modello configurato; l'autenticazione non è stata tentata.",
+    "source_hash": "bb1cc09f22e5"
+  },
+  "wizard.setup.model_unavailable": {
+    "text": "La verifica del modello di Pi non è disponibile. La tua configurazione è stata mantenuta; dopo la configurazione usa /model e /login in Pi.",
+    "source_hash": "8ed5b781187b"
+  },
+  "wizard.setup.installing": {
+    "text": "Installazione di Mash",
+    "source_hash": "fd2247be3921"
+  },
+  "wizard.setup.progress": {
+    "text": "Avanzamento",
+    "source_hash": "4664827f8e89"
+  },
+  "wizard.setup.ready": {
+    "text": "Pronto per avviare Mash",
+    "source_hash": "07a824807aab"
+  },
+  "wizard.setup.waiting_daemon": {
+    "text": "...in attesa che il servizio di memoria risponda sulla sua porta",
+    "source_hash": "65eeaf94876f"
+  },
+  "wizard.setup.result.installed": {
+    "text": "installato",
+    "source_hash": "a51a6c19a1ff"
+  },
+  "wizard.setup.result.model_installed": {
+    "text": "modello installato",
+    "source_hash": "06627dd23cd9"
+  },
+  "wizard.setup.result.daemon_up": {
+    "text": "servizio attivo, modelli in cache",
+    "source_hash": "97145954e7ce"
+  },
+  "wizard.setup.result.already_installed": {
+    "text": "già installato",
+    "source_hash": "48544614ca22"
+  },
+  "wizard.setup.step.check_tools": {
+    "text": "Verifica gli strumenti scelti",
+    "source_hash": "3a7228d80436"
+  },
+  "wizard.setup.step.mash_tools": {
+    "text": "Installa gli strumenti in Mash",
+    "source_hash": "7914823478f2"
+  },
+  "wizard.setup.step.brew": {
+    "text": "Installa i pacchetti Homebrew",
+    "source_hash": "873564eb35a2"
+  },
+  "wizard.setup.step.npm": {
+    "text": "Installa i pacchetti npm",
+    "source_hash": "cd52241c4b6e"
+  },
+  "wizard.setup.step.pinned": {
+    "text": "Installa gli strumenti bloccati in Mash",
+    "source_hash": "53c70a54d6da"
+  },
+  "wizard.setup.step.python": {
+    "text": "Installa i pacchetti Python",
+    "source_hash": "d4c51d15c8bc"
+  },
+  "wizard.setup.step.cua": {
+    "text": "Installa CUA Driver",
+    "source_hash": "7fe6a9fd27d1"
+  },
+  "wizard.setup.step.memory": {
+    "text": "Installa l'ambiente di memoria",
+    "source_hash": "816b368aa540"
+  },
+  "wizard.setup.step.memory_models": {
+    "text": "Avvia la memoria e scarica i suoi modelli",
+    "source_hash": "9ef8dd5a39e3"
+  },
+  "wizard.setup.step.dictation": {
+    "text": "Installa il modello di dettatura",
+    "source_hash": "7abdc07c8460"
+  },
+  "wizard.identity.key_openpgp_only": {
+    "text": "Il tuo Git firma con SSH o X.509; Mash firma solo con chiavi OpenPGP",
+    "source_hash": "8021a5c51452"
+  },
+  "wizard.setup.report.host_tools": {
+    "text": "Gli strumenti di sistema sono presenti; installo gli strumenti bloccati di Mash.",
+    "source_hash": "5e1366b18b91"
+  },
+  "wizard.setup.report.all_installed": {
+    "text": "Tutto ciò che è stato scelto è già installato.",
+    "source_hash": "34a4459dc684"
+  },
+  "wizard.setup.report.missing": {
+    "text": "Mancano: {tools}",
+    "source_hash": "1d0c96cc3733"
+  },
+  "wizard.setup.report.counts": {
+    "text": "{installed} installati, {provided} forniti dal sistema",
+    "source_hash": "eed3d543f37f"
+  },
+  "wizard.setup.report.system_provided": {
+    "text": "{component}: fornito dal sistema, non installato da Mash",
+    "source_hash": "17adcbb8f3e1"
+  },
+  "wizard.setup.report.apple_tools": {
+    "text": "{tool} fa parte degli strumenti di sviluppo Apple (esegui xcode-select --install).",
+    "source_hash": "a35d7759a429"
+  }
+}

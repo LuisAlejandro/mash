@@ -1,0 +1,67 @@
+Mash no Linux — teclado
+
+Ctrl é o modificador de edição, então as famílias do Mash ficam em Ctrl+Alt e
+Ctrl+Shift. Duas capturas do GNOME ocupam esse espaço e não podem ser
+recuperadas -- o GNOME lê a tecla no compositor, antes de o Mash existir --
+por isso o foco do painel usa Ctrl+Super, e renomear o espaço de trabalho
+evita Ctrl+Alt+Shift+R. Dentro de um painel o shell mantém cada acorde Ctrl
+sozinho (Ctrl+C, Ctrl+R, Ctrl+U) e o Fresh mantém os de edição.
+
+  Ctrl+Alt+W           Fechar painel
+  Ctrl+Shift+W         Fechar aba
+  Ctrl+Alt+Shift+W     Fechar espaço de trabalho
+  Ctrl+Alt+U           Desanexar
+  Ctrl+Super+Down      Focar painel de baixo
+  Ctrl+Super+Left      Focar painel da esquerda
+  Ctrl+Super+Right     Focar painel da direita
+  Ctrl+Super+Up        Focar painel de cima
+  Ctrl+Alt+Shift+G     Ir para a sessão
+  Ctrl+Shift+I         Ajuda
+  Ctrl+Shift+Down      Próximo agente
+  Ctrl+Alt+]           Próximo painel
+  Ctrl+Tab             Próxima aba
+  Ctrl+Alt+Shift+]     Próximo espaço de trabalho
+  Ctrl+Alt+Y           Abrir notificação
+  Ctrl+Alt+Shift+U     Verificar atualizações
+  Ctrl+Shift+Up        Agente anterior
+  Ctrl+Alt+[           Painel anterior
+  Ctrl+Shift+Tab       Aba anterior
+  Ctrl+Alt+Shift+[     Espaço de trabalho anterior
+  Ctrl+Shift+,         Recarregar configuração
+  Ctrl+Alt+Shift+⌫     Remover árvore de trabalho
+  Ctrl+Shift+M         Renomear aba
+  Ctrl+Alt+Shift+M     Renomear espaço de trabalho
+  Ctrl+Alt+R           Modo de tamanho
+  Ctrl+,               Configurações
+  Ctrl+Alt+-           Dividir painel na horizontal
+  Ctrl+Alt+\           Dividir painel na vertical
+  Alt+1..9             Ir para a aba N
+  Ctrl+Alt+Shift+1..9  Ir para o espaço de trabalho N
+  Ctrl+Alt+B           Alternar barra lateral
+  Ctrl+Alt+Z           Ampliar painel
+
+  ── Inicializadores ──
+  Ctrl+Shift+T         nova aba de shell simples
+  Ctrl+Alt+T           nova aba de desenvolvimento (editor + agente)
+  Ctrl+Alt+Shift+T     nova aba de agente
+  Ctrl+Alt+P           Localizador de arquivos
+  Ctrl+Shift+G         Controle de versão
+  Ctrl+Shift+O         Status dos contêineres
+  Ctrl+Alt+Shift+P     Trechos
+  Ctrl+Shift+R         nova aba de revisão (diff + agente)
+  Ctrl+Alt+K           anotar texto
+  Ctrl+Alt+L           colar anotações no agente desta aba e arquivá-las
+  Ctrl+Shift+L         gerenciar anotações
+  Alt+G                Escolher link ou ID
+  Ctrl+Shift+X         Gerenciador de plugins
+  Ctrl+Alt+Shift+N     Novo espaço de trabalho (perfil de layout)
+  Ctrl+Alt+Shift+E     Nova árvore de trabalho (perfil de layout)
+  Ctrl+Alt+Shift+O     Seletor de espaços de trabalho
+  Ctrl+Shift+P         Paleta de comandos
+  Ctrl+Alt+Shift+Y     Bifurcar agente a partir da mensagem
+  Ctrl+Alt+Shift+L     Pesquisar sessões
+
+Copiar/colar: Ctrl+Shift+C / Ctrl+Shift+V, ou o mouse. Os acordes de edição do
+Fresh dependem do modo escolhido no primeiro lançamento: o estilo Mash/Cursor
+instala o mapa do Mash, Native deixa as teclas integradas do Fresh. Execute
+`fresh --cmd config paths` ou abra o mapa do Fresh para ver qual vale.

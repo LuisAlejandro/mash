@@ -1,0 +1,68 @@
+Mash on Linux — klávesnice
+
+Ctrl je klávesa pro úpravy, proto vlastní rodiny Mash používají Ctrl+Alt a
+Ctrl+Shift. GNOME dvě z těchto zkratek obsadí a nevrátí je -- GNOME čte
+klávesy v kompozitoru dřív, než Mash existuje -- takže přesun panelu používá
+Ctrl+Super a přejmenování pracovního prostoru se vyhýbá Ctrl+Alt+Shift+R.
+Uvnitř panelu si shell nechává každý samostatný akord Ctrl (Ctrl+C, Ctrl+R,
+Ctrl+U) a Fresh si nechává editační akordy.
+
+  Ctrl+Alt+W           Zavřít panel
+  Ctrl+Shift+W         Zavřít kartu
+  Ctrl+Alt+Shift+W     Zavřít pracovní prostor
+  Ctrl+Alt+U           Odpojit
+  Ctrl+Super+Down      Zaměřit panel dolů
+  Ctrl+Super+Left      Zaměřit panel vlevo
+  Ctrl+Super+Right     Zaměřit panel vpravo
+  Ctrl+Super+Up        Zaměřit panel nahoru
+  Ctrl+Alt+Shift+G     Přejít na relaci
+  Ctrl+Shift+I         Nápověda
+  Ctrl+Shift+Down      Další agent
+  Ctrl+Alt+]           Další panel
+  Ctrl+Tab             Další karta
+  Ctrl+Alt+Shift+]     Další pracovní prostor
+  Ctrl+Alt+Y           Otevřít oznámení
+  Ctrl+Alt+Shift+U     Zkontrolovat aktualizace
+  Ctrl+Shift+Up        Předchozí agent
+  Ctrl+Alt+[           Předchozí panel
+  Ctrl+Shift+Tab       Předchozí karta
+  Ctrl+Alt+Shift+[     Předchozí pracovní prostor
+  Ctrl+Shift+,         Znovu načíst nastavení
+  Ctrl+Alt+Shift+⌫     Odebrat pracovní strom
+  Ctrl+Shift+M         Přejmenovat kartu
+  Ctrl+Alt+Shift+M     Přejmenovat pracovní prostor
+  Ctrl+Alt+R           Změna velikosti
+  Ctrl+,               Nastavení
+  Ctrl+Alt+-           Rozdělit panel vodorovně
+  Ctrl+Alt+\           Rozdělit panel svisle
+  Alt+1..9             Přepnout na kartu N
+  Ctrl+Alt+Shift+1..9  Přepnout na pracovní prostor N
+  Ctrl+Alt+B           Přepnout postranní panel
+  Ctrl+Alt+Z           Zvětšit panel
+
+  ── Spuštění ──
+  Ctrl+Shift+T         nová karta jednoduchého shellu
+  Ctrl+Alt+T           nová karta vývoje (editor + agent)
+  Ctrl+Alt+Shift+T     nová karta agenta
+  Ctrl+Alt+P           Hledání souborů
+  Ctrl+Shift+G         Správa verzí
+  Ctrl+Shift+O         Stav kontejnerů
+  Ctrl+Alt+Shift+P     Úryvky
+  Ctrl+Shift+R         nová karta revize (diff + agent)
+  Ctrl+Alt+K           anotovat text
+  Ctrl+Alt+L           vložit anotace do agenta této karty a archivovat je
+  Ctrl+Shift+L         spravovat anotace
+  Alt+G                Vybrat odkaz nebo ID
+  Ctrl+Shift+X         Správce pluginů
+  Ctrl+Alt+Shift+N     Nový pracovní prostor (profil rozvržení)
+  Ctrl+Alt+Shift+E     Nový pracovní strom (profil rozvržení)
+  Ctrl+Alt+Shift+O     Výběr pracovního prostoru
+  Ctrl+Shift+P         Paleta příkazů
+  Ctrl+Alt+Shift+Y     Odbočit agenta ze zprávy
+  Ctrl+Alt+Shift+L     Hledání v relacích
+
+Kopírovat / vložit: Ctrl+Shift+C / Ctrl+Shift+V, nebo myší. Vlastní editační
+akordy Fresh závisí na režimu kláves, který jste zvolili při prvním spuštění:
+režim Mash/Cursor vloží mapování Mash, Native ponechá vestavěné klávesy Fresh.
+Spusťte `fresh --cmd config paths` nebo otevřete mapu kláves Fresh a zjistěte,
+která sada platí.

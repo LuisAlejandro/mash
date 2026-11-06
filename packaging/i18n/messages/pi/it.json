@@ -1,0 +1,98 @@
+{
+  "pi.header.restore": {
+    "text": "Ripristina l'intestazione integrata di pi",
+    "source_hash": "afcd79f821af"
+  },
+  "pi.header.restored": {
+    "text": "Intestazione integrata ripristinata",
+    "source_hash": "c1e44d719693"
+  },
+  "pi.orchestration.answered": {
+    "text": "Il coordinatore ha risposto: {reply}",
+    "source_hash": "fc659f7aea92"
+  },
+  "pi.orchestration.cancelled": {
+    "text": "La domanda è stata annullata.",
+    "source_hash": "4c742263cfe3"
+  },
+  "pi.orchestration.failed": {
+    "text": "La domanda al coordinatore non è riuscita.",
+    "source_hash": "1036eb4b3272"
+  },
+  "pi.orchestration.label": {
+    "text": "Chiedi al coordinatore",
+    "source_hash": "5369ae08b587"
+  },
+  "pi.orchestration.lookup-failed": {
+    "text": "Impossibile trovare il Dispatch.",
+    "source_hash": "e8a8ac97005c"
+  },
+  "pi.orchestration.no-dispatch": {
+    "text": "Nessun Dispatch aperto per questo riquadro. Chiedi alla persona con ask_user.",
+    "source_hash": "045255c705e5"
+  },
+  "pi.orchestration.pending": {
+    "text": "La domanda {id} è ancora in sospeso. Chiama di nuovo ask_coordinator con resume impostato su quell'id.",
+    "source_hash": "a70e26ec54e8"
+  },
+  "pi.orchestration.unavailable": {
+    "text": "mash-orchestration non è disponibile ({message}). Chiedi alla persona con ask_user.",
+    "source_hash": "ee1fa62200a8"
+  },
+  "pi.orchestration.waiting": {
+    "text": "In attesa del coordinatore",
+    "source_hash": "41e36ff21f8a"
+  },
+  "pi.show-file.is-directory": {
+    "text": "{path} è una directory, non un file.",
+    "source_hash": "51405f5a7722"
+  },
+  "pi.show-file.label": {
+    "text": "Mostra il file alla persona",
+    "source_hash": "1c16c0d820b1"
+  },
+  "pi.show-file.needs-path": {
+    "text": "show_file richiede un percorso.",
+    "source_hash": "2709bc3725aa"
+  },
+  "pi.show-file.no-reason": {
+    "text": "nessun motivo indicato",
+    "source_hash": "bdb1872e7703"
+  },
+  "pi.show-file.no-such-file": {
+    "text": "File inesistente: {path}",
+    "source_hash": "6b07882ca274"
+  },
+  "pi.show-file.not-shown-daemon": {
+    "text": "Non mostrato: demone Fresh non disponibile per {name}.",
+    "source_hash": "eee33afb1233"
+  },
+  "pi.show-file.not-shown-fresh": {
+    "text": "Non mostrato: impossibile aprire {name} in Fresh ({detail}).",
+    "source_hash": "38000d407a37"
+  },
+  "pi.show-file.not-shown-herdr": {
+    "text": "Non mostrato: impossibile aprire {name} in Herdr ({detail}).",
+    "source_hash": "ef35d0eb229e"
+  },
+  "pi.show-file.not-shown-no-editor": {
+    "text": "Non mostrato: nessun editor Fresh in questa scheda per {name}.",
+    "source_hash": "dd6f54bd1990"
+  },
+  "pi.show-file.not-shown-no-pane": {
+    "text": "Non mostrato: nessun riquadro Herdr disponibile per {name}.",
+    "source_hash": "b810ed171fce"
+  },
+  "pi.show-file.not-shown-other": {
+    "text": "Non mostrato: nessun visualizzatore interno per {name}.",
+    "source_hash": "c38cbe4e26f6"
+  },
+  "pi.show-file.shown-image": {
+    "text": "Mostrato: {name} è aperto in una divisione verticale accanto all'editor, a risoluzione reale.",
+    "source_hash": "bbf2a8758fc7"
+  },
+  "pi.show-file.shown-text": {
+    "text": "Mostrato: {name} è aperto nell'editor Fresh accanto a questo riquadro.",
+    "source_hash": "ac958177710d"
+  }
+}

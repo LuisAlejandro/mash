@@ -2,6 +2,32 @@
 # Draw the update notice, wait for a key, and close.
 set -u
 
+# The Herdr server starts this pane, so its PATH, MASH_LANGUAGE and
+# MASH_I18N_DIR belong to whatever launched the server. mash_messages_bind in
+# lib.sh resolves this install's mash-t and catalogs, and mash_say prints the
+# English fallback when a message cannot be found.
+here="$(cd "$(dirname "$0")" && pwd)"
+for mash_lib in "$here/../../bin/lib.sh" "$here/../../lib.sh"; do
+  if [ -f "$mash_lib" ]; then
+    # shellcheck disable=SC1090
+    source "$mash_lib"
+    break
+  fi
+done
+if command -v mash_messages_bind >/dev/null 2>&1; then
+  mash_messages_bind "${MASH_UPDATE_DATA:-${HOME:-}/.mash}"
+else
+  # No library at all: still print the English text, with placeholders filled.
+  mash_say() {
+    local text="$2" arg
+    shift 2
+    for arg in "$@"; do
+      text="${text//"{${arg%%=*}}"/${arg#*=}}"
+    done
+    printf '%s' "$text"
+  }
+fi
+
 installed="${MASH_UPDATE_INSTALLED:-}"
 candidate="${MASH_UPDATE_CANDIDATE:-}"
 status="${MASH_UPDATE_STATUS:-}"
@@ -11,36 +37,37 @@ clear
 case "$status" in
 up-to-date)
   if [ "$system" = Linux ]; then
-    printf '\n  No newer Mash version found in the current APT metadata.\n\n'
-    printf '  If package lists may be old, run sudo apt update.   (any key closes)'
+    printf '%s' "$(mash_say plugin.mash-update-notice.pane.up-to-date-linux \
+      $'\n  No newer Mash version found in the current APT metadata.\n\n  If package lists may be old, run sudo apt update.   (any key closes)')"
   else
-    printf '\n  Everything is up to date (Mash %s).\n\n' "${installed:-unknown}"
-    printf '  (any key closes)'
+    printf '%s' "$(mash_say plugin.mash-update-notice.pane.up-to-date-macos \
+      $'\n  Everything is up to date (Mash {version}).\n\n  (any key closes)' \
+      "version=${installed:-unknown}")"
   fi
   ;;
 restart-required)
-  printf '\n  Mash %s is running; Mash %s is already installed.\n\n' "${installed:-unknown}" "${candidate:-unknown}"
-  printf '  Save work and restart Mash to use the installed version.\n'
-  printf '  No download is needed.   (any key closes)'
+  printf '%s' "$(mash_say plugin.mash-update-notice.pane.restart-required \
+    $'\n  Mash {installed} is running; Mash {candidate} is already installed.\n\n  Save work and restart Mash to use the installed version.\n  No download is needed.   (any key closes)' \
+    "installed=${installed:-unknown}" "candidate=${candidate:-unknown}")"
   ;;
 restored-previous)
-  printf '\n  Mash %s is running again.\n\n' "${installed:-unknown}"
-  printf '  The update to %s did not complete. Your workspace files were not rolled back.\n\n' "${candidate:-unknown}"
-  printf '  (any key closes)'
+  printf '%s' "$(mash_say plugin.mash-update-notice.pane.previous-restored \
+    $'\n  Mash {installed} is running again.\n\n  The update to {candidate} did not complete. Your workspace files were not rolled back.\n\n  (any key closes)' \
+    "installed=${installed:-unknown}" "candidate=${candidate:-unknown}")"
   ;;
 check-unavailable)
-  printf '\n  Could not check for updates right now.\n\n'
-  printf '  Check your internet connection and try again.   (any key closes)'
+  printf '%s' "$(mash_say plugin.mash-update-notice.pane.check-failed \
+    $'\n  Could not check for updates right now.\n\n  Check your internet connection and try again.   (any key closes)')"
   ;;
 apt-unavailable)
-  printf '\n  No update information was found in APT.\n\n'
-  printf '  Verify the Mash repository and run sudo apt update.   (any key closes)'
+  printf '%s' "$(mash_say plugin.mash-update-notice.pane.apt-failed \
+    $'\n  No update information was found in APT.\n\n  Verify the Mash repository and run sudo apt update.   (any key closes)')"
   ;;
 *)
   if [ -n "$candidate" ]; then
-    printf '\n  Mash %s is available (you have %s).\n\n' "$candidate" "${installed:-an older version}"
-    printf '  To upgrade, run:\n    sudo apt install --only-upgrade letsmash\n\n'
-    printf '  Then restart Mash.   (any key closes)'
+    printf '%s' "$(mash_say plugin.mash-update-notice.pane.available-linux \
+      $'\n  Mash {candidate} is available (you have {installed}).\n\n  To upgrade, run:\n    sudo apt install --only-upgrade letsmash\n\n  Then restart Mash.   (any key closes)' \
+      "candidate=$candidate" "installed=${installed:-an older version}")"
   fi
   ;;
 esac

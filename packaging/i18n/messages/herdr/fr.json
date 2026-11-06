@@ -1,0 +1,90 @@
+{
+  "herdr.command.annotate-text": {
+    "text": "annoter le texte",
+    "source_hash": "30aff55ff069"
+  },
+  "herdr.command.check-for-updates": {
+    "text": "Rechercher des mises à jour",
+    "source_hash": "9ed79ee9b212"
+  },
+  "herdr.command.command-palette": {
+    "text": "Palette de commandes",
+    "source_hash": "0347f794d69c"
+  },
+  "herdr.command.container-status": {
+    "text": "État des conteneurs",
+    "source_hash": "ec8cbe398459"
+  },
+  "herdr.command.file-finder": {
+    "text": "Recherche de fichiers",
+    "source_hash": "ad77cff03b9f"
+  },
+  "herdr.command.fork-agent": {
+    "text": "Détacher un agent depuis un message",
+    "source_hash": "5c313f94cc7f"
+  },
+  "herdr.command.manage-annotations": {
+    "text": "gérer les annotations",
+    "source_hash": "eee1538430e1"
+  },
+  "herdr.command.new-agent-tab": {
+    "text": "nouvel onglet d'agent",
+    "source_hash": "e77139a8ffa8"
+  },
+  "herdr.command.new-dev-tab": {
+    "text": "nouvel onglet de développement (éditeur + agent)",
+    "source_hash": "1b5f35ed5d61"
+  },
+  "herdr.command.new-plain-shell-tab": {
+    "text": "nouvel onglet de terminal simple",
+    "source_hash": "74ce437b230f"
+  },
+  "herdr.command.new-review-tab": {
+    "text": "nouvel onglet de revue (diff + agent)",
+    "source_hash": "214404f418c9"
+  },
+  "herdr.command.new-shell-pane": {
+    "text": "nouveau volet de terminal sous Fresh",
+    "source_hash": "fff45de0249d"
+  },
+  "herdr.command.new-workspace": {
+    "text": "Nouvel espace de travail (profil de disposition)",
+    "source_hash": "c5e156ebeed4"
+  },
+  "herdr.command.new-worktree": {
+    "text": "Nouvel arbre de travail (profil de disposition)",
+    "source_hash": "aeff6f1ba8e9"
+  },
+  "herdr.command.paste-annotations": {
+    "text": "coller les annotations dans l'agent de cet onglet et les archiver",
+    "source_hash": "a9b21d76fa9c"
+  },
+  "herdr.command.pick-link": {
+    "text": "Choisir un lien ou un ID",
+    "source_hash": "82572d1919b2"
+  },
+  "herdr.command.plugin-manager": {
+    "text": "Gestionnaire de plugins",
+    "source_hash": "6d56df78dd25"
+  },
+  "herdr.command.session-search": {
+    "text": "Recherche de sessions",
+    "source_hash": "82c4a0945515"
+  },
+  "herdr.command.snippets": {
+    "text": "Extraits",
+    "source_hash": "ff717209de74"
+  },
+  "herdr.command.source-control": {
+    "text": "Gestion de versions",
+    "source_hash": "9bd7eab78605"
+  },
+  "herdr.command.workspace-picker": {
+    "text": "Sélecteur d'espaces de travail",
+    "source_hash": "2103daf47b34"
+  },
+  "herdr.config.window-title": {
+    "text": "Mash › {workspace} › {tab}",
+    "source_hash": "bee749ea4346"
+  }
+}

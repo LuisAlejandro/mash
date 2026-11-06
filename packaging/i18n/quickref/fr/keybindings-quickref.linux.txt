@@ -1,0 +1,69 @@
+Mash sous Linux — clavier
+
+Ctrl est le modificateur d'édition, donc les familles propres à Mash vivent
+sur Ctrl+Alt et Ctrl+Shift. Deux raccourcis GNOME occupent cet espace et ne
+peuvent pas être repris -- GNOME lit la touche dans le compositeur, avant que
+Mash existe -- donc le focus des volets utilise Ctrl+Super, et renommer
+l'espace de travail évite Ctrl+Alt+Shift+R. Dans un volet, le shell garde
+chaque accord Ctrl seul (Ctrl+C, Ctrl+R, Ctrl+U) et Fresh garde ceux de
+l'édition.
+
+  Ctrl+Alt+W           Fermer le volet
+  Ctrl+Shift+W         Fermer l'onglet
+  Ctrl+Alt+Shift+W     Fermer l'espace de travail
+  Ctrl+Alt+U           Détacher
+  Ctrl+Super+Down      Focus volet du bas
+  Ctrl+Super+Left      Focus volet de gauche
+  Ctrl+Super+Right     Focus volet de droite
+  Ctrl+Super+Up        Focus volet du haut
+  Ctrl+Alt+Shift+G     Aller à la session
+  Ctrl+Shift+I         Aide
+  Ctrl+Shift+Down      Agent suivant
+  Ctrl+Alt+]           Volet suivant
+  Ctrl+Tab             Onglet suivant
+  Ctrl+Alt+Shift+]     Espace de travail suivant
+  Ctrl+Alt+Y           Ouvrir la notification
+  Ctrl+Alt+Shift+U     Rechercher des mises à jour
+  Ctrl+Shift+Up        Agent précédent
+  Ctrl+Alt+[           Volet précédent
+  Ctrl+Shift+Tab       Onglet précédent
+  Ctrl+Alt+Shift+[     Espace de travail précédent
+  Ctrl+Shift+,         Recharger la configuration
+  Ctrl+Alt+Shift+⌫     Retirer l'arbre de travail
+  Ctrl+Shift+M         Renommer l'onglet
+  Ctrl+Alt+Shift+M     Renommer l'espace de travail
+  Ctrl+Alt+R           Mode de taille
+  Ctrl+,               Réglages
+  Ctrl+Alt+-           Diviser le volet horizontalement
+  Ctrl+Alt+\           Diviser le volet verticalement
+  Alt+1..9             Aller à l'onglet N
+  Ctrl+Alt+Shift+1..9  Aller à l'espace de travail N
+  Ctrl+Alt+B           Basculer la barre latérale
+  Ctrl+Alt+Z           Zoomer le volet
+
+  ── Lanceurs ──
+  Ctrl+Shift+T         nouvel onglet de terminal simple
+  Ctrl+Alt+T           nouvel onglet de développement (éditeur + agent)
+  Ctrl+Alt+Shift+T     nouvel onglet d'agent
+  Ctrl+Alt+P           Recherche de fichiers
+  Ctrl+Shift+G         Gestion de versions
+  Ctrl+Shift+O         État des conteneurs
+  Ctrl+Alt+Shift+P     Extraits
+  Ctrl+Shift+R         nouvel onglet de revue (diff + agent)
+  Ctrl+Alt+K           annoter le texte
+  Ctrl+Alt+L           coller les annotations dans l'agent de cet onglet et les archiver
+  Ctrl+Shift+L         gérer les annotations
+  Alt+G                Choisir un lien ou un ID
+  Ctrl+Shift+X         Gestionnaire de plugins
+  Ctrl+Alt+Shift+N     Nouvel espace de travail (profil de disposition)
+  Ctrl+Alt+Shift+E     Nouvel arbre de travail (profil de disposition)
+  Ctrl+Alt+Shift+O     Sélecteur d'espaces de travail
+  Ctrl+Shift+P         Palette de commandes
+  Ctrl+Alt+Shift+Y     Détacher un agent depuis un message
+  Ctrl+Alt+Shift+L     Recherche de sessions
+
+Copier/coller : Ctrl+Shift+C / Ctrl+Shift+V, ou la souris. Les accords
+d'édition de Fresh dépendent du mode choisi au premier lancement : le style
+Mash/Cursor installe la carte de Mash, Native laisse les touches intégrées de
+Fresh. Lance `fresh --cmd config paths` ou ouvre la carte de Fresh pour voir
+laquelle est active.

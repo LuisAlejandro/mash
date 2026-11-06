@@ -109,7 +109,92 @@ except FileNotFoundError:
     mode_lines = []
 NATIVE = "mode=native" in mode_lines
 MODE = "native" if NATIVE else "mash"
-SELECTION = {"programming": ENABLED["programming"], "keybindings": MODE}
+
+# The wizard's language choice, read the way mash_isolate reads it: one
+# `language=<code>` line, written only when setup completes. A code Mash does not
+# ship counts as absent, so a hand edit keeps the English defaults instead of
+# refusing to seed. Without a staged i18n tree there is no table to follow and
+# English stays too.
+LANGUAGE_PATH = os.path.join(data, "setup", "language")
+try:
+    with open(LANGUAGE_PATH, encoding="utf-8") as fh:
+        language_lines = fh.read().splitlines()
+except OSError:
+    # Missing, or not a regular file (a directory there is a user mistake that
+    # must not abort every seed): either way the language is absent.
+    language_lines = []
+try:
+    with open(os.path.join(res, "i18n", "languages.json"), encoding="utf-8") as fh:
+        LANGUAGES = {row["code"]: row for row in json.load(fh)}
+except (OSError, ValueError, KeyError, TypeError):
+    LANGUAGES = {}
+LANGUAGE = next(
+    (line[len("language="):].strip() for line in language_lines if line.startswith("language=")),
+    "",
+)
+LANGUAGE = LANGUAGE if LANGUAGE in LANGUAGES else "en"
+
+SELECTION = {"programming": ENABLED["programming"], "keybindings": MODE, "language": LANGUAGE}
+
+
+def catalog(code):
+    """One component's message catalog, or an empty one when it is not staged."""
+    try:
+        with open(os.path.join(res, "i18n", "messages", "herdr", f"{code}.json"), encoding="utf-8") as fh:
+            loaded = json.load(fh)
+    except (OSError, ValueError):
+        return {}
+    return loaded if isinstance(loaded, dict) else {}
+
+
+ENGLISH_LABELS = catalog("en")
+TRANSLATED_LABELS = catalog(LANGUAGE)
+
+
+def t(key):
+    """English text and this language's text for one label Mash owns.
+
+    The catalog, not this file, holds the words. The Herdr defaults keep their
+    English descriptions because keys.native.toml joins on them, so the render
+    swaps each pair after that join. A key the catalog lacks reads as absent and
+    is left alone, which is what an unstaged catalog gets.
+    """
+    english = ENGLISH_LABELS.get(key)
+    entry = TRANSLATED_LABELS.get(key)
+    text = entry.get("text") if isinstance(entry, dict) else None
+    if not isinstance(english, str) or not isinstance(text, str) or not text:
+        return None
+    return english, text
+
+
+# Mash's own text in the Herdr config: the command labels Herdr lists and the
+# window title it draws. One entry per catalog key.
+HERDR_LABELS = tuple(
+    label for label in (
+        t("herdr.command.new-plain-shell-tab"),
+        t("herdr.command.new-dev-tab"),
+        t("herdr.command.new-shell-pane"),
+        t("herdr.command.new-agent-tab"),
+        t("herdr.command.file-finder"),
+        t("herdr.command.source-control"),
+        t("herdr.command.container-status"),
+        t("herdr.command.snippets"),
+        t("herdr.command.new-review-tab"),
+        t("herdr.command.annotate-text"),
+        t("herdr.command.paste-annotations"),
+        t("herdr.command.manage-annotations"),
+        t("herdr.command.pick-link"),
+        t("herdr.command.plugin-manager"),
+        t("herdr.command.new-workspace"),
+        t("herdr.command.new-worktree"),
+        t("herdr.command.workspace-picker"),
+        t("herdr.command.command-palette"),
+        t("herdr.command.fork-agent"),
+        t("herdr.command.session-search"),
+        t("herdr.command.check-for-updates"),
+        t("herdr.config.window-title"),
+    ) if label
+)
 
 # The trees copied with rsync --ignore-existing by mash_seed_missing. Simple
 # file seeds and their path substitutions live in SINGLE_SEEDS below.
@@ -123,6 +208,24 @@ TREES = [
     ("defaults/mash-config/references", "config/mash/references"),
     ("defaults/mash-config/venvs", "config/mash/venvs"),
 ]
+
+def quickref_source():
+    """The cheat sheet for this mode, platform and language.
+
+    English stays the historical file under defaults, which is also the
+    fallback when a translated sheet was not staged. Every other language
+    reads packaging/i18n/quickref/<code>/, one sheet per mode and platform.
+    """
+    name = (
+        "keybindings-quickref"
+        + (".native" if NATIVE else "")
+        + (".linux.txt" if LINUX else ".txt")
+    )
+    translated = os.path.join("i18n", "quickref", LANGUAGE, name)
+    if LANGUAGE != "en" and os.path.isfile(os.path.join(res, translated)):
+        return translated
+    return os.path.join("defaults", "pi", "extensions", name)
+
 
 # Source, destination, template substitutions. These are the single files the
 # launchers used to seed conditionally with cp/sed. Keep the list aligned with
@@ -140,11 +243,9 @@ SINGLE_SEEDS = [
     ("defaults/pet/config.toml", "config/pet/config.toml", "pet"),
     ("defaults/pet/snippet.toml", "config/pet/snippet.toml", None),
     (f"defaults/fresh/config{SUFFIX}.json", "config/fresh/config.json", "fresh"),
-    # Each mode has its own sheet per platform.
+    # Each mode has its own sheet per platform, and each language has its own copy.
     (
-        "defaults/pi/extensions/keybindings-quickref"
-        + (".native" if NATIVE else "")
-        + (".linux.txt" if LINUX else ".txt"),
+        quickref_source(),
         "pi/agent/extensions/keybindings-quickref.txt",
         "quickref",
     ),
@@ -308,6 +409,47 @@ def native_herdr(text):
     return "".join(out)
 
 
+def herdr_labels(text):
+    """Swap Mash's English Herdr labels for the language's in one pass.
+
+    One pass, so a translation that happens to equal another English label is
+    never translated twice. The value is written as a JSON string, which is also
+    a valid TOML basic string: quotes, backslashes and control characters in a
+    translation are escaped instead of breaking the Herdr config.
+    """
+    table = {english: translated for english, translated in HERDR_LABELS if translated != english}
+    if not table:
+        return text
+    pattern = re.compile(
+        r'^(?P<lead>[ \t]*(?:description|window_title)[ \t]*=[ \t]*)"(?P<english>[^"\\\n]*)"',
+        re.MULTILINE,
+    )
+
+    def swap(match):
+        translated = table.get(match.group("english"))
+        if translated is None:
+            return match.group(0)
+        return match.group("lead") + json.dumps(translated, ensure_ascii=False)
+
+    return pattern.sub(swap, text)
+
+
+def lazydocker_language(text, code):
+    """Name the language explicitly, under lazydocker's own gui: section.
+
+    The shipped default has that section; without it, one is added rather than
+    aborting every seed for one tool's language.
+    """
+    lines = text.splitlines(keepends=True)
+    for index, line in enumerate(lines):
+        if line.rstrip("\n") == "gui:":
+            lines.insert(index + 1, f"  language: {code}\n")
+            return "".join(lines)
+    if text and not text.endswith("\n"):
+        text += "\n"
+    return text + f"gui:\n  language: {code}\n"
+
+
 def rendered_bytes(source, target, kind=None, rel_in_tree=""):
     if os.path.islink(source):
         if rel_in_tree.startswith("mash-parallel/"):
@@ -334,6 +476,8 @@ def rendered_bytes(source, target, kind=None, rel_in_tree=""):
             text = force_assignment(text, "manifest_check", "false")
             if NATIVE:
                 text = native_herdr(text)
+            # After the Native join above, which matches on the English text.
+            text = herdr_labels(text)
         elif kind == "ghostty":
             text = text.replace("__MASH_HERDR_PANE__", os.path.join(res, "bin", "herdr-pane"))
             text = force_assignment(text, "command", os.path.join(res, "bin", "herdr-pane"))
@@ -354,10 +498,24 @@ def rendered_bytes(source, target, kind=None, rel_in_tree=""):
         config = json.loads(raw.decode("utf-8"))
         config["check_for_updates"] = False
         config["self_update"] = False
+        if LANGUAGE != "en":
+            # Fresh reads its own locale code, which the table spells the way
+            # Fresh does. English stays unset so an English install keeps
+            # exactly the config it had before the language existed.
+            config["locale"] = LANGUAGES[LANGUAGE]["fresh"]
         if NATIVE:
             # Fresh's built-in default keymap, with no Mash entries at all.
             config.pop("keybindings", None)
         raw = (json.dumps(config, indent=2) + "\n").encode("utf-8")
+    elif kind == "lazydocker":
+        text = raw.decode("utf-8")
+        if LANGUAGE != "en":
+            # lazydocker ships only some of Mash's languages. One it does not
+            # ship gets English explicitly: its own fallback follows the process
+            # locale, which KTD5 may leave as C.UTF-8 with LANGUAGE naming the
+            # choice, so leaving it unset is not the same thing as English.
+            text = lazydocker_language(text, LANGUAGES[LANGUAGE]["lazydocker"])
+        raw = text.encode("utf-8")
     elif kind == "notifier" and not LINUX and os.path.isfile(os.path.join(res, "bin", "mash-notify")):
         lines = [line for line in raw.decode("utf-8").splitlines() if not line.startswith("NOTIFIER=")]
         lines.append("NOTIFIER=" + os.path.join(res, "bin", "mash-notify"))
@@ -438,7 +596,11 @@ def entries():
                 if source_rel == "defaults/pi" and rel == "mcp.json":
                     continue  # MCP servers are merged per key below
                 venv_rel = rel if source_rel == "defaults/mash-config/venvs" else ""
-                kind = "notifier" if source_rel == "defaults/plugins" and rel == "dot.terminal-notifier/config.env" else None
+                kind = None
+                if source_rel == "defaults/plugins" and rel == "dot.terminal-notifier/config.env":
+                    kind = "notifier"
+                elif source_rel == "defaults/lazydocker" and rel == "config.yml":
+                    kind = "lazydocker"
                 if venv_rel.startswith("mash-parallel/"):
                     target_key = os.path.join(dest_rel, rel)
                 else:

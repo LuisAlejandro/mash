@@ -1,0 +1,182 @@
+{
+  "helper.launch.data_not_writable": {
+    "text": "{path} 不是可写文件夹。详情：{log}",
+    "source_hash": "c2daaf7abb17"
+  },
+  "helper.launch.data_prepare_failed": {
+    "text": "Mash 无法准备 {path}。详情：{log}",
+    "source_hash": "f1a3af24d2f1"
+  },
+  "helper.launch.environment_refused": {
+    "text": "Mash 拒绝使用 {path} 之外的环境。详情：{log}",
+    "source_hash": "6cba761820b9"
+  },
+  "helper.launch.linux_data_prepare_failed": {
+    "text": "Mash 无法准备 {path}。",
+    "source_hash": "67920ad8e50d"
+  },
+  "helper.launch.linux_update_settings_failed": {
+    "text": "Mash 无法固定更新设置；已保留该文件。",
+    "source_hash": "a8cb9d5749da"
+  },
+  "helper.launch.refused_start": {
+    "text": "Mash 拒绝启动。",
+    "source_hash": "fea43a382106"
+  },
+  "helper.launch.setup_failed": {
+    "text": "设置 {path} 失败。详情：{log}",
+    "source_hash": "e891d0a29f1a"
+  },
+  "helper.launch.socket_outside": {
+    "text": "Mash 拒绝启动：套接字位于 ~/.mash 之外。",
+    "source_hash": "ddb5d709d6cd"
+  },
+  "helper.launch.update_location_invalid": {
+    "text": "Mash 更新位置无效。",
+    "source_hash": "c53120b603c7"
+  },
+  "helper.launch.update_settings_failed": {
+    "text": "Mash 无法固定更新设置。详情：{log}",
+    "source_hash": "31a1842ec5dc"
+  },
+  "helper.launch.update_state_unsafe": {
+    "text": "Mash 更新状态不安全。",
+    "source_hash": "f5d6ba096441"
+  },
+  "helper.launch.update_waiter_failed": {
+    "text": "Mash 无法注册更新等待进程。",
+    "source_hash": "ff2f989250a6"
+  },
+  "helper.launch.updater_incomplete": {
+    "text": "Mash 更新程序不完整。",
+    "source_hash": "43c808c2338d"
+  },
+  "helper.popup.dismiss": {
+    "text": "（按任意键关闭）",
+    "source_hash": "f57ff387149d"
+  },
+  "helper.setup.not_finished": {
+    "text": "Mash 设置尚未完成，因此 Mash 未启动。",
+    "source_hash": "f7435b584992"
+  },
+  "helper.setup.open_again": {
+    "text": "重新打开 Mash，从头开始设置。",
+    "source_hash": "3c08c76f274a"
+  },
+  "helper.setup.press_enter": {
+    "text": "按 Enter 关闭此窗口。",
+    "source_hash": "3cbf0fb2a94f"
+  },
+  "plugin.image-popup.no-image": {
+    "text": "没有可显示的图片：{file}",
+    "source_hash": "91aa57b30f47"
+  },
+  "plugin.image-popup.source-file": {
+    "text": "（图片文件位于 {file}）",
+    "source_hash": "acda13cd6347"
+  },
+  "plugin.image-popup.viu-missing": {
+    "text": "尚未安装 viu。使用以下命令安装：brew install viu",
+    "source_hash": "51d203b460ac"
+  },
+  "plugin.mash-update-notice.notice.apt-failed": {
+    "text": "请检查 APT 仓库并运行 sudo apt update。",
+    "source_hash": "6e5d462c3fb3"
+  },
+  "plugin.mash-update-notice.notice.available-linux": {
+    "text": "当前版本为 {installed}。要升级，请运行：{command}",
+    "source_hash": "408651e42b2f"
+  },
+  "plugin.mash-update-notice.notice.available-macos": {
+    "text": "当前版本为 {installed}。打开 Mash 即可升级。",
+    "source_hash": "110061a9c5d1"
+  },
+  "plugin.mash-update-notice.notice.check-failed": {
+    "text": "请检查网络连接并重试。",
+    "source_hash": "176afd02072f"
+  },
+  "plugin.mash-update-notice.notice.current-linux": {
+    "text": "当前 APT 元数据中没有找到更新的 Mash 版本。",
+    "source_hash": "4076014ba5ad"
+  },
+  "plugin.mash-update-notice.notice.current-macos": {
+    "text": "一切均为最新。Mash {version} 是当前版本。",
+    "source_hash": "541489679898"
+  },
+  "plugin.mash-update-notice.notice.previous-restored": {
+    "text": "Mash {installed} 已恢复运行。更新到 {candidate} 未能完成。",
+    "source_hash": "e15f090dff62"
+  },
+  "plugin.mash-update-notice.notice.restart-required": {
+    "text": "当前运行的是 {installed}。Mash {candidate} 已安装；重启 Mash 即可使用。",
+    "source_hash": "e1248557730a"
+  },
+  "plugin.mash-update-notice.notice.updated": {
+    "text": "Mash 正在运行新版本。",
+    "source_hash": "e3caeafe33e1"
+  },
+  "plugin.mash-update-notice.pane.apt-failed": {
+    "text": "\n  APT 中没有找到更新信息。\n\n  请检查 Mash 仓库并运行 sudo apt update。   （按任意键关闭）",
+    "source_hash": "ae2c3f30f3cd"
+  },
+  "plugin.mash-update-notice.pane.available-linux": {
+    "text": "\n  Mash {candidate} 已可用（当前为 {installed}）。\n\n  要升级，请运行：\n    sudo apt install --only-upgrade letsmash\n\n  然后重启 Mash。   （按任意键关闭）",
+    "source_hash": "2073e20a4f2e"
+  },
+  "plugin.mash-update-notice.pane.check-failed": {
+    "text": "\n  现在无法检查更新。\n\n  请检查网络连接并重试。   （按任意键关闭）",
+    "source_hash": "d716b0057955"
+  },
+  "plugin.mash-update-notice.pane.previous-restored": {
+    "text": "\n  Mash {installed} 已恢复运行。\n\n  更新到 {candidate} 未能完成。工作区文件未被回滚。\n\n  （按任意键关闭）",
+    "source_hash": "23ce21e89b73"
+  },
+  "plugin.mash-update-notice.pane.restart-required": {
+    "text": "\n  Mash {installed} 正在运行；Mash {candidate} 已安装。\n\n  请保存工作并重启 Mash，以使用已安装的版本。\n  无需下载。   （按任意键关闭）",
+    "source_hash": "8cfff1a68c6e"
+  },
+  "plugin.mash-update-notice.pane.update-prompt": {
+    "text": "\n  Mash {candidate} 已可用（当前为 {installed}）。\n\n  按 u 立即更新，或按其他任意键取消。\n  更新会退出 Mash，并以新版本重新打开。\n\n  > ",
+    "source_hash": "e72a656d118c"
+  },
+  "plugin.mash-update-notice.pane.update-unavailable": {
+    "text": "\n  Mash {candidate} 已可用（当前为 {installed}）。\n\n  从以下地址下载：\n    {url}\n\n  （按任意键关闭）",
+    "source_hash": "3559cf5d3977"
+  },
+  "plugin.mash-update-notice.pane.updated": {
+    "text": "\n  Mash {version} 已安装并正在运行。\n\n  工作区和配置仍保存在 ~/.mash。\n\n  （按任意键关闭）",
+    "source_hash": "b6ec8b2c9bee"
+  },
+  "plugin.mash-update-notice.pane.up-to-date-linux": {
+    "text": "\n  当前 APT 元数据中没有找到更新的 Mash 版本。\n\n  如果软件包列表可能已过期，请运行 sudo apt update。   （按任意键关闭）",
+    "source_hash": "e5f9e50c721f"
+  },
+  "plugin.mash-update-notice.pane.up-to-date-macos": {
+    "text": "\n  一切均为最新（Mash {version}）。\n\n  （按任意键关闭）",
+    "source_hash": "0f6af22649b2"
+  },
+  "plugin.mash-update-notice.title.available": {
+    "text": "Mash {candidate} 已可用",
+    "source_hash": "e9ea02ee8c67"
+  },
+  "plugin.mash-update-notice.title.check-failed": {
+    "text": "无法检查 Mash 更新",
+    "source_hash": "43d510221839"
+  },
+  "plugin.mash-update-notice.title.previous-restored": {
+    "text": "已恢复到先前的 Mash 版本",
+    "source_hash": "db2ddd4e3f64"
+  },
+  "plugin.mash-update-notice.title.restart-required": {
+    "text": "需要重启 Mash",
+    "source_hash": "c22b233a4d7d"
+  },
+  "plugin.mash-update-notice.title.up-to-date": {
+    "text": "Mash 已是最新版本",
+    "source_hash": "cc9e6d5993b9"
+  },
+  "plugin.mash-update-notice.title.updated": {
+    "text": "Mash 已更新到 {version}",
+    "source_hash": "855f75f65bcb"
+  }
+}

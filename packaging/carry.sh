@@ -294,8 +294,16 @@ mash_ghostty_trim_check() {
     echo "cannot check the Ghostty fork: $src is missing" >&2
     return 1
   }
+  # Base.lproj, so AppKit overlays each <lang>.lproj/MainMenu.strings. The
+  # title greps below pass on a missing file, so its absence is an error.
+  local xib="$src/macos/Sources/App/Base.lproj/MainMenu.xib"
+  [ -f "$xib" ] || {
+    echo "Ghostty fork moved MainMenu.xib out of Base.lproj; its menus would stay English" >&2
+    status=1
+  }
 
-  "$root/packaging/helpers/mash-ghostty-patch-menu" "$src" || return 1
+  # The menu and update code are in the fork at the pinned commit; nothing is
+  # patched into the source here.
 
   # The shared rejection, which is what covers both platforms.
   grep -q 'mash_removed_ui' "$src/src/Surface.zig" 2>/dev/null || {
@@ -309,7 +317,7 @@ mash_ghostty_trim_check() {
   for item in "New Tab" "Close Tab" "Split Right" "Split Left" "Split Down" \
     "Split Up" "Command Palette" "Quick Terminal" "Terminal Inspector" \
     "Zoom Split" "Equalize Splits" "Resize Split" "Change Tab Title..."; do
-    if grep -qF "title=\"$item\"" "$src/macos/Sources/App/MainMenu.xib" 2>/dev/null; then
+    if grep -qF "title=\"$item\"" "$xib" 2>/dev/null; then
       echo "Ghostty fork reintroduced the macOS menu item '$item'" >&2
       status=1
     fi
@@ -318,7 +326,7 @@ mash_ghostty_trim_check() {
   # Mash has one window. A rebase that brings New Window back would offer a
   # menu item that only brings the existing window forward, and a rebase that
   # drops the guard in newWindow would let a second window clone the first.
-  if grep -qF 'title="New Window"' "$src/macos/Sources/App/MainMenu.xib" 2>/dev/null; then
+  if grep -qF 'title="New Window"' "$xib" 2>/dev/null; then
     echo "Ghostty fork reintroduced the macOS 'New Window' menu item" >&2
     status=1
   fi
@@ -440,7 +448,6 @@ mash_ghostty_trim_check() {
 
   # Second pass: menu items that do not fit a Herdr host, and the code that the
   # first pass left compiled behind its rejected actions.
-  local xib="$src/macos/Sources/App/MainMenu.xib"
   for item in "Make Ghostty the Default Terminal" "Check for Updates..." \
     "Undo" "Redo" "Change Terminal Title..." "Float on Top" \
     "Use as Default" "Ghostty Help" "About Ghostty" "Hide Ghostty" \

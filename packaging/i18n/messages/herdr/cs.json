@@ -1,0 +1,90 @@
+{
+  "herdr.command.annotate-text": {
+    "text": "anotovat text",
+    "source_hash": "30aff55ff069"
+  },
+  "herdr.command.check-for-updates": {
+    "text": "Zkontrolovat aktualizace",
+    "source_hash": "9ed79ee9b212"
+  },
+  "herdr.command.command-palette": {
+    "text": "Paleta příkazů",
+    "source_hash": "0347f794d69c"
+  },
+  "herdr.command.container-status": {
+    "text": "Stav kontejnerů",
+    "source_hash": "ec8cbe398459"
+  },
+  "herdr.command.file-finder": {
+    "text": "Hledání souborů",
+    "source_hash": "ad77cff03b9f"
+  },
+  "herdr.command.fork-agent": {
+    "text": "Odbočit agenta ze zprávy",
+    "source_hash": "5c313f94cc7f"
+  },
+  "herdr.command.manage-annotations": {
+    "text": "spravovat anotace",
+    "source_hash": "eee1538430e1"
+  },
+  "herdr.command.new-agent-tab": {
+    "text": "nová karta agenta",
+    "source_hash": "e77139a8ffa8"
+  },
+  "herdr.command.new-dev-tab": {
+    "text": "nová karta vývoje (editor + agent)",
+    "source_hash": "1b5f35ed5d61"
+  },
+  "herdr.command.new-plain-shell-tab": {
+    "text": "nová karta jednoduchého shellu",
+    "source_hash": "74ce437b230f"
+  },
+  "herdr.command.new-review-tab": {
+    "text": "nová karta revize (diff + agent)",
+    "source_hash": "214404f418c9"
+  },
+  "herdr.command.new-shell-pane": {
+    "text": "nový panel shellu pod Fresh",
+    "source_hash": "fff45de0249d"
+  },
+  "herdr.command.new-workspace": {
+    "text": "Nový pracovní prostor (profil rozvržení)",
+    "source_hash": "c5e156ebeed4"
+  },
+  "herdr.command.new-worktree": {
+    "text": "Nový pracovní strom (profil rozvržení)",
+    "source_hash": "aeff6f1ba8e9"
+  },
+  "herdr.command.paste-annotations": {
+    "text": "vložit anotace do agenta této karty a archivovat je",
+    "source_hash": "a9b21d76fa9c"
+  },
+  "herdr.command.pick-link": {
+    "text": "Vybrat odkaz nebo ID",
+    "source_hash": "82572d1919b2"
+  },
+  "herdr.command.plugin-manager": {
+    "text": "Správce pluginů",
+    "source_hash": "6d56df78dd25"
+  },
+  "herdr.command.session-search": {
+    "text": "Hledání v relacích",
+    "source_hash": "82c4a0945515"
+  },
+  "herdr.command.snippets": {
+    "text": "Úryvky",
+    "source_hash": "ff717209de74"
+  },
+  "herdr.command.source-control": {
+    "text": "Správa verzí",
+    "source_hash": "9bd7eab78605"
+  },
+  "herdr.command.workspace-picker": {
+    "text": "Výběr pracovního prostoru",
+    "source_hash": "2103daf47b34"
+  },
+  "herdr.config.window-title": {
+    "text": "Mash › {workspace} › {tab}",
+    "source_hash": "bee749ea4346"
+  }
+}

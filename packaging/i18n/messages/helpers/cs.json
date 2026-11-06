@@ -1,0 +1,182 @@
+{
+  "helper.launch.data_not_writable": {
+    "text": "{path} není zapisovatelná složka. Podrobnosti: {log}",
+    "source_hash": "c2daaf7abb17"
+  },
+  "helper.launch.data_prepare_failed": {
+    "text": "Mash nemohl připravit {path}. Podrobnosti: {log}",
+    "source_hash": "f1a3af24d2f1"
+  },
+  "helper.launch.environment_refused": {
+    "text": "Mash odmítl prostředí mimo {path}. Podrobnosti: {log}",
+    "source_hash": "6cba761820b9"
+  },
+  "helper.launch.linux_data_prepare_failed": {
+    "text": "Mash nemohl připravit {path}.",
+    "source_hash": "67920ad8e50d"
+  },
+  "helper.launch.linux_update_settings_failed": {
+    "text": "Mash nemohl připnout nastavení aktualizací; soubor zůstal zachován.",
+    "source_hash": "a8cb9d5749da"
+  },
+  "helper.launch.refused_start": {
+    "text": "Mash odmítl spuštění.",
+    "source_hash": "fea43a382106"
+  },
+  "helper.launch.setup_failed": {
+    "text": "Nastavení {path} selhalo. Podrobnosti: {log}",
+    "source_hash": "e891d0a29f1a"
+  },
+  "helper.launch.socket_outside": {
+    "text": "Mash odmítl spuštění: socket je mimo ~/.mash.",
+    "source_hash": "ddb5d709d6cd"
+  },
+  "helper.launch.update_location_invalid": {
+    "text": "Neplatné umístění aktualizace Mash.",
+    "source_hash": "c53120b603c7"
+  },
+  "helper.launch.update_settings_failed": {
+    "text": "Mash nemohl připnout nastavení aktualizací. Podrobnosti: {log}",
+    "source_hash": "31a1842ec5dc"
+  },
+  "helper.launch.update_state_unsafe": {
+    "text": "Stav aktualizace Mash není bezpečný.",
+    "source_hash": "f5d6ba096441"
+  },
+  "helper.launch.update_waiter_failed": {
+    "text": "Mash nemohl zaregistrovat čekající proces aktualizace.",
+    "source_hash": "ff2f989250a6"
+  },
+  "helper.launch.updater_incomplete": {
+    "text": "Aktualizátor Mash není úplný.",
+    "source_hash": "43c808c2338d"
+  },
+  "helper.popup.dismiss": {
+    "text": "(zavřete libovolnou klávesou)",
+    "source_hash": "f57ff387149d"
+  },
+  "helper.setup.not_finished": {
+    "text": "Nastavení Mash není dokončeno, proto se Mash neotevřel.",
+    "source_hash": "f7435b584992"
+  },
+  "helper.setup.open_again": {
+    "text": "Otevřete Mash znovu a spusťte nastavení od začátku.",
+    "source_hash": "3c08c76f274a"
+  },
+  "helper.setup.press_enter": {
+    "text": "Stisknutím Enter zavřete toto okno.",
+    "source_hash": "3cbf0fb2a94f"
+  },
+  "plugin.image-popup.no-image": {
+    "text": "Žádný obrázek k zobrazení: {file}",
+    "source_hash": "91aa57b30f47"
+  },
+  "plugin.image-popup.source-file": {
+    "text": "(samotný obrázek je v {file})",
+    "source_hash": "acda13cd6347"
+  },
+  "plugin.image-popup.viu-missing": {
+    "text": "viu není nainstalováno. Nainstalujte ho pomocí: brew install viu",
+    "source_hash": "51d203b460ac"
+  },
+  "plugin.mash-update-notice.notice.apt-failed": {
+    "text": "Ověřte repozitář APT a spusťte sudo apt update.",
+    "source_hash": "6e5d462c3fb3"
+  },
+  "plugin.mash-update-notice.notice.available-linux": {
+    "text": "Máte {installed}. Aktualizaci spustíte příkazem: {command}",
+    "source_hash": "408651e42b2f"
+  },
+  "plugin.mash-update-notice.notice.available-macos": {
+    "text": "Máte {installed}. Aktualizujte otevřením Mash.",
+    "source_hash": "110061a9c5d1"
+  },
+  "plugin.mash-update-notice.notice.check-failed": {
+    "text": "Zkontrolujte připojení k internetu a zkuste to znovu.",
+    "source_hash": "176afd02072f"
+  },
+  "plugin.mash-update-notice.notice.current-linux": {
+    "text": "V aktuálních metadatech APT nebyla nalezena novější verze Mash.",
+    "source_hash": "4076014ba5ad"
+  },
+  "plugin.mash-update-notice.notice.current-macos": {
+    "text": "Vše je aktuální. Mash {version} je současná verze.",
+    "source_hash": "541489679898"
+  },
+  "plugin.mash-update-notice.notice.previous-restored": {
+    "text": "Mash {installed} znovu běží. Aktualizace na {candidate} nebyla dokončena.",
+    "source_hash": "e15f090dff62"
+  },
+  "plugin.mash-update-notice.notice.restart-required": {
+    "text": "Běží {installed}. Mash {candidate} je již nainstalován; restartujte Mash, abyste ho mohli používat.",
+    "source_hash": "e1248557730a"
+  },
+  "plugin.mash-update-notice.notice.updated": {
+    "text": "Mash běží v nové verzi.",
+    "source_hash": "e3caeafe33e1"
+  },
+  "plugin.mash-update-notice.pane.apt-failed": {
+    "text": "\n  V APT nebyly nalezeny informace o aktualizaci.\n\n  Ověřte repozitář Mash a spusťte sudo apt update.   (zavřete libovolnou klávesou)",
+    "source_hash": "ae2c3f30f3cd"
+  },
+  "plugin.mash-update-notice.pane.available-linux": {
+    "text": "\n  Je dostupný Mash {candidate} (máte {installed}).\n\n  Aktualizujte příkazem:\n    sudo apt install --only-upgrade letsmash\n\n  Poté Mash restartujte.   (zavřete libovolnou klávesou)",
+    "source_hash": "2073e20a4f2e"
+  },
+  "plugin.mash-update-notice.pane.check-failed": {
+    "text": "\n  Aktualizace teď nelze zkontrolovat.\n\n  Zkontrolujte připojení k internetu a zkuste to znovu.   (zavřete libovolnou klávesou)",
+    "source_hash": "d716b0057955"
+  },
+  "plugin.mash-update-notice.pane.previous-restored": {
+    "text": "\n  Mash {installed} znovu běží.\n\n  Aktualizace na {candidate} nebyla dokončena. Soubory vašich pracovních prostorů nebyly vráceny zpět.\n\n  (zavřete libovolnou klávesou)",
+    "source_hash": "23ce21e89b73"
+  },
+  "plugin.mash-update-notice.pane.restart-required": {
+    "text": "\n  Běží Mash {installed}; Mash {candidate} je již nainstalován.\n\n  Uložte práci a restartujte Mash, abyste mohli používat nainstalovanou verzi.\n  Není nutné nic stahovat.   (zavřete libovolnou klávesou)",
+    "source_hash": "8cfff1a68c6e"
+  },
+  "plugin.mash-update-notice.pane.update-prompt": {
+    "text": "\n  Je dostupný Mash {candidate} (máte {installed}).\n\n  Stisknutím u aktualizujete nyní, jinou klávesou zavřete.\n  Aktualizace ukončí Mash a znovu ho otevře v nové verzi.\n\n  > ",
+    "source_hash": "e72a656d118c"
+  },
+  "plugin.mash-update-notice.pane.update-unavailable": {
+    "text": "\n  Je dostupný Mash {candidate} (máte {installed}).\n\n  Stáhněte ho z:\n    {url}\n\n  (zavřete libovolnou klávesou)",
+    "source_hash": "3559cf5d3977"
+  },
+  "plugin.mash-update-notice.pane.updated": {
+    "text": "\n  Mash {version} je nainstalován a spuštěn.\n\n  Vaše pracovní prostory a konfigurace zůstávají v ~/.mash.\n\n  (zavřete libovolnou klávesou)",
+    "source_hash": "b6ec8b2c9bee"
+  },
+  "plugin.mash-update-notice.pane.up-to-date-linux": {
+    "text": "\n  V aktuálních metadatech APT nebyla nalezena novější verze Mash.\n\n  Pokud mohou být seznamy balíčků zastaralé, spusťte sudo apt update.   (zavřete libovolnou klávesou)",
+    "source_hash": "e5f9e50c721f"
+  },
+  "plugin.mash-update-notice.pane.up-to-date-macos": {
+    "text": "\n  Vše je aktuální (Mash {version}).\n\n  (zavřete libovolnou klávesou)",
+    "source_hash": "0f6af22649b2"
+  },
+  "plugin.mash-update-notice.title.available": {
+    "text": "Je dostupný Mash {candidate}",
+    "source_hash": "e9ea02ee8c67"
+  },
+  "plugin.mash-update-notice.title.check-failed": {
+    "text": "Kontrola aktualizací Mash se nezdařila",
+    "source_hash": "43d510221839"
+  },
+  "plugin.mash-update-notice.title.previous-restored": {
+    "text": "Předchozí verze Mash byla obnovena",
+    "source_hash": "db2ddd4e3f64"
+  },
+  "plugin.mash-update-notice.title.restart-required": {
+    "text": "Mash je třeba restartovat",
+    "source_hash": "c22b233a4d7d"
+  },
+  "plugin.mash-update-notice.title.up-to-date": {
+    "text": "Mash je aktuální",
+    "source_hash": "cc9e6d5993b9"
+  },
+  "plugin.mash-update-notice.title.updated": {
+    "text": "Mash byl aktualizován na {version}",
+    "source_hash": "855f75f65bcb"
+  }
+}

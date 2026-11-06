@@ -1,0 +1,79 @@
+Mash on Linux — klávesnice (Native)
+
+Každý nástroj si nechává vlastní klávesy. Herdr používá svůj vestavěný prefix
+Ctrl+B: stiskněte Ctrl+B, uvolněte a potom klávesu. Ctrl+B se do panelu
+nedostane, takže Ctrl+B ve Fresh (průzkumník souborů), Ctrl+B v Pi (kurzor
+doleva) a Ctrl+B v OpenCode (relace na pozadí) nefungují; použijte Ctrl+E nebo
+nabídku ve Fresh a levou šipku v Pi.
+
+  ── Herdr (Ctrl+B, potom) ──
+  n / p            Další / předchozí karta
+  c                Nová karta
+  1..9             Přepnout na kartu N
+  Shift+T          Přejmenovat kartu
+  Shift+X          Zavřít kartu
+  h j k l          Zaměřit panel vlevo / dolů / nahoru / vpravo
+  Shift+H J K L    Vyměnit panel vlevo / dolů / nahoru / vpravo
+  Tab / Shift+Tab  Další / předchozí panel
+  v / -            Rozdělit svisle / vodorovně
+  x                Zavřít panel
+  z                Zvětšit panel
+  r                Změna velikosti
+  [                Režim kopírování
+  e                Upravit historii posunu
+  Shift+P          Přejmenovat panel
+  w                Výběr pracovního prostoru (nativní)
+  Shift+W          Přejmenovat pracovní prostor
+  Shift+D          Zavřít pracovní prostor
+  g                Přejít na relaci
+  b                Přepnout postranní panel
+  o                Otevřít oznámení
+  s                Nastavení
+  Shift+R          Znovu načíst nastavení
+  q                Odpojit
+  ?                Nápověda
+
+  ── Doplňky Mash (Ctrl+B, potom) ──
+  t                nová karta vývoje (editor + agent)
+  a                nová karta agenta
+  Shift+C          nová karta jednoduchého shellu
+  Shift+V          nová karta revize (diff + agent)
+  `                nový panel shellu pod Fresh
+  f                Hledání souborů
+  y                Správa verzí
+  Shift+O          Stav kontejnerů
+  Shift+S          Úryvky
+  i                anotovat text
+  Shift+I          Vložit poznámky agentovi této karty
+  m                spravovat anotace
+  u                Vybrat odkaz nebo ID
+  Shift+U          Správce pluginů
+  Shift+Z          Zkontrolovat aktualizace
+  Shift+N          Nový pracovní prostor (profil rozvržení)
+  Shift+G          Nový pracovní strom (profil rozvržení)
+  Shift+F          Výběr pracovního prostoru (relace)
+  ;                Paleta příkazů
+  Shift+Y          Odbočit agenta ze zprávy
+  Shift+E          Hledání v relacích
+
+  ── Fresh (vlastní výchozí klávesy) ──
+  Ctrl+S           Uložit
+  Ctrl+O           Otevřít soubor
+  Ctrl+P           Rychle otevřít
+  Ctrl+F           Najít
+  Alt+A            Najít a nahradit
+  F3 / Shift+F3    Najít další / předchozí
+  Ctrl+G           Přejít na řádek
+  Ctrl+D           Kurzor na další shodu
+  Ctrl+E           Zaměřit průzkumník souborů
+  Ctrl+Z / Ctrl+Y  Zpět / znovu
+
+  ── Pi (vlastní výchozí klávesy) ──
+  Ctrl+↑ / Ctrl+↓  Na předchozí / další zprávu
+
+Pi toto přijímá i přes Ctrl+Shift+↑/↓, ale terminál ty dvě klávesy používá pro
+vlastní skok v výzvy, takže v režimu Native se k Pi nedostanou. Použijte
+Ctrl+↑/↓. Ostatní klávesy Pi zůstávají.
+
+Kopírovat / vložit v terminálu: Ctrl+Shift+C / Ctrl+Shift+V, nebo myší. Jinak
+Pi a shell používají vlastní výchozí klávesy.

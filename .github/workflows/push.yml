@@ -68,7 +68,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: LuisAlejandro/ghostty
-          ref: fork-main
+          ref: 876699179f66a5161b059fe1dd09047190533524 # the pinned fork commit, as in packaging/assets.json
           path: ghostty-fork
 
       - name: Point the suite at the fork

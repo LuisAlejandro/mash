@@ -1,0 +1,36 @@
+── Espacios de trabajo ──                                        ── Agentes ──
+  ⌘⌃N        Nuevo espacio de trabajo (perfil de diseño)           ⌃⇧↑ / ⌃⇧↓  Agente anterior / siguiente
+  ⌘⌃⇧N       Nuevo árbol de trabajo (perfil de diseño)             ⌃⇧1-9      Enfocar agente N
+  ⌘⌃R        Renombrar espacio de trabajo                          Esc        Interrumpir
+  ⌘⌃W        Cerrar espacio de trabajo                             ⌃C         Limpiar / salir
+  ⌘⌃⌫        Quitar árbol de trabajo                               ⇧Tab       Cambiar nivel de razonamiento
+  ⌘⌃[ / ⌘⌃]  Espacio de trabajo anterior / siguiente               ⌃O         Expandir salida de herramienta
+  ⌘⌃1-9      Cambiar al espacio de trabajo N                       ⌃P         Cambiar de modelo
+  ⌘⌃G        Ir a (navegador de sesiones)                          ⌃G         Editor externo
+  ⌘⌃O        Selector de espacios (sesiones / espacios)            ⌃⇧F        Buscar en la transcripción
+── Pestañas ──                                                     ⌥↵         Encolar seguimiento
+  ⌘T / ⌘⇧N   nueva pestaña de desarrollo (editor + agente)         ⌃⌥Z        Dictado (Pi Voice)
+  ⌘⌥T / ⌘⌥N  nueva pestaña de agente
+  ⌘⇧R        nueva pestaña de revisión (diff + agente)           ── Complementos ──
+  ⌘⇧T        nueva pestaña de terminal simple                      ⌃⇧G        Control de versiones
+  ⌘⇧[ / ⌘⇧]  Pestaña anterior / siguiente                          ⌘⇧O        Estado de contenedores
+  ⌘⇧1-9      Cambiar a la pestaña N                                ⌘⌥P        Fragmentos (ejecutor de fragmentos)
+  ⌘⇧M        Renombrar pestaña                                     ⌘P         Buscador de archivos
+  ⌘⇧W        Cerrar pestaña                                        ⌘⇧P        Paleta de comandos
+── Paneles ──                                                      ⌘⌥L        Buscar en sesiones
+  ⌘⌥← ↓ ↑ →  Enfocar panel izquierda / abajo / arriba / derecha    ⌘K / ⌘L    Anotar -- capturar / pegar
+  ⌘⌥[ / ⌘⌥]  Panel anterior / siguiente                            ⌘⇧L        Anotaciones -- gestionar
+  ⌘⌥\ ⌘⌥-    Dividir vertical / horizontal                         ⌥G         Elegir enlace o ID
+  ⌘⌥W        Cerrar panel                                          ⌘⇧X        Gestor de plugins
+  ⌘⌥Z        Ampliar panel                                         ⌘⌥Y        Bifurcar agente desde un mensaje
+  ⌘⌥R        Modo de tamaño
+                                                                 ── Global ──
+── Editor ──                                                       ⌘⇧I        Ayuda
+  ⌘O         Abrir archivo                                         ⌘I         Ajustes
+  ⌘S         Guardar                                               ⌘U         Desconectar
+  ⌘F         Buscar / reemplazar en el búfer                       ⌘R         Recargar configuración
+  ⌘⇧F        Buscar / reemplazar en archivos                       ⌘Y         Abrir destino de notificación
+  ⌘⇧E        Alternar explorador de archivos                       ⌘B         Alternar barra lateral
+  ⌘D         Cursor en la siguiente coincidencia                   ⌘⇧U        Buscar actualizaciones
+  ⌘⌥C        Copiar ruta del archivo
+  ⌥⇧↓        Duplicar línea

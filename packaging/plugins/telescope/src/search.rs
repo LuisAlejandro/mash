@@ -34,11 +34,9 @@ pub fn run_rg_preview() -> i32 {
     0
 }
 
-const SEARCH_PROMPT: &str = "herdr search ▸ ";
-
 fn preview_row(line: &str, prompt: &str, query: &str) {
     let fields: Vec<&str> = line.split('\t').collect();
-    if prompt == SEARCH_PROMPT {
+    if prompt == crate::palette::search_prompt() {
         preview(fields.get(1).copied().unwrap_or(""), query);
         return;
     }

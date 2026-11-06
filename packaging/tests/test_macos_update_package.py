@@ -229,14 +229,16 @@ class MacOSUpdatePackageTest(unittest.TestCase):
                        "mash-update-apply", "mash-update-swap"):
             self.assertIn(helper, copied)
 
-    def test_native_lifecycle_patch_ships_and_is_applied_by_the_build_seam(self):
-        patch = (ROOT / "packaging/patches/ghostty-update-lifecycle.patch").read_text()
-        self.assertIn("macos/Sources/App/main.swift", patch)
-        self.assertIn("mashUpdateObserveReadiness()", patch)
-        self.assertIn(
-            "ghostty-update-lifecycle.patch",
-            (ROOT / "packaging/helpers/mash-ghostty-patch-menu").read_text(),
-        )
+    def test_native_lifecycle_lives_in_the_pinned_fork(self):
+        from macos_update_fixture import pinned_fork_text
+
+        app_delegate = pinned_fork_text("macos/Sources/App/AppDelegate.swift")
+        main = pinned_fork_text("macos/Sources/App/main.swift")
+        if app_delegate is None or main is None:
+            self.skipTest("needs pinned Ghostty source for the native lifecycle")
+        self.assertIn("mashUpdateObserveReadiness()", app_delegate)
+        self.assertIn("mashUpdateEntry()\nmashHandOffToSetup()", main)
+        self.assertFalse((ROOT / "packaging/patches/ghostty-update-lifecycle.patch").exists())
 
     def test_linux_payload_keeps_apt_and_excludes_macos_helpers(self):
         build = (ROOT / "packaging/build-common.sh").read_text()

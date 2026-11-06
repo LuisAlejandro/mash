@@ -1,0 +1,1538 @@
+{
+  "wizard.language.title": {
+    "text": "เลือกภาษา",
+    "source_hash": "8e2d0664dbbb"
+  },
+  "wizard.language.prompt": {
+    "text": "ภาษาสำหรับการตั้งค่า",
+    "source_hash": "6a37bc86eb31"
+  },
+  "wizard.language.continue": {
+    "text": "ดำเนินการต่อ",
+    "source_hash": "31fbef162594"
+  },
+  "wizard.welcome.start": {
+    "text": "เริ่มตัวช่วยตั้งค่า",
+    "source_hash": "0fe79b066746"
+  },
+  "wizard.identity.title": {
+    "text": "ข้อมูลประจำตัว",
+    "source_hash": "999f23fcd7be"
+  },
+  "wizard.identity.name_label": {
+    "text": "ชื่อ:",
+    "source_hash": "2683cad48a14"
+  },
+  "wizard.identity.name_help": {
+    "text": "ชื่อในคอมมิต",
+    "source_hash": "496635d99500"
+  },
+  "wizard.identity.email_label": {
+    "text": "อีเมล:",
+    "source_hash": "17507dcf8457"
+  },
+  "wizard.identity.email_help": {
+    "text": "อีเมลในคอมมิต",
+    "source_hash": "c5b5196053ec"
+  },
+  "wizard.identity.key_label": {
+    "text": "คีย์ลงนาม:",
+    "source_hash": "bbfbc9ee3f2d"
+  },
+  "wizard.identity.key_help": {
+    "text": "เว้นว่างไว้เพื่อปิดการลงนาม",
+    "source_hash": "89da89efcf12"
+  },
+  "wizard.identity.next": {
+    "text": "ถัดไป — เลือกเครื่องมือ",
+    "source_hash": "a3dc8180c38c"
+  },
+  "wizard.tools.title": {
+    "text": "เครื่องมือ",
+    "source_hash": "ea93d6a262ec"
+  },
+  "wizard.tools.intro": {
+    "text": "เลือกเครื่องมือที่จะติดตั้ง รายการสีจางมีให้ใช้อยู่แล้วเสมอ",
+    "source_hash": "5428fc58e4db"
+  },
+  "wizard.tools.mash_only": {
+    "text": "ใช้ใน Mash เท่านั้น: เก็บไว้ที่ ~/.mash; แอปนอก Mash จะมองไม่เห็น",
+    "source_hash": "c1401b334c12"
+  },
+  "wizard.tools.shared": {
+    "text": "ในคอมพิวเตอร์: ติดตั้งทั้งระบบและใช้ร่วมกับแอปอื่นได้",
+    "source_hash": "ffd57efffb24"
+  },
+  "wizard.tools.no_homebrew": {
+    "text": "ไม่พบ Homebrew: ติดตั้งจาก brew.sh ก่อนเลือกเครื่องมือ Homebrew",
+    "source_hash": "59e2e7cd4988"
+  },
+  "wizard.tools.choices": {
+    "text": "ตัวเลือกการติดตั้ง",
+    "source_hash": "ab5a2f64781a"
+  },
+  "wizard.tools.skills": {
+    "text": "ทักษะ",
+    "source_hash": "66d0f523a379"
+  },
+  "wizard.tools.skills_check": {
+    "text": "ติดตั้ง Programming Skills (รวมหน่วยความจำ)",
+    "source_hash": "7accde9f1e3d"
+  },
+  "wizard.tools.skills_help": {
+    "text": "เวิร์กโฟลว์ Pi สำหรับระดมความคิด วางแผน ทำงาน QA และเผยแพร่ พร้อมหน่วยความจำในเครื่อง",
+    "source_hash": "bd9f35e51cb5"
+  },
+  "wizard.tools.back": {
+    "text": "ย้อนกลับ",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.tools.next": {
+    "text": "ถัดไป — ตั้งค่าผู้ให้บริการ",
+    "source_hash": "1168b9d2c2a3"
+  },
+  "wizard.tools.route.bundled": {
+    "text": "มีใน Mash",
+    "source_hash": "ef935c70d966"
+  },
+  "wizard.tools.route.apt": {
+    "text": "apt",
+    "source_hash": "5009a047a11f"
+  },
+  "wizard.tools.route.homebrew": {
+    "text": "Homebrew",
+    "source_hash": "bc49b968dbe4"
+  },
+  "wizard.tools.route.download": {
+    "text": "ดาวน์โหลดเวอร์ชันที่ตรึงไว้",
+    "source_hash": "33093fa51037"
+  },
+  "wizard.tools.route.npm": {
+    "text": "npm เวอร์ชันที่ตรึงไว้",
+    "source_hash": "a903155cf3fd"
+  },
+  "wizard.tools.route.pip": {
+    "text": "pip เวอร์ชันที่ตรึงไว้",
+    "source_hash": "34399ac2dcb4"
+  },
+  "wizard.tools.route.cua": {
+    "text": "ตัวติดตั้ง CUA",
+    "source_hash": "34c982365b95"
+  },
+  "wizard.tools.route.xcode": {
+    "text": "เครื่องมือ Xcode",
+    "source_hash": "80c6d0b53bee"
+  },
+  "wizard.tools.scope.shared": {
+    "text": "คอมพิวเตอร์ของคุณ",
+    "source_hash": "dced8f39fb9d"
+  },
+  "wizard.tools.scope.mash_only": {
+    "text": "ใช้ใน Mash เท่านั้น",
+    "source_hash": "3011913d5cb4"
+  },
+  "wizard.font.title": {
+    "text": "รูปลักษณ์",
+    "source_hash": "3907fa7f8072"
+  },
+  "wizard.font.fonts_section": {
+    "text": "ฟอนต์ในคอมพิวเตอร์นี้",
+    "source_hash": "48ceedcfd9eb"
+  },
+  "wizard.font.filter": {
+    "text": "กรองฟอนต์",
+    "source_hash": "b86e7b247be1"
+  },
+  "wizard.font.filter_hint": {
+    "text": "↑/↓ ฟอนต์ · Tab เพื่อปรับขนาด",
+    "source_hash": "356ea9afc4bf"
+  },
+  "wizard.font.family_section": {
+    "text": "ตระกูลฟอนต์ (มี Meslo ให้แล้ว)",
+    "source_hash": "7445920f6507"
+  },
+  "wizard.font.no_fonts": {
+    "text": "ไม่พบฟอนต์ที่ตรงกัน — กด Backspace เพื่อขยายการค้นหา",
+    "source_hash": "8d7931285de0"
+  },
+  "wizard.font.keybindings_section": {
+    "text": "ปุ่มลัด (ถาวรหลังตั้งค่าเสร็จ)",
+    "source_hash": "92dc99e05387"
+  },
+  "wizard.font.keybindings_note": {
+    "text": "ปุ่มลัดแบบ Cursor หรือปุ่มของแต่ละแอป (Herdr ใช้ Ctrl+B)",
+    "source_hash": "8658dfe96d6a"
+  },
+  "wizard.font.theme_section": {
+    "text": "ธีม (Herdr, Mash Terminal, Fresh, Pi, reviewr)",
+    "source_hash": "396f9810c847"
+  },
+  "wizard.font.theme_switch": {
+    "text": "←/→ เปลี่ยน",
+    "source_hash": "06a1545f5045"
+  },
+  "wizard.font.size_section": {
+    "text": "ขนาดฟอนต์ (พอยต์)",
+    "source_hash": "31b2eb5d3b2c"
+  },
+  "wizard.font.size_adjust": {
+    "text": "←/→ ปรับ (6–72)",
+    "source_hash": "976de7024dc8"
+  },
+  "wizard.font.preview_suffix": {
+    "text": "แสดงตัวอย่างในหน้าต่างนี้",
+    "source_hash": "b086c32f40d5"
+  },
+  "wizard.font.back": {
+    "text": "ย้อนกลับ",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.font.next": {
+    "text": "ไปยังการพิมพ์ตามคำบอก",
+    "source_hash": "ec7a0ff60525"
+  },
+  "wizard.theme.dark": {
+    "text": "ธีมมืด",
+    "source_hash": "3f11a5cc643a"
+  },
+  "wizard.theme.light": {
+    "text": "ธีมสว่าง",
+    "source_hash": "3669a1b2770f"
+  },
+  "wizard.voice.title": {
+    "text": "การพิมพ์ตามคำบอก",
+    "source_hash": "25ce1a09ddc1"
+  },
+  "wizard.voice.languages_section": {
+    "text": "ภาษาที่จะใช้พูด",
+    "source_hash": "7287a2bc2529"
+  },
+  "wizard.voice.empty_notice": {
+    "text": "ไม่ได้เลือกภาษา: จะไม่ตั้งค่าการพิมพ์ตามคำบอก เพิ่มภายหลังได้ใน Pi ด้วย /voice",
+    "source_hash": "b903d36755f6"
+  },
+  "wizard.voice.no_match": {
+    "text": "ไม่มีโมเดลที่รองรับชุดภาษานี้ ลบภาษาออกหนึ่งภาษา",
+    "source_hash": "b8b167ba3990"
+  },
+  "wizard.voice.best": {
+    "text": "ดีที่สุด",
+    "source_hash": "c47d21c643c0"
+  },
+  "wizard.voice.fast": {
+    "text": "เร็ว",
+    "source_hash": "6c582b62e0e5"
+  },
+  "wizard.voice.best_summary": {
+    "text": "สมดุลความเร็วและความแม่นยำที่แนะนำ",
+    "source_hash": "2fde20c2ddd6"
+  },
+  "wizard.voice.fast_summary": {
+    "text": "การถอดเสียงที่เร็วที่สุดซึ่งยังใช้งานได้",
+    "source_hash": "9f01f55f16dc"
+  },
+  "wizard.voice.same_model": {
+    "text": "ทั้งสองบทบาทใช้โมเดลเดียวกัน",
+    "source_hash": "6a800db5cff9"
+  },
+  "wizard.voice.detector_notice": {
+    "text": "เพิ่มตัวตรวจจับภาษาขนาด {size} เพื่อการตรวจจับอัตโนมัติ",
+    "source_hash": "3c9c1859e707"
+  },
+  "wizard.voice.model_section": {
+    "text": "โมเดลที่จะดาวน์โหลด",
+    "source_hash": "e90982e6cea9"
+  },
+  "wizard.voice.continue_without": {
+    "text": "ดำเนินการต่อโดยไม่ตั้งค่าการพิมพ์ตามคำบอก",
+    "source_hash": "25309b666263"
+  },
+  "wizard.voice.download_continue": {
+    "text": "ดาวน์โหลดและดำเนินการต่อ",
+    "source_hash": "0a12deea1f8d"
+  },
+  "wizard.voice.back": {
+    "text": "ย้อนกลับ",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.voice.more": {
+    "text": "อีก {count} รายการ — เลื่อนหรือไปต่อด้านล่าง",
+    "source_hash": "00703aa3c372"
+  },
+  "wizard.voice.name.bg": {
+    "text": "ภาษาบัลแกเรีย",
+    "source_hash": "ecd986094baf"
+  },
+  "wizard.voice.name.cs": {
+    "text": "ภาษาเช็ก",
+    "source_hash": "8b463ea23a7e"
+  },
+  "wizard.voice.name.de": {
+    "text": "ภาษาเยอรมัน",
+    "source_hash": "a659b60d246d"
+  },
+  "wizard.voice.name.en": {
+    "text": "ภาษาอังกฤษ",
+    "source_hash": "ba118bf7fc9c"
+  },
+  "wizard.voice.name.es": {
+    "text": "ภาษาสเปน",
+    "source_hash": "3411059cb8e0"
+  },
+  "wizard.voice.name.fr": {
+    "text": "ภาษาฝรั่งเศส",
+    "source_hash": "7458199fe97a"
+  },
+  "wizard.voice.name.it": {
+    "text": "ภาษาอิตาลี",
+    "source_hash": "fe1d9c7db376"
+  },
+  "wizard.voice.name.ja": {
+    "text": "ภาษาญี่ปุ่น",
+    "source_hash": "be4ee906d3ef"
+  },
+  "wizard.voice.name.ko": {
+    "text": "ภาษาเกาหลี",
+    "source_hash": "04656c6fe003"
+  },
+  "wizard.voice.name.pt": {
+    "text": "ภาษาโปรตุเกส",
+    "source_hash": "98b01b890687"
+  },
+  "wizard.voice.name.ru": {
+    "text": "ภาษารัสเซีย",
+    "source_hash": "5bcc40adf6e0"
+  },
+  "wizard.voice.name.th": {
+    "text": "ภาษาไทย",
+    "source_hash": "ad705ee19c04"
+  },
+  "wizard.voice.name.uk": {
+    "text": "ภาษายูเครน",
+    "source_hash": "6f424303fa12"
+  },
+  "wizard.voice.name.vi": {
+    "text": "ภาษาเวียดนาม",
+    "source_hash": "f25499e9df5c"
+  },
+  "wizard.voice.name.zh": {
+    "text": "ภาษาจีนกลาง",
+    "source_hash": "b4d3ec443738"
+  },
+  "wizard.github.section": {
+    "text": "GitHub (ไม่บังคับ)",
+    "source_hash": "d02de70d7691"
+  },
+  "wizard.github.signed_out": {
+    "text": "ยังไม่ได้ลงชื่อเข้าใช้",
+    "source_hash": "491fc91cd76e"
+  },
+  "wizard.github.starting": {
+    "text": "กำลังเชื่อมต่อ GitHub…",
+    "source_hash": "e7018ff9b61a"
+  },
+  "wizard.github.waiting": {
+    "text": "รอการอนุมัติในเบราว์เซอร์",
+    "source_hash": "0e591354e538"
+  },
+  "wizard.github.signed_in": {
+    "text": "✓ ลงชื่อเข้าใช้แล้ว",
+    "source_hash": "a6bc36f81df5"
+  },
+  "wizard.github.signed_in_as": {
+    "text": "✓ ลงชื่อเข้าใช้เป็น {user}",
+    "source_hash": "33cfe2e60aae"
+  },
+  "wizard.github.sign_in": {
+    "text": "ลงชื่อเข้าใช้ GitHub",
+    "source_hash": "47e9895d1d76"
+  },
+  "wizard.github.cancel": {
+    "text": "ยกเลิก",
+    "source_hash": "19766ed6ccb2"
+  },
+  "wizard.github.sign_out": {
+    "text": "ออกจากระบบ",
+    "source_hash": "48f0d3d397d4"
+  },
+  "wizard.github.retry": {
+    "text": "ลองอีกครั้ง",
+    "source_hash": "d8b8392e2c54"
+  },
+  "wizard.github.copied": {
+    "text": "คัดลอกไปยังคลิปบอร์ดแล้ว",
+    "source_hash": "9a6d3fb1a8f5"
+  },
+  "wizard.github.approve": {
+    "text": "ป้อนรหัสที่ {url} เพื่ออนุมัติ Mash",
+    "source_hash": "0811fcc61af8"
+  },
+  "wizard.github.usage": {
+    "text": "ใช้โดย Git ผ่าน HTTPS, pull request และเครื่องมือ GitHub ของเอเจนต์",
+    "source_hash": "687743c41d86"
+  },
+  "wizard.font.keybindings.mash": {
+    "text": "Mash / สไตล์ Cursor",
+    "source_hash": "50c4eaf509a5"
+  },
+  "wizard.font.keybindings.native": {
+    "text": "เนทีฟ",
+    "source_hash": "d509e4938852"
+  },
+  "wizard.tools.description.agent-browser": {
+    "text": "ระบบอัตโนมัติของเบราว์เซอร์สำหรับงานหน้าเว็บ",
+    "source_hash": "17a3b5d9e891"
+  },
+  "wizard.tools.description.atuin": {
+    "text": "ประวัติ shell ที่ค้นหาได้",
+    "source_hash": "f1667e433eff"
+  },
+  "wizard.tools.description.bash-language-server": {
+    "text": "เซิร์ฟเวอร์ภาษา Bash",
+    "source_hash": "8bb3d3483973"
+  },
+  "wizard.tools.description.bat": {
+    "text": "ตัวอย่างไฟล์พร้อมไฮไลต์",
+    "source_hash": "65f67ed05fd4"
+  },
+  "wizard.tools.description.clangd": {
+    "text": "เซิร์ฟเวอร์ภาษา C และ C++",
+    "source_hash": "eb55e1c1e2fc"
+  },
+  "wizard.tools.description.cua-driver": {
+    "text": "ควบคุมเดสก์ท็อปแอปแบบเนทีฟ",
+    "source_hash": "875a66659bbe"
+  },
+  "wizard.tools.description.delta": {
+    "text": "ความต่าง Git และตัวแบ่งหน้า",
+    "source_hash": "0a5ab9622ca0"
+  },
+  "wizard.tools.description.eza": {
+    "text": "รายการไฟล์",
+    "source_hash": "90065d6d509a"
+  },
+  "wizard.tools.description.fd": {
+    "text": "ค้นหาไฟล์",
+    "source_hash": "401934824f5c"
+  },
+  "wizard.tools.description.fresh": {
+    "text": "โปรแกรมแก้ไขของ Mash",
+    "source_hash": "07a3ce240a97"
+  },
+  "wizard.tools.description.fzf": {
+    "text": "ตัวเลือกค้นหาแบบคลุมเครือ",
+    "source_hash": "74befff772fe"
+  },
+  "wizard.tools.description.gh": {
+    "text": "GitHub CLI และตัวช่วยข้อมูลรับรอง",
+    "source_hash": "7f9081e6b668"
+  },
+  "wizard.tools.description.git": {
+    "text": "จัดการเวอร์ชันด้วย Git",
+    "source_hash": "04ecfc4b2a56"
+  },
+  "wizard.tools.description.gopls": {
+    "text": "เซิร์ฟเวอร์ภาษา Go",
+    "source_hash": "7c830acbe2df"
+  },
+  "wizard.tools.description.herdr": {
+    "text": "พื้นที่ทำงาน แท็บ และแผง",
+    "source_hash": "ae8e873192bf"
+  },
+  "wizard.tools.description.jq": {
+    "text": "ยูทิลิตี JSON",
+    "source_hash": "8f8b7b35919d"
+  },
+  "wizard.tools.description.latexindent": {
+    "text": "จัดรูปแบบ LaTeX",
+    "source_hash": "2d27bc2aed62"
+  },
+  "wizard.tools.description.lazydocker": {
+    "text": "Docker ในเทอร์มินัล",
+    "source_hash": "a1ea900f50dc"
+  },
+  "wizard.tools.description.lazygit": {
+    "text": "Git ในเทอร์มินัล",
+    "source_hash": "56280a7e33fa"
+  },
+  "wizard.tools.description.marksman": {
+    "text": "เซิร์ฟเวอร์ภาษา Markdown",
+    "source_hash": "acd246ea56cd"
+  },
+  "wizard.tools.description.node": {
+    "text": "รันไทม์ JavaScript และ npm",
+    "source_hash": "257e5fc25d9c"
+  },
+  "wizard.tools.description.pet": {
+    "text": "ตัวอย่างคำสั่ง",
+    "source_hash": "2c7046aea68e"
+  },
+  "wizard.tools.description.pi": {
+    "text": "เอเจนต์เขียนโค้ดของ Mash",
+    "source_hash": "1e3348dc35ec"
+  },
+  "wizard.tools.description.prettier": {
+    "text": "จัดรูปแบบ JavaScript, JSON, Markdown, CSS และ Svelte",
+    "source_hash": "0a196b7eee63"
+  },
+  "wizard.tools.description.python": {
+    "text": "รันไทม์ Python และ pip",
+    "source_hash": "d378a966a298"
+  },
+  "wizard.tools.description.python-lsp-server": {
+    "text": "เซิร์ฟเวอร์ภาษา Python",
+    "source_hash": "45689d922173"
+  },
+  "wizard.tools.description.rg": {
+    "text": "ค้นหาเนื้อหา",
+    "source_hash": "364c20f57972"
+  },
+  "wizard.tools.description.rust-analyzer": {
+    "text": "เซิร์ฟเวอร์ภาษา Rust",
+    "source_hash": "59af4ee7c852"
+  },
+  "wizard.tools.description.sentrux": {
+    "text": "วิเคราะห์โครงสร้างแผน งาน และ QA",
+    "source_hash": "cdadc36df319"
+  },
+  "wizard.tools.description.shfmt": {
+    "text": "จัดรูปแบบ shell",
+    "source_hash": "ef675cf302a8"
+  },
+  "wizard.tools.description.sourcekit-lsp": {
+    "text": "เซิร์ฟเวอร์ภาษา Swift",
+    "source_hash": "bf29ee422d2f"
+  },
+  "wizard.tools.description.starship": {
+    "text": "พรอมต์ shell",
+    "source_hash": "ef8740639be1"
+  },
+  "wizard.tools.description.svelte-language-server": {
+    "text": "เซิร์ฟเวอร์ภาษา Svelte",
+    "source_hash": "5f0011a9203a"
+  },
+  "wizard.tools.description.tailwindcss-language-server": {
+    "text": "เซิร์ฟเวอร์ภาษา Tailwind CSS",
+    "source_hash": "b33fd822317e"
+  },
+  "wizard.tools.description.texlab": {
+    "text": "เซิร์ฟเวอร์ภาษา LaTeX",
+    "source_hash": "3388b1a9bd89"
+  },
+  "wizard.tools.description.typescript-language-server": {
+    "text": "เซิร์ฟเวอร์ภาษา TypeScript และ JavaScript",
+    "source_hash": "199f12a09d18"
+  },
+  "wizard.tools.description.viu": {
+    "text": "รูปภาพในเทอร์มินัล",
+    "source_hash": "6068123d4bf5"
+  },
+  "wizard.tools.description.vscode-css-language-server": {
+    "text": "เซิร์ฟเวอร์ CSS (แพ็กเกจ CSS/HTML/JSON ที่ใช้ร่วมกัน)",
+    "source_hash": "3ae9cafca643"
+  },
+  "wizard.tools.description.vscode-html-language-server": {
+    "text": "เซิร์ฟเวอร์ HTML (แพ็กเกจ CSS/HTML/JSON ที่ใช้ร่วมกัน)",
+    "source_hash": "4fdddbf99da0"
+  },
+  "wizard.tools.description.vscode-json-language-server": {
+    "text": "เซิร์ฟเวอร์ JSON (แพ็กเกจ CSS/HTML/JSON ที่ใช้ร่วมกัน)",
+    "source_hash": "af757d93137e"
+  },
+  "wizard.tools.description.yaml-language-server": {
+    "text": "เซิร์ฟเวอร์ภาษา YAML",
+    "source_hash": "d56c118152ef"
+  },
+  "wizard.tools.description.zoxide": {
+    "text": "จัดเรียงไดเรกทอรีอย่างชาญฉลาด",
+    "source_hash": "82deb27f3f2d"
+  },
+  "wizard.font.warning_no_list": {
+    "text": "ไม่สามารถแสดงรายการฟอนต์ที่ติดตั้งได้ แต่ยังใช้ Meslo ที่ให้มาได้",
+    "source_hash": "800ea442cefd"
+  },
+  "wizard.shell.setup": {
+    "text": "ตั้งค่า",
+    "source_hash": "7013af4c42fe"
+  },
+  "wizard.shell.installing": {
+    "text": "กำลังติดตั้ง…",
+    "source_hash": "530bcc355f0a"
+  },
+  "wizard.shell.navigation_hint": {
+    "text": "Tab เพื่อเลื่อน · Enter เพื่อเลือก",
+    "source_hash": "fbe682a41063"
+  },
+  "wizard.shell.preview_hint": {
+    "text": "←/→ หน้า · Esc ย้อนกลับ",
+    "source_hash": "9a1a64bc4c7d"
+  },
+  "wizard.shell.page_title": {
+    "text": "{title} — หน้า {current}/{total}",
+    "source_hash": "26ddd83b8742"
+  },
+  "wizard.page.model_provider": {
+    "text": "ผู้ให้บริการโมเดล",
+    "source_hash": "ea70384c465d"
+  },
+  "wizard.page.web_search": {
+    "text": "ค้นหาเว็บ",
+    "source_hash": "7711faa74a10"
+  },
+  "wizard.page.memory": {
+    "text": "หน่วยความจำ",
+    "source_hash": "c3963aedaac6"
+  },
+  "wizard.shell.setup_label": {
+    "text": "ตั้งค่า",
+    "source_hash": "7175b03373a2"
+  },
+  "wizard.github.config_inside": {
+    "text": "การตั้งค่า GitHub ต้องอยู่ภายใน Mash",
+    "source_hash": "2b038878bb44"
+  },
+  "wizard.github.cli_unavailable": {
+    "text": "ไม่มี GitHub CLI ในบิลด์นี้",
+    "source_hash": "929b978e3fa2"
+  },
+  "wizard.github.incomplete": {
+    "text": "การลงชื่อเข้าใช้ GitHub ยังไม่เสร็จสมบูรณ์",
+    "source_hash": "d7fb51538ef3"
+  },
+  "wizard.github.start_failed": {
+    "text": "ไม่สามารถเริ่ม GitHub CLI ได้: {error}",
+    "source_hash": "77cc54ecbb65"
+  },
+  "wizard.model.local_catalog": {
+    "text": "แคตตาล็อกในเครื่อง ข้อมูลรับรองยังไม่ได้รับการตรวจสอบจากเซิร์ฟเวอร์",
+    "source_hash": "b90b73d51076"
+  },
+  "wizard.model.filter": {
+    "text": "กรองโมเดล",
+    "source_hash": "9a35e606cd37"
+  },
+  "wizard.model.choose": {
+    "text": "เลือกโมเดล (Enter หรือคลิก)",
+    "source_hash": "b67e2354ebe6"
+  },
+  "wizard.model.enter_manual": {
+    "text": "พิมพ์เอง",
+    "source_hash": "ad876beba8ac"
+  },
+  "wizard.model.use_model": {
+    "text": "ใช้โมเดลนี้",
+    "source_hash": "cb1c1ca37393"
+  },
+  "wizard.connection.unavailable": {
+    "text": "ไม่สามารถตรวจสอบการเชื่อมต่อได้ กรอกรายละเอียดเอง แล้วการตั้งค่าจะดำเนินต่อได้",
+    "source_hash": "df66e4e70112"
+  },
+  "wizard.connection.mode.existing": {
+    "text": "ใช้ข้อมูลรับรองที่บันทึกไว้",
+    "source_hash": "a8f3c9ed4b75"
+  },
+  "wizard.common.new_api_key": {
+    "text": "กรอกคีย์ API ใหม่",
+    "source_hash": "9b6cc5e19d07"
+  },
+  "wizard.connection.mode.none": {
+    "text": "ไม่ใช้คีย์ (เซิร์ฟเวอร์ในเครื่อง)",
+    "source_hash": "327d8a7f069e"
+  },
+  "wizard.common.sign_in_later": {
+    "text": "ลงชื่อเข้าใช้ใน Pi ภายหลัง",
+    "source_hash": "9e6b7094c00b"
+  },
+  "wizard.connection.local_server": {
+    "text": "{name} (ในเครื่อง)",
+    "source_hash": "60d0adb8ca44"
+  },
+  "wizard.connection.reason.unauthorized": {
+    "text": "ปลายทางปฏิเสธข้อมูลรับรองนี้",
+    "source_hash": "5c67730adff0"
+  },
+  "wizard.connection.reason.not_found": {
+    "text": "ปลายทางไม่มีโมเดลหรือพาธ API นี้",
+    "source_hash": "92e6a1ef02b9"
+  },
+  "wizard.connection.reason.timeout": {
+    "text": "ปลายทางไม่ตอบกลับภายในเวลาที่กำหนด",
+    "source_hash": "824104c212df"
+  },
+  "wizard.connection.reason.unreachable": {
+    "text": "ไม่มีเซิร์ฟเวอร์ตอบกลับที่ที่อยู่นั้น",
+    "source_hash": "91cf761f6798"
+  },
+  "wizard.connection.reason.blocked": {
+    "text": "ไม่อนุญาตให้ใช้ที่อยู่นี้ ให้ใช้ปลายทาง HTTPS หรือที่อยู่เซิร์ฟเวอร์ในเครื่อง",
+    "source_hash": "91672c928382"
+  },
+  "wizard.connection.reason.redirected": {
+    "text": "ปลายทางเปลี่ยนเส้นทางไปที่อื่น กรุณากรอกที่อยู่สุดท้าย",
+    "source_hash": "6f5c4d2db072"
+  },
+  "wizard.connection.reason.not_json": {
+    "text": "ที่อยู่นี้ตอบกลับด้วยหน้าเว็บ ไม่ใช่ API ของโมเดล",
+    "source_hash": "caa45c7a5c14"
+  },
+  "wizard.connection.reason.wrong_api": {
+    "text": "ที่อยู่นี้ตอบกลับสำหรับ API คนละประเภท ให้ตรวจสอบที่อยู่และ API ที่เลือก",
+    "source_hash": "4214079dbe1b"
+  },
+  "wizard.connection.reason.no_models": {
+    "text": "เซิร์ฟเวอร์ทำงานอยู่ แต่ยังไม่ได้โหลดโมเดลแชท",
+    "source_hash": "a1655be795a4"
+  },
+  "wizard.connection.reason.stale": {
+    "text": "การเชื่อมต่อเปลี่ยนไประหว่างการตรวจสอบ กรุณาทดสอบอีกครั้ง",
+    "source_hash": "270cbc62e785"
+  },
+  "wizard.connection.reason.consent": {
+    "text": "การทดสอบจะส่งคำขอสั้นๆ หนึ่งครั้ง ยืนยันเพื่อดำเนินการต่อ",
+    "source_hash": "8210811701c1"
+  },
+  "wizard.connection.reason.command_secret": {
+    "text": "ข้อมูลรับรองนี้รันคำสั่ง ให้จัดการใน Pi แทน",
+    "source_hash": "07c5bdb147b9"
+  },
+  "wizard.connection.reason.oauth_expired": {
+    "text": "การลงชื่อเข้าใช้ที่บันทึกไว้หมดอายุแล้ว ลงชื่อเข้าใช้อีกครั้งผ่าน Pi",
+    "source_hash": "d5ce40555415"
+  },
+  "wizard.connection.reason.endpoint_changed": {
+    "text": "ข้อมูลรับรองที่บันทึกไว้เป็นของปลายทางอื่น",
+    "source_hash": "c8ac0862d7b2"
+  },
+  "wizard.connection.reason.additional_setup": {
+    "text": "ผู้ให้บริการนี้ต้องตั้งค่าเพิ่มเติม ให้ทำให้เสร็จใน Pi",
+    "source_hash": "b02eeda9e214"
+  },
+  "wizard.connection.reason.fallback": {
+    "text": "ไม่สามารถตรวจสอบการเชื่อมต่อได้",
+    "source_hash": "a329289ba9b5"
+  },
+  "wizard.connection.saved": {
+    "text": "ข้อมูลรับรองที่บันทึกไว้",
+    "source_hash": "cd3c6826c368"
+  },
+  "wizard.connection.deferred": {
+    "text": "การยืนยันตัวตนถูกเลื่อนไปที่ Pi /login",
+    "source_hash": "48ed1207e344"
+  },
+  "wizard.connection.http_status": {
+    "text": "{message} (HTTP {status})",
+    "source_hash": "28b2090559db"
+  },
+  "wizard.models.unavailable": {
+    "text": "ไม่สามารถตรวจสอบโมเดลของ Pi ได้ กำหนดค่าโมเดลเองหรือใช้ Pi /login หลังการตั้งค่า",
+    "source_hash": "b446b49932ad"
+  },
+  "wizard.models.helper_unavailable": {
+    "text": "ตัวช่วยการตั้งค่าไม่พร้อมใช้งาน กรอกรายละเอียดเอง แล้วการตั้งค่าจะดำเนินต่อได้",
+    "source_hash": "c105bfa9119a"
+  },
+  "wizard.models.not_in_catalog": {
+    "text": "โมเดลที่บันทึกไว้ไม่อยู่ในแคตตาล็อกในเครื่องของ Pi จึงเก็บ ID เดิมไว้",
+    "source_hash": "3a377429f23a"
+  },
+  "wizard.models.no_catalog": {
+    "text": "โมเดลที่บันทึกไว้ไม่มีแคตตาล็อกในเครื่องให้ใช้ จึงยังไม่ได้ตรวจสอบ ID",
+    "source_hash": "41e3d45585a9"
+  },
+  "wizard.models.not_ready": {
+    "text": "ไม่มีข้อมูลรับรองที่ตั้งค่าไว้สำหรับผู้ให้บริการของโมเดลที่บันทึกไว้ ใช้ Pi /login หลังการตั้งค่า",
+    "source_hash": "27dc6e44bc1e"
+  },
+  "wizard.models.unverified": {
+    "text": "ไม่สามารถตรวจสอบข้อมูลรับรองของผู้ให้บริการที่บันทึกไว้ในเครื่องได้ ใช้ Pi /login หลังการตั้งค่า",
+    "source_hash": "eb785e842362"
+  },
+  "wizard.providers.invalid_catalog": {
+    "text": "แคตตาล็อกผู้ให้บริการ Pi ที่มาพร้อมแอปไม่ถูกต้อง",
+    "source_hash": "bbcc3cc163f5"
+  },
+  "wizard.providers.hint.azure": {
+    "text": "ตั้งค่า AZURE_OPENAI_BASE_URL หรือ AZURE_OPENAI_RESOURCE_NAME ก่อน",
+    "source_hash": "2decf0bd1d6b"
+  },
+  "wizard.providers.hint.cloudflare_gateway": {
+    "text": "Cloudflare ยังต้องใช้ ID บัญชีและ ID เกตเวย์ด้วย",
+    "source_hash": "c6bb32d55e90"
+  },
+  "wizard.providers.hint.cloudflare_workers": {
+    "text": "Cloudflare ยังต้องใช้ ID บัญชีด้วย",
+    "source_hash": "487cf2bed2ad"
+  },
+  "wizard.providers.hint.bedrock": {
+    "text": "หรือจะใช้โปรไฟล์ AWS และ IAM เพื่อให้ข้อมูลรับรองจากสภาพแวดล้อมก็ได้",
+    "source_hash": "d4ddd86cd093"
+  },
+  "wizard.providers.hint.vertex": {
+    "text": "การเข้าถึงด้วย ADC หรือบัญชีบริการต้องระบุโปรเจกต์และ location ด้วย",
+    "source_hash": "a382011b4183"
+  },
+  "wizard.providers.guidance.azure": {
+    "text": "ตั้งค่า AZURE_OPENAI_BASE_URL หรือ AZURE_OPENAI_RESOURCE_NAME แล้วใช้ /login azure ใน Pi การดำเนินการต่อจะคงการตั้งค่า Pi ปัจจุบันไว้",
+    "source_hash": "5834561a0d12"
+  },
+  "wizard.providers.guidance.cloudflare_gateway": {
+    "text": "ต้องใช้โทเค็น ID บัญชี และ ID เกตเวย์ ใช้ /login cloudflare-ai-gateway ใน Pi การดำเนินการต่อจะคงการตั้งค่า Pi ปัจจุบันไว้",
+    "source_hash": "2c4fdf840f5a"
+  },
+  "wizard.providers.guidance.cloudflare_workers": {
+    "text": "ต้องใช้โทเค็นและ ID บัญชี ใช้ /login cloudflare-workers-ai ใน Pi การดำเนินการต่อจะคงการตั้งค่า Pi ปัจจุบันไว้",
+    "source_hash": "95b2361c0b9a"
+  },
+  "wizard.providers.guidance.bedrock": {
+    "text": "กรอกโทเค็น bearer ของ Bedrock ไม่ใช่ ID คีย์การเข้าถึง AWS สำหรับโปรไฟล์ AWS หรือ IAM ให้ใช้ /login amazon-bedrock ใน Pi",
+    "source_hash": "869163e8c80d"
+  },
+  "wizard.providers.guidance.vertex": {
+    "text": "กรอกคีย์ API ของ Google Cloud สำหรับ ADC หรือไฟล์บัญชีบริการ ให้ใช้ /login google-vertex ใน Pi",
+    "source_hash": "786382a710f6"
+  },
+  "wizard.providers.guidance.generic": {
+    "text": "หลังการตั้งค่า ใช้ /login {id} ใน Pi การดำเนินการต่อจะคงการตั้งค่า Pi ปัจจุบันไว้",
+    "source_hash": "558591c917f8"
+  },
+  "wizard.providers.guidance.oauth": {
+    "text": "ที่นี่ให้ใช้คีย์ API สำหรับการลงชื่อเข้าใช้ผ่านเบราว์เซอร์หรืออุปกรณ์ ใช้ /login {id} ใน Pi หลังการตั้งค่า",
+    "source_hash": "c50e0a9f050c"
+  },
+  "wizard.providers.login_deferred": {
+    "text": "เลื่อนการยืนยันตัวตนไว้ก่อน หลังการตั้งค่า ให้รัน /login {id} ใน Pi",
+    "source_hash": "de2f18975d71"
+  },
+  "wizard.providers.key_api": {
+    "text": "คีย์ API ของ {name}",
+    "source_hash": "a07eb1509dcd"
+  },
+  "wizard.providers.key_token": {
+    "text": "โทเค็นของ {name}",
+    "source_hash": "ba35265f1f56"
+  },
+  "wizard.providers.key_aws": {
+    "text": "ข้อมูลรับรองของ AWS หรือโทเค็น bearer",
+    "source_hash": "cdfc8a182045"
+  },
+  "wizard.providers.key_gcloud": {
+    "text": "ข้อมูลรับรองของ Google Cloud",
+    "source_hash": "1757285aa598"
+  },
+  "wizard.providers.key_bedrock": {
+    "text": "โทเค็น bearer ของ Bedrock",
+    "source_hash": "56b93e9ece96"
+  },
+  "wizard.provider.none_llm": {
+    "text": "ไม่มี (ไม่ใช้ LLM)",
+    "source_hash": "8756f88be90d"
+  },
+  "wizard.provider.custom": {
+    "text": "ผู้ให้บริการแบบกำหนดเอง",
+    "source_hash": "fee405014d78"
+  },
+  "wizard.provider.openai_compatible": {
+    "text": "เข้ากันได้กับ OpenAI (Chat Completions)",
+    "source_hash": "d53238670c07"
+  },
+  "wizard.search.keep": {
+    "text": "คงการตั้งค่าการค้นหาเดิมไว้",
+    "source_hash": "5e67d2e2b08e"
+  },
+  "wizard.search.use_chat": {
+    "text": "ใช้โมเดลแชท",
+    "source_hash": "a3132658890a"
+  },
+  "wizard.provider.auto_api": {
+    "text": "อัตโนมัติ (ตรวจจับเมื่อทดสอบ)",
+    "source_hash": "88afbf0096a7"
+  },
+  "wizard.provider.enter_id": {
+    "text": "กรอก ID ของผู้ให้บริการก่อน",
+    "source_hash": "0c037db27d29"
+  },
+  "wizard.provider.preview_only": {
+    "text": "เฉพาะการแสดงตัวอย่าง: ไม่มีการส่งคำขอและไม่มีการบันทึกอะไร",
+    "source_hash": "0ebb19deae89"
+  },
+  "wizard.provider.testing": {
+    "text": "กำลังทดสอบการเชื่อมต่อ… ส่งคำขอสั้นๆ หนึ่งครั้ง",
+    "source_hash": "1676396cacd0"
+  },
+  "wizard.provider.connected": {
+    "text": "เชื่อมต่อแล้ว: ปลายทางตอบกลับที่ {label}",
+    "source_hash": "7ad0b1549289"
+  },
+  "wizard.provider.models_reported": {
+    "text": "เซิร์ฟเวอร์นี้รายงานโมเดล {count} รายการ",
+    "source_hash": "f31fe95a9707"
+  },
+  "wizard.provider.list_incomplete": {
+    "text": "รายการไม่สมบูรณ์ กรอก ID ที่ขาดเองแล้วทดสอบ",
+    "source_hash": "2d588d0ed045"
+  },
+  "wizard.provider.no_chat_model": {
+    "text": "เซิร์ฟเวอร์ตอบกลับ แต่ไม่ได้รายงานโมเดลแชท",
+    "source_hash": "facf8d7bd587"
+  },
+  "wizard.provider.credential_label": {
+    "text": "ข้อมูลรับรอง: {label}",
+    "source_hash": "8b458229f825"
+  },
+  "wizard.provider.credential_unusable": {
+    "text": "ใช้ข้อมูลรับรองไม่ได้: {label}",
+    "source_hash": "d431bbfadbd4"
+  },
+  "wizard.provider.model_list_unavailable": {
+    "text": "ไม่มีรายการโมเดลหรือรายการว่าง กรอก ID ของโมเดลให้ตรงทุกตัวอักษร ซึ่งจะยังไม่ได้รับการตรวจสอบ",
+    "source_hash": "00dff5896fd5"
+  },
+  "wizard.provider.choose_or_enter": {
+    "text": "เลือกโมเดลจากปลายทางนี้ หรือกรอก ID ที่ถูกต้อง",
+    "source_hash": "cfad129610d3"
+  },
+  "wizard.provider.fetch_or_test": {
+    "text": "ดึงรายการโมเดลจากเซิร์ฟเวอร์ หรือทดสอบ ID ที่ขาดจากรายการที่ไม่สมบูรณ์",
+    "source_hash": "c320f93cb08b"
+  },
+  "wizard.provider.choose_reported": {
+    "text": "{label}: เลือกโมเดลที่รายงานมา หรือทดสอบ ID ที่ขาดจากรายการที่ไม่สมบูรณ์",
+    "source_hash": "a77913382c56"
+  },
+  "wizard.provider.pi_test_first": {
+    "text": "Pi: ทดสอบการเชื่อมต่อแบบกำหนดเองนี้ก่อน บันทึกได้เฉพาะคำขอที่ได้รับการยอมรับ",
+    "source_hash": "161d742c4903"
+  },
+  "wizard.search.src_chat": {
+    "text": "ใช้ข้อมูลรับรองของผู้ให้บริการแชท",
+    "source_hash": "f775d3990dd0"
+  },
+  "wizard.memory.src_saved": {
+    "text": "คงคีย์หน่วยความจำที่บันทึกไว้",
+    "source_hash": "e5a0bc3ecc75"
+  },
+  "wizard.search.src_saved": {
+    "text": "ใช้ข้อมูลรับรอง Pi ที่บันทึกไว้",
+    "source_hash": "68823fc1dc94"
+  },
+  "wizard.memory.src_later": {
+    "text": "กำหนดค่าภายหลัง (คงของเดิมไว้)",
+    "source_hash": "b9e8bb9af513"
+  },
+  "wizard.search.keep_unreadable": {
+    "text": "คงการตั้งค่าการค้นหาเดิมไว้ (อ่านไม่ได้)",
+    "source_hash": "03bfcd418f97"
+  },
+  "wizard.search.keep_chat": {
+    "text": "คงค่าปัจจุบัน: ใช้โมเดลแชท",
+    "source_hash": "c454fc0778ba"
+  },
+  "wizard.common.keep_current_model": {
+    "text": "คงค่าปัจจุบัน: {provider}/{model}",
+    "source_hash": "417283f9b64d"
+  },
+  "wizard.search.use_chat_unset": {
+    "text": "ใช้โมเดลแชท (ยังไม่ได้กำหนดค่า)",
+    "source_hash": "e8b6ce6cb122"
+  },
+  "wizard.search.use_chat_model": {
+    "text": "ใช้โมเดลแชท: {provider}/{model}",
+    "source_hash": "8d09d2b9f3dd"
+  },
+  "wizard.common.keep_or_later": {
+    "text": "คงของเดิม / ตั้งค่าภายหลัง",
+    "source_hash": "4cec99ff32b6"
+  },
+  "wizard.provider.custom_endpoint": {
+    "text": "ปลายทางแบบกำหนดเอง",
+    "source_hash": "5fb0795eaf2e"
+  },
+  "wizard.common.keep_current_provider": {
+    "text": "คงค่าปัจจุบัน: {provider}",
+    "source_hash": "e0547b6f785f"
+  },
+  "wizard.common.set_up_later": {
+    "text": "ตั้งค่าภายหลัง",
+    "source_hash": "eb5e104944c1"
+  },
+  "wizard.common.currently_configured": {
+    "text": "(กำหนดค่าอยู่ในปัจจุบัน)",
+    "source_hash": "fd8c4c2150d6"
+  },
+  "wizard.memory.enter_url": {
+    "text": "หน่วยความจำ: กรอก URL ของปลายทางก่อนดึงรายการโมเดล",
+    "source_hash": "4491f26c74d0"
+  },
+  "wizard.search.configure_chat_first": {
+    "text": "การค้นหาเว็บ: กำหนดค่าโมเดลแชทก่อน",
+    "source_hash": "f2d6fcb7ce5a"
+  },
+  "wizard.search.not_native": {
+    "text": "ผู้ให้บริการแชทนี้ไม่มีการค้นหาเว็บแบบ native เลือกผู้ให้บริการค้นหาเฉพาะ",
+    "source_hash": "2ae0277a4bbb"
+  },
+  "wizard.search.enter_key_or_later": {
+    "text": "การค้นหาเว็บ: กรอกคีย์หรือเลือก «ลงชื่อเข้าใช้ใน Pi ภายหลัง»",
+    "source_hash": "ec8998bc8e73"
+  },
+  "wizard.search.credential_invalid": {
+    "text": "การค้นหาเว็บ: ข้อมูลรับรอง Pi ที่มีอยู่ไม่ถูกต้อง",
+    "source_hash": "2bdcb880250c"
+  },
+  "wizard.search.oauth_exists": {
+    "text": "การค้นหาเว็บ: มีข้อมูลรับรอง OAuth อยู่แล้ว จัดการผ่าน Pi /login",
+    "source_hash": "789004e75d1e"
+  },
+  "wizard.search.azure_env_invalid": {
+    "text": "การค้นหาเว็บ: ข้อมูลรับรอง Azure ที่มีอยู่มีตัวแปรสภาพแวดล้อมไม่ถูกต้อง",
+    "source_hash": "907c142da323"
+  },
+  "wizard.search.credential_on_model_page": {
+    "text": "การค้นหาเว็บ: ข้อมูลรับรองของผู้ให้บริการนี้ตั้งค่าไว้ที่หน้าผู้ให้บริการโมเดล ใช้ข้อมูลรับรองของโมเดลแชทที่นี่ หรือเลือกผู้ให้บริการค้นหาอื่น",
+    "source_hash": "9cb065a8fae4"
+  },
+  "wizard.provider.pi_signed_in": {
+    "text": "Pi: ผู้ให้บริการนี้ลงชื่อเข้าใช้ผ่าน Pi /login คงข้อมูลรับรองที่บันทึกไว้ไว้ หรือลงชื่อเข้าใช้ใหม่ใน Pi แทนการแทนที่",
+    "source_hash": "eb4d65ce6ad3"
+  },
+  "wizard.provider.credential_dir_unavailable": {
+    "text": "ไม่พบไดเรกทอรีข้อมูลรับรองของ Pi",
+    "source_hash": "98f28d5f8b0b"
+  },
+  "wizard.provider.retest_before_apply": {
+    "text": "ทดสอบการเชื่อมต่อแบบกำหนดเองนี้อีกครั้งก่อนนำข้อมูลรับรองไปใช้",
+    "source_hash": "33f016024d39"
+  },
+  "wizard.search.manage_oauth": {
+    "text": "การค้นหาเว็บ: จัดการข้อมูลรับรอง OAuth ที่มีอยู่ผ่าน Pi /login",
+    "source_hash": "9b1cb7045e7d"
+  },
+  "wizard.memory.config_missing": {
+    "text": "ไม่พบการตั้งค่าหน่วยความจำ เปิด Mash ใหม่เพื่อกู้คืน",
+    "source_hash": "19b25e7d8997"
+  },
+  "wizard.provider.models_providers_invalid": {
+    "text": "models.json ของ Pi มีอ็อบเจกต์ providers ไม่ถูกต้อง",
+    "source_hash": "4e54bf06618d"
+  },
+  "wizard.provider.models_definition_invalid": {
+    "text": "models.json ของ Pi มีนิยามผู้ให้บริการไม่ถูกต้อง",
+    "source_hash": "0c2aec3a83b0"
+  },
+  "wizard.provider.models_list_invalid": {
+    "text": "models.json ของ Pi มีรายการโมเดลไม่ถูกต้อง",
+    "source_hash": "e653afbf6dc8"
+  },
+  "wizard.search.symlink": {
+    "text": "การค้นหาเว็บ: ปฏิเสธการตั้งค่าที่เป็น symbolic link",
+    "source_hash": "b8dd10482ddf"
+  },
+  "wizard.search.regular_file": {
+    "text": "การค้นหาเว็บ: ต้องเป็นไฟล์ตั้งค่าปกติ",
+    "source_hash": "b6b6243f6e7a"
+  },
+  "wizard.memory.credential_changed": {
+    "text": "หน่วยความจำ: ผู้ให้บริการหรือปลายทางของข้อมูลรับรองที่บันทึกไว้เปลี่ยนไป เลือกแหล่งที่มาใหม่",
+    "source_hash": "67915097bd25"
+  },
+  "wizard.memory.key_unavailable": {
+    "text": "หน่วยความจำ: คีย์ที่บันทึกไว้ใช้ไม่ได้ เลือกแหล่งที่มาใหม่",
+    "source_hash": "a755ba277cc4"
+  },
+  "wizard.provider.test_for_api": {
+    "text": "Pi: ทดสอบการเชื่อมต่อเพื่อให้ทราบประเภท API",
+    "source_hash": "c15bc6eb37b4"
+  },
+  "wizard.provider.env_invalid": {
+    "text": "Pi: สภาพแวดล้อมของผู้ให้บริการที่มีอยู่ไม่ถูกต้อง",
+    "source_hash": "11b3e98a566f"
+  },
+  "wizard.search.override_remove_failed": {
+    "text": "การค้นหาเว็บ: ไม่สามารถลบการแทนที่โมเดลเฉพาะได้",
+    "source_hash": "4179191bf160"
+  },
+  "wizard.provider.list_title": {
+    "text": "ผู้ให้บริการโมเดล",
+    "source_hash": "fbdc457db218"
+  },
+  "wizard.search.list_title": {
+    "text": "ผู้ให้บริการค้นหาเว็บ",
+    "source_hash": "3f76c4cc3f0f"
+  },
+  "wizard.memory.list_title": {
+    "text": "ผู้ให้บริการหน่วยความจำ",
+    "source_hash": "f7ac1d2de59f"
+  },
+  "wizard.provider.preview_model": {
+    "text": "โมเดลตัวอย่าง",
+    "source_hash": "b6eb6b14ddad"
+  },
+  "wizard.provider.preview_small_model": {
+    "text": "โมเดลขนาดเล็กสำหรับตัวอย่าง",
+    "source_hash": "e552021200b5"
+  },
+  "wizard.provider.connection_details": {
+    "text": "รายละเอียดการเชื่อมต่อ",
+    "source_hash": "51bfffbcdbcf"
+  },
+  "wizard.provider.no_extra": {
+    "text": "ไม่ต้องกำหนดค่าเพิ่มเติม",
+    "source_hash": "a8523c5346ec"
+  },
+  "wizard.provider.fetch_models": {
+    "text": "ดึงรายการโมเดล",
+    "source_hash": "812c98c992c6"
+  },
+  "wizard.provider.choose_model": {
+    "text": "เลือกโมเดล",
+    "source_hash": "f6e05dcfcfa8"
+  },
+  "wizard.provider.testing_short": {
+    "text": "กำลังทดสอบ...",
+    "source_hash": "6c02a28421f8"
+  },
+  "wizard.provider.test_connection": {
+    "text": "ทดสอบการเชื่อมต่อ",
+    "source_hash": "5bcf311b19d8"
+  },
+  "wizard.provider.not_tested": {
+    "text": "ยังไม่ได้ทดสอบ",
+    "source_hash": "51e3a01219f2"
+  },
+  "wizard.provider.lists_models": {
+    "text": "แสดงรายการโมเดลของปลายทาง ไม่มีการอนุมานหรือเขียนหน่วยความจำ",
+    "source_hash": "ade190bd0811"
+  },
+  "wizard.provider.browse_or_enter": {
+    "text": "เลือกดูคำแนะนำ หรือกรอก ID โมเดลที่ถูกต้องทุกตัวอักษร",
+    "source_hash": "ea1aef31b165"
+  },
+  "wizard.provider.sends_request": {
+    "text": "ส่งคำขอสั้นๆ อาจมีค่าใช้จ่ายจากผู้ให้บริการ",
+    "source_hash": "29e67ff448f6"
+  },
+  "wizard.shell.next": {
+    "text": "ถัดไป — {page}",
+    "source_hash": "827f82fa3edf"
+  },
+  "wizard.provider.catalog_truncated": {
+    "text": "แคตตาล็อกถูกตัดทอน กรอก ID ที่ขาดในขั้นตอนกรอกเอง",
+    "source_hash": "a74d0cf6f9ec"
+  },
+  "wizard.search.catalog_note": {
+    "text": "แคตตาล็อกการค้นหาแบบ native ยังไม่ได้ตรวจสอบความพร้อมใช้งาน",
+    "source_hash": "6dc5683dbdc3"
+  },
+  "wizard.memory.catalog_note": {
+    "text": "คำแนะนำโมเดล ยังไม่ได้ตรวจสอบความเข้ากันได้กับหน่วยความจำ",
+    "source_hash": "39137a61ed43"
+  },
+  "wizard.provider.fetching": {
+    "text": "กำลังดึงรายการโมเดลจากปลายทางที่เลือก...",
+    "source_hash": "0230b84d9b0c"
+  },
+  "wizard.provider.loading_local": {
+    "text": "กำลังโหลดแคตตาล็อกโมเดลในเครื่อง...",
+    "source_hash": "fb9cfdb82b65"
+  },
+  "wizard.provider.no_auth_check": {
+    "text": "ไม่มีการยืนยันตัวตนกับเซิร์ฟเวอร์หรือตรวจสอบสิทธิ์บัญชี",
+    "source_hash": "48043c00d31d"
+  },
+  "wizard.provider.credentials_changed": {
+    "text": "ข้อมูลรับรองของ Pi เปลี่ยนไปหรือบันทึกไม่สำเร็จ ตรวจสอบแหล่งที่เลือกและทดสอบการเชื่อมต่อแบบกำหนดเองอีกครั้ง",
+    "source_hash": "76a2cf9164f0"
+  },
+  "wizard.search.enter_model": {
+    "text": "การค้นหาเว็บ: กรอก ID โมเดลที่ถูกต้องทุกตัวอักษร",
+    "source_hash": "a5abb7475ed0"
+  },
+  "wizard.search.key_invalid": {
+    "text": "การค้นหาเว็บ: กรอกคีย์ API โดยไม่มีช่องว่างหรืออักขระควบคุม",
+    "source_hash": "904667c8779a"
+  },
+  "wizard.search.azure_url": {
+    "text": "การค้นหาเว็บ: กรอก URL พื้นฐานของ Azure แบบ HTTPS โดยไม่มีข้อมูลรับรอง",
+    "source_hash": "88c2de75ba77"
+  },
+  "wizard.search.azure_both": {
+    "text": "การค้นหาเว็บ: กรอกคีย์ API พร้อม URL พื้นฐานของ Azure หรือกำหนดค่าทั้งสองอย่างภายหลังใน Pi",
+    "source_hash": "d82f956e9ea6"
+  },
+  "wizard.provider.pi_url": {
+    "text": "Pi: กรอก URL พื้นฐานแบบ HTTPS หรือที่อยู่เซิร์ฟเวอร์ในเครื่อง",
+    "source_hash": "961be0bfd948"
+  },
+  "wizard.common.enter_model_id": {
+    "text": "{label}: กรอก ID โมเดลที่ถูกต้องทุกตัวอักษร",
+    "source_hash": "686e504338e0"
+  },
+  "wizard.common.https_no_credentials": {
+    "text": "{label}: กรอก URL พื้นฐานแบบ HTTPS โดยไม่มีข้อมูลรับรอง",
+    "source_hash": "5ab56666492c"
+  },
+  "wizard.common.key_invalid": {
+    "text": "{label}: กรอกคีย์ API โดยไม่มีช่องว่างหรืออักขระควบคุม",
+    "source_hash": "06cb71707873"
+  },
+  "wizard.provider.unique_id": {
+    "text": "Pi: ใช้ ID ผู้ให้บริการที่ไม่ซ้ำและเป็นตัวพิมพ์เล็ก (เช่น omniroute)",
+    "source_hash": "a5d12f69f254"
+  },
+  "wizard.memory.symlink": {
+    "text": "หน่วยความจำ: ปฏิเสธการตั้งค่าที่เป็น symbolic link",
+    "source_hash": "408cc1d5eca7"
+  },
+  "wizard.memory.config_unavailable": {
+    "text": "ไม่สามารถใช้การตั้งค่าหน่วยความจำได้",
+    "source_hash": "5facb5204c8b"
+  },
+  "wizard.memory.config_too_large": {
+    "text": "การตั้งค่าหน่วยความจำมีขนาดใหญ่เกินไป",
+    "source_hash": "0abce5fa7620"
+  },
+  "wizard.common.symlink_at": {
+    "text": "ปฏิเสธ symbolic link ที่ {path}",
+    "source_hash": "2d1d6d9229be"
+  },
+  "wizard.common.invalid_json": {
+    "text": "JSON ไม่ถูกต้องใน {path}: {error}",
+    "source_hash": "cb1c0852dda4"
+  },
+  "wizard.common.expected_object": {
+    "text": "ต้องเป็นอ็อบเจกต์ JSON ใน {path}",
+    "source_hash": "b40e836032c5"
+  },
+  "wizard.memory.symlink_config": {
+    "text": "ปฏิเสธ symbolic link ในการตั้งค่าหน่วยความจำ",
+    "source_hash": "7093970b6456"
+  },
+  "wizard.memory.config_error": {
+    "text": "การตั้งค่าหน่วยความจำ: {error}",
+    "source_hash": "0d2dd39a2d90"
+  },
+  "wizard.common.missing_dir": {
+    "text": "ไม่พบไดเรกทอรีการตั้งค่า",
+    "source_hash": "35701334e8bf"
+  },
+  "wizard.provider.partly_saved": {
+    "text": "{error} (มีข้อมูลรับรองบางส่วนบันทึกไว้ใน Pi แล้ว การตั้งค่าอาจถูกนำไปใช้บางส่วน)",
+    "source_hash": "69266b7404df"
+  },
+  "wizard.provider.partly_applied": {
+    "text": "{error} (การตั้งค่าอาจถูกนำไปใช้บางส่วน ตรวจสอบก่อนตั้งค่าใหม่อีกครั้ง)",
+    "source_hash": "93e84daad133"
+  },
+  "wizard.provider.list_hint": {
+    "text": "↑/↓ เลื่อนดู · Space เลือก · Tab รายละเอียด  {index}/{count}",
+    "source_hash": "6f4e925e84b1"
+  },
+  "wizard.form.provider_id": {
+    "text": "ID ผู้ให้บริการ:",
+    "source_hash": "e035a2e312e7"
+  },
+  "wizard.form.provider_id_hint": {
+    "text": "เช่น omniroute",
+    "source_hash": "474364acdb88"
+  },
+  "wizard.form.base_url": {
+    "text": "URL พื้นฐาน:",
+    "source_hash": "d34c1f38253c"
+  },
+  "wizard.form.base_url_hint": {
+    "text": "URL พื้นฐานของ API",
+    "source_hash": "a45474ea09c3"
+  },
+  "wizard.form.api_type": {
+    "text": "ประเภท API:",
+    "source_hash": "ef56d0b93d30"
+  },
+  "wizard.form.api_type_hint": {
+    "text": "กลุ่ม API",
+    "source_hash": "921463d37e58"
+  },
+  "wizard.form.model_id": {
+    "text": "ID โมเดล:",
+    "source_hash": "93139b7fb881"
+  },
+  "wizard.form.model_id_exact": {
+    "text": "ID โมเดลที่ถูกต้องทุกตัวอักษร",
+    "source_hash": "b0d6631bddc5"
+  },
+  "wizard.form.credential": {
+    "text": "ข้อมูลรับรอง:",
+    "source_hash": "c410f0de5633"
+  },
+  "wizard.form.use_login": {
+    "text": "ใช้ /login ใน Pi",
+    "source_hash": "9b741fe3564a"
+  },
+  "wizard.form.saved_or_new": {
+    "text": "ที่บันทึกไว้หรือใหม่",
+    "source_hash": "12374a1d011c"
+  },
+  "wizard.form.api_key": {
+    "text": "คีย์ API:",
+    "source_hash": "2f77effde67c"
+  },
+  "wizard.form.kept_private": {
+    "text": "เก็บเป็นส่วนตัว",
+    "source_hash": "187c44112cef"
+  },
+  "wizard.form.pick_or_enter": {
+    "text": "เลือกหรือกรอก ID",
+    "source_hash": "d04d70878e87"
+  },
+  "wizard.form.stored_in_pi": {
+    "text": "เก็บไว้ใน Pi",
+    "source_hash": "d25575aa94b0"
+  },
+  "wizard.form.azure_endpoint": {
+    "text": "ปลายทาง Azure",
+    "source_hash": "9083377a277e"
+  },
+  "wizard.form.memory_only": {
+    "text": "ใช้กับหน่วยความจำเท่านั้น",
+    "source_hash": "32e44d486399"
+  },
+  "wizard.provider.settings_unchanged": {
+    "text": "การตั้งค่าผู้ให้บริการปัจจุบันจะไม่เปลี่ยนแปลง",
+    "source_hash": "dfb133c06e72"
+  },
+  "wizard.search.keeps_unchanged": {
+    "text": "คงการตั้งค่าการค้นหาและข้อมูลรับรองเดิมไว้โดยไม่เปลี่ยนแปลง",
+    "source_hash": "58aa4df1275c"
+  },
+  "wizard.search.removes_override": {
+    "text": "ลบการแทนที่การค้นหาเฉพาะและใช้โมเดลการสนทนาของคุณแทน โมเดลนั้นต้องรองรับการค้นหาแบบ native ไม่มีการสำรองอัตโนมัติ",
+    "source_hash": "a8414fd4c8f2"
+  },
+  "wizard.search.shares_chat": {
+    "text": "แชร์ข้อมูลรับรอง Pi ของผู้ให้บริการนี้กับแชท ไม่มีการคัดลอกคีย์ไปยังผู้ให้บริการอื่น",
+    "source_hash": "a8c1b3542f7e"
+  },
+  "wizard.search.uses_saved": {
+    "text": "ใช้ข้อมูลรับรอง Pi ที่บันทึกไว้ของผู้ให้บริการนี้โดยไม่เปลี่ยนแปลง การเลือกโมเดลอื่นจะไม่แทนที่คีย์",
+    "source_hash": "df913b2221e3"
+  },
+  "wizard.search.new_key_note": {
+    "text": "คีย์ใหม่จะถูกบันทึกใน Pi เมื่อนำไปใช้ขั้นสุดท้าย แคตตาล็อกแสดงเฉพาะโมเดลที่มีการค้นหาแบบ native ไม่ใช่โมเดลแชททั้งหมด",
+    "source_hash": "6cb0b2fd20b7"
+  },
+  "wizard.search.later_note": {
+    "text": "กำหนดค่าโมเดลแล้วโดยไม่เปลี่ยนข้อมูลรับรอง หลังการตั้งค่า ให้รัน /login {id} ใน Pi",
+    "source_hash": "ef6b5edfbe81"
+  },
+  "wizard.search.azure_note": {
+    "text": "Azure ยังต้องกำหนดค่าปลายทางด้วย",
+    "source_hash": "3c0a05a844aa"
+  },
+  "wizard.memory.not_enabled": {
+    "text": "หน่วยความจำเป็นส่วนหนึ่งของ Programming Skills ซึ่งไม่ได้เลือกไว้ที่หน้า Tools: ไม่มีอะไรในหน้านี้จะถูกบันทึก",
+    "source_hash": "5f38d8d9f142"
+  },
+  "wizard.memory.keep": {
+    "text": "การตั้งค่าหน่วยความจำเดิมจะไม่เปลี่ยนแปลง",
+    "source_hash": "8747d4c2d994"
+  },
+  "wizard.memory.no_llm": {
+    "text": "หน่วยความจำจะไม่ใช้ LLM",
+    "source_hash": "85197fc97e6b"
+  },
+  "wizard.memory.keeps_saved": {
+    "text": "คงคีย์หน่วยความจำที่บันทึกไว้สำหรับผู้ให้บริการและปลายทางนี้ การแก้ไขเฉพาะโมเดลจะไม่กระทบคีย์",
+    "source_hash": "dec480d705ed"
+  },
+  "wizard.memory.deferred": {
+    "text": "การตั้งค่าหน่วยความจำถูกเลื่อนไว้ การตั้งค่าและข้อมูลรับรองเดิมจะไม่เปลี่ยนแปลง Pi /login ไม่ได้ยืนยันตัวตนให้หน่วยความจำ",
+    "source_hash": "56476111c257"
+  },
+  "wizard.memory.own_key": {
+    "text": "หน่วยความจำใช้คีย์ของตัวเอง ไม่ใช่การลงชื่อเข้าใช้ Pi คำแนะนำโมเดลไม่ได้รับประกันความเข้ากันได้กับหน่วยความจำ",
+    "source_hash": "5e9f06b7afef"
+  },
+  "wizard.setup.title": {
+    "text": "การตั้งค่า Mash",
+    "source_hash": "9a6b9e8768aa"
+  },
+  "wizard.setup.quit_title": {
+    "text": "ออกจากการตั้งค่า Mash หรือไม่?",
+    "source_hash": "fca13bacb3db"
+  },
+  "wizard.setup.not_finished": {
+    "text": "การตั้งค่ายังไม่เสร็จ Mash จึงยังไม่เปิด",
+    "source_hash": "7126b47d6f0c"
+  },
+  "wizard.setup.reopen": {
+    "text": "เปิด Mash อีกครั้งเพื่อเริ่มการตั้งค่าตั้งแต่ต้น",
+    "source_hash": "3c08c76f274a"
+  },
+  "wizard.setup.quit_action": {
+    "text": "ออกจากการตั้งค่า",
+    "source_hash": "fbbf0c02026a"
+  },
+  "wizard.setup.other_key": {
+    "text": "ปุ่มอื่นใด",
+    "source_hash": "53e6aac5af12"
+  },
+  "wizard.setup.keep_going": {
+    "text": "ดำเนินการต่อ",
+    "source_hash": "6e7ecf10083e"
+  },
+  "wizard.setup.could_not_finish": {
+    "text": "การตั้งค่าเสร็จไม่สมบูรณ์",
+    "source_hash": "923e2d2bfa67"
+  },
+  "wizard.setup.press_enter": {
+    "text": "กด Enter เพื่อดำเนินการต่อ",
+    "source_hash": "0a593337307e"
+  },
+  "wizard.setup.continue_open": {
+    "text": "ดำเนินการต่อ — เปิด Mash",
+    "source_hash": "08a87d4e2372"
+  },
+  "wizard.setup.details": {
+    "text": "รายละเอียด: {path}",
+    "source_hash": "a33894398867"
+  },
+  "wizard.setup.saved_reopen": {
+    "text": "ตัวเลือกบางอย่างอาจถูกบันทึกไว้แล้ว การตั้งค่าจะเปิดอีกครั้งในการเปิดครั้งถัดไป",
+    "source_hash": "0de801ae7cf2"
+  },
+  "wizard.setup.unknown_error": {
+    "text": "ข้อผิดพลาดที่ไม่รู้จักทำให้การตั้งค่าหยุดลง",
+    "source_hash": "eb9d67c96506"
+  },
+  "wizard.setup.model_check": {
+    "text": "ตรวจสอบโมเดล",
+    "source_hash": "2d2297acd2aa"
+  },
+  "wizard.setup.checking": {
+    "text": "กำลังตรวจสอบการตั้งค่าภายในที่บันทึกไว้...",
+    "source_hash": "c777a13b3e35"
+  },
+  "wizard.setup.notes": {
+    "text": "หมายเหตุการตั้งค่า (ไม่บล็อก)",
+    "source_hash": "ffc8480c82a9"
+  },
+  "wizard.setup.no_auth_checked": {
+    "text": "ยังไม่ได้ตรวจสอบการยืนยันตัวตนของเซิร์ฟเวอร์หรือสิทธิ์ของบัญชี",
+    "source_hash": "e148bf76d6d3"
+  },
+  "wizard.setup.skip_check": {
+    "text": "ข้ามการตรวจสอบ",
+    "source_hash": "48e595221f47"
+  },
+  "wizard.setup.continue": {
+    "text": "ดำเนินการต่อ",
+    "source_hash": "31fbef162594"
+  },
+  "wizard.setup.auth_skipped": {
+    "text": "ตั้งค่าโมเดลแล้ว ยังไม่ได้ลองยืนยันตัวตน",
+    "source_hash": "bb1cc09f22e5"
+  },
+  "wizard.setup.model_unavailable": {
+    "text": "การตรวจสอบโมเดลของ Pi ใช้ไม่ได้ การตั้งค่าของคุณยังคงอยู่ หลังตั้งค่าแล้วให้ใช้ /model และ /login ใน Pi",
+    "source_hash": "8ed5b781187b"
+  },
+  "wizard.setup.installing": {
+    "text": "การติดตั้ง Mash",
+    "source_hash": "fd2247be3921"
+  },
+  "wizard.setup.progress": {
+    "text": "ความคืบหน้า",
+    "source_hash": "4664827f8e89"
+  },
+  "wizard.setup.ready": {
+    "text": "พร้อมเปิด Mash",
+    "source_hash": "07a824807aab"
+  },
+  "wizard.setup.waiting_daemon": {
+    "text": "...กำลังรอให้บริการหน่วยความจำตอบสนองที่พอร์ตของมัน",
+    "source_hash": "65eeaf94876f"
+  },
+  "wizard.setup.result.installed": {
+    "text": "ติดตั้งแล้ว",
+    "source_hash": "a51a6c19a1ff"
+  },
+  "wizard.setup.result.model_installed": {
+    "text": "ติดตั้งโมเดลแล้ว",
+    "source_hash": "06627dd23cd9"
+  },
+  "wizard.setup.result.daemon_up": {
+    "text": "บริการทำงานอยู่ แคชโมเดลแล้ว",
+    "source_hash": "97145954e7ce"
+  },
+  "wizard.setup.result.already_installed": {
+    "text": "ติดตั้งไว้แล้ว",
+    "source_hash": "48544614ca22"
+  },
+  "wizard.setup.step.check_tools": {
+    "text": "ตรวจสอบเครื่องมือที่เลือก",
+    "source_hash": "3a7228d80436"
+  },
+  "wizard.setup.step.mash_tools": {
+    "text": "ติดตั้งเครื่องมือลงใน Mash",
+    "source_hash": "7914823478f2"
+  },
+  "wizard.setup.step.brew": {
+    "text": "ติดตั้งแพ็กเกจ Homebrew",
+    "source_hash": "873564eb35a2"
+  },
+  "wizard.setup.step.npm": {
+    "text": "ติดตั้งแพ็กเกจ npm",
+    "source_hash": "cd52241c4b6e"
+  },
+  "wizard.setup.step.pinned": {
+    "text": "ติดตั้งเครื่องมือเวอร์ชันคงที่ลงใน Mash",
+    "source_hash": "53c70a54d6da"
+  },
+  "wizard.setup.step.python": {
+    "text": "ติดตั้งแพ็กเกจ Python",
+    "source_hash": "d4c51d15c8bc"
+  },
+  "wizard.setup.step.cua": {
+    "text": "ติดตั้ง CUA Driver",
+    "source_hash": "7fe6a9fd27d1"
+  },
+  "wizard.setup.step.memory": {
+    "text": "ติดตั้งสภาพแวดล้อมหน่วยความจำ",
+    "source_hash": "816b368aa540"
+  },
+  "wizard.setup.step.memory_models": {
+    "text": "เริ่มหน่วยความจำและดาวน์โหลดโมเดล",
+    "source_hash": "9ef8dd5a39e3"
+  },
+  "wizard.setup.step.dictation": {
+    "text": "ติดตั้งโมเดลสำหรับการพิมพ์ด้วยเสียง",
+    "source_hash": "7abdc07c8460"
+  },
+  "wizard.identity.key_openpgp_only": {
+    "text": "Git ของคุณลงนามด้วย SSH หรือ X.509; Mash ลงนามด้วยคีย์ OpenPGP เท่านั้น",
+    "source_hash": "8021a5c51452"
+  },
+  "wizard.setup.report.host_tools": {
+    "text": "มีเครื่องมือของระบบอยู่แล้ว กำลังติดตั้งเครื่องมือเวอร์ชันคงที่ของ Mash",
+    "source_hash": "5e1366b18b91"
+  },
+  "wizard.setup.report.all_installed": {
+    "text": "ทุกอย่างที่เลือกไว้ติดตั้งแล้ว",
+    "source_hash": "34a4459dc684"
+  },
+  "wizard.setup.report.missing": {
+    "text": "ยังขาด: {tools}",
+    "source_hash": "1d0c96cc3733"
+  },
+  "wizard.setup.report.counts": {
+    "text": "ติดตั้งแล้ว {installed} รายการ, ระบบมีให้ {provided} รายการ",
+    "source_hash": "eed3d543f37f"
+  },
+  "wizard.setup.report.system_provided": {
+    "text": "{component}: ระบบมีให้ จึงไม่ได้ติดตั้งโดย Mash",
+    "source_hash": "17adcbb8f3e1"
+  },
+  "wizard.setup.report.apple_tools": {
+    "text": "{tool} มาพร้อมเครื่องมือนักพัฒนาของ Apple (รัน xcode-select --install)",
+    "source_hash": "a35d7759a429"
+  }
+}

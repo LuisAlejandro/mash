@@ -1,0 +1,98 @@
+{
+  "pi.header.restore": {
+    "text": "Відновити вбудований заголовок pi",
+    "source_hash": "afcd79f821af"
+  },
+  "pi.header.restored": {
+    "text": "Вбудований заголовок відновлено",
+    "source_hash": "c1e44d719693"
+  },
+  "pi.orchestration.answered": {
+    "text": "Координатор відповів: {reply}",
+    "source_hash": "fc659f7aea92"
+  },
+  "pi.orchestration.cancelled": {
+    "text": "Питання скасовано.",
+    "source_hash": "4c742263cfe3"
+  },
+  "pi.orchestration.failed": {
+    "text": "Питання координатору не вдалося.",
+    "source_hash": "1036eb4b3272"
+  },
+  "pi.orchestration.label": {
+    "text": "Запитати координатора",
+    "source_hash": "5369ae08b587"
+  },
+  "pi.orchestration.lookup-failed": {
+    "text": "Не вдалося знайти Dispatch.",
+    "source_hash": "e8a8ac97005c"
+  },
+  "pi.orchestration.no-dispatch": {
+    "text": "Немає відкритого Dispatch для цієї панелі. Запитайте людину через ask_user.",
+    "source_hash": "045255c705e5"
+  },
+  "pi.orchestration.pending": {
+    "text": "Питання {id} досі очікує. Викличте ask_coordinator знову, вказавши цей id у resume.",
+    "source_hash": "a70e26ec54e8"
+  },
+  "pi.orchestration.unavailable": {
+    "text": "mash-orchestration недоступний ({message}). Запитайте людину через ask_user.",
+    "source_hash": "ee1fa62200a8"
+  },
+  "pi.orchestration.waiting": {
+    "text": "Очікування координатора",
+    "source_hash": "41e36ff21f8a"
+  },
+  "pi.show-file.is-directory": {
+    "text": "{path} — це каталог, а не файл.",
+    "source_hash": "51405f5a7722"
+  },
+  "pi.show-file.label": {
+    "text": "Показати файл людині",
+    "source_hash": "1c16c0d820b1"
+  },
+  "pi.show-file.needs-path": {
+    "text": "show_file потрібен шлях.",
+    "source_hash": "2709bc3725aa"
+  },
+  "pi.show-file.no-reason": {
+    "text": "причину не вказано",
+    "source_hash": "bdb1872e7703"
+  },
+  "pi.show-file.no-such-file": {
+    "text": "Немає такого файлу: {path}",
+    "source_hash": "6b07882ca274"
+  },
+  "pi.show-file.not-shown-daemon": {
+    "text": "Не показано: демон Fresh недоступний для {name}.",
+    "source_hash": "eee33afb1233"
+  },
+  "pi.show-file.not-shown-fresh": {
+    "text": "Не показано: не вдалося відкрити {name} у Fresh ({detail}).",
+    "source_hash": "38000d407a37"
+  },
+  "pi.show-file.not-shown-herdr": {
+    "text": "Не показано: не вдалося відкрити {name} у Herdr ({detail}).",
+    "source_hash": "ef35d0eb229e"
+  },
+  "pi.show-file.not-shown-no-editor": {
+    "text": "Не показано: у цій вкладці немає редактора Fresh для {name}.",
+    "source_hash": "dd6f54bd1990"
+  },
+  "pi.show-file.not-shown-no-pane": {
+    "text": "Не показано: немає доступної панелі Herdr для {name}.",
+    "source_hash": "b810ed171fce"
+  },
+  "pi.show-file.not-shown-other": {
+    "text": "Не показано: немає внутрішнього переглядача для {name}.",
+    "source_hash": "c38cbe4e26f6"
+  },
+  "pi.show-file.shown-image": {
+    "text": "Показано: {name} відкрито у вертикальному поділі поруч із редактором, у справжній роздільності.",
+    "source_hash": "bbf2a8758fc7"
+  },
+  "pi.show-file.shown-text": {
+    "text": "Показано: {name} відкрито в редакторі Fresh поруч із цією панеллю.",
+    "source_hash": "ac958177710d"
+  }
+}

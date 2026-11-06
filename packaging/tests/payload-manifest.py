@@ -25,7 +25,7 @@ import sys
 # The parts of a payload that U2 extracts. Ghostty, the icon and the macOS
 # uninstall script stay in the platform adapter, so comparing only these keeps
 # the check about the extraction.
-PORTABLE_SUBTREES = ("bin", "defaults", "libexec", "plugins")
+PORTABLE_SUBTREES = ("bin", "defaults", "i18n", "libexec", "plugins")
 
 DEFAULT_MAX_HASH = 2 * 1024 * 1024
 

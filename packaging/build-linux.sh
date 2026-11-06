@@ -350,7 +350,14 @@ installed_kb="$(du -sk --exclude=DEBIAN "$stage" | awk '{print $1}')"
 # rust-analyzer is deliberately absent: noble ships no such package. It stays a
 # tool the user provides, and setup reports it missing rather than failing.
 host_utilities="git, zoxide, eza, fzf, fd-find, bat, ripgrep, jq, git-delta, gopls, shfmt"
-extra_depends="ca-certificates, rsync, xdg-utils, wl-clipboard, $host_utilities"
+# Mash's own text and the agent's replies arrive in 15 languages, four of which
+# need glyphs Ubuntu does not install by default: ja, ko and zh-CN (Noto CJK)
+# and th (Thai). Ghostty already asks fontconfig for a fallback per missing
+# glyph, so the only thing missing is a font to fall back to -- hence Depends
+# and no Ghostty font configuration. Both are in noble's main component, so
+# no universe source has to be enabled for the dependency to resolve.
+font_depends="fonts-noto-cjk, fonts-thai-tlwg"
+extra_depends="ca-certificates, rsync, xdg-utils, wl-clipboard, $font_depends, $host_utilities"
 sed -e "s#@EXTRA_DEPENDS@#$extra_depends#" \
   -e "s#@VERSION@#$version#" \
   -e "s#@ARCH@#$debarch#" \

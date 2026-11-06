@@ -1,5 +1,6 @@
 //! Shared visual frame for the first-launch wizard. Herdr is not running yet,
 //! so the sidebar is a page index drawn with the same palette, not Herdr UI.
+use crate::i18n;
 // ponytail: these are today's bundled Herdr colors, not live user overrides;
 // read config.toml only if wizard theming needs to follow custom themes.
 use ratatui::{
@@ -248,20 +249,30 @@ pub const SURFACE: Color = Color::Rgb(52, 53, 47); // surface0, for section head
 const BACKGROUND: Color = Color::Rgb(39, 40, 34); // Ghostty's Monokai Cursor
 const ACCENT: Color = Color::Rgb(204, 204, 204);
 const ACTIVE_ROW: Color = Color::Rgb(51, 51, 51);
-pub const PAGES: [&str; 7] = [
-    "Identity",
-    "Tools",
-    "Model provider",
-    "Web search",
-    "Memory",
-    "Appearance",
-    "Dictation",
-];
-
-pub const PAGE_COUNT: usize = PAGES.len();
+pub const PAGE_COUNT: usize = 7;
 
 pub fn page_title(title: &str, index: usize) -> String {
-    format!("{title} — page {}/{}", index + 1, PAGE_COUNT)
+    i18n::fill(
+        &i18n::t("wizard.shell.page_title"),
+        &[
+            ("title", &title),
+            ("current", &&(index + 1).to_string()),
+            ("total", &&PAGE_COUNT.to_string()),
+        ],
+    )
+}
+
+pub fn page_label(index: usize) -> String {
+    match index {
+        0 => i18n::t("wizard.identity.title"),
+        1 => i18n::t("wizard.tools.title"),
+        2 => i18n::t("wizard.page.model_provider"),
+        3 => i18n::t("wizard.page.web_search"),
+        4 => i18n::t("wizard.page.memory"),
+        5 => i18n::t("wizard.font.title"),
+        6 => i18n::t("wizard.voice.title"),
+        _ => String::new(),
+    }
 }
 
 pub fn selected() -> Style {
@@ -413,13 +424,14 @@ pub fn page_area(frame: &mut Frame, page: Option<usize>) -> Rect {
     if area.width < 90 || area.height < 16 {
         let rows = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]).split(area);
         let title = page.map_or_else(
-            || "Mash  ›  Installing".to_string(),
+            || format!("Mash  ›  {}", i18n::t("wizard.shell.installing")),
             |index| {
                 format!(
-                    "Mash  ›  Setup {}/{}  ›  {}",
+                    "Mash  ›  {} {}/{}  ›  {}",
+                    i18n::t("wizard.shell.setup"),
                     index + 1,
-                    PAGES.len(),
-                    PAGES[index]
+                    PAGE_COUNT,
+                    page_label(index)
                 )
             },
         );
@@ -449,7 +461,13 @@ pub fn page_area(frame: &mut Frame, page: Option<usize>) -> Rect {
             .into_iter()
             .map(Line::centered)
             .collect();
-        art.push(Line::styled("SETUP", Style::default().fg(MUTED)).centered());
+        art.push(
+            Line::styled(
+                i18n::t("wizard.shell.setup_label"),
+                Style::default().fg(MUTED),
+            )
+            .centered(),
+        );
         art
     } else {
         vec![
@@ -457,12 +475,16 @@ pub fn page_area(frame: &mut Frame, page: Option<usize>) -> Rect {
                 " MASH",
                 Style::default().fg(TEXT).add_modifier(Modifier::BOLD),
             ),
-            Line::styled(" SETUP", Style::default().fg(MUTED)),
+            Line::styled(
+                format!(" {}", i18n::t("wizard.shell.setup_label")),
+                Style::default().fg(MUTED),
+            ),
         ]
     };
     lines.push(Line::default());
     let first_page = inner.y + lines.len() as u16;
-    for (index, label) in PAGES.iter().enumerate() {
+    for index in 0..PAGE_COUNT {
+        let label = page_label(index);
         let active = page == Some(index);
         let completed = page.is_none_or(|current| index < current);
         let marker = if active {
@@ -494,9 +516,9 @@ pub fn page_area(frame: &mut Frame, page: Option<usize>) -> Rect {
     lines.push(Line::default());
     lines.push(Line::styled(
         if page.is_some() {
-            " Tab to move · Enter to select"
+            i18n::t("wizard.shell.navigation_hint")
         } else {
-            " Installing…"
+            format!(" {}", i18n::t("wizard.shell.installing"))
         },
         Style::default().fg(MUTED),
     ));
@@ -512,19 +534,26 @@ pub fn preview_hint(frame: &mut Frame) {
         // Same rows page_area stacks: header, blank, page list, blank.
         let header = if shows_logo(area) { LOGO_ROWS + 1 } else { 2 };
         let width = SIDEBAR_WIDTH - 2;
+        let row = Rect::new(
+            area.x + 1,
+            area.y + 1 + header + PAGE_COUNT as u16 + 2,
+            width,
+            1,
+        );
+        // The normal hint already sits in this row. Clear it first: a wide
+        // character drawn over half of an older wide one is lost otherwise,
+        // which garbled CJK hints.
+        frame.render_widget(ratatui::widgets::Clear, row);
         frame.render_widget(
-            Paragraph::new(format!(
-                "{:<width$}",
-                " ←/→ pages · Esc back",
-                width = width as usize
-            ))
+            Paragraph::new({
+                // Padded by display width, not characters: CJK text is two
+                // columns per character, and the row must cover the normal hint.
+                let hint = format!(" {}", i18n::t("wizard.shell.preview_hint"));
+                let pad = (width as usize).saturating_sub(Line::from(hint.as_str()).width());
+                format!("{hint}{}", " ".repeat(pad))
+            })
             .style(Style::default().fg(MUTED).bg(PANEL)),
-            Rect::new(
-                area.x + 1,
-                area.y + 1 + header + PAGE_COUNT as u16 + 2,
-                width,
-                1,
-            ),
+            row,
         );
     }
 }
@@ -734,7 +763,7 @@ pub mod tests {
     #[test]
     fn page_split_exposes_seven_named_pages() {
         assert_eq!(
-            PAGES,
+            (0..PAGE_COUNT).map(page_label).collect::<Vec<_>>(),
             [
                 "Identity",
                 "Tools",
@@ -813,6 +842,41 @@ pub mod tests {
             .collect::<String>();
         assert!(text.contains("←/→ pages · Esc back"));
         assert!(!text.contains("Tab to move"));
+    }
+
+    #[test]
+    fn preview_hint_is_whole_in_wide_scripts() {
+        for code in ["ja", "ko", "zh-CN", "th"] {
+            let _language = i18n::override_language(code);
+            let mut terminal = Terminal::new(TestBackend::new(120, 30)).unwrap();
+            terminal
+                .draw(|frame| {
+                    page_area(frame, Some(0));
+                    preview_hint(frame);
+                })
+                .unwrap();
+            let buffer = terminal.backend().buffer();
+            // A wide character fills two cells; the second holds no glyph of its
+            // own, so it is skipped when reading the row back.
+            let rows: Vec<String> = (0..buffer.area.height)
+                .map(|y| {
+                    let mut row = String::new();
+                    let mut x = 0;
+                    while x < buffer.area.width {
+                        let symbol = buffer[(x, y)].symbol();
+                        row.push_str(symbol);
+                        x += Line::from(symbol).width().max(1) as u16;
+                    }
+                    row
+                })
+                .collect();
+            let hint = i18n::t("wizard.shell.preview_hint");
+            assert!(
+                rows.iter().any(|row| row.contains(&hint)),
+                "{code}: hint {hint:?} not whole in {:?}",
+                rows.iter().find(|row| row.contains("←"))
+            );
+        }
     }
 
     #[test]

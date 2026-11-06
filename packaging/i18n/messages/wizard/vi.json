@@ -1,0 +1,1538 @@
+{
+  "wizard.language.title": {
+    "text": "Chọn ngôn ngữ",
+    "source_hash": "8e2d0664dbbb"
+  },
+  "wizard.language.prompt": {
+    "text": "Ngôn ngữ thiết lập",
+    "source_hash": "6a37bc86eb31"
+  },
+  "wizard.language.continue": {
+    "text": "Tiếp tục",
+    "source_hash": "31fbef162594"
+  },
+  "wizard.welcome.start": {
+    "text": "Bắt đầu trình hướng dẫn thiết lập",
+    "source_hash": "0fe79b066746"
+  },
+  "wizard.identity.title": {
+    "text": "Thông tin cá nhân",
+    "source_hash": "999f23fcd7be"
+  },
+  "wizard.identity.name_label": {
+    "text": "Tên:",
+    "source_hash": "2683cad48a14"
+  },
+  "wizard.identity.name_help": {
+    "text": "Tên trong commit",
+    "source_hash": "496635d99500"
+  },
+  "wizard.identity.email_label": {
+    "text": "Email:",
+    "source_hash": "17507dcf8457"
+  },
+  "wizard.identity.email_help": {
+    "text": "Email trong commit",
+    "source_hash": "c5b5196053ec"
+  },
+  "wizard.identity.key_label": {
+    "text": "Khóa ký:",
+    "source_hash": "bbfbc9ee3f2d"
+  },
+  "wizard.identity.key_help": {
+    "text": "Để trống để tắt ký",
+    "source_hash": "89da89efcf12"
+  },
+  "wizard.identity.next": {
+    "text": "Tiếp — chọn công cụ",
+    "source_hash": "a3dc8180c38c"
+  },
+  "wizard.tools.title": {
+    "text": "Công cụ",
+    "source_hash": "ea93d6a262ec"
+  },
+  "wizard.tools.intro": {
+    "text": "Chọn công cụ cần cài đặt. Mục mờ luôn có sẵn.",
+    "source_hash": "5428fc58e4db"
+  },
+  "wizard.tools.mash_only": {
+    "text": "Chỉ trong Mash: lưu ở ~/.mash; bên ngoài Mash không thể thấy.",
+    "source_hash": "c1401b334c12"
+  },
+  "wizard.tools.shared": {
+    "text": "Trên máy tính: cài đặt toàn hệ thống và dùng chung với ứng dụng khác.",
+    "source_hash": "ffd57efffb24"
+  },
+  "wizard.tools.no_homebrew": {
+    "text": "Không tìm thấy Homebrew: cài từ brew.sh trước khi chọn công cụ Homebrew.",
+    "source_hash": "59e2e7cd4988"
+  },
+  "wizard.tools.choices": {
+    "text": "Tùy chọn cài đặt",
+    "source_hash": "ab5a2f64781a"
+  },
+  "wizard.tools.skills": {
+    "text": "Kỹ năng",
+    "source_hash": "66d0f523a379"
+  },
+  "wizard.tools.skills_check": {
+    "text": "Cài Programming Skills (bao gồm bộ nhớ)",
+    "source_hash": "7accde9f1e3d"
+  },
+  "wizard.tools.skills_help": {
+    "text": "Quy trình Pi cho ý tưởng, lập kế hoạch, công việc, QA và phát hành, kèm bộ nhớ cục bộ.",
+    "source_hash": "bd9f35e51cb5"
+  },
+  "wizard.tools.back": {
+    "text": "Quay lại",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.tools.next": {
+    "text": "Tiếp — cấu hình nhà cung cấp",
+    "source_hash": "1168b9d2c2a3"
+  },
+  "wizard.tools.route.bundled": {
+    "text": "được đóng gói trong Mash",
+    "source_hash": "ef935c70d966"
+  },
+  "wizard.tools.route.apt": {
+    "text": "apt",
+    "source_hash": "5009a047a11f"
+  },
+  "wizard.tools.route.homebrew": {
+    "text": "Homebrew",
+    "source_hash": "bc49b968dbe4"
+  },
+  "wizard.tools.route.download": {
+    "text": "tải xuống đã ghim",
+    "source_hash": "33093fa51037"
+  },
+  "wizard.tools.route.npm": {
+    "text": "npm đã ghim",
+    "source_hash": "a903155cf3fd"
+  },
+  "wizard.tools.route.pip": {
+    "text": "pip đã ghim",
+    "source_hash": "34399ac2dcb4"
+  },
+  "wizard.tools.route.cua": {
+    "text": "trình cài CUA",
+    "source_hash": "34c982365b95"
+  },
+  "wizard.tools.route.xcode": {
+    "text": "công cụ Xcode",
+    "source_hash": "80c6d0b53bee"
+  },
+  "wizard.tools.scope.shared": {
+    "text": "máy tính của bạn",
+    "source_hash": "dced8f39fb9d"
+  },
+  "wizard.tools.scope.mash_only": {
+    "text": "Chỉ trong Mash",
+    "source_hash": "3011913d5cb4"
+  },
+  "wizard.font.title": {
+    "text": "Giao diện",
+    "source_hash": "3907fa7f8072"
+  },
+  "wizard.font.fonts_section": {
+    "text": "Phông chữ trên máy tính này",
+    "source_hash": "48ceedcfd9eb"
+  },
+  "wizard.font.filter": {
+    "text": "Lọc phông chữ",
+    "source_hash": "b86e7b247be1"
+  },
+  "wizard.font.filter_hint": {
+    "text": "↑/↓ phông chữ · Tab để chỉnh cỡ",
+    "source_hash": "356ea9afc4bf"
+  },
+  "wizard.font.family_section": {
+    "text": "Họ phông chữ (đã có Meslo)",
+    "source_hash": "7445920f6507"
+  },
+  "wizard.font.no_fonts": {
+    "text": "Không có phông phù hợp — nhấn Backspace để mở rộng tìm kiếm",
+    "source_hash": "8d7931285de0"
+  },
+  "wizard.font.keybindings_section": {
+    "text": "Phím tắt (cố định sau khi hoàn tất thiết lập)",
+    "source_hash": "92dc99e05387"
+  },
+  "wizard.font.keybindings_note": {
+    "text": "Phím tắt Cursor hoặc phím riêng của từng ứng dụng (Herdr dùng Ctrl+B).",
+    "source_hash": "8658dfe96d6a"
+  },
+  "wizard.font.theme_section": {
+    "text": "Chủ đề (Herdr, Mash Terminal, Fresh, Pi, reviewr)",
+    "source_hash": "396f9810c847"
+  },
+  "wizard.font.theme_switch": {
+    "text": "←/→ đổi",
+    "source_hash": "06a1545f5045"
+  },
+  "wizard.font.size_section": {
+    "text": "Cỡ chữ (điểm)",
+    "source_hash": "31b2eb5d3b2c"
+  },
+  "wizard.font.size_adjust": {
+    "text": "←/→ điều chỉnh (6–72)",
+    "source_hash": "976de7024dc8"
+  },
+  "wizard.font.preview_suffix": {
+    "text": "xem trước trong cửa sổ này",
+    "source_hash": "b086c32f40d5"
+  },
+  "wizard.font.back": {
+    "text": "Quay lại",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.font.next": {
+    "text": "Tiếp tục đến nhập liệu bằng giọng nói",
+    "source_hash": "ec7a0ff60525"
+  },
+  "wizard.theme.dark": {
+    "text": "Chủ đề tối",
+    "source_hash": "3f11a5cc643a"
+  },
+  "wizard.theme.light": {
+    "text": "Chủ đề sáng",
+    "source_hash": "3669a1b2770f"
+  },
+  "wizard.voice.title": {
+    "text": "Nhập liệu bằng giọng nói",
+    "source_hash": "25ce1a09ddc1"
+  },
+  "wizard.voice.languages_section": {
+    "text": "Ngôn ngữ bạn sẽ đọc",
+    "source_hash": "7287a2bc2529"
+  },
+  "wizard.voice.empty_notice": {
+    "text": "Chưa chọn ngôn ngữ: tính năng đọc sẽ chưa được thiết lập. Có thể thêm sau bằng /voice trong Pi.",
+    "source_hash": "b903d36755f6"
+  },
+  "wizard.voice.no_match": {
+    "text": "Không có mô hình hỗ trợ tổ hợp này. Hãy bỏ một ngôn ngữ.",
+    "source_hash": "b8b167ba3990"
+  },
+  "wizard.voice.best": {
+    "text": "Tốt nhất",
+    "source_hash": "c47d21c643c0"
+  },
+  "wizard.voice.fast": {
+    "text": "Nhanh",
+    "source_hash": "6c582b62e0e5"
+  },
+  "wizard.voice.best_summary": {
+    "text": "cân bằng tốc độ và độ chính xác được đề xuất",
+    "source_hash": "2fde20c2ddd6"
+  },
+  "wizard.voice.fast_summary": {
+    "text": "bản chép lời nhanh nhất vẫn dùng được",
+    "source_hash": "9f01f55f16dc"
+  },
+  "wizard.voice.same_model": {
+    "text": "Hai vai trò dùng cùng một mô hình ở đây.",
+    "source_hash": "6a800db5cff9"
+  },
+  "wizard.voice.detector_notice": {
+    "text": "thêm bộ nhận diện ngôn ngữ {size} để tự động nhận biết",
+    "source_hash": "3c9c1859e707"
+  },
+  "wizard.voice.model_section": {
+    "text": "Mô hình cần tải",
+    "source_hash": "e90982e6cea9"
+  },
+  "wizard.voice.continue_without": {
+    "text": "Tiếp tục không dùng giọng nói",
+    "source_hash": "25309b666263"
+  },
+  "wizard.voice.download_continue": {
+    "text": "Tải xuống và tiếp tục",
+    "source_hash": "0a12deea1f8d"
+  },
+  "wizard.voice.back": {
+    "text": "Quay lại",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.voice.more": {
+    "text": "Còn {count} — cuộn hoặc tiếp tục xuống dưới",
+    "source_hash": "00703aa3c372"
+  },
+  "wizard.voice.name.bg": {
+    "text": "Tiếng Bulgaria",
+    "source_hash": "ecd986094baf"
+  },
+  "wizard.voice.name.cs": {
+    "text": "Tiếng Séc",
+    "source_hash": "8b463ea23a7e"
+  },
+  "wizard.voice.name.de": {
+    "text": "Tiếng Đức",
+    "source_hash": "a659b60d246d"
+  },
+  "wizard.voice.name.en": {
+    "text": "Tiếng Anh",
+    "source_hash": "ba118bf7fc9c"
+  },
+  "wizard.voice.name.es": {
+    "text": "Tiếng Tây Ban Nha",
+    "source_hash": "3411059cb8e0"
+  },
+  "wizard.voice.name.fr": {
+    "text": "Tiếng Pháp",
+    "source_hash": "7458199fe97a"
+  },
+  "wizard.voice.name.it": {
+    "text": "Tiếng Ý",
+    "source_hash": "fe1d9c7db376"
+  },
+  "wizard.voice.name.ja": {
+    "text": "Tiếng Nhật",
+    "source_hash": "be4ee906d3ef"
+  },
+  "wizard.voice.name.ko": {
+    "text": "Tiếng Hàn",
+    "source_hash": "04656c6fe003"
+  },
+  "wizard.voice.name.pt": {
+    "text": "Tiếng Bồ Đào Nha",
+    "source_hash": "98b01b890687"
+  },
+  "wizard.voice.name.ru": {
+    "text": "Tiếng Nga",
+    "source_hash": "5bcc40adf6e0"
+  },
+  "wizard.voice.name.th": {
+    "text": "Tiếng Thái",
+    "source_hash": "ad705ee19c04"
+  },
+  "wizard.voice.name.uk": {
+    "text": "Tiếng Ukraina",
+    "source_hash": "6f424303fa12"
+  },
+  "wizard.voice.name.vi": {
+    "text": "Tiếng Việt",
+    "source_hash": "f25499e9df5c"
+  },
+  "wizard.voice.name.zh": {
+    "text": "Tiếng Trung Quan Thoại",
+    "source_hash": "b4d3ec443738"
+  },
+  "wizard.github.section": {
+    "text": "GitHub (tùy chọn)",
+    "source_hash": "d02de70d7691"
+  },
+  "wizard.github.signed_out": {
+    "text": "Chưa đăng nhập",
+    "source_hash": "491fc91cd76e"
+  },
+  "wizard.github.starting": {
+    "text": "Đang kết nối GitHub…",
+    "source_hash": "e7018ff9b61a"
+  },
+  "wizard.github.waiting": {
+    "text": "Đang chờ phê duyệt trong trình duyệt",
+    "source_hash": "0e591354e538"
+  },
+  "wizard.github.signed_in": {
+    "text": "✓ Đã đăng nhập",
+    "source_hash": "a6bc36f81df5"
+  },
+  "wizard.github.signed_in_as": {
+    "text": "✓ Đã đăng nhập với tên {user}",
+    "source_hash": "33cfe2e60aae"
+  },
+  "wizard.github.sign_in": {
+    "text": "Đăng nhập GitHub",
+    "source_hash": "47e9895d1d76"
+  },
+  "wizard.github.cancel": {
+    "text": "Hủy",
+    "source_hash": "19766ed6ccb2"
+  },
+  "wizard.github.sign_out": {
+    "text": "Đăng xuất",
+    "source_hash": "48f0d3d397d4"
+  },
+  "wizard.github.retry": {
+    "text": "Thử lại",
+    "source_hash": "d8b8392e2c54"
+  },
+  "wizard.github.copied": {
+    "text": "đã sao chép vào bảng nhớ tạm",
+    "source_hash": "9a6d3fb1a8f5"
+  },
+  "wizard.github.approve": {
+    "text": "Nhập mã tại {url} để phê duyệt Mash.",
+    "source_hash": "0811fcc61af8"
+  },
+  "wizard.github.usage": {
+    "text": "Được Git qua HTTPS, pull request và công cụ GitHub của các tác nhân sử dụng.",
+    "source_hash": "687743c41d86"
+  },
+  "wizard.font.keybindings.mash": {
+    "text": "Mash / kiểu Cursor",
+    "source_hash": "50c4eaf509a5"
+  },
+  "wizard.font.keybindings.native": {
+    "text": "Bản địa",
+    "source_hash": "d509e4938852"
+  },
+  "wizard.tools.description.agent-browser": {
+    "text": "Tự động hóa trình duyệt cho công việc với trang",
+    "source_hash": "17a3b5d9e891"
+  },
+  "wizard.tools.description.atuin": {
+    "text": "Lịch sử shell có thể tìm kiếm",
+    "source_hash": "f1667e433eff"
+  },
+  "wizard.tools.description.bash-language-server": {
+    "text": "Máy chủ ngôn ngữ Bash",
+    "source_hash": "8bb3d3483973"
+  },
+  "wizard.tools.description.bat": {
+    "text": "Xem trước tệp có tô sáng",
+    "source_hash": "65f67ed05fd4"
+  },
+  "wizard.tools.description.clangd": {
+    "text": "Máy chủ ngôn ngữ C và C++",
+    "source_hash": "eb55e1c1e2fc"
+  },
+  "wizard.tools.description.cua-driver": {
+    "text": "Điều khiển màn hình ứng dụng gốc",
+    "source_hash": "875a66659bbe"
+  },
+  "wizard.tools.description.delta": {
+    "text": "Diff Git và trình phân trang",
+    "source_hash": "0a5ab9622ca0"
+  },
+  "wizard.tools.description.eza": {
+    "text": "Danh sách tệp",
+    "source_hash": "90065d6d509a"
+  },
+  "wizard.tools.description.fd": {
+    "text": "Tìm tệp",
+    "source_hash": "401934824f5c"
+  },
+  "wizard.tools.description.fresh": {
+    "text": "Trình chỉnh sửa của Mash",
+    "source_hash": "07a3ce240a97"
+  },
+  "wizard.tools.description.fzf": {
+    "text": "Bộ chọn fuzzy tương tác",
+    "source_hash": "74befff772fe"
+  },
+  "wizard.tools.description.gh": {
+    "text": "GitHub CLI và trình trợ giúp thông tin xác thực",
+    "source_hash": "7f9081e6b668"
+  },
+  "wizard.tools.description.git": {
+    "text": "Quản lý phiên bản Git",
+    "source_hash": "04ecfc4b2a56"
+  },
+  "wizard.tools.description.gopls": {
+    "text": "Máy chủ ngôn ngữ Go",
+    "source_hash": "7c830acbe2df"
+  },
+  "wizard.tools.description.herdr": {
+    "text": "Không gian làm việc, tab và ngăn",
+    "source_hash": "ae8e873192bf"
+  },
+  "wizard.tools.description.jq": {
+    "text": "Tiện ích JSON",
+    "source_hash": "8f8b7b35919d"
+  },
+  "wizard.tools.description.latexindent": {
+    "text": "Định dạng LaTeX",
+    "source_hash": "2d27bc2aed62"
+  },
+  "wizard.tools.description.lazydocker": {
+    "text": "Docker trong terminal",
+    "source_hash": "a1ea900f50dc"
+  },
+  "wizard.tools.description.lazygit": {
+    "text": "Git trong terminal",
+    "source_hash": "56280a7e33fa"
+  },
+  "wizard.tools.description.marksman": {
+    "text": "Máy chủ ngôn ngữ Markdown",
+    "source_hash": "acd246ea56cd"
+  },
+  "wizard.tools.description.node": {
+    "text": "Runtime JavaScript và npm",
+    "source_hash": "257e5fc25d9c"
+  },
+  "wizard.tools.description.pet": {
+    "text": "Đoạn lệnh",
+    "source_hash": "2c7046aea68e"
+  },
+  "wizard.tools.description.pi": {
+    "text": "Tác nhân lập trình của Mash",
+    "source_hash": "1e3348dc35ec"
+  },
+  "wizard.tools.description.prettier": {
+    "text": "Định dạng JavaScript, JSON, Markdown, CSS và Svelte",
+    "source_hash": "0a196b7eee63"
+  },
+  "wizard.tools.description.python": {
+    "text": "Runtime Python và pip",
+    "source_hash": "d378a966a298"
+  },
+  "wizard.tools.description.python-lsp-server": {
+    "text": "Máy chủ ngôn ngữ Python",
+    "source_hash": "45689d922173"
+  },
+  "wizard.tools.description.rg": {
+    "text": "Tìm kiếm nội dung",
+    "source_hash": "364c20f57972"
+  },
+  "wizard.tools.description.rust-analyzer": {
+    "text": "Máy chủ ngôn ngữ Rust",
+    "source_hash": "59af4ee7c852"
+  },
+  "wizard.tools.description.sentrux": {
+    "text": "Phân tích cấu trúc kế hoạch, công việc và QA",
+    "source_hash": "cdadc36df319"
+  },
+  "wizard.tools.description.shfmt": {
+    "text": "Định dạng shell",
+    "source_hash": "ef675cf302a8"
+  },
+  "wizard.tools.description.sourcekit-lsp": {
+    "text": "Máy chủ ngôn ngữ Swift",
+    "source_hash": "bf29ee422d2f"
+  },
+  "wizard.tools.description.starship": {
+    "text": "Dấu nhắc shell",
+    "source_hash": "ef8740639be1"
+  },
+  "wizard.tools.description.svelte-language-server": {
+    "text": "Máy chủ ngôn ngữ Svelte",
+    "source_hash": "5f0011a9203a"
+  },
+  "wizard.tools.description.tailwindcss-language-server": {
+    "text": "Máy chủ ngôn ngữ Tailwind CSS",
+    "source_hash": "b33fd822317e"
+  },
+  "wizard.tools.description.texlab": {
+    "text": "Máy chủ ngôn ngữ LaTeX",
+    "source_hash": "3388b1a9bd89"
+  },
+  "wizard.tools.description.typescript-language-server": {
+    "text": "Máy chủ ngôn ngữ TypeScript và JavaScript",
+    "source_hash": "199f12a09d18"
+  },
+  "wizard.tools.description.viu": {
+    "text": "Hình ảnh trong terminal",
+    "source_hash": "6068123d4bf5"
+  },
+  "wizard.tools.description.vscode-css-language-server": {
+    "text": "Máy chủ CSS (gói CSS/HTML/JSON dùng chung)",
+    "source_hash": "3ae9cafca643"
+  },
+  "wizard.tools.description.vscode-html-language-server": {
+    "text": "Máy chủ HTML (gói CSS/HTML/JSON dùng chung)",
+    "source_hash": "4fdddbf99da0"
+  },
+  "wizard.tools.description.vscode-json-language-server": {
+    "text": "Máy chủ JSON (gói CSS/HTML/JSON dùng chung)",
+    "source_hash": "af757d93137e"
+  },
+  "wizard.tools.description.yaml-language-server": {
+    "text": "Máy chủ ngôn ngữ YAML",
+    "source_hash": "d56c118152ef"
+  },
+  "wizard.tools.description.zoxide": {
+    "text": "Sắp xếp thư mục thông minh",
+    "source_hash": "82deb27f3f2d"
+  },
+  "wizard.font.warning_no_list": {
+    "text": "Không thể liệt kê phông đã cài; Meslo đi kèm vẫn dùng được.",
+    "source_hash": "800ea442cefd"
+  },
+  "wizard.shell.setup": {
+    "text": "Thiết lập",
+    "source_hash": "7013af4c42fe"
+  },
+  "wizard.shell.installing": {
+    "text": "Đang cài đặt…",
+    "source_hash": "530bcc355f0a"
+  },
+  "wizard.shell.navigation_hint": {
+    "text": "Tab để di chuyển · Enter để chọn",
+    "source_hash": "fbe682a41063"
+  },
+  "wizard.shell.preview_hint": {
+    "text": "←/→ trang · Esc quay lại",
+    "source_hash": "9a1a64bc4c7d"
+  },
+  "wizard.shell.page_title": {
+    "text": "{title} — trang {current}/{total}",
+    "source_hash": "26ddd83b8742"
+  },
+  "wizard.page.model_provider": {
+    "text": "Nhà cung cấp mô hình",
+    "source_hash": "ea70384c465d"
+  },
+  "wizard.page.web_search": {
+    "text": "Tìm kiếm web",
+    "source_hash": "7711faa74a10"
+  },
+  "wizard.page.memory": {
+    "text": "Bộ nhớ",
+    "source_hash": "c3963aedaac6"
+  },
+  "wizard.shell.setup_label": {
+    "text": "THIẾT LẬP",
+    "source_hash": "7175b03373a2"
+  },
+  "wizard.github.config_inside": {
+    "text": "Cấu hình GitHub phải nằm trong Mash.",
+    "source_hash": "2b038878bb44"
+  },
+  "wizard.github.cli_unavailable": {
+    "text": "CLI GitHub không có sẵn trong bản dựng này.",
+    "source_hash": "929b978e3fa2"
+  },
+  "wizard.github.incomplete": {
+    "text": "Đăng nhập GitHub chưa hoàn tất.",
+    "source_hash": "d7fb51538ef3"
+  },
+  "wizard.github.start_failed": {
+    "text": "Không thể khởi động CLI GitHub: {error}",
+    "source_hash": "77cc54ecbb65"
+  },
+  "wizard.model.local_catalog": {
+    "text": "Danh mục cục bộ; thông tin xác thực chưa được máy chủ kiểm tra",
+    "source_hash": "b90b73d51076"
+  },
+  "wizard.model.filter": {
+    "text": "Lọc mô hình",
+    "source_hash": "9a35e606cd37"
+  },
+  "wizard.model.choose": {
+    "text": "Chọn mô hình (Enter hoặc nhấp chuột)",
+    "source_hash": "b67e2354ebe6"
+  },
+  "wizard.model.enter_manual": {
+    "text": "Nhập thủ công",
+    "source_hash": "ad876beba8ac"
+  },
+  "wizard.model.use_model": {
+    "text": "Dùng mô hình",
+    "source_hash": "cb1c1ca37393"
+  },
+  "wizard.connection.unavailable": {
+    "text": "Không thể kiểm tra kết nối. Hãy nhập thông tin thủ công; thiết lập vẫn có thể tiếp tục.",
+    "source_hash": "df66e4e70112"
+  },
+  "wizard.connection.mode.existing": {
+    "text": "Dùng lại thông tin xác thực đã lưu",
+    "source_hash": "a8f3c9ed4b75"
+  },
+  "wizard.common.new_api_key": {
+    "text": "Nhập khóa API mới",
+    "source_hash": "9b6cc5e19d07"
+  },
+  "wizard.connection.mode.none": {
+    "text": "Không có khóa (máy chủ cục bộ)",
+    "source_hash": "327d8a7f069e"
+  },
+  "wizard.common.sign_in_later": {
+    "text": "Đăng nhập sau trong Pi",
+    "source_hash": "9e6b7094c00b"
+  },
+  "wizard.connection.local_server": {
+    "text": "{name} (cục bộ)",
+    "source_hash": "60d0adb8ca44"
+  },
+  "wizard.connection.reason.unauthorized": {
+    "text": "Điểm cuối đã từ chối thông tin xác thực này.",
+    "source_hash": "5c67730adff0"
+  },
+  "wizard.connection.reason.not_found": {
+    "text": "Điểm cuối không có mô hình hoặc đường dẫn API này.",
+    "source_hash": "92e6a1ef02b9"
+  },
+  "wizard.connection.reason.timeout": {
+    "text": "Điểm cuối không phản hồi kịp thời.",
+    "source_hash": "824104c212df"
+  },
+  "wizard.connection.reason.unreachable": {
+    "text": "Không có máy chủ nào phản hồi tại địa chỉ đó.",
+    "source_hash": "91cf761f6798"
+  },
+  "wizard.connection.reason.blocked": {
+    "text": "Địa chỉ này không được phép; hãy dùng điểm cuối HTTPS hoặc địa chỉ máy chủ cục bộ.",
+    "source_hash": "91672c928382"
+  },
+  "wizard.connection.reason.redirected": {
+    "text": "Điểm cuối đã chuyển hướng sang nơi khác; hãy nhập địa chỉ cuối cùng.",
+    "source_hash": "6f5c4d2db072"
+  },
+  "wizard.connection.reason.not_json": {
+    "text": "Địa chỉ này trả về một trang, không phải API mô hình.",
+    "source_hash": "caa45c7a5c14"
+  },
+  "wizard.connection.reason.wrong_api": {
+    "text": "Địa chỉ này trả lời cho một loại API khác; hãy kiểm tra địa chỉ và API đã chọn.",
+    "source_hash": "4214079dbe1b"
+  },
+  "wizard.connection.reason.no_models": {
+    "text": "Máy chủ đang chạy nhưng chưa tải mô hình trò chuyện nào.",
+    "source_hash": "a1655be795a4"
+  },
+  "wizard.connection.reason.stale": {
+    "text": "Kết nối đã thay đổi trong lúc kiểm tra. Hãy thử lại.",
+    "source_hash": "270cbc62e785"
+  },
+  "wizard.connection.reason.consent": {
+    "text": "Kiểm tra sẽ gửi một yêu cầu ngắn. Xác nhận để tiếp tục.",
+    "source_hash": "8210811701c1"
+  },
+  "wizard.connection.reason.command_secret": {
+    "text": "Thông tin xác thực này chạy một lệnh; hãy quản lý trong Pi.",
+    "source_hash": "07c5bdb147b9"
+  },
+  "wizard.connection.reason.oauth_expired": {
+    "text": "Đăng nhập đã lưu đã hết hạn; hãy đăng nhập lại qua Pi.",
+    "source_hash": "d5ce40555415"
+  },
+  "wizard.connection.reason.endpoint_changed": {
+    "text": "Thông tin xác thực đã lưu thuộc về một điểm cuối khác.",
+    "source_hash": "c8ac0862d7b2"
+  },
+  "wizard.connection.reason.additional_setup": {
+    "text": "Nhà cung cấp này cần thiết lập thêm; hãy hoàn tất trong Pi.",
+    "source_hash": "b02eeda9e214"
+  },
+  "wizard.connection.reason.fallback": {
+    "text": "Không thể xác minh kết nối.",
+    "source_hash": "a329289ba9b5"
+  },
+  "wizard.connection.saved": {
+    "text": "Thông tin xác thực đã lưu",
+    "source_hash": "cd3c6826c368"
+  },
+  "wizard.connection.deferred": {
+    "text": "Xác thực được chuyển sang Pi /login",
+    "source_hash": "48ed1207e344"
+  },
+  "wizard.connection.http_status": {
+    "text": "{message} (HTTP {status})",
+    "source_hash": "28b2090559db"
+  },
+  "wizard.models.unavailable": {
+    "text": "Không thể kiểm tra mô hình của Pi. Hãy cấu hình mô hình thủ công hoặc dùng Pi /login sau khi thiết lập.",
+    "source_hash": "b446b49932ad"
+  },
+  "wizard.models.helper_unavailable": {
+    "text": "Trình trợ giúp thiết lập không khả dụng. Hãy nhập thông tin thủ công; thiết lập vẫn có thể tiếp tục.",
+    "source_hash": "c105bfa9119a"
+  },
+  "wizard.models.not_in_catalog": {
+    "text": "Mô hình đã lưu không có trong danh mục cục bộ của Pi. ID chính xác đã được giữ lại.",
+    "source_hash": "3a377429f23a"
+  },
+  "wizard.models.no_catalog": {
+    "text": "Mô hình đã lưu không có danh mục cục bộ khả dụng; ID chưa được xác minh.",
+    "source_hash": "41e3d45585a9"
+  },
+  "wizard.models.not_ready": {
+    "text": "Không có thông tin xác thực nào được cấu hình cho nhà cung cấp của mô hình đã lưu. Hãy dùng Pi /login sau khi thiết lập.",
+    "source_hash": "27dc6e44bc1e"
+  },
+  "wizard.models.unverified": {
+    "text": "Không thể kiểm tra cục bộ thông tin xác thực của nhà cung cấp đã lưu. Hãy dùng Pi /login sau khi thiết lập.",
+    "source_hash": "eb785e842362"
+  },
+  "wizard.providers.invalid_catalog": {
+    "text": "Danh mục nhà cung cấp Pi đi kèm không hợp lệ",
+    "source_hash": "bbcc3cc163f5"
+  },
+  "wizard.providers.hint.azure": {
+    "text": "Hãy cấu hình AZURE_OPENAI_BASE_URL hoặc AZURE_OPENAI_RESOURCE_NAME trước.",
+    "source_hash": "2decf0bd1d6b"
+  },
+  "wizard.providers.hint.cloudflare_gateway": {
+    "text": "Cloudflare cũng cần ID tài khoản và ID gateway.",
+    "source_hash": "c6bb32d55e90"
+  },
+  "wizard.providers.hint.cloudflare_workers": {
+    "text": "Cloudflare cũng cần ID tài khoản.",
+    "source_hash": "487cf2bed2ad"
+  },
+  "wizard.providers.hint.bedrock": {
+    "text": "Thay vào đó, hồ sơ AWS và IAM có thể cung cấp thông tin xác thực có sẵn trong môi trường.",
+    "source_hash": "d4ddd86cd093"
+  },
+  "wizard.providers.hint.vertex": {
+    "text": "Truy cập bằng ADC hoặc tài khoản dịch vụ cũng cần dự án và vị trí.",
+    "source_hash": "a382011b4183"
+  },
+  "wizard.providers.guidance.azure": {
+    "text": "Đặt AZURE_OPENAI_BASE_URL hoặc AZURE_OPENAI_RESOURCE_NAME, rồi dùng /login azure trong Pi. Tiếp tục sẽ giữ nguyên cấu hình Pi hiện tại.",
+    "source_hash": "5834561a0d12"
+  },
+  "wizard.providers.guidance.cloudflare_gateway": {
+    "text": "Cần token, ID tài khoản và ID gateway. Dùng /login cloudflare-ai-gateway trong Pi. Tiếp tục sẽ giữ nguyên cấu hình Pi hiện tại.",
+    "source_hash": "2c4fdf840f5a"
+  },
+  "wizard.providers.guidance.cloudflare_workers": {
+    "text": "Cần token và ID tài khoản. Dùng /login cloudflare-workers-ai trong Pi. Tiếp tục sẽ giữ nguyên cấu hình Pi hiện tại.",
+    "source_hash": "95b2361c0b9a"
+  },
+  "wizard.providers.guidance.bedrock": {
+    "text": "Nhập bearer token Bedrock, không phải ID khóa truy cập AWS. Với hồ sơ AWS hoặc IAM, dùng /login amazon-bedrock trong Pi.",
+    "source_hash": "869163e8c80d"
+  },
+  "wizard.providers.guidance.vertex": {
+    "text": "Nhập khóa API Google Cloud. Với ADC hoặc tệp tài khoản dịch vụ, dùng /login google-vertex trong Pi.",
+    "source_hash": "786382a710f6"
+  },
+  "wizard.providers.guidance.generic": {
+    "text": "Sau khi thiết lập, dùng /login {id} trong Pi. Tiếp tục sẽ giữ nguyên cấu hình Pi hiện tại.",
+    "source_hash": "558591c917f8"
+  },
+  "wizard.providers.guidance.oauth": {
+    "text": "Ở đây hãy dùng khóa API. Để đăng nhập qua trình duyệt hoặc thiết bị, dùng /login {id} trong Pi sau khi thiết lập.",
+    "source_hash": "c50e0a9f050c"
+  },
+  "wizard.providers.login_deferred": {
+    "text": "Đã hoãn xác thực. Sau khi thiết lập, chạy /login {id} trong Pi.",
+    "source_hash": "de2f18975d71"
+  },
+  "wizard.providers.key_api": {
+    "text": "Khóa API {name}",
+    "source_hash": "a07eb1509dcd"
+  },
+  "wizard.providers.key_token": {
+    "text": "Token {name}",
+    "source_hash": "ba35265f1f56"
+  },
+  "wizard.providers.key_aws": {
+    "text": "Thông tin xác thực AWS hoặc bearer token",
+    "source_hash": "cdfc8a182045"
+  },
+  "wizard.providers.key_gcloud": {
+    "text": "Thông tin xác thực Google Cloud",
+    "source_hash": "1757285aa598"
+  },
+  "wizard.providers.key_bedrock": {
+    "text": "Bedrock bearer token",
+    "source_hash": "56b93e9ece96"
+  },
+  "wizard.provider.none_llm": {
+    "text": "Không có (không dùng LLM)",
+    "source_hash": "8756f88be90d"
+  },
+  "wizard.provider.custom": {
+    "text": "Nhà cung cấp tùy chỉnh",
+    "source_hash": "fee405014d78"
+  },
+  "wizard.provider.openai_compatible": {
+    "text": "Tương thích OpenAI (Chat Completions)",
+    "source_hash": "d53238670c07"
+  },
+  "wizard.search.keep": {
+    "text": "Giữ nguyên cấu hình tìm kiếm hiện có",
+    "source_hash": "5e67d2e2b08e"
+  },
+  "wizard.search.use_chat": {
+    "text": "Dùng mô hình trò chuyện",
+    "source_hash": "a3132658890a"
+  },
+  "wizard.provider.auto_api": {
+    "text": "Tự động (phát hiện khi kiểm tra)",
+    "source_hash": "88afbf0096a7"
+  },
+  "wizard.provider.enter_id": {
+    "text": "Hãy nhập ID nhà cung cấp trước.",
+    "source_hash": "0c037db27d29"
+  },
+  "wizard.provider.preview_only": {
+    "text": "Chỉ xem trước: không gửi yêu cầu nào và không lưu gì.",
+    "source_hash": "0ebb19deae89"
+  },
+  "wizard.provider.testing": {
+    "text": "Đang kiểm tra kết nối… gửi một yêu cầu ngắn.",
+    "source_hash": "1676396cacd0"
+  },
+  "wizard.provider.connected": {
+    "text": "Đã kết nối: điểm cuối đã phản hồi tại {label}.",
+    "source_hash": "7ad0b1549289"
+  },
+  "wizard.provider.models_reported": {
+    "text": "Máy chủ này báo cáo {count} mô hình.",
+    "source_hash": "f31fe95a9707"
+  },
+  "wizard.provider.list_incomplete": {
+    "text": "Danh sách chưa đầy đủ; hãy nhập thủ công ID bị thiếu và kiểm tra.",
+    "source_hash": "2d588d0ed045"
+  },
+  "wizard.provider.no_chat_model": {
+    "text": "Máy chủ đã phản hồi nhưng không báo cáo mô hình trò chuyện nào.",
+    "source_hash": "facf8d7bd587"
+  },
+  "wizard.provider.credential_label": {
+    "text": "Thông tin xác thực: {label}",
+    "source_hash": "8b458229f825"
+  },
+  "wizard.provider.credential_unusable": {
+    "text": "Thông tin xác thực không dùng được: {label}",
+    "source_hash": "d431bbfadbd4"
+  },
+  "wizard.provider.model_list_unavailable": {
+    "text": "Danh sách mô hình không khả dụng hoặc trống. Hãy nhập đúng ID mô hình; ID sẽ chưa được xác minh.",
+    "source_hash": "00dff5896fd5"
+  },
+  "wizard.provider.choose_or_enter": {
+    "text": "Chọn mô hình từ điểm cuối này hoặc nhập đúng ID của nó.",
+    "source_hash": "cfad129610d3"
+  },
+  "wizard.provider.fetch_or_test": {
+    "text": "Lấy danh sách mô hình từ máy chủ, hoặc kiểm tra một ID bị thiếu trong danh sách chưa đầy đủ.",
+    "source_hash": "c320f93cb08b"
+  },
+  "wizard.provider.choose_reported": {
+    "text": "{label}: chọn một mô hình đã báo cáo, hoặc kiểm tra một ID bị thiếu trong danh sách chưa đầy đủ.",
+    "source_hash": "a77913382c56"
+  },
+  "wizard.provider.pi_test_first": {
+    "text": "Pi: hãy kiểm tra kết nối tùy chỉnh này trước; chỉ có thể lưu yêu cầu được chấp nhận.",
+    "source_hash": "161d742c4903"
+  },
+  "wizard.search.src_chat": {
+    "text": "Dùng thông tin xác thực của nhà cung cấp trò chuyện",
+    "source_hash": "f775d3990dd0"
+  },
+  "wizard.memory.src_saved": {
+    "text": "Giữ khóa bộ nhớ đã lưu",
+    "source_hash": "e5a0bc3ecc75"
+  },
+  "wizard.search.src_saved": {
+    "text": "Dùng thông tin xác thực Pi đã lưu",
+    "source_hash": "68823fc1dc94"
+  },
+  "wizard.memory.src_later": {
+    "text": "Cấu hình sau (giữ nguyên hiện có)",
+    "source_hash": "b9e8bb9af513"
+  },
+  "wizard.search.keep_unreadable": {
+    "text": "Giữ nguyên cấu hình tìm kiếm hiện có (không đọc được)",
+    "source_hash": "03bfcd418f97"
+  },
+  "wizard.search.keep_chat": {
+    "text": "Giữ hiện tại: dùng mô hình trò chuyện",
+    "source_hash": "c454fc0778ba"
+  },
+  "wizard.common.keep_current_model": {
+    "text": "Giữ hiện tại: {provider}/{model}",
+    "source_hash": "417283f9b64d"
+  },
+  "wizard.search.use_chat_unset": {
+    "text": "Dùng mô hình trò chuyện (chưa cấu hình)",
+    "source_hash": "e8b6ce6cb122"
+  },
+  "wizard.search.use_chat_model": {
+    "text": "Dùng mô hình trò chuyện: {provider}/{model}",
+    "source_hash": "8d09d2b9f3dd"
+  },
+  "wizard.common.keep_or_later": {
+    "text": "Giữ hiện có / thiết lập sau",
+    "source_hash": "4cec99ff32b6"
+  },
+  "wizard.provider.custom_endpoint": {
+    "text": "Điểm cuối tùy chỉnh",
+    "source_hash": "5fb0795eaf2e"
+  },
+  "wizard.common.keep_current_provider": {
+    "text": "Giữ hiện tại: {provider}",
+    "source_hash": "e0547b6f785f"
+  },
+  "wizard.common.set_up_later": {
+    "text": "Thiết lập sau",
+    "source_hash": "eb5e104944c1"
+  },
+  "wizard.common.currently_configured": {
+    "text": "(đang được cấu hình)",
+    "source_hash": "fd8c4c2150d6"
+  },
+  "wizard.memory.enter_url": {
+    "text": "Bộ nhớ: nhập URL điểm cuối trước khi lấy danh sách mô hình.",
+    "source_hash": "4491f26c74d0"
+  },
+  "wizard.search.configure_chat_first": {
+    "text": "Tìm kiếm web: hãy cấu hình mô hình trò chuyện trước",
+    "source_hash": "f2d6fcb7ce5a"
+  },
+  "wizard.search.not_native": {
+    "text": "Nhà cung cấp trò chuyện này không hỗ trợ tìm kiếm web gốc. Hãy chọn nhà cung cấp tìm kiếm riêng.",
+    "source_hash": "2ae0277a4bbb"
+  },
+  "wizard.search.enter_key_or_later": {
+    "text": "Tìm kiếm web: nhập khóa hoặc chọn «Đăng nhập sau trong Pi»",
+    "source_hash": "ec8998bc8e73"
+  },
+  "wizard.search.credential_invalid": {
+    "text": "Tìm kiếm web: thông tin xác thực Pi hiện có không hợp lệ",
+    "source_hash": "2bdcb880250c"
+  },
+  "wizard.search.oauth_exists": {
+    "text": "Tìm kiếm web: thông tin xác thực OAuth đã tồn tại; hãy quản lý qua Pi /login",
+    "source_hash": "789004e75d1e"
+  },
+  "wizard.search.azure_env_invalid": {
+    "text": "Tìm kiếm web: thông tin xác thực Azure hiện có có biến môi trường không hợp lệ",
+    "source_hash": "907c142da323"
+  },
+  "wizard.search.credential_on_model_page": {
+    "text": "Tìm kiếm web: thông tin xác thực của nhà cung cấp này được đặt ở trang Nhà cung cấp mô hình. Hãy dùng thông tin xác thực của mô hình trò chuyện ở đây, hoặc chọn nhà cung cấp tìm kiếm khác.",
+    "source_hash": "9cb065a8fae4"
+  },
+  "wizard.provider.pi_signed_in": {
+    "text": "Pi: nhà cung cấp này đã đăng nhập qua Pi /login. Giữ thông tin xác thực đã lưu, hoặc đăng nhập lại trong Pi thay vì thay thế.",
+    "source_hash": "eb4d65ce6ad3"
+  },
+  "wizard.provider.credential_dir_unavailable": {
+    "text": "Thư mục thông tin xác thực Pi không khả dụng",
+    "source_hash": "98f28d5f8b0b"
+  },
+  "wizard.provider.retest_before_apply": {
+    "text": "Hãy kiểm tra lại kết nối tùy chỉnh này trước khi áp dụng thông tin xác thực.",
+    "source_hash": "33f016024d39"
+  },
+  "wizard.search.manage_oauth": {
+    "text": "Tìm kiếm web: hãy quản lý thông tin xác thực OAuth hiện có qua Pi /login",
+    "source_hash": "9b1cb7045e7d"
+  },
+  "wizard.memory.config_missing": {
+    "text": "Thiếu cấu hình bộ nhớ; hãy mở lại Mash để khôi phục",
+    "source_hash": "19b25e7d8997"
+  },
+  "wizard.provider.models_providers_invalid": {
+    "text": "models.json của Pi có đối tượng providers không hợp lệ",
+    "source_hash": "4e54bf06618d"
+  },
+  "wizard.provider.models_definition_invalid": {
+    "text": "models.json của Pi có định nghĩa nhà cung cấp không hợp lệ",
+    "source_hash": "0c2aec3a83b0"
+  },
+  "wizard.provider.models_list_invalid": {
+    "text": "models.json của Pi có danh sách mô hình không hợp lệ",
+    "source_hash": "e653afbf6dc8"
+  },
+  "wizard.search.symlink": {
+    "text": "Tìm kiếm web: từ chối cấu hình dạng liên kết tượng trưng",
+    "source_hash": "b8dd10482ddf"
+  },
+  "wizard.search.regular_file": {
+    "text": "Tìm kiếm web: cần một tệp cấu hình thông thường",
+    "source_hash": "b6b6243f6e7a"
+  },
+  "wizard.memory.credential_changed": {
+    "text": "Bộ nhớ: nhà cung cấp hoặc điểm cuối của thông tin xác thực đã lưu đã thay đổi; hãy chọn lại nguồn",
+    "source_hash": "67915097bd25"
+  },
+  "wizard.memory.key_unavailable": {
+    "text": "Bộ nhớ: khóa đã lưu không khả dụng; hãy chọn lại nguồn",
+    "source_hash": "a755ba277cc4"
+  },
+  "wizard.provider.test_for_api": {
+    "text": "Pi: hãy kiểm tra kết nối để biết loại API",
+    "source_hash": "c15bc6eb37b4"
+  },
+  "wizard.provider.env_invalid": {
+    "text": "Pi: môi trường nhà cung cấp hiện có không hợp lệ",
+    "source_hash": "11b3e98a566f"
+  },
+  "wizard.search.override_remove_failed": {
+    "text": "Tìm kiếm web: không thể xóa ghi đè mô hình riêng",
+    "source_hash": "4179191bf160"
+  },
+  "wizard.provider.list_title": {
+    "text": "Nhà cung cấp mô hình",
+    "source_hash": "fbdc457db218"
+  },
+  "wizard.search.list_title": {
+    "text": "Nhà cung cấp tìm kiếm web",
+    "source_hash": "3f76c4cc3f0f"
+  },
+  "wizard.memory.list_title": {
+    "text": "Nhà cung cấp bộ nhớ",
+    "source_hash": "f7ac1d2de59f"
+  },
+  "wizard.provider.preview_model": {
+    "text": "Mô hình xem trước",
+    "source_hash": "b6eb6b14ddad"
+  },
+  "wizard.provider.preview_small_model": {
+    "text": "Mô hình nhỏ để xem trước",
+    "source_hash": "e552021200b5"
+  },
+  "wizard.provider.connection_details": {
+    "text": "Chi tiết kết nối",
+    "source_hash": "51bfffbcdbcf"
+  },
+  "wizard.provider.no_extra": {
+    "text": "Không cần cấu hình thêm.",
+    "source_hash": "a8523c5346ec"
+  },
+  "wizard.provider.fetch_models": {
+    "text": "Lấy danh sách mô hình",
+    "source_hash": "812c98c992c6"
+  },
+  "wizard.provider.choose_model": {
+    "text": "Chọn mô hình",
+    "source_hash": "f6e05dcfcfa8"
+  },
+  "wizard.provider.testing_short": {
+    "text": "Đang kiểm tra...",
+    "source_hash": "6c02a28421f8"
+  },
+  "wizard.provider.test_connection": {
+    "text": "Kiểm tra kết nối",
+    "source_hash": "5bcf311b19d8"
+  },
+  "wizard.provider.not_tested": {
+    "text": "Chưa kiểm tra",
+    "source_hash": "51e3a01219f2"
+  },
+  "wizard.provider.lists_models": {
+    "text": "Liệt kê mô hình của điểm cuối; không suy luận hoặc ghi bộ nhớ.",
+    "source_hash": "ade190bd0811"
+  },
+  "wizard.provider.browse_or_enter": {
+    "text": "Xem các gợi ý hoặc nhập ID mô hình chính xác.",
+    "source_hash": "ea1aef31b165"
+  },
+  "wizard.provider.sends_request": {
+    "text": "Gửi một yêu cầu ngắn; có thể phát sinh phí của nhà cung cấp.",
+    "source_hash": "29e67ff448f6"
+  },
+  "wizard.shell.next": {
+    "text": "Tiếp — {page}",
+    "source_hash": "827f82fa3edf"
+  },
+  "wizard.provider.catalog_truncated": {
+    "text": "Danh mục bị cắt bớt; hãy nhập ID bị thiếu ở bước thủ công",
+    "source_hash": "a74d0cf6f9ec"
+  },
+  "wizard.search.catalog_note": {
+    "text": "Danh mục tìm kiếm gốc; chưa xác minh tính khả dụng",
+    "source_hash": "6dc5683dbdc3"
+  },
+  "wizard.memory.catalog_note": {
+    "text": "Gợi ý mô hình; chưa xác minh tương thích với bộ nhớ",
+    "source_hash": "39137a61ed43"
+  },
+  "wizard.provider.fetching": {
+    "text": "Đang lấy mô hình từ điểm cuối đã chọn...",
+    "source_hash": "0230b84d9b0c"
+  },
+  "wizard.provider.loading_local": {
+    "text": "Đang tải danh mục mô hình cục bộ...",
+    "source_hash": "fb9cfdb82b65"
+  },
+  "wizard.provider.no_auth_check": {
+    "text": "Không thực hiện xác thực máy chủ hay kiểm tra quyền tài khoản.",
+    "source_hash": "48043c00d31d"
+  },
+  "wizard.provider.credentials_changed": {
+    "text": "Thông tin xác thực Pi đã thay đổi hoặc không thể lưu. Hãy xem lại nguồn đã chọn và kiểm tra lại các kết nối tùy chỉnh.",
+    "source_hash": "76a2cf9164f0"
+  },
+  "wizard.search.enter_model": {
+    "text": "Tìm kiếm web: nhập ID mô hình chính xác",
+    "source_hash": "a5abb7475ed0"
+  },
+  "wizard.search.key_invalid": {
+    "text": "Tìm kiếm web: nhập khóa API không có khoảng trắng hoặc ký tự điều khiển",
+    "source_hash": "904667c8779a"
+  },
+  "wizard.search.azure_url": {
+    "text": "Tìm kiếm web: nhập URL gốc Azure HTTPS không chứa thông tin xác thực",
+    "source_hash": "88c2de75ba77"
+  },
+  "wizard.search.azure_both": {
+    "text": "Tìm kiếm web: nhập khóa API cùng URL gốc Azure, hoặc cấu hình cả hai sau trong Pi",
+    "source_hash": "d82f956e9ea6"
+  },
+  "wizard.provider.pi_url": {
+    "text": "Pi: nhập URL gốc HTTPS hoặc địa chỉ máy chủ cục bộ",
+    "source_hash": "961be0bfd948"
+  },
+  "wizard.common.enter_model_id": {
+    "text": "{label}: nhập ID mô hình chính xác",
+    "source_hash": "686e504338e0"
+  },
+  "wizard.common.https_no_credentials": {
+    "text": "{label}: nhập URL gốc HTTPS không chứa thông tin xác thực",
+    "source_hash": "5ab56666492c"
+  },
+  "wizard.common.key_invalid": {
+    "text": "{label}: nhập khóa API không có khoảng trắng hoặc ký tự điều khiển",
+    "source_hash": "06cb71707873"
+  },
+  "wizard.provider.unique_id": {
+    "text": "Pi: dùng ID nhà cung cấp duy nhất, chữ thường (vd. omniroute)",
+    "source_hash": "a5d12f69f254"
+  },
+  "wizard.memory.symlink": {
+    "text": "Bộ nhớ: từ chối cấu hình dạng liên kết tượng trưng",
+    "source_hash": "408cc1d5eca7"
+  },
+  "wizard.memory.config_unavailable": {
+    "text": "Không khả dụng cấu hình bộ nhớ",
+    "source_hash": "5facb5204c8b"
+  },
+  "wizard.memory.config_too_large": {
+    "text": "Cấu hình bộ nhớ quá lớn",
+    "source_hash": "0abce5fa7620"
+  },
+  "wizard.common.symlink_at": {
+    "text": "từ chối liên kết tượng trưng tại {path}",
+    "source_hash": "2d1d6d9229be"
+  },
+  "wizard.common.invalid_json": {
+    "text": "JSON không hợp lệ trong {path}: {error}",
+    "source_hash": "cb1c0852dda4"
+  },
+  "wizard.common.expected_object": {
+    "text": "cần đối tượng JSON trong {path}",
+    "source_hash": "b40e836032c5"
+  },
+  "wizard.memory.symlink_config": {
+    "text": "từ chối liên kết tượng trưng trong cấu hình bộ nhớ",
+    "source_hash": "7093970b6456"
+  },
+  "wizard.memory.config_error": {
+    "text": "Cấu hình bộ nhớ: {error}",
+    "source_hash": "0d2dd39a2d90"
+  },
+  "wizard.common.missing_dir": {
+    "text": "thiếu thư mục cấu hình",
+    "source_hash": "35701334e8bf"
+  },
+  "wizard.provider.partly_saved": {
+    "text": "{error} (một số thông tin xác thực đã được lưu trong Pi; cài đặt có thể đã được áp dụng một phần)",
+    "source_hash": "69266b7404df"
+  },
+  "wizard.provider.partly_applied": {
+    "text": "{error} (cài đặt có thể đã được áp dụng một phần; hãy xem lại trước khi thiết lập lại)",
+    "source_hash": "93e84daad133"
+  },
+  "wizard.provider.list_hint": {
+    "text": "↑/↓ duyệt · Space chọn · Tab chi tiết  {index}/{count}",
+    "source_hash": "6f4e925e84b1"
+  },
+  "wizard.form.provider_id": {
+    "text": "ID nhà cung cấp:",
+    "source_hash": "e035a2e312e7"
+  },
+  "wizard.form.provider_id_hint": {
+    "text": "vd. omniroute",
+    "source_hash": "474364acdb88"
+  },
+  "wizard.form.base_url": {
+    "text": "URL gốc:",
+    "source_hash": "d34c1f38253c"
+  },
+  "wizard.form.base_url_hint": {
+    "text": "URL gốc API",
+    "source_hash": "a45474ea09c3"
+  },
+  "wizard.form.api_type": {
+    "text": "Loại API:",
+    "source_hash": "ef56d0b93d30"
+  },
+  "wizard.form.api_type_hint": {
+    "text": "Họ API",
+    "source_hash": "921463d37e58"
+  },
+  "wizard.form.model_id": {
+    "text": "ID mô hình:",
+    "source_hash": "93139b7fb881"
+  },
+  "wizard.form.model_id_exact": {
+    "text": "ID mô hình chính xác",
+    "source_hash": "b0d6631bddc5"
+  },
+  "wizard.form.credential": {
+    "text": "Thông tin xác thực:",
+    "source_hash": "c410f0de5633"
+  },
+  "wizard.form.use_login": {
+    "text": "Dùng /login trong Pi",
+    "source_hash": "9b741fe3564a"
+  },
+  "wizard.form.saved_or_new": {
+    "text": "Đã lưu hoặc mới",
+    "source_hash": "12374a1d011c"
+  },
+  "wizard.form.api_key": {
+    "text": "Khóa API:",
+    "source_hash": "2f77effde67c"
+  },
+  "wizard.form.kept_private": {
+    "text": "Giữ riêng tư",
+    "source_hash": "187c44112cef"
+  },
+  "wizard.form.pick_or_enter": {
+    "text": "Chọn hoặc nhập ID",
+    "source_hash": "d04d70878e87"
+  },
+  "wizard.form.stored_in_pi": {
+    "text": "Lưu trong Pi",
+    "source_hash": "d25575aa94b0"
+  },
+  "wizard.form.azure_endpoint": {
+    "text": "Điểm cuối Azure",
+    "source_hash": "9083377a277e"
+  },
+  "wizard.form.memory_only": {
+    "text": "Chỉ cho bộ nhớ",
+    "source_hash": "32e44d486399"
+  },
+  "wizard.provider.settings_unchanged": {
+    "text": "Cài đặt nhà cung cấp hiện tại được giữ nguyên.",
+    "source_hash": "dfb133c06e72"
+  },
+  "wizard.search.keeps_unchanged": {
+    "text": "Giữ nguyên cấu hình tìm kiếm và thông tin xác thực hiện có.",
+    "source_hash": "58aa4df1275c"
+  },
+  "wizard.search.removes_override": {
+    "text": "Gỡ ghi đè tìm kiếm riêng và dùng mô hình trò chuyện của bạn. Mô hình đó phải hỗ trợ tìm kiếm gốc; không có phương án dự phòng tự động.",
+    "source_hash": "a8414fd4c8f2"
+  },
+  "wizard.search.shares_chat": {
+    "text": "Chia sẻ thông tin xác thực Pi của nhà cung cấp này với trò chuyện; không sao chép khóa sang nhà cung cấp khác.",
+    "source_hash": "a8c1b3542f7e"
+  },
+  "wizard.search.uses_saved": {
+    "text": "Dùng thông tin xác thực Pi đã lưu của nhà cung cấp này không đổi. Chọn mô hình khác không thay thế khóa.",
+    "source_hash": "df913b2221e3"
+  },
+  "wizard.search.new_key_note": {
+    "text": "Khóa mới được lưu trong Pi khi áp dụng lần cuối. Danh mục chỉ liệt kê các mô hình có tìm kiếm gốc, không phải mọi mô hình trò chuyện.",
+    "source_hash": "6cb0b2fd20b7"
+  },
+  "wizard.search.later_note": {
+    "text": "Đã cấu hình mô hình mà không đổi thông tin xác thực. Sau khi thiết lập, chạy /login {id} trong Pi.",
+    "source_hash": "ef6b5edfbe81"
+  },
+  "wizard.search.azure_note": {
+    "text": "Azure cũng cần cấu hình điểm cuối.",
+    "source_hash": "3c0a05a844aa"
+  },
+  "wizard.memory.not_enabled": {
+    "text": "Bộ nhớ thuộc Programming Skills, mục này chưa được chọn trong Tools: không có gì trên trang này sẽ được lưu.",
+    "source_hash": "5f38d8d9f142"
+  },
+  "wizard.memory.keep": {
+    "text": "Cấu hình bộ nhớ hiện có được giữ nguyên.",
+    "source_hash": "8747d4c2d994"
+  },
+  "wizard.memory.no_llm": {
+    "text": "Bộ nhớ sẽ không dùng LLM.",
+    "source_hash": "85197fc97e6b"
+  },
+  "wizard.memory.keeps_saved": {
+    "text": "Giữ khóa bộ nhớ đã lưu cho nhà cung cấp và điểm cuối này. Chỉ đổi mô hình thì khóa vẫn được giữ.",
+    "source_hash": "dec480d705ed"
+  },
+  "wizard.memory.deferred": {
+    "text": "Cấu hình bộ nhớ đã được hoãn. Cài đặt và thông tin xác thực hiện có giữ nguyên; Pi /login không xác thực bộ nhớ.",
+    "source_hash": "56476111c257"
+  },
+  "wizard.memory.own_key": {
+    "text": "Bộ nhớ dùng khóa riêng, không bao giờ dùng đăng nhập Pi. Gợi ý mô hình không bảo đảm tương thích với bộ nhớ.",
+    "source_hash": "5e9f06b7afef"
+  },
+  "wizard.setup.title": {
+    "text": "Thiết lập Mash",
+    "source_hash": "9a6b9e8768aa"
+  },
+  "wizard.setup.quit_title": {
+    "text": "Thoát thiết lập Mash?",
+    "source_hash": "fca13bacb3db"
+  },
+  "wizard.setup.not_finished": {
+    "text": "Thiết lập chưa xong nên Mash chưa mở.",
+    "source_hash": "7126b47d6f0c"
+  },
+  "wizard.setup.reopen": {
+    "text": "Mở lại Mash để bắt đầu thiết lập từ đầu.",
+    "source_hash": "3c08c76f274a"
+  },
+  "wizard.setup.quit_action": {
+    "text": "thoát thiết lập",
+    "source_hash": "fbbf0c02026a"
+  },
+  "wizard.setup.other_key": {
+    "text": "phím bất kỳ",
+    "source_hash": "53e6aac5af12"
+  },
+  "wizard.setup.keep_going": {
+    "text": "tiếp tục",
+    "source_hash": "6e7ecf10083e"
+  },
+  "wizard.setup.could_not_finish": {
+    "text": "Không thể hoàn tất thiết lập",
+    "source_hash": "923e2d2bfa67"
+  },
+  "wizard.setup.press_enter": {
+    "text": "Nhấn Enter để tiếp tục",
+    "source_hash": "0a593337307e"
+  },
+  "wizard.setup.continue_open": {
+    "text": "Tiếp tục — mở Mash",
+    "source_hash": "08a87d4e2372"
+  },
+  "wizard.setup.details": {
+    "text": "Chi tiết: {path}",
+    "source_hash": "a33894398867"
+  },
+  "wizard.setup.saved_reopen": {
+    "text": "Một số lựa chọn có thể đã được lưu. Thiết lập sẽ mở lại ở lần khởi động sau.",
+    "source_hash": "0de801ae7cf2"
+  },
+  "wizard.setup.unknown_error": {
+    "text": "Một lỗi không xác định đã dừng thiết lập.",
+    "source_hash": "eb9d67c96506"
+  },
+  "wizard.setup.model_check": {
+    "text": "Kiểm tra mô hình",
+    "source_hash": "2d2297acd2aa"
+  },
+  "wizard.setup.checking": {
+    "text": "Đang kiểm tra cấu hình cục bộ đã lưu...",
+    "source_hash": "c777a13b3e35"
+  },
+  "wizard.setup.notes": {
+    "text": "Ghi chú cấu hình (không chặn)",
+    "source_hash": "ffc8480c82a9"
+  },
+  "wizard.setup.no_auth_checked": {
+    "text": "Chưa kiểm tra xác thực máy chủ hay quyền của tài khoản.",
+    "source_hash": "e148bf76d6d3"
+  },
+  "wizard.setup.skip_check": {
+    "text": "Bỏ qua kiểm tra",
+    "source_hash": "48e595221f47"
+  },
+  "wizard.setup.continue": {
+    "text": "Tiếp tục",
+    "source_hash": "31fbef162594"
+  },
+  "wizard.setup.auth_skipped": {
+    "text": "Đã cấu hình mô hình; chưa thử đăng nhập.",
+    "source_hash": "bb1cc09f22e5"
+  },
+  "wizard.setup.model_unavailable": {
+    "text": "Không dùng được tính năng kiểm tra mô hình của Pi. Cấu hình của bạn vẫn được giữ; sau khi thiết lập, hãy dùng /model và /login trong Pi.",
+    "source_hash": "8ed5b781187b"
+  },
+  "wizard.setup.installing": {
+    "text": "Cài đặt Mash",
+    "source_hash": "fd2247be3921"
+  },
+  "wizard.setup.progress": {
+    "text": "Tiến trình",
+    "source_hash": "4664827f8e89"
+  },
+  "wizard.setup.ready": {
+    "text": "Sẵn sàng mở Mash",
+    "source_hash": "07a824807aab"
+  },
+  "wizard.setup.waiting_daemon": {
+    "text": "...đang chờ dịch vụ bộ nhớ trả lời trên cổng của nó",
+    "source_hash": "65eeaf94876f"
+  },
+  "wizard.setup.result.installed": {
+    "text": "đã cài",
+    "source_hash": "a51a6c19a1ff"
+  },
+  "wizard.setup.result.model_installed": {
+    "text": "đã cài mô hình",
+    "source_hash": "06627dd23cd9"
+  },
+  "wizard.setup.result.daemon_up": {
+    "text": "dịch vụ đang chạy, mô hình đã vào bộ nhớ đệm",
+    "source_hash": "97145954e7ce"
+  },
+  "wizard.setup.result.already_installed": {
+    "text": "đã cài trước đó",
+    "source_hash": "48544614ca22"
+  },
+  "wizard.setup.step.check_tools": {
+    "text": "Kiểm tra các công cụ đã chọn",
+    "source_hash": "3a7228d80436"
+  },
+  "wizard.setup.step.mash_tools": {
+    "text": "Cài công cụ vào Mash",
+    "source_hash": "7914823478f2"
+  },
+  "wizard.setup.step.brew": {
+    "text": "Cài các gói Homebrew",
+    "source_hash": "873564eb35a2"
+  },
+  "wizard.setup.step.npm": {
+    "text": "Cài các gói npm",
+    "source_hash": "cd52241c4b6e"
+  },
+  "wizard.setup.step.pinned": {
+    "text": "Cài công cụ cố định vào Mash",
+    "source_hash": "53c70a54d6da"
+  },
+  "wizard.setup.step.python": {
+    "text": "Cài các gói Python",
+    "source_hash": "d4c51d15c8bc"
+  },
+  "wizard.setup.step.cua": {
+    "text": "Cài CUA Driver",
+    "source_hash": "7fe6a9fd27d1"
+  },
+  "wizard.setup.step.memory": {
+    "text": "Cài môi trường bộ nhớ",
+    "source_hash": "816b368aa540"
+  },
+  "wizard.setup.step.memory_models": {
+    "text": "Khởi động bộ nhớ và tải các mô hình của nó",
+    "source_hash": "9ef8dd5a39e3"
+  },
+  "wizard.setup.step.dictation": {
+    "text": "Cài mô hình đọc chính tả",
+    "source_hash": "7abdc07c8460"
+  },
+  "wizard.identity.key_openpgp_only": {
+    "text": "Git của bạn ký bằng SSH hoặc X.509; Mash chỉ ký bằng khóa OpenPGP",
+    "source_hash": "8021a5c51452"
+  },
+  "wizard.setup.report.host_tools": {
+    "text": "Đã có công cụ của hệ thống; đang cài công cụ cố định của Mash.",
+    "source_hash": "5e1366b18b91"
+  },
+  "wizard.setup.report.all_installed": {
+    "text": "Mọi thứ đã chọn đều đã được cài.",
+    "source_hash": "34a4459dc684"
+  },
+  "wizard.setup.report.missing": {
+    "text": "Còn thiếu: {tools}",
+    "source_hash": "1d0c96cc3733"
+  },
+  "wizard.setup.report.counts": {
+    "text": "đã cài {installed}, hệ thống cung cấp {provided}",
+    "source_hash": "eed3d543f37f"
+  },
+  "wizard.setup.report.system_provided": {
+    "text": "{component}: do hệ thống cung cấp, Mash không cài",
+    "source_hash": "17adcbb8f3e1"
+  },
+  "wizard.setup.report.apple_tools": {
+    "text": "{tool} đi kèm công cụ dành cho nhà phát triển của Apple (chạy xcode-select --install).",
+    "source_hash": "a35d7759a429"
+  }
+}

@@ -5,6 +5,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { registerHooks } from "node:module";
 
+delete process.env.MASH_LANGUAGE;
+
 registerHooks({
   resolve(specifier, context, nextResolve) {
     if (specifier === "typebox") {

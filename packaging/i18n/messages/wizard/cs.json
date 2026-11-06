@@ -1,0 +1,1538 @@
+{
+  "wizard.language.title": {
+    "text": "Zvolte jazyk",
+    "source_hash": "8e2d0664dbbb"
+  },
+  "wizard.language.prompt": {
+    "text": "Jazyk nastavení",
+    "source_hash": "6a37bc86eb31"
+  },
+  "wizard.language.continue": {
+    "text": "Pokračovat",
+    "source_hash": "31fbef162594"
+  },
+  "wizard.welcome.start": {
+    "text": "Spustit průvodce nastavením",
+    "source_hash": "0fe79b066746"
+  },
+  "wizard.identity.title": {
+    "text": "Identita",
+    "source_hash": "999f23fcd7be"
+  },
+  "wizard.identity.name_label": {
+    "text": "Jméno:",
+    "source_hash": "2683cad48a14"
+  },
+  "wizard.identity.name_help": {
+    "text": "Jméno v commitech",
+    "source_hash": "496635d99500"
+  },
+  "wizard.identity.email_label": {
+    "text": "E-mail:",
+    "source_hash": "17507dcf8457"
+  },
+  "wizard.identity.email_help": {
+    "text": "E-mail v commitech",
+    "source_hash": "c5b5196053ec"
+  },
+  "wizard.identity.key_label": {
+    "text": "Podpisový klíč:",
+    "source_hash": "bbfbc9ee3f2d"
+  },
+  "wizard.identity.key_help": {
+    "text": "Prázdné pole vypne podepisování",
+    "source_hash": "89da89efcf12"
+  },
+  "wizard.identity.next": {
+    "text": "Další — zvolit nástroje",
+    "source_hash": "a3dc8180c38c"
+  },
+  "wizard.tools.title": {
+    "text": "Nástroje",
+    "source_hash": "ea93d6a262ec"
+  },
+  "wizard.tools.intro": {
+    "text": "Zvolte nástroje k instalaci. Zašedlé jsou vždy dostupné.",
+    "source_hash": "5428fc58e4db"
+  },
+  "wizard.tools.mash_only": {
+    "text": "Pouze Mash: uloženo v ~/.mash; mimo Mash není viditelné.",
+    "source_hash": "c1401b334c12"
+  },
+  "wizard.tools.shared": {
+    "text": "V počítači: instalováno pro celý systém a sdíleno s ostatními aplikacemi.",
+    "source_hash": "ffd57efffb24"
+  },
+  "wizard.tools.no_homebrew": {
+    "text": "Homebrew nebyl nalezen: před výběrem jeho nástrojů jej nainstalujte z brew.sh.",
+    "source_hash": "59e2e7cd4988"
+  },
+  "wizard.tools.choices": {
+    "text": "Volby instalace",
+    "source_hash": "ab5a2f64781a"
+  },
+  "wizard.tools.skills": {
+    "text": "Dovednosti",
+    "source_hash": "66d0f523a379"
+  },
+  "wizard.tools.skills_check": {
+    "text": "Nainstalovat Programming Skills (včetně paměti)",
+    "source_hash": "7accde9f1e3d"
+  },
+  "wizard.tools.skills_help": {
+    "text": "Pracovní postupy Pi pro nápady, plánování, práci, QA a vydávání, s místní pamětí.",
+    "source_hash": "bd9f35e51cb5"
+  },
+  "wizard.tools.back": {
+    "text": "Zpět",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.tools.next": {
+    "text": "Další — nastavit poskytovatele",
+    "source_hash": "1168b9d2c2a3"
+  },
+  "wizard.tools.route.bundled": {
+    "text": "součást Mash",
+    "source_hash": "ef935c70d966"
+  },
+  "wizard.tools.route.apt": {
+    "text": "apt",
+    "source_hash": "5009a047a11f"
+  },
+  "wizard.tools.route.homebrew": {
+    "text": "Homebrew",
+    "source_hash": "bc49b968dbe4"
+  },
+  "wizard.tools.route.download": {
+    "text": "připnuté stažení",
+    "source_hash": "33093fa51037"
+  },
+  "wizard.tools.route.npm": {
+    "text": "připnutý npm",
+    "source_hash": "a903155cf3fd"
+  },
+  "wizard.tools.route.pip": {
+    "text": "připnutý pip",
+    "source_hash": "34399ac2dcb4"
+  },
+  "wizard.tools.route.cua": {
+    "text": "instalátor CUA",
+    "source_hash": "34c982365b95"
+  },
+  "wizard.tools.route.xcode": {
+    "text": "nástroje Xcode",
+    "source_hash": "80c6d0b53bee"
+  },
+  "wizard.tools.scope.shared": {
+    "text": "váš počítač",
+    "source_hash": "dced8f39fb9d"
+  },
+  "wizard.tools.scope.mash_only": {
+    "text": "pouze Mash",
+    "source_hash": "3011913d5cb4"
+  },
+  "wizard.font.title": {
+    "text": "Vzhled",
+    "source_hash": "3907fa7f8072"
+  },
+  "wizard.font.fonts_section": {
+    "text": "Písma v tomto počítači",
+    "source_hash": "48ceedcfd9eb"
+  },
+  "wizard.font.filter": {
+    "text": "Filtrovat písma",
+    "source_hash": "b86e7b247be1"
+  },
+  "wizard.font.filter_hint": {
+    "text": "↑/↓ písma · Tab pro velikost",
+    "source_hash": "356ea9afc4bf"
+  },
+  "wizard.font.family_section": {
+    "text": "Rodina písem (Meslo je součástí)",
+    "source_hash": "7445920f6507"
+  },
+  "wizard.font.no_fonts": {
+    "text": "Žádná odpovídající písma — Backspace rozšíří hledání",
+    "source_hash": "8d7931285de0"
+  },
+  "wizard.font.keybindings_section": {
+    "text": "Klávesové zkratky (po dokončení nastavení trvalé)",
+    "source_hash": "92dc99e05387"
+  },
+  "wizard.font.keybindings_note": {
+    "text": "Zkratky Cursoru, nebo vlastní klávesy aplikací (Herdr: Ctrl+B).",
+    "source_hash": "8658dfe96d6a"
+  },
+  "wizard.font.theme_section": {
+    "text": "Motiv (Herdr, Mash Terminal, Fresh, Pi, reviewr)",
+    "source_hash": "396f9810c847"
+  },
+  "wizard.font.theme_switch": {
+    "text": "←/→ přepnout",
+    "source_hash": "06a1545f5045"
+  },
+  "wizard.font.size_section": {
+    "text": "Velikost písma (body)",
+    "source_hash": "31b2eb5d3b2c"
+  },
+  "wizard.font.size_adjust": {
+    "text": "←/→ upravit (6–72)",
+    "source_hash": "976de7024dc8"
+  },
+  "wizard.font.preview_suffix": {
+    "text": "áhled v tomto okně",
+    "source_hash": "b086c32f40d5"
+  },
+  "wizard.font.back": {
+    "text": "Zpět",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.font.next": {
+    "text": "Pokračovat k diktování",
+    "source_hash": "ec7a0ff60525"
+  },
+  "wizard.theme.dark": {
+    "text": "Tmavý motiv",
+    "source_hash": "3f11a5cc643a"
+  },
+  "wizard.theme.light": {
+    "text": "Světlý motiv",
+    "source_hash": "3669a1b2770f"
+  },
+  "wizard.voice.title": {
+    "text": "Diktování",
+    "source_hash": "25ce1a09ddc1"
+  },
+  "wizard.voice.languages_section": {
+    "text": "Jazyky pro diktování",
+    "source_hash": "7287a2bc2529"
+  },
+  "wizard.voice.empty_notice": {
+    "text": "Není vybrán jazyk: diktování se nenastaví. Pi jej může později přidat přes /voice.",
+    "source_hash": "b903d36755f6"
+  },
+  "wizard.voice.no_match": {
+    "text": "Pro tuto kombinaci není žádný model. Odeberte jazyk.",
+    "source_hash": "b8b167ba3990"
+  },
+  "wizard.voice.best": {
+    "text": "Nejlepší",
+    "source_hash": "c47d21c643c0"
+  },
+  "wizard.voice.fast": {
+    "text": "Rychlý",
+    "source_hash": "6c582b62e0e5"
+  },
+  "wizard.voice.best_summary": {
+    "text": "navržená rovnováha rychlosti a přesnosti",
+    "source_hash": "2fde20c2ddd6"
+  },
+  "wizard.voice.fast_summary": {
+    "text": "nejrychlejší přepis, který zůstává použitelný",
+    "source_hash": "9f01f55f16dc"
+  },
+  "wizard.voice.same_model": {
+    "text": "Obě role zde používají stejný model.",
+    "source_hash": "6a800db5cff9"
+  },
+  "wizard.voice.detector_notice": {
+    "text": "přidá detektor jazyka o velikosti {size} pro automatické rozpoznání",
+    "source_hash": "3c9c1859e707"
+  },
+  "wizard.voice.model_section": {
+    "text": "Model ke stažení",
+    "source_hash": "e90982e6cea9"
+  },
+  "wizard.voice.continue_without": {
+    "text": "Pokračovat bez diktování",
+    "source_hash": "25309b666263"
+  },
+  "wizard.voice.download_continue": {
+    "text": "Stáhnout a pokračovat",
+    "source_hash": "0a12deea1f8d"
+  },
+  "wizard.voice.back": {
+    "text": "Zpět",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.voice.more": {
+    "text": "Další jazyky: {count} — posouvejte nebo pokračujte dolů",
+    "source_hash": "00703aa3c372"
+  },
+  "wizard.voice.name.bg": {
+    "text": "Bulharština",
+    "source_hash": "ecd986094baf"
+  },
+  "wizard.voice.name.cs": {
+    "text": "Čeština",
+    "source_hash": "8b463ea23a7e"
+  },
+  "wizard.voice.name.de": {
+    "text": "Němčina",
+    "source_hash": "a659b60d246d"
+  },
+  "wizard.voice.name.en": {
+    "text": "Angličtina",
+    "source_hash": "ba118bf7fc9c"
+  },
+  "wizard.voice.name.es": {
+    "text": "Španělština",
+    "source_hash": "3411059cb8e0"
+  },
+  "wizard.voice.name.fr": {
+    "text": "Francouzština",
+    "source_hash": "7458199fe97a"
+  },
+  "wizard.voice.name.it": {
+    "text": "Italština",
+    "source_hash": "fe1d9c7db376"
+  },
+  "wizard.voice.name.ja": {
+    "text": "Japonština",
+    "source_hash": "be4ee906d3ef"
+  },
+  "wizard.voice.name.ko": {
+    "text": "Korejština",
+    "source_hash": "04656c6fe003"
+  },
+  "wizard.voice.name.pt": {
+    "text": "Portugalština",
+    "source_hash": "98b01b890687"
+  },
+  "wizard.voice.name.ru": {
+    "text": "Ruština",
+    "source_hash": "5bcc40adf6e0"
+  },
+  "wizard.voice.name.th": {
+    "text": "Thajština",
+    "source_hash": "ad705ee19c04"
+  },
+  "wizard.voice.name.uk": {
+    "text": "Ukrajinština",
+    "source_hash": "6f424303fa12"
+  },
+  "wizard.voice.name.vi": {
+    "text": "Vietnamština",
+    "source_hash": "f25499e9df5c"
+  },
+  "wizard.voice.name.zh": {
+    "text": "Mandarínská čínština",
+    "source_hash": "b4d3ec443738"
+  },
+  "wizard.github.section": {
+    "text": "GitHub (volitelné)",
+    "source_hash": "d02de70d7691"
+  },
+  "wizard.github.signed_out": {
+    "text": "Nejste přihlášeni",
+    "source_hash": "491fc91cd76e"
+  },
+  "wizard.github.starting": {
+    "text": "Připojování ke GitHubu…",
+    "source_hash": "e7018ff9b61a"
+  },
+  "wizard.github.waiting": {
+    "text": "Čeká se na schválení v prohlížeči",
+    "source_hash": "0e591354e538"
+  },
+  "wizard.github.signed_in": {
+    "text": "✓ Přihlášeno",
+    "source_hash": "a6bc36f81df5"
+  },
+  "wizard.github.signed_in_as": {
+    "text": "✓ Přihlášeno jako {user}",
+    "source_hash": "33cfe2e60aae"
+  },
+  "wizard.github.sign_in": {
+    "text": "Přihlásit ke GitHubu",
+    "source_hash": "47e9895d1d76"
+  },
+  "wizard.github.cancel": {
+    "text": "Zrušit",
+    "source_hash": "19766ed6ccb2"
+  },
+  "wizard.github.sign_out": {
+    "text": "Odhlásit",
+    "source_hash": "48f0d3d397d4"
+  },
+  "wizard.github.retry": {
+    "text": "Zkusit znovu",
+    "source_hash": "d8b8392e2c54"
+  },
+  "wizard.github.copied": {
+    "text": "zkopírováno do schránky",
+    "source_hash": "9a6d3fb1a8f5"
+  },
+  "wizard.github.approve": {
+    "text": "Zadejte kód na {url} a potvrďte Mash.",
+    "source_hash": "0811fcc61af8"
+  },
+  "wizard.github.usage": {
+    "text": "Používají Git přes HTTPS, pull requesty a nástroje agentů pro GitHub.",
+    "source_hash": "687743c41d86"
+  },
+  "wizard.font.keybindings.mash": {
+    "text": "Mash / styl Cursoru",
+    "source_hash": "50c4eaf509a5"
+  },
+  "wizard.font.keybindings.native": {
+    "text": "Vlastní",
+    "source_hash": "d509e4938852"
+  },
+  "wizard.tools.description.agent-browser": {
+    "text": "Automatizace prohlížeče při práci se stránkami",
+    "source_hash": "17a3b5d9e891"
+  },
+  "wizard.tools.description.atuin": {
+    "text": "Prohledávatelná historie shellu",
+    "source_hash": "f1667e433eff"
+  },
+  "wizard.tools.description.bash-language-server": {
+    "text": "Jazykový server pro Bash",
+    "source_hash": "8bb3d3483973"
+  },
+  "wizard.tools.description.bat": {
+    "text": "Náhled souborů se zvýrazněním",
+    "source_hash": "65f67ed05fd4"
+  },
+  "wizard.tools.description.clangd": {
+    "text": "Jazykový server pro C a C++",
+    "source_hash": "eb55e1c1e2fc"
+  },
+  "wizard.tools.description.cua-driver": {
+    "text": "Nativní ovládání plochy aplikací",
+    "source_hash": "875a66659bbe"
+  },
+  "wizard.tools.description.delta": {
+    "text": "Git diff a stránkování",
+    "source_hash": "0a5ab9622ca0"
+  },
+  "wizard.tools.description.eza": {
+    "text": "Výpisy souborů",
+    "source_hash": "90065d6d509a"
+  },
+  "wizard.tools.description.fd": {
+    "text": "Vyhledávání souborů",
+    "source_hash": "401934824f5c"
+  },
+  "wizard.tools.description.fresh": {
+    "text": "Editor Mash",
+    "source_hash": "07a3ce240a97"
+  },
+  "wizard.tools.description.fzf": {
+    "text": "Interaktivní fuzzy výběr",
+    "source_hash": "74befff772fe"
+  },
+  "wizard.tools.description.gh": {
+    "text": "GitHub CLI a správce přihlašovacích údajů",
+    "source_hash": "7f9081e6b668"
+  },
+  "wizard.tools.description.git": {
+    "text": "Správa verzí pomocí Gitu",
+    "source_hash": "04ecfc4b2a56"
+  },
+  "wizard.tools.description.gopls": {
+    "text": "Jazykový server pro Go",
+    "source_hash": "7c830acbe2df"
+  },
+  "wizard.tools.description.herdr": {
+    "text": "Pracovní prostory, karty a panely",
+    "source_hash": "ae8e873192bf"
+  },
+  "wizard.tools.description.jq": {
+    "text": "Nástroj pro JSON",
+    "source_hash": "8f8b7b35919d"
+  },
+  "wizard.tools.description.latexindent": {
+    "text": "Formátování LaTeXu",
+    "source_hash": "2d27bc2aed62"
+  },
+  "wizard.tools.description.lazydocker": {
+    "text": "Docker v terminálu",
+    "source_hash": "a1ea900f50dc"
+  },
+  "wizard.tools.description.lazygit": {
+    "text": "Git v terminálu",
+    "source_hash": "56280a7e33fa"
+  },
+  "wizard.tools.description.marksman": {
+    "text": "Jazykový server pro Markdown",
+    "source_hash": "acd246ea56cd"
+  },
+  "wizard.tools.description.node": {
+    "text": "Běhové prostředí JavaScriptu a npm",
+    "source_hash": "257e5fc25d9c"
+  },
+  "wizard.tools.description.pet": {
+    "text": "Úryvky příkazů",
+    "source_hash": "2c7046aea68e"
+  },
+  "wizard.tools.description.pi": {
+    "text": "Programovací agent Mash",
+    "source_hash": "1e3348dc35ec"
+  },
+  "wizard.tools.description.prettier": {
+    "text": "Formátování JavaScriptu, JSON, Markdownu, CSS a Svelte",
+    "source_hash": "0a196b7eee63"
+  },
+  "wizard.tools.description.python": {
+    "text": "Běhové prostředí Pythonu a pip",
+    "source_hash": "d378a966a298"
+  },
+  "wizard.tools.description.python-lsp-server": {
+    "text": "Jazykový server pro Python",
+    "source_hash": "45689d922173"
+  },
+  "wizard.tools.description.rg": {
+    "text": "Vyhledávání obsahu",
+    "source_hash": "364c20f57972"
+  },
+  "wizard.tools.description.rust-analyzer": {
+    "text": "Jazykový server pro Rust",
+    "source_hash": "59af4ee7c852"
+  },
+  "wizard.tools.description.sentrux": {
+    "text": "Strukturální analýza plánů, práce a QA",
+    "source_hash": "cdadc36df319"
+  },
+  "wizard.tools.description.shfmt": {
+    "text": "Formátování shellu",
+    "source_hash": "ef675cf302a8"
+  },
+  "wizard.tools.description.sourcekit-lsp": {
+    "text": "Jazykový server pro Swift",
+    "source_hash": "bf29ee422d2f"
+  },
+  "wizard.tools.description.starship": {
+    "text": "Příkazový řádek shellu",
+    "source_hash": "ef8740639be1"
+  },
+  "wizard.tools.description.svelte-language-server": {
+    "text": "Jazykový server pro Svelte",
+    "source_hash": "5f0011a9203a"
+  },
+  "wizard.tools.description.tailwindcss-language-server": {
+    "text": "Jazykový server pro Tailwind CSS",
+    "source_hash": "b33fd822317e"
+  },
+  "wizard.tools.description.texlab": {
+    "text": "Jazykový server pro LaTeX",
+    "source_hash": "3388b1a9bd89"
+  },
+  "wizard.tools.description.typescript-language-server": {
+    "text": "Jazykový server pro TypeScript a JavaScript",
+    "source_hash": "199f12a09d18"
+  },
+  "wizard.tools.description.viu": {
+    "text": "Obrázky v terminálu",
+    "source_hash": "6068123d4bf5"
+  },
+  "wizard.tools.description.vscode-css-language-server": {
+    "text": "CSS server (sdílený balíček CSS/HTML/JSON)",
+    "source_hash": "3ae9cafca643"
+  },
+  "wizard.tools.description.vscode-html-language-server": {
+    "text": "HTML server (sdílený balíček CSS/HTML/JSON)",
+    "source_hash": "4fdddbf99da0"
+  },
+  "wizard.tools.description.vscode-json-language-server": {
+    "text": "JSON server (sdílený balíček CSS/HTML/JSON)",
+    "source_hash": "af757d93137e"
+  },
+  "wizard.tools.description.yaml-language-server": {
+    "text": "Jazykový server pro YAML",
+    "source_hash": "d56c118152ef"
+  },
+  "wizard.tools.description.zoxide": {
+    "text": "Chytřejší řazení adresářů",
+    "source_hash": "82deb27f3f2d"
+  },
+  "wizard.font.warning_no_list": {
+    "text": "Nainstalované fonty nelze vypsat; přibalený Meslo je stále dostupný.",
+    "source_hash": "800ea442cefd"
+  },
+  "wizard.shell.setup": {
+    "text": "Nastavení",
+    "source_hash": "7013af4c42fe"
+  },
+  "wizard.shell.installing": {
+    "text": "Instalace…",
+    "source_hash": "530bcc355f0a"
+  },
+  "wizard.shell.navigation_hint": {
+    "text": "Tab pro pohyb · Enter pro výběr",
+    "source_hash": "fbe682a41063"
+  },
+  "wizard.shell.preview_hint": {
+    "text": "←/→ stránky · Esc zpět",
+    "source_hash": "9a1a64bc4c7d"
+  },
+  "wizard.shell.page_title": {
+    "text": "{title} — stránka {current}/{total}",
+    "source_hash": "26ddd83b8742"
+  },
+  "wizard.page.model_provider": {
+    "text": "Poskytovatel modelu",
+    "source_hash": "ea70384c465d"
+  },
+  "wizard.page.web_search": {
+    "text": "Webové hledání",
+    "source_hash": "7711faa74a10"
+  },
+  "wizard.page.memory": {
+    "text": "Paměť",
+    "source_hash": "c3963aedaac6"
+  },
+  "wizard.shell.setup_label": {
+    "text": "NASTAVENÍ",
+    "source_hash": "7175b03373a2"
+  },
+  "wizard.github.config_inside": {
+    "text": "Konfigurace GitHubu musí zůstat uvnitř Mash.",
+    "source_hash": "2b038878bb44"
+  },
+  "wizard.github.cli_unavailable": {
+    "text": "GitHub CLI není v této verzi dostupné.",
+    "source_hash": "929b978e3fa2"
+  },
+  "wizard.github.incomplete": {
+    "text": "Přihlášení ke GitHubu nebylo dokončeno.",
+    "source_hash": "d7fb51538ef3"
+  },
+  "wizard.github.start_failed": {
+    "text": "Nepodařilo se spustit GitHub CLI: {error}",
+    "source_hash": "77cc54ecbb65"
+  },
+  "wizard.model.local_catalog": {
+    "text": "Místní katalog; přihlašovací údaje nejsou ověřeny serverem",
+    "source_hash": "b90b73d51076"
+  },
+  "wizard.model.filter": {
+    "text": "Filtrovat modely",
+    "source_hash": "9a35e606cd37"
+  },
+  "wizard.model.choose": {
+    "text": "Vyberte model (Enter nebo klik)",
+    "source_hash": "b67e2354ebe6"
+  },
+  "wizard.model.enter_manual": {
+    "text": "Zadat ručně",
+    "source_hash": "ad876beba8ac"
+  },
+  "wizard.model.use_model": {
+    "text": "Použít model",
+    "source_hash": "cb1c1ca37393"
+  },
+  "wizard.connection.unavailable": {
+    "text": "Kontrola připojení není k dispozici. Zadejte údaje ručně; nastavení může pokračovat.",
+    "source_hash": "df66e4e70112"
+  },
+  "wizard.connection.mode.existing": {
+    "text": "Použít uložené přihlašovací údaje",
+    "source_hash": "a8f3c9ed4b75"
+  },
+  "wizard.common.new_api_key": {
+    "text": "Zadat nový klíč API",
+    "source_hash": "9b6cc5e19d07"
+  },
+  "wizard.connection.mode.none": {
+    "text": "Bez klíče (místní server)",
+    "source_hash": "327d8a7f069e"
+  },
+  "wizard.common.sign_in_later": {
+    "text": "Přihlásit se později v Pi",
+    "source_hash": "9e6b7094c00b"
+  },
+  "wizard.connection.local_server": {
+    "text": "{name} (místní)",
+    "source_hash": "60d0adb8ca44"
+  },
+  "wizard.connection.reason.unauthorized": {
+    "text": "Koncový bod tyto přihlašovací údaje odmítl.",
+    "source_hash": "5c67730adff0"
+  },
+  "wizard.connection.reason.not_found": {
+    "text": "Koncový bod nemá takový model nebo cestu API.",
+    "source_hash": "92e6a1ef02b9"
+  },
+  "wizard.connection.reason.timeout": {
+    "text": "Koncový bod neodpověděl včas.",
+    "source_hash": "824104c212df"
+  },
+  "wizard.connection.reason.unreachable": {
+    "text": "Na této adrese neodpověděl žádný server.",
+    "source_hash": "91cf761f6798"
+  },
+  "wizard.connection.reason.blocked": {
+    "text": "Tato adresa není povolena; použijte koncový bod HTTPS nebo adresu místního serveru.",
+    "source_hash": "91672c928382"
+  },
+  "wizard.connection.reason.redirected": {
+    "text": "Koncový bod přesměroval jinam; zadejte konečnou adresu.",
+    "source_hash": "6f5c4d2db072"
+  },
+  "wizard.connection.reason.not_json": {
+    "text": "Tato adresa odpověděla stránkou, nikoli modelovým API.",
+    "source_hash": "caa45c7a5c14"
+  },
+  "wizard.connection.reason.wrong_api": {
+    "text": "Tato adresa odpověděla pro jiný typ API; zkontrolujte adresu a zvolené API.",
+    "source_hash": "4214079dbe1b"
+  },
+  "wizard.connection.reason.no_models": {
+    "text": "Server běží, ale nemá načtený žádný chatovací model.",
+    "source_hash": "a1655be795a4"
+  },
+  "wizard.connection.reason.stale": {
+    "text": "Připojení se během kontroly změnilo. Otestujte ho znovu.",
+    "source_hash": "270cbc62e785"
+  },
+  "wizard.connection.reason.consent": {
+    "text": "Test odešle jeden krátký požadavek. Potvrďte pokračování.",
+    "source_hash": "8210811701c1"
+  },
+  "wizard.connection.reason.command_secret": {
+    "text": "Tyto údaje spouštějí příkaz; spravujte je raději v Pi.",
+    "source_hash": "07c5bdb147b9"
+  },
+  "wizard.connection.reason.oauth_expired": {
+    "text": "Uložené přihlášení vypršelo; přihlaste se znovu přes Pi.",
+    "source_hash": "d5ce40555415"
+  },
+  "wizard.connection.reason.endpoint_changed": {
+    "text": "Uložené přihlašovací údaje patří jinému koncovému bodu.",
+    "source_hash": "c8ac0862d7b2"
+  },
+  "wizard.connection.reason.additional_setup": {
+    "text": "Tento poskytovatel vyžaduje další nastavení; dokončete ho v Pi.",
+    "source_hash": "b02eeda9e214"
+  },
+  "wizard.connection.reason.fallback": {
+    "text": "Připojení nebylo možné ověřit.",
+    "source_hash": "a329289ba9b5"
+  },
+  "wizard.connection.saved": {
+    "text": "Uložené přihlašovací údaje",
+    "source_hash": "cd3c6826c368"
+  },
+  "wizard.connection.deferred": {
+    "text": "Ověření je odloženo na Pi /login",
+    "source_hash": "48ed1207e344"
+  },
+  "wizard.connection.http_status": {
+    "text": "{message} (HTTP {status})",
+    "source_hash": "28b2090559db"
+  },
+  "wizard.models.unavailable": {
+    "text": "Kontrola modelů v Pi není k dispozici. Nastavte model ručně nebo použijte Pi /login po nastavení.",
+    "source_hash": "b446b49932ad"
+  },
+  "wizard.models.helper_unavailable": {
+    "text": "Pomocný nástroj pro nastavení není k dispozici. Zadejte údaje ručně; nastavení může pokračovat.",
+    "source_hash": "c105bfa9119a"
+  },
+  "wizard.models.not_in_catalog": {
+    "text": "Uložený model není v místním katalogu Pi. Jeho přesné ID bylo zachováno.",
+    "source_hash": "3a377429f23a"
+  },
+  "wizard.models.no_catalog": {
+    "text": "Pro uložený model není dostupný místní katalog; jeho ID není ověřeno.",
+    "source_hash": "41e3d45585a9"
+  },
+  "wizard.models.not_ready": {
+    "text": "Pro poskytovatele uloženého modelu nejsou nastavené žádné přihlašovací údaje. Po nastavení použijte Pi /login.",
+    "source_hash": "27dc6e44bc1e"
+  },
+  "wizard.models.unverified": {
+    "text": "Přihlašovací údaje uloženého poskytovatele nebylo možné místně ověřit. Po nastavení použijte Pi /login.",
+    "source_hash": "eb785e842362"
+  },
+  "wizard.providers.invalid_catalog": {
+    "text": "Neplatný přibalený katalog poskytovatelů Pi",
+    "source_hash": "bbcc3cc163f5"
+  },
+  "wizard.providers.hint.azure": {
+    "text": "Nejprve nastavte AZURE_OPENAI_BASE_URL nebo AZURE_OPENAI_RESOURCE_NAME.",
+    "source_hash": "2decf0bd1d6b"
+  },
+  "wizard.providers.hint.cloudflare_gateway": {
+    "text": "Cloudflare také vyžaduje ID účtu a ID brány.",
+    "source_hash": "c6bb32d55e90"
+  },
+  "wizard.providers.hint.cloudflare_workers": {
+    "text": "Cloudflare také vyžaduje ID účtu.",
+    "source_hash": "487cf2bed2ad"
+  },
+  "wizard.providers.hint.bedrock": {
+    "text": "Místo toho mohou přihlašovací údaje poskytnout profily AWS a IAM.",
+    "source_hash": "d4ddd86cd093"
+  },
+  "wizard.providers.hint.vertex": {
+    "text": "Přístup přes ADC nebo servisní účet také vyžaduje projekt a umístění.",
+    "source_hash": "a382011b4183"
+  },
+  "wizard.providers.guidance.azure": {
+    "text": "Nastavte AZURE_OPENAI_BASE_URL nebo AZURE_OPENAI_RESOURCE_NAME a poté použijte /login azure v Pi. Pokračovat ponechá vaši stávající konfiguraci Pi.",
+    "source_hash": "5834561a0d12"
+  },
+  "wizard.providers.guidance.cloudflare_gateway": {
+    "text": "Vyžaduje token, ID účtu a ID brány. V Pi použijte /login cloudflare-ai-gateway. Pokračovat ponechá vaši stávající konfiguraci Pi.",
+    "source_hash": "2c4fdf840f5a"
+  },
+  "wizard.providers.guidance.cloudflare_workers": {
+    "text": "Vyžaduje token a ID účtu. V Pi použijte /login cloudflare-workers-ai. Pokračovat ponechá vaši stávající konfiguraci Pi.",
+    "source_hash": "95b2361c0b9a"
+  },
+  "wizard.providers.guidance.bedrock": {
+    "text": "Zadejte bearer token Bedrock, nikoli ID přístupového klíče AWS. Pro profily AWS nebo IAM použijte /login amazon-bedrock v Pi.",
+    "source_hash": "869163e8c80d"
+  },
+  "wizard.providers.guidance.vertex": {
+    "text": "Zadejte klíč API Google Cloud. Pro ADC nebo soubor servisního účtu použijte /login google-vertex v Pi.",
+    "source_hash": "786382a710f6"
+  },
+  "wizard.providers.guidance.generic": {
+    "text": "Po nastavení použijte /login {id} v Pi. Pokračovat ponechá vaši stávající konfiguraci Pi.",
+    "source_hash": "558591c917f8"
+  },
+  "wizard.providers.guidance.oauth": {
+    "text": "Zde použijte klíč API. Pro přihlášení v prohlížeči nebo zařízení použijte /login {id} v Pi po nastavení.",
+    "source_hash": "c50e0a9f050c"
+  },
+  "wizard.providers.login_deferred": {
+    "text": "Ověření odloženo. Po nastavení spusťte /login {id} v Pi.",
+    "source_hash": "de2f18975d71"
+  },
+  "wizard.providers.key_api": {
+    "text": "Klíč API {name}",
+    "source_hash": "a07eb1509dcd"
+  },
+  "wizard.providers.key_token": {
+    "text": "Token {name}",
+    "source_hash": "ba35265f1f56"
+  },
+  "wizard.providers.key_aws": {
+    "text": "Přihlašovací údaje AWS nebo bearer token",
+    "source_hash": "cdfc8a182045"
+  },
+  "wizard.providers.key_gcloud": {
+    "text": "Přihlašovací údaje Google Cloud",
+    "source_hash": "1757285aa598"
+  },
+  "wizard.providers.key_bedrock": {
+    "text": "Bedrock bearer token",
+    "source_hash": "56b93e9ece96"
+  },
+  "wizard.provider.none_llm": {
+    "text": "Žádný (bez LLM)",
+    "source_hash": "8756f88be90d"
+  },
+  "wizard.provider.custom": {
+    "text": "Vlastní poskytovatel",
+    "source_hash": "fee405014d78"
+  },
+  "wizard.provider.openai_compatible": {
+    "text": "Kompatibilní s OpenAI (Chat Completions)",
+    "source_hash": "d53238670c07"
+  },
+  "wizard.search.keep": {
+    "text": "Ponechat stávající nastavení vyhledávání",
+    "source_hash": "5e67d2e2b08e"
+  },
+  "wizard.search.use_chat": {
+    "text": "Použít chatovací model",
+    "source_hash": "a3132658890a"
+  },
+  "wizard.provider.auto_api": {
+    "text": "Automaticky (zjistí se při testu)",
+    "source_hash": "88afbf0096a7"
+  },
+  "wizard.provider.enter_id": {
+    "text": "Nejprve zadejte ID poskytovatele.",
+    "source_hash": "0c037db27d29"
+  },
+  "wizard.provider.preview_only": {
+    "text": "Pouze náhled: žádný požadavek se neodešle a nic se neuloží.",
+    "source_hash": "0ebb19deae89"
+  },
+  "wizard.provider.testing": {
+    "text": "Testování připojení… odešle se jeden krátký požadavek.",
+    "source_hash": "1676396cacd0"
+  },
+  "wizard.provider.connected": {
+    "text": "Připojeno: koncový bod odpověděl na {label}.",
+    "source_hash": "7ad0b1549289"
+  },
+  "wizard.provider.models_reported": {
+    "text": "Server nahlásil modelů: {count}.",
+    "source_hash": "f31fe95a9707"
+  },
+  "wizard.provider.list_incomplete": {
+    "text": "Seznam je neúplný; chybějící ID zadejte ručně a otestujte ho.",
+    "source_hash": "2d588d0ed045"
+  },
+  "wizard.provider.no_chat_model": {
+    "text": "Server odpověděl, ale nenahlásil žádný chatovací model.",
+    "source_hash": "facf8d7bd587"
+  },
+  "wizard.provider.credential_label": {
+    "text": "Přihlašovací údaje: {label}",
+    "source_hash": "8b458229f825"
+  },
+  "wizard.provider.credential_unusable": {
+    "text": "Přihlašovací údaje nelze použít: {label}",
+    "source_hash": "d431bbfadbd4"
+  },
+  "wizard.provider.model_list_unavailable": {
+    "text": "Seznam modelů není dostupný nebo je prázdný. Zadejte přesné ID modelu; zůstane neověřený.",
+    "source_hash": "00dff5896fd5"
+  },
+  "wizard.provider.choose_or_enter": {
+    "text": "Vyberte model z tohoto koncového bodu nebo zadejte jeho přesné ID.",
+    "source_hash": "cfad129610d3"
+  },
+  "wizard.provider.fetch_or_test": {
+    "text": "Načtěte seznam modelů serveru nebo otestujte chybějící ID z neúplného seznamu.",
+    "source_hash": "c320f93cb08b"
+  },
+  "wizard.provider.choose_reported": {
+    "text": "{label}: vyberte nahlášený model nebo otestujte chybějící ID z neúplného seznamu.",
+    "source_hash": "a77913382c56"
+  },
+  "wizard.provider.pi_test_first": {
+    "text": "Pi: nejprve otestujte toto vlastní připojení; uložit lze jen přijatý požadavek.",
+    "source_hash": "161d742c4903"
+  },
+  "wizard.search.src_chat": {
+    "text": "Použít přihlašovací údaje chatovacího poskytovatele",
+    "source_hash": "f775d3990dd0"
+  },
+  "wizard.memory.src_saved": {
+    "text": "Ponechat uložený klíč paměti",
+    "source_hash": "e5a0bc3ecc75"
+  },
+  "wizard.search.src_saved": {
+    "text": "Použít uložené přihlašovací údaje Pi",
+    "source_hash": "68823fc1dc94"
+  },
+  "wizard.memory.src_later": {
+    "text": "Nastavit později (ponechat stávající)",
+    "source_hash": "b9e8bb9af513"
+  },
+  "wizard.search.keep_unreadable": {
+    "text": "Ponechat stávající nastavení vyhledávání (nečitelné)",
+    "source_hash": "03bfcd418f97"
+  },
+  "wizard.search.keep_chat": {
+    "text": "Ponechat: používá chatovací model",
+    "source_hash": "c454fc0778ba"
+  },
+  "wizard.common.keep_current_model": {
+    "text": "Ponechat: {provider}/{model}",
+    "source_hash": "417283f9b64d"
+  },
+  "wizard.search.use_chat_unset": {
+    "text": "Použít chatovací model (zatím nenastaven)",
+    "source_hash": "e8b6ce6cb122"
+  },
+  "wizard.search.use_chat_model": {
+    "text": "Použít chatovací model: {provider}/{model}",
+    "source_hash": "8d09d2b9f3dd"
+  },
+  "wizard.common.keep_or_later": {
+    "text": "Ponechat stávající / nastavit později",
+    "source_hash": "4cec99ff32b6"
+  },
+  "wizard.provider.custom_endpoint": {
+    "text": "Vlastní koncový bod",
+    "source_hash": "5fb0795eaf2e"
+  },
+  "wizard.common.keep_current_provider": {
+    "text": "Ponechat: {provider}",
+    "source_hash": "e0547b6f785f"
+  },
+  "wizard.common.set_up_later": {
+    "text": "Nastavit později",
+    "source_hash": "eb5e104944c1"
+  },
+  "wizard.common.currently_configured": {
+    "text": "(v současnosti nastaveno)",
+    "source_hash": "fd8c4c2150d6"
+  },
+  "wizard.memory.enter_url": {
+    "text": "Paměť: před načtením modelů zadejte URL koncového bodu.",
+    "source_hash": "4491f26c74d0"
+  },
+  "wizard.search.configure_chat_first": {
+    "text": "Webové vyhledávání: nejprve nastavte chatovací model",
+    "source_hash": "f2d6fcb7ce5a"
+  },
+  "wizard.search.not_native": {
+    "text": "Tento poskytovatel chatu nenabízí nativní webové vyhledávání. Vyberte samostatného poskytovatele vyhledávání.",
+    "source_hash": "2ae0277a4bbb"
+  },
+  "wizard.search.enter_key_or_later": {
+    "text": "Webové vyhledávání: zadejte klíč nebo vyberte „Přihlásit se později v Pi“",
+    "source_hash": "ec8998bc8e73"
+  },
+  "wizard.search.credential_invalid": {
+    "text": "Webové vyhledávání: stávající přihlašovací údaje Pi jsou neplatné",
+    "source_hash": "2bdcb880250c"
+  },
+  "wizard.search.oauth_exists": {
+    "text": "Webové vyhledávání: přihlašovací údaje OAuth již existují; spravujte je přes Pi /login",
+    "source_hash": "789004e75d1e"
+  },
+  "wizard.search.azure_env_invalid": {
+    "text": "Webové vyhledávání: stávající přihlašovací údaje Azure mají neplatné prostředí",
+    "source_hash": "907c142da323"
+  },
+  "wizard.search.credential_on_model_page": {
+    "text": "Webové vyhledávání: přihlašovací údaje tohoto poskytovatele jsou nastaveny na stránce Poskytovatel modelu. Použijte zde přihlašovací údaje chatovacího modelu nebo zvolte jiného poskytovatele vyhledávání.",
+    "source_hash": "9cb065a8fae4"
+  },
+  "wizard.provider.pi_signed_in": {
+    "text": "Pi: tento poskytovatel je přihlášen přes Pi /login. Ponechte uložené přihlašovací údaje, nebo se v Pi přihlaste znovu namísto jejich nahrazení.",
+    "source_hash": "eb4d65ce6ad3"
+  },
+  "wizard.provider.credential_dir_unavailable": {
+    "text": "Adresář přihlašovacích údajů Pi není dostupný",
+    "source_hash": "98f28d5f8b0b"
+  },
+  "wizard.provider.retest_before_apply": {
+    "text": "Před použitím přihlašovacích údajů tohoto vlastního připojení jej otestujte znovu.",
+    "source_hash": "33f016024d39"
+  },
+  "wizard.search.manage_oauth": {
+    "text": "Webové vyhledávání: spravujte stávající přihlašovací údaje OAuth přes Pi /login",
+    "source_hash": "9b1cb7045e7d"
+  },
+  "wizard.memory.config_missing": {
+    "text": "Chybí konfigurace paměti; pro obnovení znovu otevřete Mash",
+    "source_hash": "19b25e7d8997"
+  },
+  "wizard.provider.models_providers_invalid": {
+    "text": "Soubor models.json v Pi má neplatný objekt providers",
+    "source_hash": "4e54bf06618d"
+  },
+  "wizard.provider.models_definition_invalid": {
+    "text": "Soubor models.json v Pi má neplatnou definici poskytovatele",
+    "source_hash": "0c2aec3a83b0"
+  },
+  "wizard.provider.models_list_invalid": {
+    "text": "Soubor models.json v Pi má neplatný seznam modelů",
+    "source_hash": "e653afbf6dc8"
+  },
+  "wizard.search.symlink": {
+    "text": "Webové vyhledávání: odmítám konfiguraci přes symbolický odkaz",
+    "source_hash": "b8dd10482ddf"
+  },
+  "wizard.search.regular_file": {
+    "text": "Webové vyhledávání: očekáván běžný konfigurační soubor",
+    "source_hash": "b6b6243f6e7a"
+  },
+  "wizard.memory.credential_changed": {
+    "text": "Paměť: poskytovatel nebo koncový bod uložených přihlašovacích údajů se změnil; znovu vyberte jejich zdroj",
+    "source_hash": "67915097bd25"
+  },
+  "wizard.memory.key_unavailable": {
+    "text": "Paměť: uložený klíč není dostupný; znovu vyberte jeho zdroj",
+    "source_hash": "a755ba277cc4"
+  },
+  "wizard.provider.test_for_api": {
+    "text": "Pi: otestujte připojení, aby byl znám jeho typ API",
+    "source_hash": "c15bc6eb37b4"
+  },
+  "wizard.provider.env_invalid": {
+    "text": "Pi: stávající prostředí poskytovatele je neplatné",
+    "source_hash": "11b3e98a566f"
+  },
+  "wizard.search.override_remove_failed": {
+    "text": "Webové vyhledávání: nelze odstranit přepsání vyhrazeného modelu",
+    "source_hash": "4179191bf160"
+  },
+  "wizard.provider.list_title": {
+    "text": "Poskytovatelé modelů",
+    "source_hash": "fbdc457db218"
+  },
+  "wizard.search.list_title": {
+    "text": "Poskytovatelé webového vyhledávání",
+    "source_hash": "3f76c4cc3f0f"
+  },
+  "wizard.memory.list_title": {
+    "text": "Poskytovatelé paměti",
+    "source_hash": "f7ac1d2de59f"
+  },
+  "wizard.provider.preview_model": {
+    "text": "Model pro náhled",
+    "source_hash": "b6eb6b14ddad"
+  },
+  "wizard.provider.preview_small_model": {
+    "text": "Malý model pro náhled",
+    "source_hash": "e552021200b5"
+  },
+  "wizard.provider.connection_details": {
+    "text": "Údaje o připojení",
+    "source_hash": "51bfffbcdbcf"
+  },
+  "wizard.provider.no_extra": {
+    "text": "Není třeba žádné další nastavení.",
+    "source_hash": "a8523c5346ec"
+  },
+  "wizard.provider.fetch_models": {
+    "text": "Načíst modely",
+    "source_hash": "812c98c992c6"
+  },
+  "wizard.provider.choose_model": {
+    "text": "Vybrat model",
+    "source_hash": "f6e05dcfcfa8"
+  },
+  "wizard.provider.testing_short": {
+    "text": "Testování...",
+    "source_hash": "6c02a28421f8"
+  },
+  "wizard.provider.test_connection": {
+    "text": "Otestovat připojení",
+    "source_hash": "5bcf311b19d8"
+  },
+  "wizard.provider.not_tested": {
+    "text": "Netestováno",
+    "source_hash": "51e3a01219f2"
+  },
+  "wizard.provider.lists_models": {
+    "text": "Vypíše modely koncového bodu; neprovádí inference ani zápisy do paměti.",
+    "source_hash": "ade190bd0811"
+  },
+  "wizard.provider.browse_or_enter": {
+    "text": "Procházejte návrhy nebo zadejte přesné ID modelu.",
+    "source_hash": "ea1aef31b165"
+  },
+  "wizard.provider.sends_request": {
+    "text": "Odešle krátký požadavek; mohou být účtovány poplatky poskytovatele.",
+    "source_hash": "29e67ff448f6"
+  },
+  "wizard.shell.next": {
+    "text": "Další — {page}",
+    "source_hash": "827f82fa3edf"
+  },
+  "wizard.provider.catalog_truncated": {
+    "text": "Katalog je zkrácen; chybějící ID zadejte v ručním kroku",
+    "source_hash": "a74d0cf6f9ec"
+  },
+  "wizard.search.catalog_note": {
+    "text": "Katalog nativního vyhledávání; dostupnost není ověřena",
+    "source_hash": "6dc5683dbdc3"
+  },
+  "wizard.memory.catalog_note": {
+    "text": "Návrhy modelů; kompatibilita s pamětí není ověřena",
+    "source_hash": "39137a61ed43"
+  },
+  "wizard.provider.fetching": {
+    "text": "Načítání modelů z vybraného koncového bodu…",
+    "source_hash": "0230b84d9b0c"
+  },
+  "wizard.provider.loading_local": {
+    "text": "Načítání místního katalogu modelů...",
+    "source_hash": "fb9cfdb82b65"
+  },
+  "wizard.provider.no_auth_check": {
+    "text": "Neprovádí se ověření serveru ani kontrola oprávnění účtu.",
+    "source_hash": "48043c00d31d"
+  },
+  "wizard.provider.credentials_changed": {
+    "text": "Přihlašovací údaje Pi se změnily nebo je nelze uložit. Zkontrolujte vybraný zdroj a znovu otestujte vlastní připojení.",
+    "source_hash": "76a2cf9164f0"
+  },
+  "wizard.search.enter_model": {
+    "text": "Webové vyhledávání: zadejte přesné ID modelu",
+    "source_hash": "a5abb7475ed0"
+  },
+  "wizard.search.key_invalid": {
+    "text": "Webové vyhledávání: zadejte klíč API bez mezer a řídicích znaků",
+    "source_hash": "904667c8779a"
+  },
+  "wizard.search.azure_url": {
+    "text": "Webové vyhledávání: zadejte základní URL Azure přes HTTPS bez přihlašovacích údajů",
+    "source_hash": "88c2de75ba77"
+  },
+  "wizard.search.azure_both": {
+    "text": "Webové vyhledávání: zadejte klíč API spolu se základní URL Azure, nebo obojí nastavte později v Pi",
+    "source_hash": "d82f956e9ea6"
+  },
+  "wizard.provider.pi_url": {
+    "text": "Pi: zadejte základní URL přes HTTPS nebo adresu místního serveru",
+    "source_hash": "961be0bfd948"
+  },
+  "wizard.common.enter_model_id": {
+    "text": "{label}: zadejte přesné ID modelu",
+    "source_hash": "686e504338e0"
+  },
+  "wizard.common.https_no_credentials": {
+    "text": "{label}: zadejte základní URL přes HTTPS bez přihlašovacích údajů",
+    "source_hash": "5ab56666492c"
+  },
+  "wizard.common.key_invalid": {
+    "text": "{label}: zadejte klíč API bez mezer a řídicích znaků",
+    "source_hash": "06cb71707873"
+  },
+  "wizard.provider.unique_id": {
+    "text": "Pi: použijte jedinečné ID poskytovatele malými písmeny (např. omniroute)",
+    "source_hash": "a5d12f69f254"
+  },
+  "wizard.memory.symlink": {
+    "text": "Paměť: odmítám konfiguraci přes symbolický odkaz",
+    "source_hash": "408cc1d5eca7"
+  },
+  "wizard.memory.config_unavailable": {
+    "text": "Konfigurace paměti není dostupná",
+    "source_hash": "5facb5204c8b"
+  },
+  "wizard.memory.config_too_large": {
+    "text": "Konfigurace paměti je příliš velká",
+    "source_hash": "0abce5fa7620"
+  },
+  "wizard.common.symlink_at": {
+    "text": "odmítnut symbolický odkaz na {path}",
+    "source_hash": "2d1d6d9229be"
+  },
+  "wizard.common.invalid_json": {
+    "text": "neplatný JSON v {path}: {error}",
+    "source_hash": "cb1c0852dda4"
+  },
+  "wizard.common.expected_object": {
+    "text": "očekáván objekt JSON v {path}",
+    "source_hash": "b40e836032c5"
+  },
+  "wizard.memory.symlink_config": {
+    "text": "odmítnut symbolický odkaz v konfiguraci paměti",
+    "source_hash": "7093970b6456"
+  },
+  "wizard.memory.config_error": {
+    "text": "Konfigurace paměti: {error}",
+    "source_hash": "0d2dd39a2d90"
+  },
+  "wizard.common.missing_dir": {
+    "text": "chybí konfigurační adresář",
+    "source_hash": "35701334e8bf"
+  },
+  "wizard.provider.partly_saved": {
+    "text": "{error} (některé přihlašovací údaje už byly uloženy v Pi; nastavení mohla být částečně použita)",
+    "source_hash": "69266b7404df"
+  },
+  "wizard.provider.partly_applied": {
+    "text": "{error} (nastavení mohla být částečně použita; před dalším pokusem o nastavení je zkontrolujte)",
+    "source_hash": "93e84daad133"
+  },
+  "wizard.provider.list_hint": {
+    "text": "↑/↓ procházet · Space vybrat · Tab podrobnosti  {index}/{count}",
+    "source_hash": "6f4e925e84b1"
+  },
+  "wizard.form.provider_id": {
+    "text": "ID poskytovatele:",
+    "source_hash": "e035a2e312e7"
+  },
+  "wizard.form.provider_id_hint": {
+    "text": "např. omniroute",
+    "source_hash": "474364acdb88"
+  },
+  "wizard.form.base_url": {
+    "text": "Základní URL:",
+    "source_hash": "d34c1f38253c"
+  },
+  "wizard.form.base_url_hint": {
+    "text": "Základní URL API",
+    "source_hash": "a45474ea09c3"
+  },
+  "wizard.form.api_type": {
+    "text": "Typ API:",
+    "source_hash": "ef56d0b93d30"
+  },
+  "wizard.form.api_type_hint": {
+    "text": "Rodina API",
+    "source_hash": "921463d37e58"
+  },
+  "wizard.form.model_id": {
+    "text": "ID modelu:",
+    "source_hash": "93139b7fb881"
+  },
+  "wizard.form.model_id_exact": {
+    "text": "Přesné ID modelu",
+    "source_hash": "b0d6631bddc5"
+  },
+  "wizard.form.credential": {
+    "text": "Přihlašovací údaje:",
+    "source_hash": "c410f0de5633"
+  },
+  "wizard.form.use_login": {
+    "text": "Použijte /login v Pi",
+    "source_hash": "9b741fe3564a"
+  },
+  "wizard.form.saved_or_new": {
+    "text": "Uložené nebo nové",
+    "source_hash": "12374a1d011c"
+  },
+  "wizard.form.api_key": {
+    "text": "Klíč API:",
+    "source_hash": "2f77effde67c"
+  },
+  "wizard.form.kept_private": {
+    "text": "Zachováno v soukromí",
+    "source_hash": "187c44112cef"
+  },
+  "wizard.form.pick_or_enter": {
+    "text": "Vyberte nebo zadejte ID",
+    "source_hash": "d04d70878e87"
+  },
+  "wizard.form.stored_in_pi": {
+    "text": "Uloženo v Pi",
+    "source_hash": "d25575aa94b0"
+  },
+  "wizard.form.azure_endpoint": {
+    "text": "Koncový bod Azure",
+    "source_hash": "9083377a277e"
+  },
+  "wizard.form.memory_only": {
+    "text": "Pouze pro paměť",
+    "source_hash": "32e44d486399"
+  },
+  "wizard.provider.settings_unchanged": {
+    "text": "Stávající nastavení poskytovatele zůstanou beze změny.",
+    "source_hash": "dfb133c06e72"
+  },
+  "wizard.search.keeps_unchanged": {
+    "text": "Ponechá stávající nastavení vyhledávání a přihlašovací údaje beze změny.",
+    "source_hash": "58aa4df1275c"
+  },
+  "wizard.search.removes_override": {
+    "text": "Odstraní vyhrazené přepsání vyhledávání a bude používat model vaší konverzace. Tento model musí podporovat nativní vyhledávání; neexistuje automatická záloha.",
+    "source_hash": "a8414fd4c8f2"
+  },
+  "wizard.search.shares_chat": {
+    "text": "Sdílí přihlašovací údaje tohoto poskytovatele v Pi s chatem; žádný klíč se nekopíruje k jinému poskytovateli.",
+    "source_hash": "a8c1b3542f7e"
+  },
+  "wizard.search.uses_saved": {
+    "text": "Používá uložené přihlašovací údaje Pi tohoto poskytovatele beze změny. Výběr jiného modelu klíč nenahradí.",
+    "source_hash": "df913b2221e3"
+  },
+  "wizard.search.new_key_note": {
+    "text": "Nový klíč se uloží do Pi při závěrečném použití. Katalog uvádí modely s nativním vyhledáváním, nikoli všechny chatovací modely.",
+    "source_hash": "6cb0b2fd20b7"
+  },
+  "wizard.search.later_note": {
+    "text": "Model je nastaven bez změny přihlašovacích údajů. Po nastavení spusťte /login {id} v Pi.",
+    "source_hash": "ef6b5edfbe81"
+  },
+  "wizard.search.azure_note": {
+    "text": "Azure také vyžaduje nastavený koncový bod.",
+    "source_hash": "3c0a05a844aa"
+  },
+  "wizard.memory.not_enabled": {
+    "text": "Paměť je součástí Programming Skills, které nejsou na stránce Tools zaškrtnuty: nic na této stránce se neuloží.",
+    "source_hash": "5f38d8d9f142"
+  },
+  "wizard.memory.keep": {
+    "text": "Stávající nastavení paměti zůstane beze změny.",
+    "source_hash": "8747d4c2d994"
+  },
+  "wizard.memory.no_llm": {
+    "text": "Paměť nebude používat LLM.",
+    "source_hash": "85197fc97e6b"
+  },
+  "wizard.memory.keeps_saved": {
+    "text": "Ponechá uložený klíč paměti pro tohoto poskytovatele a koncový bod. Úpravy pouze modelu jej zachovají.",
+    "source_hash": "dec480d705ed"
+  },
+  "wizard.memory.deferred": {
+    "text": "Nastavení paměti je odloženo. Stávající nastavení a přihlašovací údaje zůstanou beze změny; Pi /login paměť neověřuje.",
+    "source_hash": "56476111c257"
+  },
+  "wizard.memory.own_key": {
+    "text": "Paměť používá vlastní klíč, nikdy přihlášení do Pi. Návrhy modelů nezaručují kompatibilitu s pamětí.",
+    "source_hash": "5e9f06b7afef"
+  },
+  "wizard.setup.title": {
+    "text": "Nastavení Mash",
+    "source_hash": "9a6b9e8768aa"
+  },
+  "wizard.setup.quit_title": {
+    "text": "Ukončit nastavení Mash?",
+    "source_hash": "fca13bacb3db"
+  },
+  "wizard.setup.not_finished": {
+    "text": "Nastavení není dokončené, takže se Mash zatím neotevře.",
+    "source_hash": "7126b47d6f0c"
+  },
+  "wizard.setup.reopen": {
+    "text": "Otevřete Mash znovu a začněte nastavení od začátku.",
+    "source_hash": "3c08c76f274a"
+  },
+  "wizard.setup.quit_action": {
+    "text": "ukončit nastavení",
+    "source_hash": "fbbf0c02026a"
+  },
+  "wizard.setup.other_key": {
+    "text": "jakákoli jiná klávesa",
+    "source_hash": "53e6aac5af12"
+  },
+  "wizard.setup.keep_going": {
+    "text": "pokračovat",
+    "source_hash": "6e7ecf10083e"
+  },
+  "wizard.setup.could_not_finish": {
+    "text": "Nastavení se nepodařilo dokončit",
+    "source_hash": "923e2d2bfa67"
+  },
+  "wizard.setup.press_enter": {
+    "text": "Pokračujte stisknutím Enter",
+    "source_hash": "0a593337307e"
+  },
+  "wizard.setup.continue_open": {
+    "text": "Pokračovat — otevřít Mash",
+    "source_hash": "08a87d4e2372"
+  },
+  "wizard.setup.details": {
+    "text": "Podrobnosti: {path}",
+    "source_hash": "a33894398867"
+  },
+  "wizard.setup.saved_reopen": {
+    "text": "Některé volby už mohou být uložené. Nastavení se při dalším spuštění otevře znovu.",
+    "source_hash": "0de801ae7cf2"
+  },
+  "wizard.setup.unknown_error": {
+    "text": "Nastavení přerušila neznámá chyba.",
+    "source_hash": "eb9d67c96506"
+  },
+  "wizard.setup.model_check": {
+    "text": "Kontrola modelu",
+    "source_hash": "2d2297acd2aa"
+  },
+  "wizard.setup.checking": {
+    "text": "Kontrola uložené místní konfigurace...",
+    "source_hash": "c777a13b3e35"
+  },
+  "wizard.setup.notes": {
+    "text": "Poznámky ke konfiguraci (neblokující)",
+    "source_hash": "ffc8480c82a9"
+  },
+  "wizard.setup.no_auth_checked": {
+    "text": "Ověření serveru ani nároku účtu neproběhlo.",
+    "source_hash": "e148bf76d6d3"
+  },
+  "wizard.setup.skip_check": {
+    "text": "Přeskočit kontrolu",
+    "source_hash": "48e595221f47"
+  },
+  "wizard.setup.continue": {
+    "text": "Pokračovat",
+    "source_hash": "31fbef162594"
+  },
+  "wizard.setup.auth_skipped": {
+    "text": "Model je nastavený; ověření přihlášení neproběhlo.",
+    "source_hash": "bb1cc09f22e5"
+  },
+  "wizard.setup.model_unavailable": {
+    "text": "Kontrola modelu Pi není dostupná. Vaše konfigurace zůstala zachovaná; po nastavení použijte v Pi /model a /login.",
+    "source_hash": "8ed5b781187b"
+  },
+  "wizard.setup.installing": {
+    "text": "Instalace Mash",
+    "source_hash": "fd2247be3921"
+  },
+  "wizard.setup.progress": {
+    "text": "Průběh",
+    "source_hash": "4664827f8e89"
+  },
+  "wizard.setup.ready": {
+    "text": "Připraveno ke spuštění Mash",
+    "source_hash": "07a824807aab"
+  },
+  "wizard.setup.waiting_daemon": {
+    "text": "...čeká se, až paměťová služba odpoví na svém portu",
+    "source_hash": "65eeaf94876f"
+  },
+  "wizard.setup.result.installed": {
+    "text": "nainstalováno",
+    "source_hash": "a51a6c19a1ff"
+  },
+  "wizard.setup.result.model_installed": {
+    "text": "model nainstalován",
+    "source_hash": "06627dd23cd9"
+  },
+  "wizard.setup.result.daemon_up": {
+    "text": "služba běží, modely v mezipaměti",
+    "source_hash": "97145954e7ce"
+  },
+  "wizard.setup.result.already_installed": {
+    "text": "už je nainstalováno",
+    "source_hash": "48544614ca22"
+  },
+  "wizard.setup.step.check_tools": {
+    "text": "Kontrola vybraných nástrojů",
+    "source_hash": "3a7228d80436"
+  },
+  "wizard.setup.step.mash_tools": {
+    "text": "Instalace nástrojů do Mash",
+    "source_hash": "7914823478f2"
+  },
+  "wizard.setup.step.brew": {
+    "text": "Instalace balíčků Homebrew",
+    "source_hash": "873564eb35a2"
+  },
+  "wizard.setup.step.npm": {
+    "text": "Instalace balíčků npm",
+    "source_hash": "cd52241c4b6e"
+  },
+  "wizard.setup.step.pinned": {
+    "text": "Instalace připnutých nástrojů do Mash",
+    "source_hash": "53c70a54d6da"
+  },
+  "wizard.setup.step.python": {
+    "text": "Instalace balíčků Python",
+    "source_hash": "d4c51d15c8bc"
+  },
+  "wizard.setup.step.cua": {
+    "text": "Instalace CUA Driver",
+    "source_hash": "7fe6a9fd27d1"
+  },
+  "wizard.setup.step.memory": {
+    "text": "Instalace prostředí paměti",
+    "source_hash": "816b368aa540"
+  },
+  "wizard.setup.step.memory_models": {
+    "text": "Spuštění paměti a stažení jejích modelů",
+    "source_hash": "9ef8dd5a39e3"
+  },
+  "wizard.setup.step.dictation": {
+    "text": "Instalace modelu pro diktování",
+    "source_hash": "7abdc07c8460"
+  },
+  "wizard.identity.key_openpgp_only": {
+    "text": "Váš Git podepisuje přes SSH nebo X.509; Mash podepisuje pouze klíči OpenPGP",
+    "source_hash": "8021a5c51452"
+  },
+  "wizard.setup.report.host_tools": {
+    "text": "Nástroje systému jsou k dispozici; instaluji připnuté nástroje Mash.",
+    "source_hash": "5e1366b18b91"
+  },
+  "wizard.setup.report.all_installed": {
+    "text": "Vše vybrané už je nainstalované.",
+    "source_hash": "34a4459dc684"
+  },
+  "wizard.setup.report.missing": {
+    "text": "Chybí: {tools}",
+    "source_hash": "1d0c96cc3733"
+  },
+  "wizard.setup.report.counts": {
+    "text": "nainstalováno: {installed}, poskytnuto systémem: {provided}",
+    "source_hash": "eed3d543f37f"
+  },
+  "wizard.setup.report.system_provided": {
+    "text": "{component}: poskytuje systém, neinstaloval Mash",
+    "source_hash": "17adcbb8f3e1"
+  },
+  "wizard.setup.report.apple_tools": {
+    "text": "{tool} je součástí vývojářských nástrojů Apple (spusťte xcode-select --install).",
+    "source_hash": "a35d7759a429"
+  }
+}

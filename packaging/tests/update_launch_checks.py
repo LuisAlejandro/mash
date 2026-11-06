@@ -6,7 +6,7 @@ import tempfile
 import time
 import unittest
 
-from macos_update_fixture import ROOT, UpdateFixture
+from macos_update_fixture import ROOT, UpdateFixture, pinned_fork_text
 
 
 class LaunchGateTests(unittest.TestCase):
@@ -140,32 +140,20 @@ class LaunchGateTests(unittest.TestCase):
         self.assertEqual(subprocess.run(command, env=self.f.env, timeout=10).returncode, 0)
         self.assertEqual(self.f.state()["phase"], "failed-before-swap")
 
-    def test_native_patch_applies_twice_and_typechecks(self):
-        src = pathlib.Path(os.environ.get("MASH_GHOSTTY_SRC", ROOT.parent / "ghostty"))
-        if not (src / ".git").exists():
-            self.skipTest("needs pinned Ghostty source for native patch proof")
-        pin = __import__("json").loads((ROOT / "packaging/assets.json").read_text())["components"]["ghostty"]["commit"]
-        files = ["macos/Sources/App/main.swift", "macos/Sources/App/AppDelegate.swift", "macos/Sources/App/MashMenus.swift", "src/apprt/gtk/ui/1.5/window.blp"]
-        checkout = self.f.root / "source"
-        for name in files:
-            path = checkout / name
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(subprocess.check_output(["git", "-C", str(src), "show", f"{pin}:{name}"]))
-        command = ["/bin/bash", str(ROOT / "packaging/helpers/mash-ghostty-patch-menu"), str(checkout)]
-        for _ in range(2):
-            result = subprocess.run(command, capture_output=True, text=True)
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        native = (checkout / files[0]).read_text()
-        self.assertLess(native.index("mashUpdateEntry()\nmashHandOffToSetup()"), native.index('if env["MASH_BIN"] != nil'))
-        snippet = native.split("import MachO\n", 1)[1].split("// Mash: this binary", 1)[0]
+    def test_pinned_native_lifecycle_typechecks(self):
+        main = pinned_fork_text("macos/Sources/App/main.swift")
+        if main is None:
+            # Without a fork checkout the proof is skipped; with one configured
+            # a missing pin is a real failure, not a silent skip.
+            if os.environ.get("MASH_GHOSTTY_SRC"):
+                self.fail("MASH_GHOSTTY_SRC is set but the pinned fork commit cannot be read")
+            self.skipTest("needs pinned Ghostty source for the native lifecycle proof")
+        self.assertIn("mashUpdateEntry()\nmashHandOffToSetup()", main)
+        snippet = main.split("import MachO\n", 1)[1].split("// Mash: this binary", 1)[0]
         harness = self.f.root / "native.swift"
         harness.write_text('import AppKit\nimport Cocoa\nimport MachO\nclass TerminalController { static var all: [NSWindowController] { [] } }\nfunc mashSetupFailed(_ reason: String) -> Never { fatalError(reason) }\n' + snippet)
         checked = subprocess.run(["xcrun", "swiftc", "-typecheck", str(harness)], capture_output=True, text=True)
         self.assertEqual(checked.returncode, 0, checked.stderr)
-        # A changed source must fail, not be mistaken for an applied patch.
-        main = checkout / files[0]
-        main.write_text(native.replace("mashUpdateEntry()\nmashHandOffToSetup()", "changedEntry()\nmashHandOffToSetup()"))
-        self.assertNotEqual(subprocess.run(command, capture_output=True).returncode, 0)
 
 
 class NativeEntryTests(unittest.TestCase):
@@ -174,9 +162,12 @@ class NativeEntryTests(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory(prefix="mash-native-entry-", dir="/tmp")
         cls.addClassCleanup(temporary.cleanup)
         directory = pathlib.Path(temporary.name)
-        patch = (ROOT / "packaging/patches/ghostty-update-lifecycle.patch").read_text()
-        added = "\n".join(line[1:] for line in patch.splitlines() if line.startswith("+") and not line.startswith("+++"))
-        snippet = added[added.index("import MachO\n"):].split("\nmashUpdateEntry()\n", 1)[0]
+        main = pinned_fork_text("macos/Sources/App/main.swift")
+        if main is None:
+            if os.environ.get("MASH_GHOSTTY_SRC"):
+                raise AssertionError("MASH_GHOSTTY_SRC is set but the pinned fork commit cannot be read")
+            raise unittest.SkipTest("needs pinned Ghostty source for the native lifecycle")
+        snippet = main[main.index("import MachO\n"):].split("\nmashUpdateEntry()\n", 1)[0]
         snippet = snippet.replace("FileManager.default.homeDirectoryForCurrentUser", 'URL(fileURLWithPath: ProcessInfo.processInfo.environment["HOME"]!)')
         snippet = snippet.replace("Bundle.main.bundleURL", 'URL(fileURLWithPath: ProcessInfo.processInfo.environment["FIXTURE_APP"]!)')
         snippet = snippet.replace("Bundle.main.resourceURL", 'Optional(URL(fileURLWithPath: ProcessInfo.processInfo.environment["FIXTURE_APP"]!).appendingPathComponent("Contents/Resources"))')

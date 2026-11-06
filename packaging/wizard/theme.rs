@@ -4,6 +4,7 @@
 //! Applying a theme swaps exact shipped lines in each seeded config. A line the
 //! user has changed no longer matches either side, so it is left alone, and
 //! switching back restores the shipped dark values the same way.
+use crate::i18n;
 use std::{fs, path::Path};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -114,10 +115,10 @@ const SWAPS: &[(&str, &str, &str)] = &[
 ];
 
 impl Theme {
-    pub fn label(self) -> &'static str {
+    pub fn label(self) -> String {
         match self {
-            Theme::Dark => "Dark theme",
-            Theme::Light => "Light theme",
+            Theme::Dark => i18n::t("wizard.theme.dark"),
+            Theme::Light => i18n::t("wizard.theme.light"),
         }
     }
 

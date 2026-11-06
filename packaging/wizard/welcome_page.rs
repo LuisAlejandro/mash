@@ -1,5 +1,5 @@
 //! Entry screen shown only before the first-launch configuration flow.
-use crate::wizard_style;
+use crate::{i18n, wizard_style};
 use ratatui::{
     crossterm::event::{Event, KeyCode, KeyEventKind, MouseButton, MouseEventKind},
     layout::Rect,
@@ -109,7 +109,10 @@ pub fn draw(frame: &mut Frame) -> Rect {
         frame.render_widget(Paragraph::new(art), logo);
     }
 
-    let button_width = BUTTON_WIDTH.min(area.width);
+    let button_text = format!(" {} ", i18n::t("wizard.welcome.start"));
+    let button_width = BUTTON_WIDTH
+        .max(Line::from(button_text.as_str()).width() as u16)
+        .min(area.width);
     let button = Rect::new(
         area.x + area.width.saturating_sub(button_width) / 2,
         top + logo_height + gap,
@@ -117,7 +120,7 @@ pub fn draw(frame: &mut Frame) -> Rect {
         button_height,
     );
     frame.render_widget(
-        Paragraph::new(" Start config wizard ")
+        Paragraph::new(button_text)
             .alignment(ratatui::layout::Alignment::Center)
             .style(wizard_style::selected()),
         button,

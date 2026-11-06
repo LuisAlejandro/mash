@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+"""Print one Mash message from the JSON catalogs, in Mash's language.
+
+    mash-t <key> [name=value ...]
+
+The environment mash_isolate builds is the whole interface: MASH_LANGUAGE is the
+code from setup/language and MASH_I18N_DIR is the staged i18n tree. Both are
+absent outside Mash and on the first launch, which is why an unset language
+means English and an unset directory means the one beside this program.
+
+A key missing from the chosen language falls back to English at runtime; the
+check that gates releases is what keeps a shipped catalog from relying on that.
+Placeholders are substituted from the name=value arguments, and one without a
+matching argument is left in place instead of being silently dropped. A key
+absent from every catalog prints nothing and exits 1, so a caller can write
+`mash-t helper.example || true` and get "no text" for it.
+"""
+
+import json
+import os
+import re
+import sys
+from pathlib import Path
+
+PLACEHOLDER = re.compile(r"\{([A-Za-z_][A-Za-z0-9_]*)\}")
+USAGE = "usage: mash-t <key> [name=value ...]"
+
+
+def fail(message):
+    print(f"mash-t: {message}", file=sys.stderr)
+    print(USAGE, file=sys.stderr)
+    return 2
+
+
+def catalogs_dir():
+    """The i18n tree: MASH_I18N_DIR, else the one beside this program.
+
+    mash-t is staged in the bundle's bin/ next to i18n/, and lives in
+    packaging/helpers/ in the source tree next to packaging/i18n/, so the parent
+    of its own directory names the right tree in both layouts.
+    """
+    configured = os.environ.get("MASH_I18N_DIR", "").strip()
+    if configured:
+        return Path(configured)
+    return Path(__file__).resolve().parent.parent / "i18n"
+
+
+def text_for(messages, code, key):
+    """The key's text in one language, or None when that catalog lacks it."""
+    if not messages.is_dir():
+        return None
+    for component in sorted(messages.iterdir()):
+        if not component.is_dir():
+            continue
+        try:
+            catalog = json.loads((component / f"{code}.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        entry = catalog.get(key)
+        if isinstance(entry, dict):
+            entry = entry.get("text")
+        if isinstance(entry, str) and entry:
+            return entry
+    return None
+
+
+def main(argv):
+    if not argv:
+        return fail("no message key")
+    key, arguments = argv[0], argv[1:]
+    values = {}
+    for argument in arguments:
+        name, separator, value = argument.partition("=")
+        if not separator or not name:
+            return fail(f"{argument!r} is not name=value")
+        values[name] = value
+    language = (os.environ.get("MASH_LANGUAGE") or "en").strip() or "en"
+    messages = catalogs_dir() / "messages"
+    for code in dict.fromkeys((language, "en")):
+        text = text_for(messages, code, key)
+        if text is not None:
+            print(PLACEHOLDER.sub(lambda m: values.get(m.group(1), m.group(0)), text))
+            return 0
+    print(f"mash-t: unknown message key {key}", file=sys.stderr)
+    return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))

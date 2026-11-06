@@ -1,0 +1,182 @@
+{
+  "helper.launch.data_not_writable": {
+    "text": "{path} không phải thư mục có thể ghi. Chi tiết: {log}",
+    "source_hash": "c2daaf7abb17"
+  },
+  "helper.launch.data_prepare_failed": {
+    "text": "Mash không thể chuẩn bị {path}. Chi tiết: {log}",
+    "source_hash": "f1a3af24d2f1"
+  },
+  "helper.launch.environment_refused": {
+    "text": "Mash từ chối môi trường bên ngoài {path}. Chi tiết: {log}",
+    "source_hash": "6cba761820b9"
+  },
+  "helper.launch.linux_data_prepare_failed": {
+    "text": "Mash không thể chuẩn bị {path}.",
+    "source_hash": "67920ad8e50d"
+  },
+  "helper.launch.linux_update_settings_failed": {
+    "text": "Mash không thể ghim cài đặt cập nhật; tệp vẫn được giữ nguyên.",
+    "source_hash": "a8cb9d5749da"
+  },
+  "helper.launch.refused_start": {
+    "text": "Mash từ chối khởi chạy.",
+    "source_hash": "fea43a382106"
+  },
+  "helper.launch.setup_failed": {
+    "text": "Không thể thiết lập {path}. Chi tiết: {log}",
+    "source_hash": "e891d0a29f1a"
+  },
+  "helper.launch.socket_outside": {
+    "text": "Mash từ chối khởi chạy: socket nằm ngoài ~/.mash.",
+    "source_hash": "ddb5d709d6cd"
+  },
+  "helper.launch.update_location_invalid": {
+    "text": "Vị trí cập nhật Mash không hợp lệ.",
+    "source_hash": "c53120b603c7"
+  },
+  "helper.launch.update_settings_failed": {
+    "text": "Mash không thể ghim cài đặt cập nhật. Chi tiết: {log}",
+    "source_hash": "31a1842ec5dc"
+  },
+  "helper.launch.update_state_unsafe": {
+    "text": "Trạng thái cập nhật Mash không an toàn.",
+    "source_hash": "f5d6ba096441"
+  },
+  "helper.launch.update_waiter_failed": {
+    "text": "Mash không thể đăng ký tiến trình chờ cập nhật.",
+    "source_hash": "ff2f989250a6"
+  },
+  "helper.launch.updater_incomplete": {
+    "text": "Trình cập nhật Mash chưa hoàn chỉnh.",
+    "source_hash": "43c808c2338d"
+  },
+  "helper.popup.dismiss": {
+    "text": "(nhấn phím bất kỳ để đóng)",
+    "source_hash": "f57ff387149d"
+  },
+  "helper.setup.not_finished": {
+    "text": "Thiết lập Mash chưa hoàn tất nên Mash không mở.",
+    "source_hash": "f7435b584992"
+  },
+  "helper.setup.open_again": {
+    "text": "Mở lại Mash để bắt đầu thiết lập từ đầu.",
+    "source_hash": "3c08c76f274a"
+  },
+  "helper.setup.press_enter": {
+    "text": "Nhấn Enter để đóng cửa sổ này.",
+    "source_hash": "3cbf0fb2a94f"
+  },
+  "plugin.image-popup.no-image": {
+    "text": "Không có ảnh để hiển thị: {file}",
+    "source_hash": "91aa57b30f47"
+  },
+  "plugin.image-popup.source-file": {
+    "text": "(tệp ảnh nằm tại {file})",
+    "source_hash": "acda13cd6347"
+  },
+  "plugin.image-popup.viu-missing": {
+    "text": "Chưa cài viu. Cài đặt bằng: brew install viu",
+    "source_hash": "51d203b460ac"
+  },
+  "plugin.mash-update-notice.notice.apt-failed": {
+    "text": "Kiểm tra kho APT và chạy sudo apt update.",
+    "source_hash": "6e5d462c3fb3"
+  },
+  "plugin.mash-update-notice.notice.available-linux": {
+    "text": "Bạn đang có {installed}. Để cập nhật, hãy chạy: {command}",
+    "source_hash": "408651e42b2f"
+  },
+  "plugin.mash-update-notice.notice.available-macos": {
+    "text": "Bạn đang có {installed}. Mở Mash để cập nhật.",
+    "source_hash": "110061a9c5d1"
+  },
+  "plugin.mash-update-notice.notice.check-failed": {
+    "text": "Kiểm tra kết nối Internet rồi thử lại.",
+    "source_hash": "176afd02072f"
+  },
+  "plugin.mash-update-notice.notice.current-linux": {
+    "text": "Không tìm thấy phiên bản Mash mới hơn trong siêu dữ liệu APT hiện tại.",
+    "source_hash": "4076014ba5ad"
+  },
+  "plugin.mash-update-notice.notice.current-macos": {
+    "text": "Mọi thứ đã được cập nhật. Mash {version} là phiên bản hiện tại.",
+    "source_hash": "541489679898"
+  },
+  "plugin.mash-update-notice.notice.previous-restored": {
+    "text": "Mash {installed} đã chạy lại. Việc cập nhật lên {candidate} chưa hoàn tất.",
+    "source_hash": "e15f090dff62"
+  },
+  "plugin.mash-update-notice.notice.restart-required": {
+    "text": "Bạn đang chạy {installed}. Mash {candidate} đã được cài đặt; hãy khởi động lại Mash để sử dụng.",
+    "source_hash": "e1248557730a"
+  },
+  "plugin.mash-update-notice.notice.updated": {
+    "text": "Mash đang chạy phiên bản mới.",
+    "source_hash": "e3caeafe33e1"
+  },
+  "plugin.mash-update-notice.pane.apt-failed": {
+    "text": "\n  Không tìm thấy thông tin cập nhật trong APT.\n\n  Kiểm tra kho Mash và chạy sudo apt update.   (nhấn phím bất kỳ để đóng)",
+    "source_hash": "ae2c3f30f3cd"
+  },
+  "plugin.mash-update-notice.pane.available-linux": {
+    "text": "\n  Đã có Mash {candidate} (bạn đang có {installed}).\n\n  Để cập nhật, hãy chạy:\n    sudo apt install --only-upgrade letsmash\n\n  Sau đó khởi động lại Mash.   (nhấn phím bất kỳ để đóng)",
+    "source_hash": "2073e20a4f2e"
+  },
+  "plugin.mash-update-notice.pane.check-failed": {
+    "text": "\n  Hiện không thể kiểm tra cập nhật.\n\n  Kiểm tra kết nối Internet rồi thử lại.   (nhấn phím bất kỳ để đóng)",
+    "source_hash": "d716b0057955"
+  },
+  "plugin.mash-update-notice.pane.previous-restored": {
+    "text": "\n  Mash {installed} đã chạy lại.\n\n  Việc cập nhật lên {candidate} chưa hoàn tất. Tệp trong không gian làm việc không bị hoàn nguyên.\n\n  (nhấn phím bất kỳ để đóng)",
+    "source_hash": "23ce21e89b73"
+  },
+  "plugin.mash-update-notice.pane.restart-required": {
+    "text": "\n  Mash {installed} đang chạy; Mash {candidate} đã được cài đặt.\n\n  Lưu công việc rồi khởi động lại Mash để dùng phiên bản đã cài đặt.\n  Không cần tải xuống.   (nhấn phím bất kỳ để đóng)",
+    "source_hash": "8cfff1a68c6e"
+  },
+  "plugin.mash-update-notice.pane.update-prompt": {
+    "text": "\n  Đã có Mash {candidate} (bạn đang có {installed}).\n\n  Nhấn u để cập nhật ngay hoặc nhấn phím khác để bỏ qua.\n  Quá trình cập nhật sẽ thoát Mash rồi mở lại bằng phiên bản mới.\n\n  > ",
+    "source_hash": "e72a656d118c"
+  },
+  "plugin.mash-update-notice.pane.update-unavailable": {
+    "text": "\n  Đã có Mash {candidate} (bạn đang có {installed}).\n\n  Tải xuống tại:\n    {url}\n\n  (nhấn phím bất kỳ để đóng)",
+    "source_hash": "3559cf5d3977"
+  },
+  "plugin.mash-update-notice.pane.updated": {
+    "text": "\n  Mash {version} đã được cài đặt và đang chạy.\n\n  Không gian làm việc và cấu hình của bạn vẫn nằm trong ~/.mash.\n\n  (nhấn phím bất kỳ để đóng)",
+    "source_hash": "b6ec8b2c9bee"
+  },
+  "plugin.mash-update-notice.pane.up-to-date-linux": {
+    "text": "\n  Không tìm thấy phiên bản Mash mới hơn trong siêu dữ liệu APT hiện tại.\n\n  Nếu danh sách gói đã cũ, hãy chạy sudo apt update.   (nhấn phím bất kỳ để đóng)",
+    "source_hash": "e5f9e50c721f"
+  },
+  "plugin.mash-update-notice.pane.up-to-date-macos": {
+    "text": "\n  Mọi thứ đã được cập nhật (Mash {version}).\n\n  (nhấn phím bất kỳ để đóng)",
+    "source_hash": "0f6af22649b2"
+  },
+  "plugin.mash-update-notice.title.available": {
+    "text": "Đã có Mash {candidate}",
+    "source_hash": "e9ea02ee8c67"
+  },
+  "plugin.mash-update-notice.title.check-failed": {
+    "text": "Không thể kiểm tra cập nhật Mash",
+    "source_hash": "43d510221839"
+  },
+  "plugin.mash-update-notice.title.previous-restored": {
+    "text": "Đã khôi phục phiên bản Mash trước đó",
+    "source_hash": "db2ddd4e3f64"
+  },
+  "plugin.mash-update-notice.title.restart-required": {
+    "text": "Cần khởi động lại Mash",
+    "source_hash": "c22b233a4d7d"
+  },
+  "plugin.mash-update-notice.title.up-to-date": {
+    "text": "Mash đã được cập nhật",
+    "source_hash": "cc9e6d5993b9"
+  },
+  "plugin.mash-update-notice.title.updated": {
+    "text": "Mash đã cập nhật lên {version}",
+    "source_hash": "855f75f65bcb"
+  }
+}

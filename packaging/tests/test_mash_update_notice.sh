@@ -34,7 +34,7 @@ mkdir -p "$res/bin"
 # Only the basics the helper needs, linked from the host.
 tools="$tmp/tools"
 mkdir -p "$tools"
-for t in bash cat mkdir rm mv sed head grep seq sort tail date dirname chmod; do
+for t in bash cat mkdir rm mv sed head grep seq sort tail date dirname chmod awk; do
   ln -s "$(command -v "$t")" "$tools/$t"
 done
 # The system interpreter by absolute path: a `command -v python3` inside Mash
@@ -71,18 +71,23 @@ esac'
 cp "$fake/herdr" "$res/bin/herdr"
 
 run() { # run [VAR=value...] -- one launch's worth of the helper
-  env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" "$@" \
+  env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" \
+    "$@" \
     bash "$helper" "$res" "$data" 2>"$tmp/stderr"
 }
 run_manual() { # run_manual [VAR=value...] -- one user-requested check
   mkdir -p "$data/local/state"
-  env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" "$@" \
+  env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" \
+    "$@" \
     bash "$helper" --manual "$res" "$data" 2>"$tmp/stderr"
 }
 count() { grep -c "^$1 " "$calls" 2>/dev/null || true; }
-show_status() { # show_status STATUS SYSTEM -- render the manual result pane
+show_status() { # show_status STATUS SYSTEM [VAR=value...] -- render the manual result pane
+  local status="$1" system="$2"
+  shift 2
   env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" \
-    MASH_UPDATE_STATUS="$1" MASH_UPDATE_SYSTEM="$2" \
+    "$@" \
+    MASH_UPDATE_STATUS="$status" MASH_UPDATE_SYSTEM="$system" \
     MASH_UPDATE_INSTALLED=0.2.0 HERDR_PANE_ID=manual \
     bash "$root/packaging/plugins/mash-update-notice/notice.sh" \
     >"$tmp/status-out" 2>"$tmp/status-stderr" || true
@@ -103,8 +108,12 @@ check "one desktop notification" test "$(count notify)" = 1
 check "the notification names both versions and the command" \
   grep -q 'notify .*0\.2\.0.*0\.1\.1.*sudo apt install --only-upgrade letsmash' "$calls"
 check "one popup" test "$(count popup)" = 1
-check "the popup opens the notice pane, centered, at 56x9" \
-  grep -q 'popup plugin pane open --plugin mash-update-notice --entrypoint notice --placement popup --width 56 --height 9' "$calls"
+check "the popup opens the notice pane, centered, at 56x11" \
+  grep -q 'popup plugin pane open --plugin mash-update-notice --entrypoint notice --placement popup --width 56 --height 11' "$calls"
+check "the popup is given the catalog directory" \
+  grep -q "MASH_I18N_DIR=$root/packaging/i18n" "$calls"
+check "the popup language is passed explicitly" \
+  grep -q -- '--env MASH_LANGUAGE=' "$calls"
 check "the popup receives both versions" \
   grep -q 'MASH_UPDATE_INSTALLED=0.1.1 .*MASH_UPDATE_CANDIDATE=0.2.0' "$calls"
 check "no notification daemon fallback when notify-send works" test "$(count gdbus)" = 0
@@ -182,18 +191,27 @@ mkdir -p "$appdir/Mash.app/Contents/Resources/bin"
 app="$appdir/Mash.app"
 cp "$helper" "$app/Contents/Resources/bin/mash-update-notice"
 cp "$fake/herdr" "$app/Contents/Resources/bin/herdr"
+appres="$app/Contents/Resources"
+# The copied helper has to find mash-t and the catalogs beside itself, the way
+# a bundle does. Putting them on PATH would hide a pane that cannot.
+mkdir -p "$appres/bin" "$appres/i18n/messages"
+cp "$root/packaging/helpers/mash-t" "$appres/bin/mash-t"
+cp "$root/packaging/lib.sh" "$appres/bin/lib.sh"
+chmod +x "$appres/bin/mash-t"
+cp -R "$root/packaging/i18n/messages/helpers" "$appres/i18n/messages/"
 # macOS delivers notifications through the bundle's own wrapper, not notify-send.
 printf '#!/bin/bash\necho "notify $*" >>"$CALLS"\n' \
   >"$app/Contents/Resources/bin/mash-notify"
 chmod +x "$app/Contents/Resources/bin/mash-notify"
-appres="$app/Contents/Resources"
 mac() { # mac [VAR=value...] -- one macOS launch, run from inside the bundle
-  env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" FAKE_UNAME=Darwin "$@" \
+  env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" \
+    FAKE_UNAME=Darwin "$@" \
     bash "$appres/bin/mash-update-notice" "$appres" "$data" 2>"$tmp/stderr"
 }
 mac_manual() { # mac_manual [VAR=value...] -- one user-requested macOS check
   mkdir -p "$data/local/state"
-  env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" FAKE_UNAME=Darwin "$@" \
+  env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" \
+    FAKE_UNAME=Darwin "$@" \
     bash "$appres/bin/mash-update-notice" --manual "$appres" "$data" 2>"$tmp/stderr"
 }
 setversion() { printf '%s\n' "$1" >"$appres/VERSION"; }
@@ -214,6 +232,8 @@ check "the interactive popup has room for download and confirmation" \
   grep -q 'popup plugin pane open --plugin mash-update-notice --entrypoint update --placement popup --width 64 --height 16' "$calls"
 check "the pane receives both versions" \
   grep -q 'MASH_UPDATE_INSTALLED=0.1.1 .*MASH_UPDATE_CANDIDATE=0.2.0' "$calls"
+check "macOS popup is given the bundle catalogs" \
+  grep -q "MASH_I18N_DIR=$appres/i18n" "$calls"
 
 # --- the rate limit ------------------------------------------------------------
 : >"$calls"
@@ -279,6 +299,20 @@ check "macOS manual status says everything is up to date" \
 show_status up-to-date Linux
 check "Linux manual status qualifies its cached APT result" \
   grep -q 'No newer Mash version found in the current APT metadata' "$tmp/status-out"
+show_status up-to-date Linux MASH_LANGUAGE=es
+check "Spanish manual status is translated from the catalog" \
+  grep -q 'No se encontró una versión más reciente de Mash' "$tmp/status-out"
+
+fresh ptbr
+mkdir -p "$data/setup"
+printf 'language=pt-BR\n' >"$data/setup/language"
+run FAKE_INSTALLED=0.1.1 FAKE_CANDIDATE=0.2.0
+check "pt-BR notification is translated from the catalog" \
+  grep -q 'Mash 0\.2\.0 está disponível.*Você tem 0\.1\.1' "$calls"
+check "localized notice keeps canonical state value" \
+  grep -qx 0.2.0 "$data/local/state/update-notice"
+check "the popup is opened in the recorded language" \
+  grep -q 'MASH_LANGUAGE=pt-BR' "$calls"
 
 # --- an announced version is not re-announced ----------------------------------
 fresh mac-already-announced
@@ -343,7 +377,7 @@ mkdir -p "$data/local/state"
 echo 0.2.0 >"$data/local/state/update-success"
 mac FAKE_RELEASE=0.3.0
 check "success opens a confirmation pane" \
-  grep -q 'popup plugin pane open --plugin mash-update-notice --entrypoint updated' "$calls"
+  grep -q 'popup plugin pane open --plugin mash-update-notice --entrypoint updated --placement popup --width 56 --height 9' "$calls"
 check "success notification names the new version" grep -q 'notify .*Mash updated to 0.2.0' "$calls"
 check "success marker is consumed once" test ! -f "$data/local/state/update-success"
 check "success makes no GitHub request" test "$(count curl)" = 0
@@ -410,14 +444,51 @@ check "a read-only parent offers no update" grep -q 'MASH_UPDATE_CAN_APPLY=0' "$
 # A dist tree or any other non-.app location cannot be swapped.
 fresh mac-notapp
 plain="$tmp/plain/Resources"
-mkdir -p "$plain/bin"
+mkdir -p "$plain/bin" "$plain/i18n/messages"
 cp "$helper" "$plain/bin/mash-update-notice"
 cp "$fake/herdr" "$plain/bin/herdr"
+cp "$root/packaging/helpers/mash-t" "$plain/bin/mash-t"
+cp "$root/packaging/lib.sh" "$plain/bin/lib.sh"
+chmod +x "$plain/bin/mash-t"
+cp -R "$root/packaging/i18n/messages/helpers" "$plain/i18n/messages/"
 printf '0.1.1\n' >"$plain/VERSION"
-env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" FAKE_UNAME=Darwin FAKE_RELEASE=0.2.0 \
+env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" \
+  FAKE_UNAME=Darwin FAKE_RELEASE=0.2.0 \
   bash "$plain/bin/mash-update-notice" "$plain" "$data" 2>"$tmp/stderr"
 check "a non-.app location still announces" test "$(count popup)" = 1
 check "a non-.app location offers no update" grep -q 'MASH_UPDATE_CAN_APPLY=0' "$calls"
+
+# No catalog directory and no Mash bin on PATH. The real pane script resolves
+# mash-t itself and still prints English. A copy that cannot see mash-t at all
+# prints the same English instead of an empty box.
+env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" \
+  MASH_UPDATE_STATUS=up-to-date MASH_UPDATE_SYSTEM=Linux \
+  MASH_UPDATE_INSTALLED=0.2.0 HERDR_PANE_ID=manual \
+  bash "$root/packaging/plugins/mash-update-notice/notice.sh" \
+  >"$tmp/status-out" 2>"$tmp/status-stderr" || true
+check "missing MASH_I18N_DIR still prints English" \
+  grep -q 'No newer Mash version found in the current APT metadata' "$tmp/status-out"
+
+mkdir -p "$tmp/a/b/c"
+cp "$root/packaging/plugins/mash-update-notice/notice.sh" "$tmp/a/b/c/notice.sh"
+env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" \
+  MASH_UPDATE_STATUS=check-unavailable MASH_UPDATE_SYSTEM=Linux \
+  HERDR_PANE_ID=manual \
+  bash "$tmp/a/b/c/notice.sh" \
+  >"$tmp/status-out" 2>"$tmp/status-stderr" || true
+check "unresolvable mash-t prints English instead of an empty popup" \
+  grep -q 'Could not check for updates right now' "$tmp/status-out"
+check "unresolvable mash-t does not print the message key" \
+  grep -qv 'plugin.mash-update-notice' "$tmp/status-out"
+
+mkdir -p "$tmp/a/b/d"
+cp "$root/packaging/plugins/image-popup/view.sh" "$tmp/a/b/d/view.sh"
+env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" \
+  IMAGE_POPUP_FILE="$tmp/no-such.png" HERDR_PANE_ID=manual \
+  bash "$tmp/a/b/d/view.sh" \
+  >"$tmp/status-out" 2>"$tmp/status-stderr" || true
+check "image popup without mash-t prints English" \
+  grep -q 'No image to show:' "$tmp/status-out"
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

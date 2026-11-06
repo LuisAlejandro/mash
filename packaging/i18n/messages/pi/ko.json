@@ -1,0 +1,98 @@
+{
+  "pi.header.restore": {
+    "text": "내장 pi 머리글을 복원",
+    "source_hash": "afcd79f821af"
+  },
+  "pi.header.restored": {
+    "text": "내장 머리글을 복원했습니다",
+    "source_hash": "c1e44d719693"
+  },
+  "pi.orchestration.answered": {
+    "text": "코디네이터가 답했습니다: {reply}",
+    "source_hash": "fc659f7aea92"
+  },
+  "pi.orchestration.cancelled": {
+    "text": "질문이 취소되었습니다.",
+    "source_hash": "4c742263cfe3"
+  },
+  "pi.orchestration.failed": {
+    "text": "코디네이터 질문이 실패했습니다.",
+    "source_hash": "1036eb4b3272"
+  },
+  "pi.orchestration.label": {
+    "text": "코디네이터에게 묻기",
+    "source_hash": "5369ae08b587"
+  },
+  "pi.orchestration.lookup-failed": {
+    "text": "Dispatch를 찾지 못했습니다.",
+    "source_hash": "e8a8ac97005c"
+  },
+  "pi.orchestration.no-dispatch": {
+    "text": "이 창에 열린 Dispatch가 없습니다. ask_user로 사람에게 물어보세요.",
+    "source_hash": "045255c705e5"
+  },
+  "pi.orchestration.pending": {
+    "text": "질문 {id}이(가) 아직 대기 중입니다. resume에 그 id를 넣어 ask_coordinator를 다시 호출하세요.",
+    "source_hash": "a70e26ec54e8"
+  },
+  "pi.orchestration.unavailable": {
+    "text": "mash-orchestration을 사용할 수 없습니다 ({message}). ask_user로 사람에게 물어보세요.",
+    "source_hash": "ee1fa62200a8"
+  },
+  "pi.orchestration.waiting": {
+    "text": "코디네이터를 기다리는 중",
+    "source_hash": "41e36ff21f8a"
+  },
+  "pi.show-file.is-directory": {
+    "text": "{path}은(는) 파일이 아니라 디렉터리입니다.",
+    "source_hash": "51405f5a7722"
+  },
+  "pi.show-file.label": {
+    "text": "사람에게 파일 보여 주기",
+    "source_hash": "1c16c0d820b1"
+  },
+  "pi.show-file.needs-path": {
+    "text": "show_file에는 경로가 필요합니다.",
+    "source_hash": "2709bc3725aa"
+  },
+  "pi.show-file.no-reason": {
+    "text": "이유가 없습니다",
+    "source_hash": "bdb1872e7703"
+  },
+  "pi.show-file.no-such-file": {
+    "text": "파일이 없습니다: {path}",
+    "source_hash": "6b07882ca274"
+  },
+  "pi.show-file.not-shown-daemon": {
+    "text": "표시되지 않음: {name}의 Fresh 데몬을 사용할 수 없습니다.",
+    "source_hash": "eee33afb1233"
+  },
+  "pi.show-file.not-shown-fresh": {
+    "text": "표시되지 않음: Fresh에서 {name}을(를) 열 수 없습니다 ({detail}).",
+    "source_hash": "38000d407a37"
+  },
+  "pi.show-file.not-shown-herdr": {
+    "text": "표시되지 않음: Herdr에서 {name}을(를) 열 수 없습니다 ({detail}).",
+    "source_hash": "ef35d0eb229e"
+  },
+  "pi.show-file.not-shown-no-editor": {
+    "text": "표시되지 않음: 이 탭에 {name}을(를) 열 Fresh 편집기가 없습니다.",
+    "source_hash": "dd6f54bd1990"
+  },
+  "pi.show-file.not-shown-no-pane": {
+    "text": "표시되지 않음: {name}에 쓸 Herdr 창이 없습니다.",
+    "source_hash": "b810ed171fce"
+  },
+  "pi.show-file.not-shown-other": {
+    "text": "표시되지 않음: {name}의 내부 뷰어가 없습니다.",
+    "source_hash": "c38cbe4e26f6"
+  },
+  "pi.show-file.shown-image": {
+    "text": "표시됨: {name}이(가) 편집기 옆 세로 분할에서 실제 해상도로 열려 있습니다.",
+    "source_hash": "bbf2a8758fc7"
+  },
+  "pi.show-file.shown-text": {
+    "text": "표시됨: {name}이(가) 이 창 옆 Fresh 편집기에서 열려 있습니다.",
+    "source_hash": "ac958177710d"
+  }
+}

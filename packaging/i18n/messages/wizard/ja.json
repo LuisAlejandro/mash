@@ -1,0 +1,1538 @@
+{
+  "wizard.language.title": {
+    "text": "言語を選択",
+    "source_hash": "8e2d0664dbbb"
+  },
+  "wizard.language.prompt": {
+    "text": "セットアップ言語",
+    "source_hash": "6a37bc86eb31"
+  },
+  "wizard.language.continue": {
+    "text": "続行",
+    "source_hash": "31fbef162594"
+  },
+  "wizard.welcome.start": {
+    "text": "セットアップウィザードを開始",
+    "source_hash": "0fe79b066746"
+  },
+  "wizard.identity.title": {
+    "text": "ユーザー情報",
+    "source_hash": "999f23fcd7be"
+  },
+  "wizard.identity.name_label": {
+    "text": "名前:",
+    "source_hash": "2683cad48a14"
+  },
+  "wizard.identity.name_help": {
+    "text": "コミットに表示する名前",
+    "source_hash": "496635d99500"
+  },
+  "wizard.identity.email_label": {
+    "text": "メール:",
+    "source_hash": "17507dcf8457"
+  },
+  "wizard.identity.email_help": {
+    "text": "コミットに表示するメール",
+    "source_hash": "c5b5196053ec"
+  },
+  "wizard.identity.key_label": {
+    "text": "署名キー:",
+    "source_hash": "bbfbc9ee3f2d"
+  },
+  "wizard.identity.key_help": {
+    "text": "空欄にすると署名を無効化",
+    "source_hash": "89da89efcf12"
+  },
+  "wizard.identity.next": {
+    "text": "次へ — ツールを選択",
+    "source_hash": "a3dc8180c38c"
+  },
+  "wizard.tools.title": {
+    "text": "ツール",
+    "source_hash": "ea93d6a262ec"
+  },
+  "wizard.tools.intro": {
+    "text": "インストールするツールを選択します。グレー表示のツールは常に利用できます。",
+    "source_hash": "5428fc58e4db"
+  },
+  "wizard.tools.mash_only": {
+    "text": "Mash 内のみ: ~/.mash に保存され、Mash の外からは見えません。",
+    "source_hash": "c1401b334c12"
+  },
+  "wizard.tools.shared": {
+    "text": "コンピューター全体: システムにインストールされ、他のアプリと共有されます。",
+    "source_hash": "ffd57efffb24"
+  },
+  "wizard.tools.no_homebrew": {
+    "text": "Homebrew が見つかりません。Homebrew ツールを選ぶ前に brew.sh からインストールしてください。",
+    "source_hash": "59e2e7cd4988"
+  },
+  "wizard.tools.choices": {
+    "text": "インストール項目",
+    "source_hash": "ab5a2f64781a"
+  },
+  "wizard.tools.skills": {
+    "text": "スキル",
+    "source_hash": "66d0f523a379"
+  },
+  "wizard.tools.skills_check": {
+    "text": "Programming Skills をインストール（メモリを含む）",
+    "source_hash": "7accde9f1e3d"
+  },
+  "wizard.tools.skills_help": {
+    "text": "ローカルメモリを使う Pi の発想、計画、作業、QA、リリースのワークフロー。",
+    "source_hash": "bd9f35e51cb5"
+  },
+  "wizard.tools.back": {
+    "text": "戻る",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.tools.next": {
+    "text": "次へ — プロバイダーを設定",
+    "source_hash": "1168b9d2c2a3"
+  },
+  "wizard.tools.route.bundled": {
+    "text": "Mash に同梱",
+    "source_hash": "ef935c70d966"
+  },
+  "wizard.tools.route.apt": {
+    "text": "apt",
+    "source_hash": "5009a047a11f"
+  },
+  "wizard.tools.route.homebrew": {
+    "text": "Homebrew",
+    "source_hash": "bc49b968dbe4"
+  },
+  "wizard.tools.route.download": {
+    "text": "固定バージョンのダウンロード",
+    "source_hash": "33093fa51037"
+  },
+  "wizard.tools.route.npm": {
+    "text": "固定バージョンの npm",
+    "source_hash": "a903155cf3fd"
+  },
+  "wizard.tools.route.pip": {
+    "text": "固定バージョンの pip",
+    "source_hash": "34399ac2dcb4"
+  },
+  "wizard.tools.route.cua": {
+    "text": "CUA インストーラー",
+    "source_hash": "34c982365b95"
+  },
+  "wizard.tools.route.xcode": {
+    "text": "Xcode ツール",
+    "source_hash": "80c6d0b53bee"
+  },
+  "wizard.tools.scope.shared": {
+    "text": "コンピューター全体",
+    "source_hash": "dced8f39fb9d"
+  },
+  "wizard.tools.scope.mash_only": {
+    "text": "Mash 内のみ",
+    "source_hash": "3011913d5cb4"
+  },
+  "wizard.font.title": {
+    "text": "外観",
+    "source_hash": "3907fa7f8072"
+  },
+  "wizard.font.fonts_section": {
+    "text": "このコンピューターのフォント",
+    "source_hash": "48ceedcfd9eb"
+  },
+  "wizard.font.filter": {
+    "text": "フォントを絞り込む",
+    "source_hash": "b86e7b247be1"
+  },
+  "wizard.font.filter_hint": {
+    "text": "↑/↓ フォント · Tab でサイズ",
+    "source_hash": "356ea9afc4bf"
+  },
+  "wizard.font.family_section": {
+    "text": "フォントファミリー（Meslo を同梱）",
+    "source_hash": "7445920f6507"
+  },
+  "wizard.font.no_fonts": {
+    "text": "一致するフォントがありません — Backspace で検索範囲を広げる",
+    "source_hash": "8d7931285de0"
+  },
+  "wizard.font.keybindings_section": {
+    "text": "キー設定（セットアップ完了後は変更されません）",
+    "source_hash": "92dc99e05387"
+  },
+  "wizard.font.keybindings_note": {
+    "text": "Cursor のキー操作、または各アプリ独自のキー（Herdr は Ctrl+B）。",
+    "source_hash": "8658dfe96d6a"
+  },
+  "wizard.font.theme_section": {
+    "text": "テーマ（Herdr、Mash Terminal、Fresh、Pi、reviewr）",
+    "source_hash": "396f9810c847"
+  },
+  "wizard.font.theme_switch": {
+    "text": "←/→ 切り替え",
+    "source_hash": "06a1545f5045"
+  },
+  "wizard.font.size_section": {
+    "text": "フォントサイズ（ポイント）",
+    "source_hash": "31b2eb5d3b2c"
+  },
+  "wizard.font.size_adjust": {
+    "text": "←/→ 調整（6–72）",
+    "source_hash": "976de7024dc8"
+  },
+  "wizard.font.preview_suffix": {
+    "text": "このウィンドウでプレビュー",
+    "source_hash": "b086c32f40d5"
+  },
+  "wizard.font.back": {
+    "text": "戻る",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.font.next": {
+    "text": "音声入力へ進む",
+    "source_hash": "ec7a0ff60525"
+  },
+  "wizard.theme.dark": {
+    "text": "ダークテーマ",
+    "source_hash": "3f11a5cc643a"
+  },
+  "wizard.theme.light": {
+    "text": "ライトテーマ",
+    "source_hash": "3669a1b2770f"
+  },
+  "wizard.voice.title": {
+    "text": "音声入力",
+    "source_hash": "25ce1a09ddc1"
+  },
+  "wizard.voice.languages_section": {
+    "text": "音声入力する言語",
+    "source_hash": "7287a2bc2529"
+  },
+  "wizard.voice.empty_notice": {
+    "text": "言語未選択: 音声入力は設定されません。あとで Pi の /voice から追加できます。",
+    "source_hash": "b903d36755f6"
+  },
+  "wizard.voice.no_match": {
+    "text": "この組み合わせに対応するモデルがありません。言語を削除してください。",
+    "source_hash": "b8b167ba3990"
+  },
+  "wizard.voice.best": {
+    "text": "おすすめ",
+    "source_hash": "c47d21c643c0"
+  },
+  "wizard.voice.fast": {
+    "text": "高速",
+    "source_hash": "6c582b62e0e5"
+  },
+  "wizard.voice.best_summary": {
+    "text": "速度と精度のバランスがよい候補",
+    "source_hash": "2fde20c2ddd6"
+  },
+  "wizard.voice.fast_summary": {
+    "text": "実用性を保てる最速の文字起こし",
+    "source_hash": "9f01f55f16dc"
+  },
+  "wizard.voice.same_model": {
+    "text": "ここでは両方の役割に同じモデルを使います。",
+    "source_hash": "6a800db5cff9"
+  },
+  "wizard.voice.detector_notice": {
+    "text": "自動検出用に {size} の言語検出器を追加",
+    "source_hash": "3c9c1859e707"
+  },
+  "wizard.voice.model_section": {
+    "text": "ダウンロードするモデル",
+    "source_hash": "e90982e6cea9"
+  },
+  "wizard.voice.continue_without": {
+    "text": "音声入力せずに続行",
+    "source_hash": "25309b666263"
+  },
+  "wizard.voice.download_continue": {
+    "text": "ダウンロードして続行",
+    "source_hash": "0a12deea1f8d"
+  },
+  "wizard.voice.back": {
+    "text": "戻る",
+    "source_hash": "76900f1bfd16"
+  },
+  "wizard.voice.more": {
+    "text": "あと {count} 件 — スクロールするか下へ移動",
+    "source_hash": "00703aa3c372"
+  },
+  "wizard.voice.name.bg": {
+    "text": "ブルガリア語",
+    "source_hash": "ecd986094baf"
+  },
+  "wizard.voice.name.cs": {
+    "text": "チェコ語",
+    "source_hash": "8b463ea23a7e"
+  },
+  "wizard.voice.name.de": {
+    "text": "ドイツ語",
+    "source_hash": "a659b60d246d"
+  },
+  "wizard.voice.name.en": {
+    "text": "英語",
+    "source_hash": "ba118bf7fc9c"
+  },
+  "wizard.voice.name.es": {
+    "text": "スペイン語",
+    "source_hash": "3411059cb8e0"
+  },
+  "wizard.voice.name.fr": {
+    "text": "フランス語",
+    "source_hash": "7458199fe97a"
+  },
+  "wizard.voice.name.it": {
+    "text": "イタリア語",
+    "source_hash": "fe1d9c7db376"
+  },
+  "wizard.voice.name.ja": {
+    "text": "日本語",
+    "source_hash": "be4ee906d3ef"
+  },
+  "wizard.voice.name.ko": {
+    "text": "韓国語",
+    "source_hash": "04656c6fe003"
+  },
+  "wizard.voice.name.pt": {
+    "text": "ポルトガル語",
+    "source_hash": "98b01b890687"
+  },
+  "wizard.voice.name.ru": {
+    "text": "ロシア語",
+    "source_hash": "5bcc40adf6e0"
+  },
+  "wizard.voice.name.th": {
+    "text": "タイ語",
+    "source_hash": "ad705ee19c04"
+  },
+  "wizard.voice.name.uk": {
+    "text": "ウクライナ語",
+    "source_hash": "6f424303fa12"
+  },
+  "wizard.voice.name.vi": {
+    "text": "ベトナム語",
+    "source_hash": "f25499e9df5c"
+  },
+  "wizard.voice.name.zh": {
+    "text": "中国語（標準語）",
+    "source_hash": "b4d3ec443738"
+  },
+  "wizard.github.section": {
+    "text": "GitHub（任意）",
+    "source_hash": "d02de70d7691"
+  },
+  "wizard.github.signed_out": {
+    "text": "未サインイン",
+    "source_hash": "491fc91cd76e"
+  },
+  "wizard.github.starting": {
+    "text": "GitHub に接続中…",
+    "source_hash": "e7018ff9b61a"
+  },
+  "wizard.github.waiting": {
+    "text": "ブラウザーでの承認を待っています",
+    "source_hash": "0e591354e538"
+  },
+  "wizard.github.signed_in": {
+    "text": "✓ サインイン済み",
+    "source_hash": "a6bc36f81df5"
+  },
+  "wizard.github.signed_in_as": {
+    "text": "✓ {user} としてサインイン済み",
+    "source_hash": "33cfe2e60aae"
+  },
+  "wizard.github.sign_in": {
+    "text": "GitHub にサインイン",
+    "source_hash": "47e9895d1d76"
+  },
+  "wizard.github.cancel": {
+    "text": "キャンセル",
+    "source_hash": "19766ed6ccb2"
+  },
+  "wizard.github.sign_out": {
+    "text": "サインアウト",
+    "source_hash": "48f0d3d397d4"
+  },
+  "wizard.github.retry": {
+    "text": "再試行",
+    "source_hash": "d8b8392e2c54"
+  },
+  "wizard.github.copied": {
+    "text": "クリップボードにコピー済み",
+    "source_hash": "9a6d3fb1a8f5"
+  },
+  "wizard.github.approve": {
+    "text": "Mash を承認するには {url} でコードを入力してください。",
+    "source_hash": "0811fcc61af8"
+  },
+  "wizard.github.usage": {
+    "text": "Git の HTTPS、プルリクエスト、エージェントの GitHub ツールで使用されます。",
+    "source_hash": "687743c41d86"
+  },
+  "wizard.font.keybindings.mash": {
+    "text": "Mash / Cursor スタイル",
+    "source_hash": "50c4eaf509a5"
+  },
+  "wizard.font.keybindings.native": {
+    "text": "ネイティブ",
+    "source_hash": "d509e4938852"
+  },
+  "wizard.tools.description.agent-browser": {
+    "text": "ページ作業用のブラウザー自動化",
+    "source_hash": "17a3b5d9e891"
+  },
+  "wizard.tools.description.atuin": {
+    "text": "検索できるシェル履歴",
+    "source_hash": "f1667e433eff"
+  },
+  "wizard.tools.description.bash-language-server": {
+    "text": "Bash 言語サーバー",
+    "source_hash": "8bb3d3483973"
+  },
+  "wizard.tools.description.bat": {
+    "text": "ハイライト付きファイルプレビュー",
+    "source_hash": "65f67ed05fd4"
+  },
+  "wizard.tools.description.clangd": {
+    "text": "C/C++ 言語サーバー",
+    "source_hash": "eb55e1c1e2fc"
+  },
+  "wizard.tools.description.cua-driver": {
+    "text": "アプリ画面向けのネイティブデスクトップ操作",
+    "source_hash": "875a66659bbe"
+  },
+  "wizard.tools.description.delta": {
+    "text": "Git 差分とページャー",
+    "source_hash": "0a5ab9622ca0"
+  },
+  "wizard.tools.description.eza": {
+    "text": "ファイル一覧",
+    "source_hash": "90065d6d509a"
+  },
+  "wizard.tools.description.fd": {
+    "text": "ファイル検索",
+    "source_hash": "401934824f5c"
+  },
+  "wizard.tools.description.fresh": {
+    "text": "Mash のエディター",
+    "source_hash": "07a3ce240a97"
+  },
+  "wizard.tools.description.fzf": {
+    "text": "対話型あいまい検索",
+    "source_hash": "74befff772fe"
+  },
+  "wizard.tools.description.gh": {
+    "text": "GitHub CLI と認証情報ヘルパー",
+    "source_hash": "7f9081e6b668"
+  },
+  "wizard.tools.description.git": {
+    "text": "Git のバージョン管理",
+    "source_hash": "04ecfc4b2a56"
+  },
+  "wizard.tools.description.gopls": {
+    "text": "Go 言語サーバー",
+    "source_hash": "7c830acbe2df"
+  },
+  "wizard.tools.description.herdr": {
+    "text": "ワークスペース、タブ、ペイン",
+    "source_hash": "ae8e873192bf"
+  },
+  "wizard.tools.description.jq": {
+    "text": "JSON ユーティリティ",
+    "source_hash": "8f8b7b35919d"
+  },
+  "wizard.tools.description.latexindent": {
+    "text": "LaTeX の整形",
+    "source_hash": "2d27bc2aed62"
+  },
+  "wizard.tools.description.lazydocker": {
+    "text": "ターミナル内の Docker",
+    "source_hash": "a1ea900f50dc"
+  },
+  "wizard.tools.description.lazygit": {
+    "text": "ターミナル内の Git",
+    "source_hash": "56280a7e33fa"
+  },
+  "wizard.tools.description.marksman": {
+    "text": "Markdown 言語サーバー",
+    "source_hash": "acd246ea56cd"
+  },
+  "wizard.tools.description.node": {
+    "text": "JavaScript ランタイムと npm",
+    "source_hash": "257e5fc25d9c"
+  },
+  "wizard.tools.description.pet": {
+    "text": "コマンドスニペット",
+    "source_hash": "2c7046aea68e"
+  },
+  "wizard.tools.description.pi": {
+    "text": "Mash のコーディングエージェント",
+    "source_hash": "1e3348dc35ec"
+  },
+  "wizard.tools.description.prettier": {
+    "text": "JavaScript、JSON、Markdown、CSS、Svelte の整形",
+    "source_hash": "0a196b7eee63"
+  },
+  "wizard.tools.description.python": {
+    "text": "Python ランタイムと pip",
+    "source_hash": "d378a966a298"
+  },
+  "wizard.tools.description.python-lsp-server": {
+    "text": "Python 言語サーバー",
+    "source_hash": "45689d922173"
+  },
+  "wizard.tools.description.rg": {
+    "text": "コンテンツ検索",
+    "source_hash": "364c20f57972"
+  },
+  "wizard.tools.description.rust-analyzer": {
+    "text": "Rust 言語サーバー",
+    "source_hash": "59af4ee7c852"
+  },
+  "wizard.tools.description.sentrux": {
+    "text": "計画、作業、QA の構造分析",
+    "source_hash": "cdadc36df319"
+  },
+  "wizard.tools.description.shfmt": {
+    "text": "シェルの整形",
+    "source_hash": "ef675cf302a8"
+  },
+  "wizard.tools.description.sourcekit-lsp": {
+    "text": "Swift 言語サーバー",
+    "source_hash": "bf29ee422d2f"
+  },
+  "wizard.tools.description.starship": {
+    "text": "シェルプロンプト",
+    "source_hash": "ef8740639be1"
+  },
+  "wizard.tools.description.svelte-language-server": {
+    "text": "Svelte 言語サーバー",
+    "source_hash": "5f0011a9203a"
+  },
+  "wizard.tools.description.tailwindcss-language-server": {
+    "text": "Tailwind CSS 言語サーバー",
+    "source_hash": "b33fd822317e"
+  },
+  "wizard.tools.description.texlab": {
+    "text": "LaTeX 言語サーバー",
+    "source_hash": "3388b1a9bd89"
+  },
+  "wizard.tools.description.typescript-language-server": {
+    "text": "TypeScript/JavaScript 言語サーバー",
+    "source_hash": "199f12a09d18"
+  },
+  "wizard.tools.description.viu": {
+    "text": "ターミナル内の画像",
+    "source_hash": "6068123d4bf5"
+  },
+  "wizard.tools.description.vscode-css-language-server": {
+    "text": "CSS サーバー（CSS/HTML/JSON 共通パッケージ）",
+    "source_hash": "3ae9cafca643"
+  },
+  "wizard.tools.description.vscode-html-language-server": {
+    "text": "HTML サーバー（CSS/HTML/JSON 共通パッケージ）",
+    "source_hash": "4fdddbf99da0"
+  },
+  "wizard.tools.description.vscode-json-language-server": {
+    "text": "JSON サーバー（CSS/HTML/JSON 共通パッケージ）",
+    "source_hash": "af757d93137e"
+  },
+  "wizard.tools.description.yaml-language-server": {
+    "text": "YAML 言語サーバー",
+    "source_hash": "d56c118152ef"
+  },
+  "wizard.tools.description.zoxide": {
+    "text": "ディレクトリを賢く並べ替え",
+    "source_hash": "82deb27f3f2d"
+  },
+  "wizard.font.warning_no_list": {
+    "text": "インストール済みフォントを一覧表示できません。Meslo は引き続き利用できます。",
+    "source_hash": "800ea442cefd"
+  },
+  "wizard.shell.setup": {
+    "text": "セットアップ",
+    "source_hash": "7013af4c42fe"
+  },
+  "wizard.shell.installing": {
+    "text": "インストール中…",
+    "source_hash": "530bcc355f0a"
+  },
+  "wizard.shell.navigation_hint": {
+    "text": "Tab で移動 · Enter で選択",
+    "source_hash": "fbe682a41063"
+  },
+  "wizard.shell.preview_hint": {
+    "text": "←/→ ページ · Esc で戻る",
+    "source_hash": "9a1a64bc4c7d"
+  },
+  "wizard.shell.page_title": {
+    "text": "{title} — {total}ページ中{current}ページ目",
+    "source_hash": "26ddd83b8742"
+  },
+  "wizard.page.model_provider": {
+    "text": "モデルプロバイダー",
+    "source_hash": "ea70384c465d"
+  },
+  "wizard.page.web_search": {
+    "text": "ウェブ検索",
+    "source_hash": "7711faa74a10"
+  },
+  "wizard.page.memory": {
+    "text": "メモリ",
+    "source_hash": "c3963aedaac6"
+  },
+  "wizard.shell.setup_label": {
+    "text": "セットアップ",
+    "source_hash": "7175b03373a2"
+  },
+  "wizard.github.config_inside": {
+    "text": "GitHubの設定はMash内に保存する必要があります。",
+    "source_hash": "2b038878bb44"
+  },
+  "wizard.github.cli_unavailable": {
+    "text": "このビルドではGitHub CLIは利用できません。",
+    "source_hash": "929b978e3fa2"
+  },
+  "wizard.github.incomplete": {
+    "text": "GitHubへのサインインが完了しませんでした。",
+    "source_hash": "d7fb51538ef3"
+  },
+  "wizard.github.start_failed": {
+    "text": "GitHub CLIを起動できませんでした: {error}",
+    "source_hash": "77cc54ecbb65"
+  },
+  "wizard.model.local_catalog": {
+    "text": "ローカルのカタログです。認証情報はサーバーで検証されていません",
+    "source_hash": "b90b73d51076"
+  },
+  "wizard.model.filter": {
+    "text": "モデルを絞り込む",
+    "source_hash": "9a35e606cd37"
+  },
+  "wizard.model.choose": {
+    "text": "モデルを選択（Enterまたはクリック）",
+    "source_hash": "b67e2354ebe6"
+  },
+  "wizard.model.enter_manual": {
+    "text": "手動で入力",
+    "source_hash": "ad876beba8ac"
+  },
+  "wizard.model.use_model": {
+    "text": "モデルを使う",
+    "source_hash": "cb1c1ca37393"
+  },
+  "wizard.connection.unavailable": {
+    "text": "接続の確認はできません。詳細を手動で入力してください。セットアップは続行できます。",
+    "source_hash": "df66e4e70112"
+  },
+  "wizard.connection.mode.existing": {
+    "text": "保存済みの認証情報を再利用",
+    "source_hash": "a8f3c9ed4b75"
+  },
+  "wizard.common.new_api_key": {
+    "text": "新しいAPIキーを入力",
+    "source_hash": "9b6cc5e19d07"
+  },
+  "wizard.connection.mode.none": {
+    "text": "キーなし（ローカルサーバー）",
+    "source_hash": "327d8a7f069e"
+  },
+  "wizard.common.sign_in_later": {
+    "text": "後でPiでサインイン",
+    "source_hash": "9e6b7094c00b"
+  },
+  "wizard.connection.local_server": {
+    "text": "{name}（ローカル）",
+    "source_hash": "60d0adb8ca44"
+  },
+  "wizard.connection.reason.unauthorized": {
+    "text": "エンドポイントがこの認証情報を拒否しました。",
+    "source_hash": "5c67730adff0"
+  },
+  "wizard.connection.reason.not_found": {
+    "text": "エンドポイントにそのモデルまたはAPIパスがありません。",
+    "source_hash": "92e6a1ef02b9"
+  },
+  "wizard.connection.reason.timeout": {
+    "text": "エンドポイントが時間内に応答しませんでした。",
+    "source_hash": "824104c212df"
+  },
+  "wizard.connection.reason.unreachable": {
+    "text": "そのアドレスではサーバーが応答しませんでした。",
+    "source_hash": "91cf761f6798"
+  },
+  "wizard.connection.reason.blocked": {
+    "text": "そのアドレスは許可されていません。HTTPSエンドポイントまたはローカルサーバーのアドレスを使用してください。",
+    "source_hash": "91672c928382"
+  },
+  "wizard.connection.reason.redirected": {
+    "text": "エンドポイントが別の場所にリダイレクトしました。最終的なアドレスを入力してください。",
+    "source_hash": "6f5c4d2db072"
+  },
+  "wizard.connection.reason.not_json": {
+    "text": "そのアドレスはモデルAPIではなくページで応答しました。",
+    "source_hash": "caa45c7a5c14"
+  },
+  "wizard.connection.reason.wrong_api": {
+    "text": "そのアドレスは別のAPI種別で応答しました。アドレスと選択したAPIを確認してください。",
+    "source_hash": "4214079dbe1b"
+  },
+  "wizard.connection.reason.no_models": {
+    "text": "サーバーは動作していますが、チャットモデルが読み込まれていません。",
+    "source_hash": "a1655be795a4"
+  },
+  "wizard.connection.reason.stale": {
+    "text": "確認中に接続が変わりました。もう一度テストしてください。",
+    "source_hash": "270cbc62e785"
+  },
+  "wizard.connection.reason.consent": {
+    "text": "テストでは短いリクエストを1回送信します。続けるには確認してください。",
+    "source_hash": "8210811701c1"
+  },
+  "wizard.connection.reason.command_secret": {
+    "text": "この認証情報はコマンドを実行します。代わりにPiで管理してください。",
+    "source_hash": "07c5bdb147b9"
+  },
+  "wizard.connection.reason.oauth_expired": {
+    "text": "保存済みのサインインの期限が切れました。Piから再度サインインしてください。",
+    "source_hash": "d5ce40555415"
+  },
+  "wizard.connection.reason.endpoint_changed": {
+    "text": "保存済みの認証情報は別のエンドポイントのものです。",
+    "source_hash": "c8ac0862d7b2"
+  },
+  "wizard.connection.reason.additional_setup": {
+    "text": "このプロバイダーには追加の設定が必要です。Piで完了してください。",
+    "source_hash": "b02eeda9e214"
+  },
+  "wizard.connection.reason.fallback": {
+    "text": "接続を確認できませんでした。",
+    "source_hash": "a329289ba9b5"
+  },
+  "wizard.connection.saved": {
+    "text": "保存済みの認証情報",
+    "source_hash": "cd3c6826c368"
+  },
+  "wizard.connection.deferred": {
+    "text": "認証はPi /loginに委ねられています",
+    "source_hash": "48ed1207e344"
+  },
+  "wizard.connection.http_status": {
+    "text": "{message}（HTTP {status}）",
+    "source_hash": "28b2090559db"
+  },
+  "wizard.models.unavailable": {
+    "text": "Piのモデル確認を利用できません。モデルは手動で設定するか、セットアップ後にPi /loginを使ってください。",
+    "source_hash": "b446b49932ad"
+  },
+  "wizard.models.helper_unavailable": {
+    "text": "セットアップ補助機能を利用できません。詳細を手動で入力してください。セットアップは続行できます。",
+    "source_hash": "c105bfa9119a"
+  },
+  "wizard.models.not_in_catalog": {
+    "text": "保存済みのモデルはPiのローカルカタログにありません。正確なIDは保持されました。",
+    "source_hash": "3a377429f23a"
+  },
+  "wizard.models.no_catalog": {
+    "text": "保存済みモデルに利用可能なローカルカタログがないため、IDは未検証です。",
+    "source_hash": "41e3d45585a9"
+  },
+  "wizard.models.not_ready": {
+    "text": "保存済みモデルのプロバイダーに認証情報が設定されていません。セットアップ後にPi /loginを使ってください。",
+    "source_hash": "27dc6e44bc1e"
+  },
+  "wizard.models.unverified": {
+    "text": "保存済みプロバイダーの認証情報をローカルで確認できませんでした。セットアップ後にPi /loginを使ってください。",
+    "source_hash": "eb785e842362"
+  },
+  "wizard.providers.invalid_catalog": {
+    "text": "同梱のPiプロバイダーカタログが無効です",
+    "source_hash": "bbcc3cc163f5"
+  },
+  "wizard.providers.hint.azure": {
+    "text": "先にAZURE_OPENAI_BASE_URLまたはAZURE_OPENAI_RESOURCE_NAMEを設定してください。",
+    "source_hash": "2decf0bd1d6b"
+  },
+  "wizard.providers.hint.cloudflare_gateway": {
+    "text": "Cloudflareではアカウント ID とゲートウェイ ID も必要です。",
+    "source_hash": "c6bb32d55e90"
+  },
+  "wizard.providers.hint.cloudflare_workers": {
+    "text": "Cloudflareではアカウント ID も必要です。",
+    "source_hash": "487cf2bed2ad"
+  },
+  "wizard.providers.hint.bedrock": {
+    "text": "代わりにAWSプロファイルやIAMで環境の認証情報を利用することもできます。",
+    "source_hash": "d4ddd86cd093"
+  },
+  "wizard.providers.hint.vertex": {
+    "text": "ADCまたはサービスアカウントでのアクセスには、プロジェクトとロケーションも必要です。",
+    "source_hash": "a382011b4183"
+  },
+  "wizard.providers.guidance.azure": {
+    "text": "AZURE_OPENAI_BASE_URLまたはAZURE_OPENAI_RESOURCE_NAMEを設定し、Piで /login azure を使ってください。続行すると現在のPi設定はそのまま残ります。",
+    "source_hash": "5834561a0d12"
+  },
+  "wizard.providers.guidance.cloudflare_gateway": {
+    "text": "トークン、アカウント ID、ゲートウェイ ID が必要です。Piで /login cloudflare-ai-gateway を使ってください。続行すると現在のPi設定はそのまま残ります。",
+    "source_hash": "2c4fdf840f5a"
+  },
+  "wizard.providers.guidance.cloudflare_workers": {
+    "text": "トークンとアカウント ID が必要です。Piで /login cloudflare-workers-ai を使ってください。続行すると現在のPi設定はそのまま残ります。",
+    "source_hash": "95b2361c0b9a"
+  },
+  "wizard.providers.guidance.bedrock": {
+    "text": "AWSのアクセスキーIDではなく、Bedrockのベアラートークンを入力してください。AWSプロファイルまたはIAMを使う場合は、Piで /login amazon-bedrock を使ってください。",
+    "source_hash": "869163e8c80d"
+  },
+  "wizard.providers.guidance.vertex": {
+    "text": "Google CloudのAPIキーを入力してください。ADCやサービスアカウントファイルを使う場合は、Piで /login google-vertex を使ってください。",
+    "source_hash": "786382a710f6"
+  },
+  "wizard.providers.guidance.generic": {
+    "text": "セットアップ後、Piで /login {id} を使ってください。続行すると現在のPi設定はそのまま残ります。",
+    "source_hash": "558591c917f8"
+  },
+  "wizard.providers.guidance.oauth": {
+    "text": "ここではAPIキーを使ってください。ブラウザやデバイスでのサインインは、セットアップ後にPiで /login {id} を使ってください。",
+    "source_hash": "c50e0a9f050c"
+  },
+  "wizard.providers.login_deferred": {
+    "text": "認証は保留されています。セットアップ後、Piで /login {id} を実行してください。",
+    "source_hash": "de2f18975d71"
+  },
+  "wizard.providers.key_api": {
+    "text": "{name} APIキー",
+    "source_hash": "a07eb1509dcd"
+  },
+  "wizard.providers.key_token": {
+    "text": "{name} トークン",
+    "source_hash": "ba35265f1f56"
+  },
+  "wizard.providers.key_aws": {
+    "text": "AWS認証情報またはベアラートークン",
+    "source_hash": "cdfc8a182045"
+  },
+  "wizard.providers.key_gcloud": {
+    "text": "Google Cloud認証情報",
+    "source_hash": "1757285aa598"
+  },
+  "wizard.providers.key_bedrock": {
+    "text": "Bedrockベアラートークン",
+    "source_hash": "56b93e9ece96"
+  },
+  "wizard.provider.none_llm": {
+    "text": "なし（LLMなし）",
+    "source_hash": "8756f88be90d"
+  },
+  "wizard.provider.custom": {
+    "text": "カスタムプロバイダー",
+    "source_hash": "fee405014d78"
+  },
+  "wizard.provider.openai_compatible": {
+    "text": "OpenAI互換（Chat Completions）",
+    "source_hash": "d53238670c07"
+  },
+  "wizard.search.keep": {
+    "text": "既存の検索設定を維持",
+    "source_hash": "5e67d2e2b08e"
+  },
+  "wizard.search.use_chat": {
+    "text": "チャットモデルを使う",
+    "source_hash": "a3132658890a"
+  },
+  "wizard.provider.auto_api": {
+    "text": "自動（テスト時に検出）",
+    "source_hash": "88afbf0096a7"
+  },
+  "wizard.provider.enter_id": {
+    "text": "先にプロバイダーIDを入力してください。",
+    "source_hash": "0c037db27d29"
+  },
+  "wizard.provider.preview_only": {
+    "text": "プレビューのみです。リクエストは送信されず、何も保存されません。",
+    "source_hash": "0ebb19deae89"
+  },
+  "wizard.provider.testing": {
+    "text": "接続をテストしています…短いリクエストを1回送信します。",
+    "source_hash": "1676396cacd0"
+  },
+  "wizard.provider.connected": {
+    "text": "接続済み: エンドポイントが {label} で応答しました。",
+    "source_hash": "7ad0b1549289"
+  },
+  "wizard.provider.models_reported": {
+    "text": "このサーバーは {count} 個のモデルを報告しました。",
+    "source_hash": "f31fe95a9707"
+  },
+  "wizard.provider.list_incomplete": {
+    "text": "一覧は不完全です。省略されたIDを手動で入力してテストしてください。",
+    "source_hash": "2d588d0ed045"
+  },
+  "wizard.provider.no_chat_model": {
+    "text": "サーバーは応答しましたが、チャットモデルが報告されませんでした。",
+    "source_hash": "facf8d7bd587"
+  },
+  "wizard.provider.credential_label": {
+    "text": "認証情報: {label}",
+    "source_hash": "8b458229f825"
+  },
+  "wizard.provider.credential_unusable": {
+    "text": "認証情報は使用できません: {label}",
+    "source_hash": "d431bbfadbd4"
+  },
+  "wizard.provider.model_list_unavailable": {
+    "text": "モデル一覧が利用できないか空です。正確なモデルIDを入力してください。未検証のままになります。",
+    "source_hash": "00dff5896fd5"
+  },
+  "wizard.provider.choose_or_enter": {
+    "text": "このエンドポイントのモデルを選ぶか、正確なIDを入力してください。",
+    "source_hash": "cfad129610d3"
+  },
+  "wizard.provider.fetch_or_test": {
+    "text": "サーバーのモデル一覧を取得するか、不完全な一覧にない ID をテストしてください。",
+    "source_hash": "c320f93cb08b"
+  },
+  "wizard.provider.choose_reported": {
+    "text": "{label}: 報告されたモデルを選ぶか、不完全な一覧にない ID をテストしてください。",
+    "source_hash": "a77913382c56"
+  },
+  "wizard.provider.pi_test_first": {
+    "text": "Pi: まずこのカスタム接続をテストしてください。承認されたリクエストのみ保存できます。",
+    "source_hash": "161d742c4903"
+  },
+  "wizard.search.src_chat": {
+    "text": "チャットプロバイダーの認証情報を使う",
+    "source_hash": "f775d3990dd0"
+  },
+  "wizard.memory.src_saved": {
+    "text": "保存済みのメモリキーを維持",
+    "source_hash": "e5a0bc3ecc75"
+  },
+  "wizard.search.src_saved": {
+    "text": "保存済みのPi認証情報を使う",
+    "source_hash": "68823fc1dc94"
+  },
+  "wizard.memory.src_later": {
+    "text": "後で設定（既存の設定を維持）",
+    "source_hash": "b9e8bb9af513"
+  },
+  "wizard.search.keep_unreadable": {
+    "text": "既存の検索設定を維持（読み取れません）",
+    "source_hash": "03bfcd418f97"
+  },
+  "wizard.search.keep_chat": {
+    "text": "現在の設定を維持: チャットモデルを使用",
+    "source_hash": "c454fc0778ba"
+  },
+  "wizard.common.keep_current_model": {
+    "text": "現在の設定を維持: {provider}/{model}",
+    "source_hash": "417283f9b64d"
+  },
+  "wizard.search.use_chat_unset": {
+    "text": "チャットモデルを使う（未設定）",
+    "source_hash": "e8b6ce6cb122"
+  },
+  "wizard.search.use_chat_model": {
+    "text": "チャットモデルを使う: {provider}/{model}",
+    "source_hash": "8d09d2b9f3dd"
+  },
+  "wizard.common.keep_or_later": {
+    "text": "既存の設定を維持／後で設定",
+    "source_hash": "4cec99ff32b6"
+  },
+  "wizard.provider.custom_endpoint": {
+    "text": "カスタムエンドポイント",
+    "source_hash": "5fb0795eaf2e"
+  },
+  "wizard.common.keep_current_provider": {
+    "text": "現在の設定を維持: {provider}",
+    "source_hash": "e0547b6f785f"
+  },
+  "wizard.common.set_up_later": {
+    "text": "後で設定",
+    "source_hash": "eb5e104944c1"
+  },
+  "wizard.common.currently_configured": {
+    "text": "（現在設定済み）",
+    "source_hash": "fd8c4c2150d6"
+  },
+  "wizard.memory.enter_url": {
+    "text": "メモリ: モデルを取得する前にエンドポイントのURLを入力してください。",
+    "source_hash": "4491f26c74d0"
+  },
+  "wizard.search.configure_chat_first": {
+    "text": "Web検索: 先にチャットモデルを設定してください",
+    "source_hash": "f2d6fcb7ce5a"
+  },
+  "wizard.search.not_native": {
+    "text": "このチャットプロバイダーはネイティブのWeb検索に対応していません。専用の検索プロバイダーを選んでください。",
+    "source_hash": "2ae0277a4bbb"
+  },
+  "wizard.search.enter_key_or_later": {
+    "text": "Web検索: キーを入力するか、「後でPiでサインイン」を選んでください",
+    "source_hash": "ec8998bc8e73"
+  },
+  "wizard.search.credential_invalid": {
+    "text": "Web検索: 既存のPi認証情報が無効です",
+    "source_hash": "2bdcb880250c"
+  },
+  "wizard.search.oauth_exists": {
+    "text": "Web検索: OAuth認証情報が既に存在します。Pi /loginから管理してください",
+    "source_hash": "789004e75d1e"
+  },
+  "wizard.search.azure_env_invalid": {
+    "text": "Web検索: 既存のAzure認証情報の環境設定が無効です",
+    "source_hash": "907c142da323"
+  },
+  "wizard.search.credential_on_model_page": {
+    "text": "Web検索: このプロバイダーの認証情報はモデルプロバイダーのページで設定されています。ここではチャットモデルの認証情報を使うか、別の検索プロバイダーを選んでください。",
+    "source_hash": "9cb065a8fae4"
+  },
+  "wizard.provider.pi_signed_in": {
+    "text": "Pi: このプロバイダーはPi /loginでサインイン済みです。保存済みの認証情報を維持するか、置き換えずにPiで再度サインインしてください。",
+    "source_hash": "eb4d65ce6ad3"
+  },
+  "wizard.provider.credential_dir_unavailable": {
+    "text": "Piの認証情報ディレクトリを利用できません",
+    "source_hash": "98f28d5f8b0b"
+  },
+  "wizard.provider.retest_before_apply": {
+    "text": "このカスタム接続の認証情報を適用する前に、もう一度テストしてください。",
+    "source_hash": "33f016024d39"
+  },
+  "wizard.search.manage_oauth": {
+    "text": "Web検索: 既存のOAuth認証情報はPi /loginから管理してください",
+    "source_hash": "9b1cb7045e7d"
+  },
+  "wizard.memory.config_missing": {
+    "text": "メモリの設定がありません。Mashを開き直して復元してください",
+    "source_hash": "19b25e7d8997"
+  },
+  "wizard.provider.models_providers_invalid": {
+    "text": "Piのmodels.jsonのprovidersオブジェクトが無効です",
+    "source_hash": "4e54bf06618d"
+  },
+  "wizard.provider.models_definition_invalid": {
+    "text": "Piのmodels.jsonのプロバイダー定義が無効です",
+    "source_hash": "0c2aec3a83b0"
+  },
+  "wizard.provider.models_list_invalid": {
+    "text": "Piのmodels.jsonのモデル一覧が無効です",
+    "source_hash": "e653afbf6dc8"
+  },
+  "wizard.search.symlink": {
+    "text": "Web検索: シンボリックリンクの設定は拒否します",
+    "source_hash": "b8dd10482ddf"
+  },
+  "wizard.search.regular_file": {
+    "text": "Web検索: 通常の設定ファイルが必要です",
+    "source_hash": "b6b6243f6e7a"
+  },
+  "wizard.memory.credential_changed": {
+    "text": "メモリ: 保存済み認証情報のプロバイダーまたはエンドポイントが変わりました。ソースを選び直してください",
+    "source_hash": "67915097bd25"
+  },
+  "wizard.memory.key_unavailable": {
+    "text": "メモリ: 保存済みのキーが利用できません。ソースを選び直してください",
+    "source_hash": "a755ba277cc4"
+  },
+  "wizard.provider.test_for_api": {
+    "text": "Pi: 接続をテストしてAPIの種類を確認してください",
+    "source_hash": "c15bc6eb37b4"
+  },
+  "wizard.provider.env_invalid": {
+    "text": "Pi: 既存のプロバイダー環境設定が無効です",
+    "source_hash": "11b3e98a566f"
+  },
+  "wizard.search.override_remove_failed": {
+    "text": "Web検索: 専用モデルの上書きを削除できませんでした",
+    "source_hash": "4179191bf160"
+  },
+  "wizard.provider.list_title": {
+    "text": "モデルプロバイダー",
+    "source_hash": "fbdc457db218"
+  },
+  "wizard.search.list_title": {
+    "text": "Web検索プロバイダー",
+    "source_hash": "3f76c4cc3f0f"
+  },
+  "wizard.memory.list_title": {
+    "text": "メモリプロバイダー",
+    "source_hash": "f7ac1d2de59f"
+  },
+  "wizard.provider.preview_model": {
+    "text": "プレビュー用モデル",
+    "source_hash": "b6eb6b14ddad"
+  },
+  "wizard.provider.preview_small_model": {
+    "text": "プレビュー用の小型モデル",
+    "source_hash": "e552021200b5"
+  },
+  "wizard.provider.connection_details": {
+    "text": "接続の詳細",
+    "source_hash": "51bfffbcdbcf"
+  },
+  "wizard.provider.no_extra": {
+    "text": "追加の設定は不要です。",
+    "source_hash": "a8523c5346ec"
+  },
+  "wizard.provider.fetch_models": {
+    "text": "モデルを取得",
+    "source_hash": "812c98c992c6"
+  },
+  "wizard.provider.choose_model": {
+    "text": "モデルを選択",
+    "source_hash": "f6e05dcfcfa8"
+  },
+  "wizard.provider.testing_short": {
+    "text": "テスト中...",
+    "source_hash": "6c02a28421f8"
+  },
+  "wizard.provider.test_connection": {
+    "text": "接続をテスト",
+    "source_hash": "5bcf311b19d8"
+  },
+  "wizard.provider.not_tested": {
+    "text": "未テスト",
+    "source_hash": "51e3a01219f2"
+  },
+  "wizard.provider.lists_models": {
+    "text": "エンドポイントのモデルを一覧表示します。推論やメモリへの書き込みはありません。",
+    "source_hash": "ade190bd0811"
+  },
+  "wizard.provider.browse_or_enter": {
+    "text": "候補を見るか、正確なモデルIDを入力してください。",
+    "source_hash": "ea1aef31b165"
+  },
+  "wizard.provider.sends_request": {
+    "text": "短いリクエストを送信します。プロバイダーの料金がかかる場合があります。",
+    "source_hash": "29e67ff448f6"
+  },
+  "wizard.shell.next": {
+    "text": "次へ — {page}",
+    "source_hash": "827f82fa3edf"
+  },
+  "wizard.provider.catalog_truncated": {
+    "text": "カタログが切り捨てられています。省略されたIDは手動の手順で入力してください",
+    "source_hash": "a74d0cf6f9ec"
+  },
+  "wizard.search.catalog_note": {
+    "text": "ネイティブ検索のカタログです。提供状況は確認されていません",
+    "source_hash": "6dc5683dbdc3"
+  },
+  "wizard.memory.catalog_note": {
+    "text": "モデルの候補です。メモリとの互換性は確認されていません",
+    "source_hash": "39137a61ed43"
+  },
+  "wizard.provider.fetching": {
+    "text": "選択したエンドポイントからモデルを取得しています...",
+    "source_hash": "0230b84d9b0c"
+  },
+  "wizard.provider.loading_local": {
+    "text": "ローカルのモデルカタログを読み込んでいます...",
+    "source_hash": "fb9cfdb82b65"
+  },
+  "wizard.provider.no_auth_check": {
+    "text": "サーバーの認証もアカウントの利用権限の確認も行いません。",
+    "source_hash": "48043c00d31d"
+  },
+  "wizard.provider.credentials_changed": {
+    "text": "Piの認証情報が変更されたか、保存できませんでした。選択したソースを確認し、カスタム接続をもう一度テストしてください。",
+    "source_hash": "76a2cf9164f0"
+  },
+  "wizard.search.enter_model": {
+    "text": "Web検索: 正確なモデルIDを入力してください",
+    "source_hash": "a5abb7475ed0"
+  },
+  "wizard.search.key_invalid": {
+    "text": "Web検索: スペースや制御文字を含まないAPIキーを入力してください",
+    "source_hash": "904667c8779a"
+  },
+  "wizard.search.azure_url": {
+    "text": "Web検索: 認証情報を含まないHTTPSのAzureベースURLを入力してください",
+    "source_hash": "88c2de75ba77"
+  },
+  "wizard.search.azure_both": {
+    "text": "Web検索: AzureベースURLと一緒にAPIキーを入力するか、両方をあとでPiで設定してください",
+    "source_hash": "d82f956e9ea6"
+  },
+  "wizard.provider.pi_url": {
+    "text": "Pi: HTTPSのベースURL、またはローカルサーバーのアドレスを入力してください",
+    "source_hash": "961be0bfd948"
+  },
+  "wizard.common.enter_model_id": {
+    "text": "{label}: 正確なモデルIDを入力してください",
+    "source_hash": "686e504338e0"
+  },
+  "wizard.common.https_no_credentials": {
+    "text": "{label}: 認証情報を含まないHTTPSのベースURLを入力してください",
+    "source_hash": "5ab56666492c"
+  },
+  "wizard.common.key_invalid": {
+    "text": "{label}: スペースや制御文字を含まないAPIキーを入力してください",
+    "source_hash": "06cb71707873"
+  },
+  "wizard.provider.unique_id": {
+    "text": "Pi: 小文字で一意のプロバイダーIDを使ってください（例: omniroute）",
+    "source_hash": "a5d12f69f254"
+  },
+  "wizard.memory.symlink": {
+    "text": "メモリ: シンボリックリンクの設定は拒否します",
+    "source_hash": "408cc1d5eca7"
+  },
+  "wizard.memory.config_unavailable": {
+    "text": "メモリの設定を利用できません",
+    "source_hash": "5facb5204c8b"
+  },
+  "wizard.memory.config_too_large": {
+    "text": "メモリの設定が大きすぎます",
+    "source_hash": "0abce5fa7620"
+  },
+  "wizard.common.symlink_at": {
+    "text": "{path} のシンボリックリンクは拒否します",
+    "source_hash": "2d1d6d9229be"
+  },
+  "wizard.common.invalid_json": {
+    "text": "{path} のJSONが無効です: {error}",
+    "source_hash": "cb1c0852dda4"
+  },
+  "wizard.common.expected_object": {
+    "text": "{path} にはJSONオブジェクトが必要です",
+    "source_hash": "b40e836032c5"
+  },
+  "wizard.memory.symlink_config": {
+    "text": "メモリ設定内のシンボリックリンクは拒否します",
+    "source_hash": "7093970b6456"
+  },
+  "wizard.memory.config_error": {
+    "text": "メモリ設定: {error}",
+    "source_hash": "0d2dd39a2d90"
+  },
+  "wizard.common.missing_dir": {
+    "text": "設定ディレクトリがありません",
+    "source_hash": "35701334e8bf"
+  },
+  "wizard.provider.partly_saved": {
+    "text": "{error}（一部の認証情報はすでにPiに保存されています。設定は一部だけ適用された可能性があります）",
+    "source_hash": "69266b7404df"
+  },
+  "wizard.provider.partly_applied": {
+    "text": "{error}（設定は一部だけ適用された可能性があります。再試行する前に確認してください）",
+    "source_hash": "93e84daad133"
+  },
+  "wizard.provider.list_hint": {
+    "text": "↑/↓ 移動 · Space 選択 · Tab 詳細  {index}/{count}",
+    "source_hash": "6f4e925e84b1"
+  },
+  "wizard.form.provider_id": {
+    "text": "プロバイダーID:",
+    "source_hash": "e035a2e312e7"
+  },
+  "wizard.form.provider_id_hint": {
+    "text": "例: omniroute",
+    "source_hash": "474364acdb88"
+  },
+  "wizard.form.base_url": {
+    "text": "ベースURL:",
+    "source_hash": "d34c1f38253c"
+  },
+  "wizard.form.base_url_hint": {
+    "text": "APIのベースURL",
+    "source_hash": "a45474ea09c3"
+  },
+  "wizard.form.api_type": {
+    "text": "APIの種類:",
+    "source_hash": "ef56d0b93d30"
+  },
+  "wizard.form.api_type_hint": {
+    "text": "APIファミリー",
+    "source_hash": "921463d37e58"
+  },
+  "wizard.form.model_id": {
+    "text": "モデルID:",
+    "source_hash": "93139b7fb881"
+  },
+  "wizard.form.model_id_exact": {
+    "text": "正確なモデルID",
+    "source_hash": "b0d6631bddc5"
+  },
+  "wizard.form.credential": {
+    "text": "認証情報:",
+    "source_hash": "c410f0de5633"
+  },
+  "wizard.form.use_login": {
+    "text": "Piで /login を使う",
+    "source_hash": "9b741fe3564a"
+  },
+  "wizard.form.saved_or_new": {
+    "text": "保存済みまたは新規",
+    "source_hash": "12374a1d011c"
+  },
+  "wizard.form.api_key": {
+    "text": "APIキー:",
+    "source_hash": "2f77effde67c"
+  },
+  "wizard.form.kept_private": {
+    "text": "非公開で保持",
+    "source_hash": "187c44112cef"
+  },
+  "wizard.form.pick_or_enter": {
+    "text": "IDを選ぶか入力",
+    "source_hash": "d04d70878e87"
+  },
+  "wizard.form.stored_in_pi": {
+    "text": "Piに保存",
+    "source_hash": "d25575aa94b0"
+  },
+  "wizard.form.azure_endpoint": {
+    "text": "Azureエンドポイント",
+    "source_hash": "9083377a277e"
+  },
+  "wizard.form.memory_only": {
+    "text": "メモリ専用",
+    "source_hash": "32e44d486399"
+  },
+  "wizard.provider.settings_unchanged": {
+    "text": "現在のプロバイダー設定は変更されません。",
+    "source_hash": "dfb133c06e72"
+  },
+  "wizard.search.keeps_unchanged": {
+    "text": "既存の検索設定と認証情報は変更されません。",
+    "source_hash": "58aa4df1275c"
+  },
+  "wizard.search.removes_override": {
+    "text": "専用の検索設定を解除し、会話で使うモデルに従います。そのモデルはネイティブ検索に対応している必要があり、自動的な代替はありません。",
+    "source_hash": "a8414fd4c8f2"
+  },
+  "wizard.search.shares_chat": {
+    "text": "このプロバイダーのPi認証情報をチャットと共有します。キーが別のプロバイダーにコピーされることはありません。",
+    "source_hash": "a8c1b3542f7e"
+  },
+  "wizard.search.uses_saved": {
+    "text": "このプロバイダーの保存済みPi認証情報をそのまま使います。別のモデルを選んでもキーは置き換わりません。",
+    "source_hash": "df913b2221e3"
+  },
+  "wizard.search.new_key_note": {
+    "text": "新しいキーは最終適用時にPiへ保存されます。カタログにはネイティブ検索対応モデルのみが表示され、すべてのチャットモデルは表示されません。",
+    "source_hash": "6cb0b2fd20b7"
+  },
+  "wizard.search.later_note": {
+    "text": "認証情報を変更せずにモデルを設定しました。セットアップ後、Piで /login {id} を実行してください。",
+    "source_hash": "ef6b5edfbe81"
+  },
+  "wizard.search.azure_note": {
+    "text": "Azureではエンドポイントの設定も必要です。",
+    "source_hash": "3c0a05a844aa"
+  },
+  "wizard.memory.not_enabled": {
+    "text": "メモリはProgramming Skillsの一部で、Toolsでオフになっています。このページの内容は保存されません。",
+    "source_hash": "5f38d8d9f142"
+  },
+  "wizard.memory.keep": {
+    "text": "既存のメモリ設定は変更されません。",
+    "source_hash": "8747d4c2d994"
+  },
+  "wizard.memory.no_llm": {
+    "text": "メモリはLLMを使用しません。",
+    "source_hash": "85197fc97e6b"
+  },
+  "wizard.memory.keeps_saved": {
+    "text": "このプロバイダーとエンドポイントの保存済みメモリキーを維持します。モデルだけを変更した場合もキーは保持されます。",
+    "source_hash": "dec480d705ed"
+  },
+  "wizard.memory.deferred": {
+    "text": "メモリの設定は保留されています。既存の設定と認証情報は変更されません。Pi /loginではメモリは認証されません。",
+    "source_hash": "56476111c257"
+  },
+  "wizard.memory.own_key": {
+    "text": "メモリは独自のキーを使い、Piのサインインは使いません。モデルの候補がメモリとの互換性を保証するわけではありません。",
+    "source_hash": "5e9f06b7afef"
+  },
+  "wizard.setup.title": {
+    "text": "Mash のセットアップ",
+    "source_hash": "9a6b9e8768aa"
+  },
+  "wizard.setup.quit_title": {
+    "text": "Mash のセットアップを終了しますか？",
+    "source_hash": "fca13bacb3db"
+  },
+  "wizard.setup.not_finished": {
+    "text": "セットアップが完了していないため、Mash はまだ開きません。",
+    "source_hash": "7126b47d6f0c"
+  },
+  "wizard.setup.reopen": {
+    "text": "Mash をもう一度開くと、セットアップを最初からやり直せます。",
+    "source_hash": "3c08c76f274a"
+  },
+  "wizard.setup.quit_action": {
+    "text": "セットアップを終了",
+    "source_hash": "fbbf0c02026a"
+  },
+  "wizard.setup.other_key": {
+    "text": "その他のキー",
+    "source_hash": "53e6aac5af12"
+  },
+  "wizard.setup.keep_going": {
+    "text": "続ける",
+    "source_hash": "6e7ecf10083e"
+  },
+  "wizard.setup.could_not_finish": {
+    "text": "セットアップを完了できませんでした",
+    "source_hash": "923e2d2bfa67"
+  },
+  "wizard.setup.press_enter": {
+    "text": "Enter キーで続行",
+    "source_hash": "0a593337307e"
+  },
+  "wizard.setup.continue_open": {
+    "text": "続行 — Mash を開く",
+    "source_hash": "08a87d4e2372"
+  },
+  "wizard.setup.details": {
+    "text": "詳細: {path}",
+    "source_hash": "a33894398867"
+  },
+  "wizard.setup.saved_reopen": {
+    "text": "一部の選択はすでに保存されている可能性があります。次回の起動でセットアップが再開します。",
+    "source_hash": "0de801ae7cf2"
+  },
+  "wizard.setup.unknown_error": {
+    "text": "不明なエラーでセットアップが停止しました。",
+    "source_hash": "eb9d67c96506"
+  },
+  "wizard.setup.model_check": {
+    "text": "モデルの確認",
+    "source_hash": "2d2297acd2aa"
+  },
+  "wizard.setup.checking": {
+    "text": "保存されたローカル設定を確認しています...",
+    "source_hash": "c777a13b3e35"
+  },
+  "wizard.setup.notes": {
+    "text": "設定の注意 (操作は妨げません)",
+    "source_hash": "ffc8480c82a9"
+  },
+  "wizard.setup.no_auth_checked": {
+    "text": "サーバー認証とアカウントの権利は確認していません。",
+    "source_hash": "e148bf76d6d3"
+  },
+  "wizard.setup.skip_check": {
+    "text": "確認をスキップ",
+    "source_hash": "48e595221f47"
+  },
+  "wizard.setup.continue": {
+    "text": "続行",
+    "source_hash": "31fbef162594"
+  },
+  "wizard.setup.auth_skipped": {
+    "text": "モデルは設定済みです。認証は試行していません。",
+    "source_hash": "bb1cc09f22e5"
+  },
+  "wizard.setup.model_unavailable": {
+    "text": "Pi のモデル確認を利用できません。設定は保持されています。セットアップ後に Pi で /model と /login を使ってください。",
+    "source_hash": "8ed5b781187b"
+  },
+  "wizard.setup.installing": {
+    "text": "Mash のインストール",
+    "source_hash": "fd2247be3921"
+  },
+  "wizard.setup.progress": {
+    "text": "進行状況",
+    "source_hash": "4664827f8e89"
+  },
+  "wizard.setup.ready": {
+    "text": "Mash を起動できます",
+    "source_hash": "07a824807aab"
+  },
+  "wizard.setup.waiting_daemon": {
+    "text": "...メモリサービスがポートで応答するのを待っています",
+    "source_hash": "65eeaf94876f"
+  },
+  "wizard.setup.result.installed": {
+    "text": "インストール済み",
+    "source_hash": "a51a6c19a1ff"
+  },
+  "wizard.setup.result.model_installed": {
+    "text": "モデルをインストールしました",
+    "source_hash": "06627dd23cd9"
+  },
+  "wizard.setup.result.daemon_up": {
+    "text": "サービス稼働中、モデルはキャッシュ済み",
+    "source_hash": "97145954e7ce"
+  },
+  "wizard.setup.result.already_installed": {
+    "text": "すでにインストール済み",
+    "source_hash": "48544614ca22"
+  },
+  "wizard.setup.step.check_tools": {
+    "text": "選択したツールを確認",
+    "source_hash": "3a7228d80436"
+  },
+  "wizard.setup.step.mash_tools": {
+    "text": "Mash にツールをインストール",
+    "source_hash": "7914823478f2"
+  },
+  "wizard.setup.step.brew": {
+    "text": "Homebrew パッケージをインストール",
+    "source_hash": "873564eb35a2"
+  },
+  "wizard.setup.step.npm": {
+    "text": "npm パッケージをインストール",
+    "source_hash": "cd52241c4b6e"
+  },
+  "wizard.setup.step.pinned": {
+    "text": "固定ツールを Mash にインストール",
+    "source_hash": "53c70a54d6da"
+  },
+  "wizard.setup.step.python": {
+    "text": "Python パッケージをインストール",
+    "source_hash": "d4c51d15c8bc"
+  },
+  "wizard.setup.step.cua": {
+    "text": "CUA Driver をインストール",
+    "source_hash": "7fe6a9fd27d1"
+  },
+  "wizard.setup.step.memory": {
+    "text": "メモリ環境をインストール",
+    "source_hash": "816b368aa540"
+  },
+  "wizard.setup.step.memory_models": {
+    "text": "メモリを起動してモデルを取得",
+    "source_hash": "9ef8dd5a39e3"
+  },
+  "wizard.setup.step.dictation": {
+    "text": "音声入力モデルをインストール",
+    "source_hash": "7abdc07c8460"
+  },
+  "wizard.identity.key_openpgp_only": {
+    "text": "Git は SSH または X.509 で署名しています。Mash は OpenPGP 鍵でのみ署名します",
+    "source_hash": "8021a5c51452"
+  },
+  "wizard.setup.report.host_tools": {
+    "text": "システムのツールは揃っています。Mash の固定ツールをインストールします。",
+    "source_hash": "5e1366b18b91"
+  },
+  "wizard.setup.report.all_installed": {
+    "text": "選択したものはすべてインストール済みです。",
+    "source_hash": "34a4459dc684"
+  },
+  "wizard.setup.report.missing": {
+    "text": "不足: {tools}",
+    "source_hash": "1d0c96cc3733"
+  },
+  "wizard.setup.report.counts": {
+    "text": "インストール {installed} 件、システム提供 {provided} 件",
+    "source_hash": "eed3d543f37f"
+  },
+  "wizard.setup.report.system_provided": {
+    "text": "{component}: システム提供のため Mash ではインストールしません",
+    "source_hash": "17adcbb8f3e1"
+  },
+  "wizard.setup.report.apple_tools": {
+    "text": "{tool} は Apple の開発者ツールに含まれます (xcode-select --install を実行)。",
+    "source_hash": "a35d7759a429"
+  }
+}

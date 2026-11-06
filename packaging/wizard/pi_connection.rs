@@ -1,11 +1,13 @@
 //! Typed endpoint connections: local server presets, probes and credential reuse.
+use crate::i18n;
 use crate::pi_models::Job;
 use crate::pi_providers;
 use serde_json::Value;
 use std::{path::Path, time::Duration};
 
-const UNAVAILABLE: &str =
-    "Connection check unavailable. Enter the details manually; setup can continue.";
+fn unavailable() -> String {
+    i18n::t("wizard.connection.unavailable")
+}
 const CONNECT: &str = "bin/mash-pi-connect.mjs";
 const CREDENTIALS: &str = "bin/mash-pi-credentials.mjs";
 
@@ -19,28 +21,38 @@ pub struct Preset {
     pub requires_model: bool,
 }
 
+impl Preset {
+    /// The name shown to the user: the product name plus a translated "(local)".
+    pub fn display_name(&self) -> String {
+        i18n::fill(
+            &i18n::t("wizard.connection.local_server"),
+            &[("name", &self.name)],
+        )
+    }
+}
+
 pub const PRESETS: [Preset; 4] = [
     Preset {
         id: "ollama",
-        name: "Ollama (local)",
+        name: "Ollama",
         base_url: "http://127.0.0.1:11434/v1",
         requires_model: true,
     },
     Preset {
         id: "lmstudio",
-        name: "LM Studio (local)",
+        name: "LM Studio",
         base_url: "http://localhost:1234/v1",
         requires_model: true,
     },
     Preset {
         id: "vllm",
-        name: "vLLM (local)",
+        name: "vLLM",
         base_url: "http://127.0.0.1:8000/v1",
         requires_model: false,
     },
     Preset {
         id: "sglang",
-        name: "SGLang (local)",
+        name: "SGLang",
         base_url: "http://127.0.0.1:30000/v1",
         requires_model: false,
     },
@@ -60,12 +72,12 @@ pub enum Mode {
 }
 
 impl Mode {
-    pub fn label(self) -> &'static str {
+    pub fn label(self) -> String {
         match self {
-            Mode::Existing => "Reuse the saved credential",
-            Mode::New => "Enter a new API key",
-            Mode::None => "No key (local server)",
-            Mode::Later => "Sign in later in Pi",
+            Mode::Existing => i18n::t("wizard.connection.mode.existing"),
+            Mode::New => i18n::t("wizard.common.new_api_key"),
+            Mode::None => i18n::t("wizard.connection.mode.none"),
+            Mode::Later => i18n::t("wizard.common.sign_in_later"),
         }
     }
 
@@ -120,49 +132,51 @@ pub fn explain_saved(reason: &str) -> String {
 fn with_status(message: &str, http: Option<u64>) -> String {
     http.map_or_else(
         || message.to_string(),
-        |status| format!("{message} (HTTP {status})"),
+        |status| {
+            i18n::fill(
+                &i18n::t("wizard.connection.http_status"),
+                &[("message", &message), ("status", &&status.to_string())],
+            )
+        },
     )
 }
 
 fn explain(reason: &str, http: Option<u64>) -> String {
     let message = match reason {
-        "unauthorized" => "The endpoint rejected these credentials.",
-        "not_found" => "The endpoint has no such model or API path.",
-        "timeout" => "The endpoint did not answer in time.",
-        "unreachable" | "request_failed" => "No server answered at that address.",
+        "unauthorized" => i18n::t("wizard.connection.reason.unauthorized"),
+        "not_found" => i18n::t("wizard.connection.reason.not_found"),
+        "timeout" => i18n::t("wizard.connection.reason.timeout"),
+        "unreachable" | "request_failed" => i18n::t("wizard.connection.reason.unreachable"),
         "blocked_host"
         | "blocked_address"
         | "unsafe_url"
         | "plaintext_not_allowed"
-        | "unsupported_scheme" => {
-            "That address is not allowed; use an HTTPS endpoint, or a local server address."
-        }
-        "redirected" => "The endpoint redirected elsewhere; enter the final address.",
-        "not_json" => "That address answered with a page, not a model API.",
-        "wrong_api" => {
-            "That address answered for a different API type; check the address and the selected API."
-        }
-        "no_models" => "The server is running but has no chat model loaded.",
-        "stale" => "The connection changed while checking. Test it again.",
-        "consent_required" => "Testing sends one short request. Confirm to continue.",
-        "command_secret" => "That credential runs a command; manage it in Pi instead.",
-        "oauth_expired" => "The saved login has expired; sign in again through Pi.",
-        "endpoint_changed" => "The saved credential belongs to a different endpoint.",
-        "additional_setup" => "This provider needs extra setup; finish it in Pi.",
-        _ => "The connection could not be verified.",
+        | "unsupported_scheme" => i18n::t("wizard.connection.reason.blocked"),
+        "redirected" => i18n::t("wizard.connection.reason.redirected"),
+        "not_json" => i18n::t("wizard.connection.reason.not_json"),
+        "wrong_api" => i18n::t("wizard.connection.reason.wrong_api"),
+        "no_models" => i18n::t("wizard.connection.reason.no_models"),
+        "stale" => i18n::t("wizard.connection.reason.stale"),
+        "consent_required" => i18n::t("wizard.connection.reason.consent"),
+        "command_secret" => i18n::t("wizard.connection.reason.command_secret"),
+        "oauth_expired" => i18n::t("wizard.connection.reason.oauth_expired"),
+        "endpoint_changed" => i18n::t("wizard.connection.reason.endpoint_changed"),
+        "additional_setup" => i18n::t("wizard.connection.reason.additional_setup"),
+        _ => i18n::t("wizard.connection.reason.fallback"),
     };
-    with_status(message, http)
+    with_status(&message, http)
 }
 
 impl Outcome {
     pub fn parse(value: &Value) -> Result<Self, String> {
         if value["version"] != 1 || value["status"] != "ok" {
-            return Err(UNAVAILABLE.into());
+            return Err(unavailable());
         }
         if let Some(revision) = clean(value, "revision") {
             if value["accepted"].is_null() {
                 return Ok(Outcome::Source {
-                    label: clean(value, "label").unwrap_or_else(|| "Saved credential".into()),
+                    label: clean(value, "label")
+                        .unwrap_or_else(|| i18n::t("wizard.connection.saved").into()),
                     ready: value["ready"].as_bool().unwrap_or(false),
                     reason: clean(value, "reason"),
                     revision,
@@ -186,9 +200,9 @@ impl Outcome {
                     .collect(),
             });
         }
-        let api = clean(value, "api").ok_or(UNAVAILABLE)?;
+        let api = clean(value, "api").ok_or_else(unavailable)?;
         if !pi_providers::Api::ALL.iter().any(|known| known.id() == api) {
-            return Err(UNAVAILABLE.into());
+            return Err(unavailable());
         }
         Ok(Outcome::Accepted {
             api,
@@ -242,7 +256,7 @@ impl Connection {
         let mode = target
             .mode
             .id()
-            .ok_or("Authentication is deferred to Pi /login")?;
+            .ok_or(i18n::t("wizard.connection.deferred"))?;
         let mut request = serde_json::json!({
             "version": 1, "action": "inspect", "agentDir": agent, "provider": target.provider,
             "mode": mode, "nonce": target.nonce,
@@ -272,7 +286,7 @@ impl Connection {
         let mode = target
             .mode
             .id()
-            .ok_or("Authentication is deferred to Pi /login")?;
+            .ok_or(i18n::t("wizard.connection.deferred"))?;
         let request = serde_json::json!({
             "version": 1, "action": "discover", "agentDir": agent, "provider": target.provider,
             "preset": preset, "baseUrl": target.base_url, "mode": mode,
@@ -301,7 +315,7 @@ impl Connection {
         let mode = target
             .mode
             .id()
-            .ok_or("Authentication is deferred to Pi /login")?;
+            .ok_or(i18n::t("wizard.connection.deferred"))?;
         let request = serde_json::json!({
             "version": 1, "action": "probe", "agentDir": agent, "provider": target.provider,
             "baseUrl": target.base_url, "api": api.unwrap_or("auto"), "model": model,

@@ -1,4 +1,5 @@
 //! Bounded, read-only bridge to the bundled Pi catalog/auth helper.
+use crate::i18n;
 use serde_json::Value;
 use std::{
     io::{Read, Write},
@@ -15,10 +16,13 @@ use std::{
 };
 
 const MAX_OUTPUT: usize = 4 * 1024 * 1024;
-const UNAVAILABLE: &str =
-    "Pi model inspection unavailable. Configure the model manually or use Pi /login after setup.";
-const HELPER_UNAVAILABLE: &str =
-    "Setup helper unavailable. Enter the details manually; setup can continue.";
+fn unavailable() -> String {
+    i18n::t("wizard.models.unavailable")
+}
+
+fn helper_unavailable() -> String {
+    i18n::t("wizard.models.helper_unavailable")
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Model {
@@ -36,21 +40,21 @@ pub struct Report {
 
 impl Report {
     pub fn parse(bytes: &[u8]) -> Result<Self, String> {
-        let value: Value = serde_json::from_slice(bytes).map_err(|_| UNAVAILABLE)?;
+        let value: Value = serde_json::from_slice(bytes).map_err(|_| unavailable())?;
         if value["version"] != 1 || value["status"] != "ok" || value["serverVerified"] != false {
-            return Err(UNAVAILABLE.into());
+            return Err(unavailable());
         }
-        let complete = value["catalogComplete"].as_bool().ok_or(UNAVAILABLE)?;
-        let auth = value["auth"]["status"].as_str().ok_or(UNAVAILABLE)?;
+        let complete = value["catalogComplete"].as_bool().ok_or_else(unavailable)?;
+        let auth = value["auth"]["status"].as_str().ok_or_else(unavailable)?;
         if !["ready", "not_ready", "unverified"].contains(&auth) {
-            return Err(UNAVAILABLE.into());
+            return Err(unavailable());
         }
         let mut models = Vec::new();
-        for row in value["models"].as_array().ok_or(UNAVAILABLE)? {
+        for row in value["models"].as_array().ok_or_else(unavailable)? {
             let identity = |field: &str| -> Result<String, String> {
-                let text = row[field].as_str().ok_or(UNAVAILABLE)?;
+                let text = row[field].as_str().ok_or_else(unavailable)?;
                 if text.is_empty() || text.len() > 4096 || text.chars().any(char::is_control) {
-                    return Err(UNAVAILABLE.into());
+                    return Err(unavailable());
                 }
                 Ok(text.to_string())
             };
@@ -81,17 +85,13 @@ impl Report {
     pub fn warnings(&self) -> Vec<String> {
         let mut lines = Vec::new();
         if self.model_known == Some(false) {
-            lines.push(
-                "The saved model is not in Pi's local catalog. Its exact ID was kept.".into(),
-            );
+            lines.push(i18n::t("wizard.models.not_in_catalog").into());
         } else if !self.catalog_complete {
-            lines.push(
-                "The saved model has no available local catalog; its ID is unverified.".into(),
-            );
+            lines.push(i18n::t("wizard.models.no_catalog").into());
         }
         match self.auth.as_str() {
-            "not_ready" => lines.push("No configured credentials for the saved model provider. Use Pi /login after setup.".into()),
-            "unverified" => lines.push("The saved provider's credentials could not be checked locally. Use Pi /login after setup.".into()),
+            "not_ready" => lines.push(i18n::t("wizard.models.not_ready").into()),
+            "unverified" => lines.push(i18n::t("wizard.models.unverified").into()),
             _ => {}
         }
         lines
@@ -132,9 +132,9 @@ impl Job {
         request: Value,
         timeout: Duration,
     ) -> Result<Self, String> {
-        let input = serde_json::to_vec(&request).map_err(|_| HELPER_UNAVAILABLE)?;
+        let input = serde_json::to_vec(&request).map_err(|_| helper_unavailable())?;
         if input.len() > 64 * 1024 {
-            return Err(HELPER_UNAVAILABLE.into());
+            return Err(helper_unavailable());
         }
         let mut command = Command::new(resources.join("node/bin/node"));
         command
@@ -161,10 +161,10 @@ impl Job {
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
-        let mut child = command.spawn().map_err(|_| HELPER_UNAVAILABLE)?;
-        let mut stdin = child.stdin.take().ok_or(HELPER_UNAVAILABLE)?;
-        let stdout = child.stdout.take().ok_or(HELPER_UNAVAILABLE)?;
-        let stderr = child.stderr.take().ok_or(HELPER_UNAVAILABLE)?;
+        let mut child = command.spawn().map_err(|_| helper_unavailable())?;
+        let mut stdin = child.stdin.take().ok_or(helper_unavailable())?;
+        let stdout = child.stdout.take().ok_or(helper_unavailable())?;
+        let stderr = child.stderr.take().ok_or(helper_unavailable())?;
         let bytes = Arc::new(AtomicUsize::new(0));
         let (sender, receiver) = mpsc::channel();
         let input_sender = sender.clone();
@@ -203,7 +203,7 @@ impl Job {
     /// The raw reply, for callers with their own typed contract.
     pub fn poll_json(&mut self) -> Option<Result<Value, String>> {
         Some(self.poll_bytes()?.and_then(|bytes| {
-            serde_json::from_slice(&bytes).map_err(|_| String::from(HELPER_UNAVAILABLE))
+            serde_json::from_slice(&bytes).map_err(|_| String::from(helper_unavailable()))
         }))
     }
 
@@ -213,7 +213,7 @@ impl Job {
         }
         if Instant::now() >= self.deadline || self.bytes.load(Ordering::Relaxed) > MAX_OUTPUT {
             self.stop();
-            return Some(Err(HELPER_UNAVAILABLE.into()));
+            return Some(Err(helper_unavailable()));
         }
         while let Ok(message) = self.receiver.try_recv() {
             self.received += 1;
@@ -222,14 +222,14 @@ impl Job {
                 Message::Input(true) | Message::Stderr(true) => {}
                 _ => {
                     self.stop();
-                    return Some(Err(HELPER_UNAVAILABLE.into()));
+                    return Some(Err(helper_unavailable()));
                 }
             }
         }
         match self.child.try_wait() {
             Ok(Some(status)) if !status.success() => {
                 self.stop();
-                Some(Err(HELPER_UNAVAILABLE.into()))
+                Some(Err(helper_unavailable()))
             }
             Ok(Some(_)) if self.received == 3 => {
                 let result = self.stdout.take().unwrap_or_default();
@@ -238,7 +238,7 @@ impl Job {
             }
             Err(_) => {
                 self.stop();
-                Some(Err(HELPER_UNAVAILABLE.into()))
+                Some(Err(helper_unavailable()))
             }
             _ => None,
         }

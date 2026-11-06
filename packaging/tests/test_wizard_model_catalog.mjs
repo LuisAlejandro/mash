@@ -372,6 +372,9 @@ export class ModelRuntime {
     copyFileSync(new URL("../helpers/mash-pi-runtime.mjs", import.meta.url), join(fixture, "packaging/helpers/mash-pi-runtime.mjs"));
     writeFileSync(join(fixture, "VERSION"), "0.0.0\n");
     for (const file of ["assets.json", "assets.py"]) writeFileSync(join(fixture, "packaging", file), "unused fixture\n");
+    // The stager requires the language table (KTD1); copy the real one.
+    mkdirSync(join(fixture, "packaging/i18n"), { recursive: true });
+    copyFileSync(new URL("../i18n/languages.json", import.meta.url), join(fixture, "packaging/i18n/languages.json"));
     const stage = spawnSync("/bin/bash", ["-c", 'set -e; source "$1"; root="$2"; mash_portable_scripts() { :; }; mash_stage_portable_payload "$3" linux-amd64', "stage", fileURLToPath(new URL("../build-common.sh", import.meta.url)), fixture, root], { encoding: "utf8" });
     assert.equal(stage.status, 0, stage.stderr);
     assert.equal(readFileSync(join(root, "bin/mash-pi-models.mjs"), "utf8"), readFileSync(helper, "utf8"));

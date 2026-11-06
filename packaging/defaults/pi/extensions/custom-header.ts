@@ -12,6 +12,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { t } from "./lib/mash-i18n.ts";
 
 const COLOR = "muted";
 
@@ -36,6 +37,7 @@ function loadArt(): string[] {
 
 function loadQuickref(): string[] {
 	try {
+		// mash-seed-sync writes this pane's language, mode and platform into this file.
 		return readFileSync(join(here(), "keybindings-quickref.txt"), "utf8")
 			.split("\n")
 			.filter((line) => line.length > 0);
@@ -62,10 +64,10 @@ export default function (pi: ExtensionAPI) {
 	});
 
 	pi.registerCommand("builtin-header", {
-		description: "Restore the built-in pi header",
+		description: t("pi.header.restore"),
 		handler: async (_args, ctx) => {
 			ctx.ui.setHeader(undefined);
-			ctx.ui.notify("Built-in header restored", "info");
+			ctx.ui.notify(t("pi.header.restored"), "info");
 		},
 	});
 }

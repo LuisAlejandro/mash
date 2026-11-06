@@ -10,22 +10,48 @@
 # the popup and keeps its aspect ratio.
 set -u
 
+# The Herdr server starts this pane, so its PATH, MASH_LANGUAGE and
+# MASH_I18N_DIR belong to whatever launched the server. mash_messages_bind in
+# lib.sh resolves this install's mash-t and catalogs, and mash_say prints the
+# English fallback when a message cannot be found.
+here="$(cd "$(dirname "$0")" && pwd)"
+for mash_lib in "$here/../../bin/lib.sh" "$here/../../lib.sh"; do
+	if [ -f "$mash_lib" ]; then
+		# shellcheck disable=SC1090
+		source "$mash_lib"
+		break
+	fi
+done
+if command -v mash_messages_bind >/dev/null 2>&1; then
+	mash_messages_bind "${HOME:-}/.mash"
+else
+	# No library at all: still print the English text, with placeholders filled.
+	mash_say() {
+		local text="$2" arg
+		shift 2
+		for arg in "$@"; do
+			text="${text//"{${arg%%=*}}"/${arg#*=}}"
+		done
+		printf '%s' "$text"
+	}
+fi
+
 f="${IMAGE_POPUP_FILE:-}"
 
 # A popup pane is a terminal pane; without a tty there is nothing to draw to.
 clear
 
 if [ -z "$f" ] || [ ! -r "$f" ]; then
-	printf 'No image to show: %s\n' "${f:-<none>}"
+	printf '%s\n' "$(mash_say plugin.image-popup.no-image 'No image to show: {file}' "file=${f:-<none>}")"
 elif ! command -v viu >/dev/null 2>&1; then
-	printf 'viu is not installed. Install it with: brew install viu\n'
-	printf '(the image itself is at %s)\n' "$f"
+	printf '%s\n' "$(mash_say plugin.image-popup.viu-missing 'viu is not installed. Install it with: brew install viu')"
+	printf '%s\n' "$(mash_say plugin.image-popup.source-file '(the image itself is at {file})' "file=$f")"
 else
 	cols="$(tput cols)"
 	rows="$(tput lines)"
 	# Two rows are kept for the filename line and the closing hint.
 	viu -w "$cols" -h "$((rows > 4 ? rows - 3 : rows))" "$f"
-	printf '\n%s   (any key closes)' "$(basename "$f")"
+	printf '\n%s   %s' "$(basename "$f")" "$(mash_say helper.popup.dismiss '(any key closes)')"
 fi
 
 # Block until the user dismisses. A popup that exits immediately would be gone

@@ -3,7 +3,7 @@
 //! Tools Mash ships, and on Linux the ones its package depends on, are listed
 //! too, checked and greyed out: they are present whatever the page says. The
 //! optional Programming Skills suite is chosen here as well, below the tools.
-use crate::wizard_style;
+use crate::{i18n, wizard_style};
 use ratatui::{
     crossterm::event::{KeyCode, KeyModifiers},
     layout::{Constraint, Layout},
@@ -64,18 +64,18 @@ impl Route {
     /// The installer, then where the tool ends up.
     fn label(self) -> String {
         let installer = match self {
-            Route::Bundled => "ships in Mash",
-            Route::Apt => "apt",
-            Route::Brew(_) => "Homebrew",
-            Route::Mash(How::Download, _) => "pinned download",
-            Route::Mash(How::Npm, _) => "pinned npm",
-            Route::Mash(How::Pip, _) => "pinned pip",
-            Route::Installer => "CUA installer",
-            Route::Apple => "Xcode tools",
+            Route::Bundled => i18n::t("wizard.tools.route.bundled"),
+            Route::Apt => i18n::t("wizard.tools.route.apt"),
+            Route::Brew(_) => i18n::t("wizard.tools.route.homebrew"),
+            Route::Mash(How::Download, _) => i18n::t("wizard.tools.route.download"),
+            Route::Mash(How::Npm, _) => i18n::t("wizard.tools.route.npm"),
+            Route::Mash(How::Pip, _) => i18n::t("wizard.tools.route.pip"),
+            Route::Installer => i18n::t("wizard.tools.route.cua"),
+            Route::Apple => i18n::t("wizard.tools.route.xcode"),
         };
         let scope = match self.scope() {
-            Scope::Shared => "your computer",
-            Scope::MashOnly => "Mash only",
+            Scope::Shared => i18n::t("wizard.tools.scope.shared"),
+            Scope::MashOnly => i18n::t("wizard.tools.scope.mash_only"),
         };
         format!("{installer} ({scope})")
     }
@@ -105,6 +105,64 @@ impl Tool {
             std::slice::from_ref(&self.name)
         } else {
             self.binaries
+        }
+    }
+
+    fn description_text(&self) -> String {
+        match self.name {
+            "agent-browser" => i18n::t("wizard.tools.description.agent-browser"),
+            "atuin" => i18n::t("wizard.tools.description.atuin"),
+            "bash-language-server" => i18n::t("wizard.tools.description.bash-language-server"),
+            "bat" => i18n::t("wizard.tools.description.bat"),
+            "clangd" => i18n::t("wizard.tools.description.clangd"),
+            "cua-driver" => i18n::t("wizard.tools.description.cua-driver"),
+            "delta" => i18n::t("wizard.tools.description.delta"),
+            "eza" => i18n::t("wizard.tools.description.eza"),
+            "fd" => i18n::t("wizard.tools.description.fd"),
+            "fresh" => i18n::t("wizard.tools.description.fresh"),
+            "fzf" => i18n::t("wizard.tools.description.fzf"),
+            "gh" => i18n::t("wizard.tools.description.gh"),
+            "git" => i18n::t("wizard.tools.description.git"),
+            "gopls" => i18n::t("wizard.tools.description.gopls"),
+            "herdr" => i18n::t("wizard.tools.description.herdr"),
+            "jq" => i18n::t("wizard.tools.description.jq"),
+            "latexindent" => i18n::t("wizard.tools.description.latexindent"),
+            "lazydocker" => i18n::t("wizard.tools.description.lazydocker"),
+            "lazygit" => i18n::t("wizard.tools.description.lazygit"),
+            "marksman" => i18n::t("wizard.tools.description.marksman"),
+            "node" => i18n::t("wizard.tools.description.node"),
+            "pet" => i18n::t("wizard.tools.description.pet"),
+            "pi" => i18n::t("wizard.tools.description.pi"),
+            "prettier" => i18n::t("wizard.tools.description.prettier"),
+            "python" => i18n::t("wizard.tools.description.python"),
+            "python-lsp-server" => i18n::t("wizard.tools.description.python-lsp-server"),
+            "rg" => i18n::t("wizard.tools.description.rg"),
+            "rust-analyzer" => i18n::t("wizard.tools.description.rust-analyzer"),
+            "sentrux" => i18n::t("wizard.tools.description.sentrux"),
+            "shfmt" => i18n::t("wizard.tools.description.shfmt"),
+            "sourcekit-lsp" => i18n::t("wizard.tools.description.sourcekit-lsp"),
+            "starship" => i18n::t("wizard.tools.description.starship"),
+            "svelte-language-server" => i18n::t("wizard.tools.description.svelte-language-server"),
+            "tailwindcss-language-server" => {
+                i18n::t("wizard.tools.description.tailwindcss-language-server")
+            }
+            "texlab" => i18n::t("wizard.tools.description.texlab"),
+            "typescript-language-server" => {
+                i18n::t("wizard.tools.description.typescript-language-server")
+            }
+            "viu" => i18n::t("wizard.tools.description.viu"),
+            "vscode-css-language-server" => {
+                i18n::t("wizard.tools.description.vscode-css-language-server")
+            }
+            "vscode-html-language-server" => {
+                i18n::t("wizard.tools.description.vscode-html-language-server")
+            }
+            "vscode-json-language-server" => {
+                i18n::t("wizard.tools.description.vscode-json-language-server")
+            }
+            "yaml-language-server" => i18n::t("wizard.tools.description.yaml-language-server"),
+            "zoxide" => i18n::t("wizard.tools.description.zoxide"),
+            _ => self.description.to_string(),
         }
     }
 }
@@ -475,7 +533,11 @@ impl ToolsPage {
             Constraint::Length(3),
         ])
         .split(wizard_style::page_area(frame, Some(1)));
-        wizard_style::header(frame, parts[0], &wizard_style::page_title("Tools", 1));
+        wizard_style::header(
+            frame,
+            parts[0],
+            &wizard_style::page_title(&i18n::t("wizard.tools.title"), 1),
+        );
 
         let name_width = if parts[1].width >= 100 {
             self.rows
@@ -487,20 +549,17 @@ impl ToolsPage {
             0
         };
         let mut lines: Vec<(Line<'static>, Option<usize>)> = vec![
-            (
-                Line::from("Choose the tools to install. Greyed-out tools are always present."),
-                None,
-            ),
+            (Line::from(i18n::t("wizard.tools.intro")), None),
             (
                 Line::from(Span::styled(
-                    "Mash only: kept under ~/.mash; nothing outside Mash sees it.",
+                    i18n::t("wizard.tools.mash_only"),
                     Style::default().fg(wizard_style::MUTED),
                 )),
                 None,
             ),
             (
                 Line::from(Span::styled(
-                    "On your computer: installed system-wide, shared with your other apps.",
+                    i18n::t("wizard.tools.shared"),
                     Style::default().fg(wizard_style::MUTED),
                 )),
                 None,
@@ -514,7 +573,7 @@ impl ToolsPage {
         {
             lines.push((
                 Line::from(Span::styled(
-                    "Homebrew was not found: install it from brew.sh before selecting Homebrew tools.",
+                    i18n::t("wizard.tools.no_homebrew"),
                     Style::default().fg(wizard_style::YELLOW),
                 )),
                 None,
@@ -531,7 +590,7 @@ impl ToolsPage {
                 checked,
             );
             line.spans
-                .push(Span::raw(format!("  {}", tool.description)));
+                .push(Span::raw(format!("  {}", tool.description_text())));
             line.spans.push(Span::styled(
                 format!("  · {}", route.label()),
                 Style::default().fg(wizard_style::MUTED),
@@ -547,10 +606,10 @@ impl ToolsPage {
             lines.push((line, (!locked).then_some(index)));
         }
 
-        let body = wizard_style::section(frame, parts[1], "Install choices");
+        let body = wizard_style::section(frame, parts[1], &i18n::t("wizard.tools.choices"));
         wizard_style::render_form(frame, body, lines, true);
 
-        let skills = wizard_style::section(frame, parts[2], "Skills");
+        let skills = wizard_style::section(frame, parts[2], &i18n::t("wizard.tools.skills"));
         wizard_style::render_form(
             frame,
             skills,
@@ -558,14 +617,14 @@ impl ToolsPage {
                 (
                     wizard_style::checkbox(
                         self.focus == self.skills_id(),
-                        "Install Programming Skills (includes memory)",
+                        &i18n::t("wizard.tools.skills_check"),
                         self.programming,
                     ),
                     Some(self.skills_id()),
                 ),
                 (
                     Line::from(Span::styled(
-                        "    Brainstorm, plan, work, QA and release workflows for Pi, with local memory.",
+                        format!("    {}", i18n::t("wizard.tools.skills_help")),
                         Style::default().fg(wizard_style::MUTED),
                     )),
                     None,
@@ -578,14 +637,17 @@ impl ToolsPage {
             parts[3],
             &[
                 (
-                    wizard_style::button(self.focus == self.back_id(), " Back "),
+                    wizard_style::button(
+                        self.focus == self.back_id(),
+                        &format!(" {} ", i18n::t("wizard.tools.back")),
+                    ),
                     Some(self.back_id()),
                 ),
                 (Span::raw("    "), None),
                 (
                     wizard_style::button(
                         self.focus == self.next_id(),
-                        " Next — configure providers ",
+                        &format!(" {} ", i18n::t("wizard.tools.next")),
                     ),
                     Some(self.next_id()),
                 ),

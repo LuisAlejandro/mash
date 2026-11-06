@@ -1,0 +1,98 @@
+{
+  "pi.header.restore": {
+    "text": "Възстановяване на вградената заглавка на pi",
+    "source_hash": "afcd79f821af"
+  },
+  "pi.header.restored": {
+    "text": "Вградената заглавка е възстановена",
+    "source_hash": "c1e44d719693"
+  },
+  "pi.orchestration.answered": {
+    "text": "Координаторът отговори: {reply}",
+    "source_hash": "fc659f7aea92"
+  },
+  "pi.orchestration.cancelled": {
+    "text": "Въпросът беше отменен.",
+    "source_hash": "4c742263cfe3"
+  },
+  "pi.orchestration.failed": {
+    "text": "Въпросът към координатора не успя.",
+    "source_hash": "1036eb4b3272"
+  },
+  "pi.orchestration.label": {
+    "text": "Питай координатора",
+    "source_hash": "5369ae08b587"
+  },
+  "pi.orchestration.lookup-failed": {
+    "text": "Dispatch не може да бъде намерен.",
+    "source_hash": "e8a8ac97005c"
+  },
+  "pi.orchestration.no-dispatch": {
+    "text": "Няма отворен Dispatch за този панел. Питай човека с ask_user.",
+    "source_hash": "045255c705e5"
+  },
+  "pi.orchestration.pending": {
+    "text": "Въпросът {id} все още чака. Извикай ask_coordinator отново с resume, зададен на този id.",
+    "source_hash": "a70e26ec54e8"
+  },
+  "pi.orchestration.unavailable": {
+    "text": "mash-orchestration не е наличен ({message}). Питай човека с ask_user.",
+    "source_hash": "ee1fa62200a8"
+  },
+  "pi.orchestration.waiting": {
+    "text": "Изчакване на координатора",
+    "source_hash": "41e36ff21f8a"
+  },
+  "pi.show-file.is-directory": {
+    "text": "{path} е директория, не файл.",
+    "source_hash": "51405f5a7722"
+  },
+  "pi.show-file.label": {
+    "text": "Покажи файла на човека",
+    "source_hash": "1c16c0d820b1"
+  },
+  "pi.show-file.needs-path": {
+    "text": "show_file се нуждае от път.",
+    "source_hash": "2709bc3725aa"
+  },
+  "pi.show-file.no-reason": {
+    "text": "не е посочена причина",
+    "source_hash": "bdb1872e7703"
+  },
+  "pi.show-file.no-such-file": {
+    "text": "Няма такъв файл: {path}",
+    "source_hash": "6b07882ca274"
+  },
+  "pi.show-file.not-shown-daemon": {
+    "text": "Не е показано: демонът на Fresh не е наличен за {name}.",
+    "source_hash": "eee33afb1233"
+  },
+  "pi.show-file.not-shown-fresh": {
+    "text": "Не е показано: {name} не може да се отвори във Fresh ({detail}).",
+    "source_hash": "38000d407a37"
+  },
+  "pi.show-file.not-shown-herdr": {
+    "text": "Не е показано: {name} не може да се отвори в Herdr ({detail}).",
+    "source_hash": "ef35d0eb229e"
+  },
+  "pi.show-file.not-shown-no-editor": {
+    "text": "Не е показано: няма редактор Fresh в този раздел за {name}.",
+    "source_hash": "dd6f54bd1990"
+  },
+  "pi.show-file.not-shown-no-pane": {
+    "text": "Не е показано: няма панел на Herdr за {name}.",
+    "source_hash": "b810ed171fce"
+  },
+  "pi.show-file.not-shown-other": {
+    "text": "Не е показано: няма вътрешен визуализатор за {name}.",
+    "source_hash": "c38cbe4e26f6"
+  },
+  "pi.show-file.shown-image": {
+    "text": "Показано: {name} е отворен във вертикално разделяне до редактора, в реална резолюция.",
+    "source_hash": "bbf2a8758fc7"
+  },
+  "pi.show-file.shown-text": {
+    "text": "Показано: {name} е отворен в редактора Fresh до този панел.",
+    "source_hash": "ac958177710d"
+  }
+}

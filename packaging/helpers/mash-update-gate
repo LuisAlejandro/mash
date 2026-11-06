@@ -202,7 +202,7 @@ server-ready)
     [ "$remaining" -gt 0 ] || exit 1
     if mash_update_run "$remaining" herdr-health env HERDR_SOCKET_PATH="$data/run/herdr.sock" \
       /bin/bash -o pipefail -c '"$1" status server | grep -q "status: running"' _ "$herdr"; then
-      for pid in $(/usr/sbin/lsof -t "$data/run/herdr.sock" 2>/dev/null | sort -u); do
+      for pid in $(/usr/sbin/lsof -t "$data/run/herdr.sock" 2>/dev/null | LC_ALL=C sort -u); do
         [ "$("$bin/mash-update-processes" image "$pid" 2>/dev/null)" = "$herdr" ] || continue
         stamp="$("$bin/mash-update-processes" stamp "$pid")" || continue
         target="$MU_STATE/update-server-$MU_ID.plist"

@@ -1,0 +1,69 @@
+Mash unter Linux — Tastatur
+
+Ctrl ist die Bearbeitungstaste, daher liegen die eigenen Familien von Mash auf
+Ctrl+Alt und Ctrl+Shift. Zwei GNOME-Belegungen sitzen dort und lassen sich
+nicht zurückholen -- GNOME liest die Taste im Compositor, bevor Mash existiert
+-- deshalb verwendet der Bereichsfokus Ctrl+Super, und das Umbenennen eines
+Arbeitsbereichs meidet Ctrl+Alt+Shift+R. Innerhalb eines Bereichs behält die
+Shell jeden bloßen Ctrl-Akkord (Ctrl+C, Ctrl+R, Ctrl+U), und Fresh behält die
+Bearbeitungstasten.
+
+  Ctrl+Alt+W           Bereich schließen
+  Ctrl+Shift+W         Tab schließen
+  Ctrl+Alt+Shift+W     Arbeitsbereich schließen
+  Ctrl+Alt+U           Trennen
+  Ctrl+Super+Down      Bereich nach unten fokussieren
+  Ctrl+Super+Left      Bereich nach links fokussieren
+  Ctrl+Super+Right     Bereich nach rechts fokussieren
+  Ctrl+Super+Up        Bereich nach oben fokussieren
+  Ctrl+Alt+Shift+G     Zur Sitzung gehen
+  Ctrl+Shift+I         Hilfe
+  Ctrl+Shift+Down      Nächster Agent
+  Ctrl+Alt+]           Nächster Bereich
+  Ctrl+Tab             Nächster Tab
+  Ctrl+Alt+Shift+]     Nächster Arbeitsbereich
+  Ctrl+Alt+Y           Benachrichtigung öffnen
+  Ctrl+Alt+Shift+U     Nach Updates suchen
+  Ctrl+Shift+Up        Vorheriger Agent
+  Ctrl+Alt+[           Vorheriger Bereich
+  Ctrl+Shift+Tab       Vorheriger Tab
+  Ctrl+Alt+Shift+[     Vorheriger Arbeitsbereich
+  Ctrl+Shift+,         Konfiguration neu laden
+  Ctrl+Alt+Shift+⌫     Worktree entfernen
+  Ctrl+Shift+M         Tab umbenennen
+  Ctrl+Alt+Shift+M     Arbeitsbereich umbenennen
+  Ctrl+Alt+R           Größenmodus
+  Ctrl+,               Einstellungen
+  Ctrl+Alt+-           Bereich horizontal teilen
+  Ctrl+Alt+\           Bereich vertikal teilen
+  Alt+1..9             Zu Tab N wechseln
+  Ctrl+Alt+Shift+1..9  Zu Arbeitsbereich N wechseln
+  Ctrl+Alt+B           Seitenleiste umschalten
+  Ctrl+Alt+Z           Bereich zoomen
+
+  ── Starter ──
+  Ctrl+Shift+T         neuer einfacher Terminal-Tab
+  Ctrl+Alt+T           neuer Entwicklungs-Tab (Editor + Agent)
+  Ctrl+Alt+Shift+T     neuer Agent-Tab
+  Ctrl+Alt+P           Dateisuche
+  Ctrl+Shift+G         Versionskontrolle
+  Ctrl+Shift+O         Container-Status
+  Ctrl+Alt+Shift+P     Snippets
+  Ctrl+Shift+R         neuer Review-Tab (Diff + Agent)
+  Ctrl+Alt+K           Text annotieren
+  Ctrl+Alt+L           Anmerkungen in den Agenten dieses Tabs einfügen und archivieren
+  Ctrl+Shift+L         Anmerkungen verwalten
+  Alt+G                Link oder ID wählen
+  Ctrl+Shift+X         Plugin-Verwaltung
+  Ctrl+Alt+Shift+N     Neuer Arbeitsbereich (Layout-Profil)
+  Ctrl+Alt+Shift+E     Neuer Worktree (Layout-Profil)
+  Ctrl+Alt+Shift+O     Arbeitsbereich-Auswahl
+  Ctrl+Shift+P         Befehlspalette
+  Ctrl+Alt+Shift+Y     Agent aus Nachricht abzweigen
+  Ctrl+Alt+Shift+L     Sitzungssuche
+
+Kopieren/Einfügen: Ctrl+Shift+C / Ctrl+Shift+V oder die Maus. Die eigenen
+Bearbeitungstasten von Fresh hängen vom Tastenmodus ab, der beim ersten Start
+gewählt wurde: Mash/Cursor-Stil setzt die Belegung von Mash, Native lässt die
+eingebauten Tasten von Fresh. `fresh --cmd config paths` ausführen oder die
+Tastenbelegung von Fresh öffnen, um zu sehen, welche gilt.

@@ -5,6 +5,7 @@
 //! reads that code and draws its own UI; the user never sees `gh` itself.
 //! Everything stays in Mash's own `GH_CONFIG_DIR`, and tokens inherited from
 //! the environment are ignored so they cannot make Mash look signed in.
+use crate::i18n;
 use std::{
     ffi::OsString,
     fs,
@@ -18,10 +19,20 @@ use std::{
 
 const DEVICE_URL: &str = "https://github.com/login/device";
 
+/// Why GitHub sign-in cannot run. Drawn with `i18n::t` so the wording follows
+/// the language chosen later on the first page, not the language at construction.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum UnavailableReason {
+    /// Mash's GitHub config is a symlink, so it is not kept inside Mash.
+    ConfigInside,
+    /// The bundled `gh` cannot be executed.
+    CliUnavailable,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Status {
     /// Sign-in cannot run here; the reason is shown instead of a button.
-    Unavailable(String),
+    Unavailable(UnavailableReason),
     SignedOut,
     /// `gh` is asking GitHub for a code.
     Starting,
@@ -80,13 +91,13 @@ impl GithubLogin {
     }
 
     /// The label of the page's GitHub button for the current state.
-    pub fn button_label(&self) -> &'static str {
+    /// The catalog key of the button's label for the current state.
+    pub fn button_label_key(&self) -> &'static str {
         match self.status {
-            Status::Unavailable(_) => " Sign in to GitHub ",
-            Status::SignedOut => " Sign in to GitHub ",
-            Status::Starting | Status::Waiting { .. } => " Cancel ",
-            Status::SignedIn(_) => " Sign out ",
-            Status::Failed(_) => " Try again ",
+            Status::Unavailable(_) | Status::SignedOut => "wizard.github.sign_in",
+            Status::Starting | Status::Waiting { .. } => "wizard.github.cancel",
+            Status::SignedIn(_) => "wizard.github.sign_out",
+            Status::Failed(_) => "wizard.github.retry",
         }
     }
 
@@ -103,13 +114,13 @@ impl GithubLogin {
     /// What is known without the network: the config's own sign-in.
     fn local_status(&self) -> Status {
         if self.config.is_symlink() || self.config.join("hosts.yml").is_symlink() {
-            return Status::Unavailable("GitHub config must stay inside Mash.".into());
+            return Status::Unavailable(UnavailableReason::ConfigInside);
         }
         if self.preview {
             return Status::SignedOut;
         }
         if !self.gh_runs() {
-            return Status::Unavailable("The GitHub CLI is not available in this build.".into());
+            return Status::Unavailable(UnavailableReason::CliUnavailable);
         }
         // Only Mash's own hosts file counts. `gh auth token` also answers from
         // the system keychain, where the user's personal gh keeps its login
@@ -149,7 +160,7 @@ impl GithubLogin {
 
     fn prepare_config(&self) -> Result<(), String> {
         if self.config.is_symlink() || self.config.join("hosts.yml").is_symlink() {
-            return Err("GitHub config must stay inside Mash.".into());
+            return Err(i18n::t("wizard.github.config_inside").into());
         }
         fs::create_dir_all(&self.config).map_err(|e| e.to_string())?;
         fs::set_permissions(&self.config, fs::Permissions::from_mode(0o700))
@@ -190,7 +201,10 @@ impl GithubLogin {
         let mut child = match command.spawn() {
             Ok(child) => child,
             Err(error) => {
-                self.status = Status::Failed(format!("Could not start the GitHub CLI: {error}"));
+                self.status = Status::Failed(i18n::fill(
+                    &i18n::t("wizard.github.start_failed"),
+                    &[("error", &&error.to_string())],
+                ));
                 return;
             }
         };
@@ -246,7 +260,7 @@ impl GithubLogin {
         self.status = if exit.success() {
             Status::SignedIn(hosts_user(&self.config))
         } else if self.last_line.is_empty() {
-            Status::Failed("GitHub sign-in did not complete.".into())
+            Status::Failed(i18n::t("wizard.github.incomplete").into())
         } else {
             Status::Failed(self.last_line.clone())
         };
@@ -483,7 +497,7 @@ mod tests {
             login.status(),
             &Status::Failed("expired_token: the device code has expired".into())
         );
-        assert_eq!(login.button_label(), " Try again ");
+        assert_eq!(login.button_label_key(), "wizard.github.retry");
     }
 
     #[test]
@@ -493,7 +507,7 @@ mod tests {
         wait_until(&mut login, |status| {
             matches!(status, Status::Waiting { .. })
         });
-        assert_eq!(login.button_label(), " Cancel ");
+        assert_eq!(login.button_label_key(), "wizard.github.cancel");
         let started = Instant::now();
         login.activate();
         assert!(

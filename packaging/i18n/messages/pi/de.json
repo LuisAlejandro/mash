@@ -1,0 +1,98 @@
+{
+  "pi.header.restore": {
+    "text": "Eingebaute pi-Kopfzeile wiederherstellen",
+    "source_hash": "afcd79f821af"
+  },
+  "pi.header.restored": {
+    "text": "Eingebaute Kopfzeile wiederhergestellt",
+    "source_hash": "c1e44d719693"
+  },
+  "pi.orchestration.answered": {
+    "text": "Koordinator hat geantwortet: {reply}",
+    "source_hash": "fc659f7aea92"
+  },
+  "pi.orchestration.cancelled": {
+    "text": "Die Frage wurde abgebrochen.",
+    "source_hash": "4c742263cfe3"
+  },
+  "pi.orchestration.failed": {
+    "text": "Die Frage an den Koordinator ist fehlgeschlagen.",
+    "source_hash": "1036eb4b3272"
+  },
+  "pi.orchestration.label": {
+    "text": "Koordinator fragen",
+    "source_hash": "5369ae08b587"
+  },
+  "pi.orchestration.lookup-failed": {
+    "text": "Der Dispatch konnte nicht nachgeschlagen werden.",
+    "source_hash": "e8a8ac97005c"
+  },
+  "pi.orchestration.no-dispatch": {
+    "text": "Kein offener Dispatch für diesen Bereich. Frag die Person mit ask_user.",
+    "source_hash": "045255c705e5"
+  },
+  "pi.orchestration.pending": {
+    "text": "Frage {id} ist noch ausstehend. Ruf ask_coordinator erneut auf und setze resume auf diese id.",
+    "source_hash": "a70e26ec54e8"
+  },
+  "pi.orchestration.unavailable": {
+    "text": "mash-orchestration ist nicht verfügbar ({message}). Frag die Person mit ask_user.",
+    "source_hash": "ee1fa62200a8"
+  },
+  "pi.orchestration.waiting": {
+    "text": "Warten auf den Koordinator",
+    "source_hash": "41e36ff21f8a"
+  },
+  "pi.show-file.is-directory": {
+    "text": "{path} ist ein Verzeichnis, keine Datei.",
+    "source_hash": "51405f5a7722"
+  },
+  "pi.show-file.label": {
+    "text": "Datei der Person zeigen",
+    "source_hash": "1c16c0d820b1"
+  },
+  "pi.show-file.needs-path": {
+    "text": "show_file braucht einen Pfad.",
+    "source_hash": "2709bc3725aa"
+  },
+  "pi.show-file.no-reason": {
+    "text": "kein Grund angegeben",
+    "source_hash": "bdb1872e7703"
+  },
+  "pi.show-file.no-such-file": {
+    "text": "Datei nicht gefunden: {path}",
+    "source_hash": "6b07882ca274"
+  },
+  "pi.show-file.not-shown-daemon": {
+    "text": "Nicht gezeigt: Fresh-Daemon für {name} nicht verfügbar.",
+    "source_hash": "eee33afb1233"
+  },
+  "pi.show-file.not-shown-fresh": {
+    "text": "Nicht gezeigt: {name} konnte in Fresh nicht geöffnet werden ({detail}).",
+    "source_hash": "38000d407a37"
+  },
+  "pi.show-file.not-shown-herdr": {
+    "text": "Nicht gezeigt: {name} konnte in Herdr nicht geöffnet werden ({detail}).",
+    "source_hash": "ef35d0eb229e"
+  },
+  "pi.show-file.not-shown-no-editor": {
+    "text": "Nicht gezeigt: kein Fresh-Editor in diesem Tab für {name}.",
+    "source_hash": "dd6f54bd1990"
+  },
+  "pi.show-file.not-shown-no-pane": {
+    "text": "Nicht gezeigt: kein Herdr-Bereich für {name} verfügbar.",
+    "source_hash": "b810ed171fce"
+  },
+  "pi.show-file.not-shown-other": {
+    "text": "Nicht gezeigt: kein interner Betrachter für {name}.",
+    "source_hash": "c38cbe4e26f6"
+  },
+  "pi.show-file.shown-image": {
+    "text": "Gezeigt: {name} ist in einer vertikalen Teilung neben dem Editor geöffnet, in echter Auflösung.",
+    "source_hash": "bbf2a8758fc7"
+  },
+  "pi.show-file.shown-text": {
+    "text": "Gezeigt: {name} ist im Fresh-Editor neben diesem Bereich geöffnet.",
+    "source_hash": "ac958177710d"
+  }
+}

@@ -1,0 +1,152 @@
+[
+  {
+    "code": "bg",
+    "name": "Български",
+    "locale": "bg_BG.UTF-8",
+    "fresh": "bg",
+    "lazydocker": "en",
+    "lazygit": "en",
+    "ghostty": "bg",
+    "voice": "bg-BG"
+  },
+  {
+    "code": "cs",
+    "name": "Čeština",
+    "locale": "cs_CZ.UTF-8",
+    "fresh": "cs",
+    "lazydocker": "en",
+    "lazygit": "en",
+    "ghostty": "cs",
+    "voice": "cs-CZ"
+  },
+  {
+    "code": "de",
+    "name": "Deutsch",
+    "locale": "de_DE.UTF-8",
+    "fresh": "de",
+    "lazydocker": "de",
+    "lazygit": "en",
+    "ghostty": "de",
+    "voice": "de-DE"
+  },
+  {
+    "code": "en",
+    "name": "English",
+    "locale": "en_US.UTF-8",
+    "fresh": "en",
+    "lazydocker": "en",
+    "lazygit": "en",
+    "ghostty": "en",
+    "voice": "en-US"
+  },
+  {
+    "code": "es",
+    "name": "Español",
+    "locale": "es_MX.UTF-8",
+    "fresh": "es",
+    "lazydocker": "es",
+    "lazygit": "en",
+    "ghostty": "es",
+    "voice": "es-US"
+  },
+  {
+    "code": "fr",
+    "name": "Français",
+    "locale": "fr_FR.UTF-8",
+    "fresh": "fr",
+    "lazydocker": "fr",
+    "lazygit": "en",
+    "ghostty": "fr",
+    "voice": "fr-FR"
+  },
+  {
+    "code": "it",
+    "name": "Italiano",
+    "locale": "it_IT.UTF-8",
+    "fresh": "it",
+    "lazydocker": "en",
+    "lazygit": "en",
+    "ghostty": "it",
+    "voice": "it-IT"
+  },
+  {
+    "code": "ja",
+    "name": "日本語",
+    "locale": "ja_JP.UTF-8",
+    "fresh": "ja",
+    "lazydocker": "en",
+    "lazygit": "ja",
+    "ghostty": "ja",
+    "voice": "ja-JP"
+  },
+  {
+    "code": "ko",
+    "name": "한국어",
+    "locale": "ko_KR.UTF-8",
+    "fresh": "ko",
+    "lazydocker": "en",
+    "lazygit": "ko",
+    "ghostty": "ko",
+    "voice": "ko-KR"
+  },
+  {
+    "code": "pt-BR",
+    "name": "Português (Brasil)",
+    "locale": "pt_BR.UTF-8",
+    "fresh": "pt-BR",
+    "lazydocker": "pt",
+    "lazygit": "pt",
+    "ghostty": "pt-BR",
+    "voice": "pt-BR"
+  },
+  {
+    "code": "ru",
+    "name": "Русский",
+    "locale": "ru_RU.UTF-8",
+    "fresh": "ru",
+    "lazydocker": "en",
+    "lazygit": "ru",
+    "ghostty": "ru",
+    "voice": "ru-RU"
+  },
+  {
+    "code": "th",
+    "name": "ไทย",
+    "locale": "th_TH.UTF-8",
+    "fresh": "th",
+    "lazydocker": "en",
+    "lazygit": "en",
+    "ghostty": "th",
+    "voice": "th-TH"
+  },
+  {
+    "code": "uk",
+    "name": "Українська",
+    "locale": "uk_UA.UTF-8",
+    "fresh": "uk",
+    "lazydocker": "en",
+    "lazygit": "en",
+    "ghostty": "uk",
+    "voice": "uk-UA"
+  },
+  {
+    "code": "vi",
+    "name": "Tiếng Việt",
+    "locale": "vi_VN.UTF-8",
+    "fresh": "vi",
+    "lazydocker": "en",
+    "lazygit": "en",
+    "ghostty": "vi",
+    "voice": "vi-VN"
+  },
+  {
+    "code": "zh-CN",
+    "name": "简体中文",
+    "locale": "zh_CN.UTF-8",
+    "fresh": "zh-CN",
+    "lazydocker": "zh",
+    "lazygit": "zh-CN",
+    "ghostty": "zh-Hans",
+    "voice": "zh-CN"
+  }
+]

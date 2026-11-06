@@ -69,6 +69,22 @@ installation and startup. The choice is stored in
 `~/.mash/setup/skills-choice`; upgrading never silently removes files from an
 existing installation.
 
+## Language
+
+Set `~/.mash/setup/language` to one line:
+
+```text
+language=<code>
+```
+
+Supported codes and names: `bg` Български, `cs` Čeština, `de` Deutsch,
+`en` English, `es` Español, `fr` Français, `it` Italiano, `ja` 日本語,
+`ko` 한국어, `pt-BR` Português (Brasil), `ru` Русский, `th` ไทย,
+`uk` Українська, `vi` Tiếng Việt, `zh-CN` 简体中文.
+
+The setting takes effect on the next launch. Herdr UI, Pi's own interface,
+third-party CLI tools, and language servers stay in English.
+
 ## Mash Terminal menus
 
 The menu bar (macOS) and the titlebar menu (Linux) carry Mash's own commands,

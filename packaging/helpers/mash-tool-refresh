@@ -77,7 +77,7 @@ installed_components() {
   done
 }
 
-components="$(installed_components | sort -u)"
+components="$(installed_components | LC_ALL=C sort -u)"
 hindsight="$data/local/share/mash/hindsight/bin/hindsight-embed"
 [ -n "$components" ] || [ -x "$hindsight" ] || exit 0
 

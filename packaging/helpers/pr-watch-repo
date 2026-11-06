@@ -68,6 +68,9 @@ if "--workspace" in sys.argv:
 # value there makes every call fail as though logged out — indistinguishable
 # from "no PRs" without this. Scrub it for every gh invocation in this script.
 GH_ENV = {k: v for k, v in os.environ.items() if k != "GITHUB_TOKEN"}
+# Every gh call here is parsed (JSON, counts), so none of them takes the
+# user's locale.
+GH_ENV["LC_ALL"] = "C"
 
 
 LIST_FAILED = "list-failed"

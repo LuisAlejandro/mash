@@ -361,7 +361,7 @@ mash_update_quiesce() {
   fi
   while :; do
     "$proc" list "$app" "$MU_DATA" >"$inventory.current" || return 1
-    sort -u "$inventory" "$inventory.current" >"$inventory.all" || return 1
+    LC_ALL=C sort -u "$inventory" "$inventory.current" >"$inventory.all" || return 1
     : >"$inventory"
     alive=0
     while read -r pid stamp; do

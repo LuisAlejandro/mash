@@ -88,15 +88,6 @@ class TestRunnerContract(unittest.TestCase):
         self.assertIn("PASS  packaging/tests/test_partial.sh", result.stdout)
         self.assertIn("7 suite(s) ran", result.stdout)
 
-    def test_applicable_patch_failure_stops_the_run(self):
-        self.executable(self.root / "packaging/helpers/mash-ghostty-patch-menu", "exit 9\n")
-        ghostty = self.root / "ghostty"
-        ghostty.mkdir()
-        result = self.run_runner(MASH_GHOSTTY_SRC=str(ghostty))
-        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("FAIL", result.stdout + result.stderr)
-        self.assertNotIn("test: PASSED", result.stdout)
-        self.assertEqual(self.run_runner().returncode, 0)
 
     def test_missing_optional_runtimes_are_named_skips(self):
         (self.bin / "cargo").unlink()

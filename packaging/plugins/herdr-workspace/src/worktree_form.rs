@@ -5,6 +5,7 @@ use crate::config::{self, Profile};
 use crate::edit;
 use crate::form::{self, CARD_HEIGHT, CARD_WIDTH};
 use crate::git;
+use crate::i18n::{fill, t};
 use crate::popup;
 use crate::theme::Theme;
 use ratatui::backend::CrosstermBackend;
@@ -102,13 +103,13 @@ impl Source {
                     .ok()
                     .filter(|s| !s.is_empty())
             })
-            .ok_or_else(|| "no current workspace; open a git workspace first".to_string())?;
+            .ok_or_else(|| t("plugin.herdr-workspace.error.no_workspace"))?;
         let mut cwd = std::env::var("WORKTREE_FORM_CWD").unwrap_or_default();
         if cwd.is_empty() {
             cwd = std::env::var("HERDR_WORKSPACE_CWD").unwrap_or_default();
         }
         if cwd.is_empty() {
-            return Err("workspace has no directory".into());
+            return Err(t("plugin.herdr-workspace.error.no_directory"));
         }
         Ok(Self { workspace_id, cwd })
     }
@@ -373,7 +374,7 @@ impl App {
 
     fn commit_branch(&mut self) {
         if self.branch.trim().is_empty() {
-            self.error = "branch name is empty".into();
+            self.error = t("plugin.herdr-workspace.worktree.error.branch_empty");
             return;
         }
         if let Err(e) = git::valid_branch_name(&self.branch) {
@@ -397,11 +398,14 @@ impl App {
     fn apply_base(&mut self, value: &str) {
         let trimmed = value.trim();
         if trimmed.is_empty() {
-            self.error = "base ref is empty".into();
+            self.error = t("plugin.herdr-workspace.worktree.error.base_empty");
             return;
         }
         if !self.refs.iter().any(|r| r == trimmed) {
-            self.error = format!("unknown ref `{trimmed}`");
+            self.error = fill(
+                &t("plugin.herdr-workspace.worktree.error.unknown_ref"),
+                &[("ref", trimmed)],
+            );
             return;
         }
         self.base = trimmed.to_string();
@@ -409,7 +413,7 @@ impl App {
         self.error.clear();
         self.refresh_suggestions();
         if self.profiles.is_empty() {
-            self.error = "no profiles in config.yaml".into();
+            self.error = t("plugin.herdr-workspace.error.no_profiles");
             return;
         }
         self.focus = Focus::Profile;
@@ -426,7 +430,7 @@ impl App {
             return;
         }
         let Some(profile) = self.profiles.get(self.profile_idx).cloned() else {
-            self.error = "select a profile".into();
+            self.error = t("plugin.herdr-workspace.error.select_profile");
             return;
         };
         let workspace_id = self.source.workspace_id.clone();
@@ -512,7 +516,7 @@ impl App {
         let body = form::pad(inner[0], 1, 2);
         f.render_widget(
             Paragraph::new(Span::styled(
-                "  ↑↓/pgup/pgdn/ctrl+j/k select ref · tab complete · enter next · esc cancel",
+                format!("  {}", t("plugin.herdr-workspace.worktree.hint")),
                 self.theme.muted(),
             )),
             inner[1],
@@ -540,7 +544,7 @@ impl App {
         self.draw_input(
             f,
             chunks[0],
-            "Branch",
+            &t("plugin.herdr-workspace.worktree.branch"),
             &self.branch,
             self.focus == Focus::Branch,
             "feature/my-work",
@@ -550,7 +554,7 @@ impl App {
         self.draw_input(
             f,
             chunks[2],
-            "Base ref",
+            &t("plugin.herdr-workspace.worktree.base_ref"),
             &self.base,
             self.focus == Focus::Base,
             "origin/main",
@@ -613,7 +617,10 @@ impl App {
     fn draw_suggestions(&mut self, f: &mut Frame, area: Rect) {
         if self.suggestions.is_empty() {
             f.render_widget(
-                Paragraph::new(Span::styled("  no matching refs", self.theme.muted())),
+                Paragraph::new(Span::styled(
+                    format!("  {}", t("plugin.herdr-workspace.worktree.no_matches")),
+                    self.theme.muted(),
+                )),
                 area,
             );
             return;
@@ -696,18 +703,21 @@ impl App {
     }
 
     fn draw_buttons(&mut self, f: &mut Frame, area: Rect) {
+        let cancel = t("plugin.herdr-workspace.button.cancel");
+        let save = t("plugin.herdr-workspace.button.save");
+        let width = crate::theme::button_width(&[&cancel, &save]);
         let row = Layout::horizontal([
             Constraint::Fill(1),
-            Constraint::Length(12),
+            Constraint::Length(width),
             Constraint::Length(1),
-            Constraint::Length(12),
+            Constraint::Length(width),
         ])
         .split(area);
         self.cancel_box = row[1];
         self.save_box = row[3];
         f.render_widget(
             Paragraph::new(Line::from(Span::styled(
-                "[ Cancel ]",
+                cancel,
                 self.theme.button(self.focus == Focus::Cancel, false),
             )))
             .centered(),
@@ -716,7 +726,7 @@ impl App {
         let save_ok = self.branch_committed && self.base_committed && !self.profiles.is_empty();
         f.render_widget(
             Paragraph::new(Line::from(Span::styled(
-                "[ Save ]",
+                save,
                 self.theme.button(self.focus == Focus::Save, save_ok),
             )))
             .centered(),
@@ -852,9 +862,9 @@ mod tests {
         // same as form.rs's directory list -- not out of bounds, not a no-op.
         app.key_base(KeyCode::PageDown, KeyModifiers::NONE);
         assert_eq!(app.suggest_idx, 1); // (0 + 10) % 3 == 1
-        // PageUp mirrors Up's "already at the top -> jump focus to Branch"
-        // rule, not move_suggest's own wraparound -- the quantity moved (not
-        // 1) is irrelevant once idx is already 0, so this must NOT wrap to 2.
+                                        // PageUp mirrors Up's "already at the top -> jump focus to Branch"
+                                        // rule, not move_suggest's own wraparound -- the quantity moved (not
+                                        // 1) is irrelevant once idx is already 0, so this must NOT wrap to 2.
         app.suggest_idx = 0;
         app.key_base(KeyCode::PageUp, KeyModifiers::NONE);
         assert_eq!(app.focus, Focus::Branch);

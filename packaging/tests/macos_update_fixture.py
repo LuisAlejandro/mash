@@ -10,6 +10,27 @@ import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 
+
+def pinned_fork_text(name):
+    """Source of ``name`` at the Ghostty commit Mash pins, or None without the fork.
+
+    The update lifecycle lives in the fork (commit pinned in packaging/assets.json),
+    not in a Mash-side patch. Tests that need that code read it from the pinned
+    commit when MASH_GHOSTTY_SRC names a checkout, and skip otherwise.
+    """
+    import json
+
+    checkout = pathlib.Path(os.environ.get("MASH_GHOSTTY_SRC", ROOT.parent / "ghostty"))
+    if not (checkout / ".git").exists():
+        return None
+    pin = json.loads((ROOT / "packaging/assets.json").read_text())["components"]["ghostty"]["commit"]
+    result = subprocess.run(
+        ["git", "-C", str(checkout), "show", f"{pin}:{name}"], capture_output=True, text=True
+    )
+    if result.returncode != 0:
+        return None
+    return result.stdout
+
 _PROCESS_C = '''#include <unistd.h>
 #include <stdlib.h>
 #include <sys/socket.h>

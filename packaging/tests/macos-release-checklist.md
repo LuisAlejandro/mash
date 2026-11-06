@@ -80,6 +80,7 @@ launch. Delete the account afterwards.
 | Shell | a new pane shows the Starship prompt, completion works in zsh, bash and fish, and `viu` and `latexindent` run |
 | Editor | Fresh opens files from the file finder and right-click reaches Fresh, not Herdr |
 | Clipboard and mouse | copy, paste, selection and scrolling work in a shell pane and in Fresh |
+| Fonts | with no extra fonts installed, set `~/.mash/setup/language` to each of ja, ko, zh-CN and th in turn and relaunch: the wizard, a Herdr pane, Fresh and Pi's replies show that language's glyphs, never boxes. macOS supplies the fallbacks, so nothing is packaged for it; this row is the only proof that they are reached |
 | Self-update journey | covered by the blocking sign-off in `linux-release-checklist.md`: a disposable account, a notarized pair, mid-install relaunches, About Mash on the new version, no surviving old-bundle process, refusal and post-exchange recovery paths, and the 0.2.1/0.2.2 legacy transition |
 
 **Blocking:** do not tag the release until every row passes. Record anything

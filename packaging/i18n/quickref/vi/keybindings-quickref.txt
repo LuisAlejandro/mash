@@ -1,0 +1,36 @@
+── Không gian làm việc ──                                   ── Tác nhân ──
+  ⌘⌃N        Không gian làm việc mới (hồ sơ bố cục)           ⌃⇧↑ / ⌃⇧↓  Tác nhân trước / sau
+  ⌘⌃⇧N       Cây làm việc mới (hồ sơ bố cục)                  ⌃⇧1-9      Tới tác nhân N
+  ⌘⌃R        Đổi tên không gian làm việc                      Esc        Ngắt
+  ⌘⌃W        Đóng không gian làm việc                         ⌃C         Xóa / thoát
+  ⌘⌃⌫        Gỡ cây làm việc                                  ⇧Tab       Đổi mức suy nghĩ
+  ⌘⌃[ / ⌘⌃]  Không gian làm việc trước / sau                  ⌃O         Mở rộng kết quả công cụ
+  ⌘⌃1-9      Chuyển tới không gian làm việc N                 ⌃P         Đổi mô hình
+  ⌘⌃G        Đi tới (duyệt phiên)                             ⌃G         Trình soạn thảo bên ngoài
+  ⌘⌃O        Chọn không gian làm việc (phiên / không gian)    ⌃⇧F        Tìm trong bản ghi
+── Thẻ ──                                                     ⌥↵         Xếp hàng tin tiếp theo
+  ⌘T / ⌘⇧N   tab phát triển mới (trình soạn thảo + tác tử)    ⌃⌥Z        Đọc chính tả (Pi Voice)
+  ⌘⌥T / ⌘⌥N  tab tác tử mới
+  ⌘⇧R        tab đánh giá mới (diff + tác tử)               ── Phần bổ sung ──
+  ⌘⇧T        tab shell đơn giản mới                           ⌃⇧G        Quản lý phiên bản
+  ⌘⇧[ / ⌘⇧]  Thẻ trước / sau                                  ⌘⇧O        Trạng thái container
+  ⌘⇧1-9      Chuyển tới thẻ N                                 ⌘⌥P        Đoạn mã (trình thực thi)
+  ⌘⇧M        Đổi tên thẻ                                      ⌘P         Tìm tệp
+  ⌘⇧W        Đóng thẻ                                         ⌘⇧P        Bảng lệnh
+── Ô ──                                                       ⌘⌥L        Tìm kiếm phiên
+  ⌘⌥← ↓ ↑ →  Tới ô trái / xuống / lên / phải                  ⌘K / ⌘L    Chú thích -- lấy / dán
+  ⌘⌥[ / ⌘⌥]  Ô trước / sau                                    ⌘⇧L        Chú thích -- quản lý
+  ⌘⌥\ ⌘⌥-    Chia dọc / ngang                                 ⌥G         Chọn liên kết hoặc ID
+  ⌘⌥W        Đóng ô                                           ⌘⇧X        Trình quản lý plugin
+  ⌘⌥Z        Phóng ô                                          ⌘⌥Y        Tách tác tử từ tin nhắn
+  ⌘⌥R        Đổi kích thước
+                                                            ── Toàn cục ──
+── Trình soạn thảo ──                                         ⌘⇧I        Trợ giúp
+  ⌘O         Mở tệp                                           ⌘I         Cài đặt
+  ⌘S         Lưu                                              ⌘U         Tách
+  ⌘F         Tìm / thay trong bộ đệm                          ⌘R         Tải lại cấu hình
+  ⌘⇧F        Tìm / thay trong tệp                             ⌘Y         Mở đích thông báo
+  ⌘⇧E        Bật tắt trình duyệt tệp                          ⌘B         Bật tắt thanh bên
+  ⌘D         Con trỏ tới khớp tiếp theo                       ⌘⇧U        Kiểm tra bản cập nhật
+  ⌘⌥C        Sao chép đường dẫn tệp
+  ⌥⇧↓        Nhân đôi dòng

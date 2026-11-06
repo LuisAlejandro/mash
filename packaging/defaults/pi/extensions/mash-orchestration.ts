@@ -11,6 +11,7 @@ import { spawn } from "node:child_process";
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
+import { t } from "./lib/mash-i18n.ts";
 
 const DEFAULT_TIMEOUT_MS = 600_000;
 
@@ -67,7 +68,7 @@ function parseJson(raw: string): Record<string, unknown> | undefined {
 export default function (pi: ExtensionAPI) {
 	pi.registerTool({
 		name: "ask_coordinator",
-		label: "Ask coordinator",
+		label: t("pi.orchestration.label"),
 		description:
 			"Ask the Herdr orchestration coordinator one question and wait for its reply. Use this only while this pane has an open Dispatch. If this pane has no Dispatch, the tool returns an error: ask the person with ask_user instead.",
 		promptSnippet:
@@ -93,29 +94,23 @@ export default function (pi: ExtensionAPI) {
 		}),
 		async execute(_toolCallId, params, signal, _onUpdate, _ctx) {
 			if (signal?.aborted) {
-				return textResult("The question was cancelled.", true);
+				return textResult(t("pi.orchestration.cancelled"), true);
 			}
 			let lookup;
 			try {
 				lookup = await runCli(["dispatch-for-pane"], signal);
 			} catch (error) {
 				const message = error instanceof Error ? error.message : String(error);
-				return textResult(
-					`mash-orchestration is not available (${message}). Ask the person with ask_user.`,
-					true,
-				);
+				return textResult(t("pi.orchestration.unavailable", { message }), true);
 			}
 			const found = parseJson(lookup.stdout);
 			if (lookup.code !== 0 || !found) {
 				const err = parseJson(lookup.stderr);
 				const message = typeof err?.error === "string" ? err.error : lookup.stderr.trim();
-				return textResult(message || "Could not look up the Dispatch.", true);
+				return textResult(message || t("pi.orchestration.lookup-failed"), true);
 			}
 			if (!found.dispatch) {
-				return textResult(
-					"No open Dispatch for this pane. Ask the person with ask_user.",
-					true,
-				);
+				return textResult(t("pi.orchestration.no-dispatch"), true);
 			}
 
 			const args = ["ask", "--question", params.question];
@@ -130,23 +125,21 @@ export default function (pi: ExtensionAPI) {
 
 			let announced = false;
 			try {
-				pi.events.emit("herdr:blocked", { active: true, label: "Waiting for coordinator" });
+				pi.events.emit("herdr:blocked", { active: true, label: t("pi.orchestration.waiting") });
 				announced = true;
 				const result = await runCli(args, signal);
 				if (signal?.aborted) {
-					return textResult("The question was cancelled.", true);
+					return textResult(t("pi.orchestration.cancelled"), true);
 				}
 				const body = parseJson(result.code === 0 ? result.stdout : result.stderr);
 				if (result.code !== 0 || !body) {
 					const message = typeof body?.error === "string" ? body.error : result.stderr.trim();
-					return textResult(message || "The coordinator question failed.", true);
+					return textResult(message || t("pi.orchestration.failed"), true);
 				}
 				if (body.status === "answered") {
-					return textResult(`Coordinator answered: ${String(body.reply ?? "")}`);
+					return textResult(t("pi.orchestration.answered", { reply: String(body.reply ?? "") }));
 				}
-				return textResult(
-					`Question ${String(body.id)} is still pending. Call ask_coordinator again with resume set to that id.`,
-				);
+				return textResult(t("pi.orchestration.pending", { id: String(body.id) }));
 			} finally {
 				if (announced) {
 					pi.events.emit("herdr:blocked", { active: false });

@@ -97,11 +97,15 @@ GIT_ENV = {k: v for k, v in os.environ.items() if k != "GITHUB_TOKEN"}
 # hang on a username/password or passphrase prompt that nothing is there to
 # answer.
 GIT_ENV["GIT_TERMINAL_PROMPT"] = "0"
+# Output parsed below (branch names, rev-list counts) must not depend on the
+# user's LANG, so only the parsing calls run under LC_ALL=C. The fetch keeps
+# the caller's locale.
+PARSE_ENV = {**os.environ, "LC_ALL": "C"}
 
 
 def current_branch(root):
     r = subprocess.run(["git", "-C", root, "rev-parse", "--abbrev-ref", "HEAD"],
-                        capture_output=True, text=True)
+                        capture_output=True, text=True, env=PARSE_ENV)
     name = r.stdout.strip()
     # A detached HEAD prints the literal string "HEAD", not empty -- excluded
     # explicitly rather than relying on a later git call to fail on it, since
@@ -115,7 +119,7 @@ def upstream_of(root, branch):
     r = subprocess.run(
         ["git", "-C", root, "rev-parse", "--abbrev-ref", "--symbolic-full-name",
          f"{branch}@{{u}}"],
-        capture_output=True, text=True)
+        capture_output=True, text=True, env=PARSE_ENV)
     return r.stdout.strip() if r.returncode == 0 else None
 
 
@@ -142,7 +146,7 @@ def ahead_behind(root, branch, upstream):
     r = subprocess.run(
         ["git", "-C", root, "rev-list", "--left-right", "--count",
          f"{branch}...{upstream}"],
-        capture_output=True, text=True)
+        capture_output=True, text=True, env=PARSE_ENV)
     if r.returncode != 0:
         return None
     try:

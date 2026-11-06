@@ -143,7 +143,10 @@ def macos_items(src):
     tables = {"cursor": [], "native": []}
     for name, body in re.findall(r"static let (\w+): \[Entry\] = \[(.*?)\n    \]", text, re.S):
         mode = "native" if name.startswith("native") else "cursor"
-        tables[mode] += re.findall(r'\.item\("([^"]+)",\s*"([^"]+)"\)', body)
+        tables[mode] += re.findall(
+            r'\.item\("herdr\.menu\.item\.[a-z0-9_]+",\s*"([^"]+)",\s*"([^"]+)"\)',
+            body,
+        )
     for name, native, cursor in re.findall(
         r'static var (\w+)Chord: String \{ native \? "([^"]+)" : "([^"]+)" \}', text
     ):

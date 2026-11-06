@@ -1,0 +1,182 @@
+{
+  "helper.launch.data_not_writable": {
+    "text": "{path} не є доступною для запису папкою. Подробиці: {log}",
+    "source_hash": "c2daaf7abb17"
+  },
+  "helper.launch.data_prepare_failed": {
+    "text": "Mash не вдалося підготувати {path}. Подробиці: {log}",
+    "source_hash": "f1a3af24d2f1"
+  },
+  "helper.launch.environment_refused": {
+    "text": "Mash відхилив середовище поза {path}. Подробиці: {log}",
+    "source_hash": "6cba761820b9"
+  },
+  "helper.launch.linux_data_prepare_failed": {
+    "text": "Mash не вдалося підготувати {path}.",
+    "source_hash": "67920ad8e50d"
+  },
+  "helper.launch.linux_update_settings_failed": {
+    "text": "Mash не вдалося зафіксувати налаштування оновлення; файл збережено.",
+    "source_hash": "a8cb9d5749da"
+  },
+  "helper.launch.refused_start": {
+    "text": "Mash відмовився запускатися.",
+    "source_hash": "fea43a382106"
+  },
+  "helper.launch.setup_failed": {
+    "text": "Не вдалося налаштувати {path}. Подробиці: {log}",
+    "source_hash": "e891d0a29f1a"
+  },
+  "helper.launch.socket_outside": {
+    "text": "Mash відмовився запускатися: сокет розташований поза ~/.mash.",
+    "source_hash": "ddb5d709d6cd"
+  },
+  "helper.launch.update_location_invalid": {
+    "text": "Недійсне розташування оновлення Mash.",
+    "source_hash": "c53120b603c7"
+  },
+  "helper.launch.update_settings_failed": {
+    "text": "Mash не вдалося зафіксувати налаштування оновлення. Подробиці: {log}",
+    "source_hash": "31a1842ec5dc"
+  },
+  "helper.launch.update_state_unsafe": {
+    "text": "Стан оновлення Mash небезпечний.",
+    "source_hash": "f5d6ba096441"
+  },
+  "helper.launch.update_waiter_failed": {
+    "text": "Mash не вдалося зареєструвати процес очікування оновлення.",
+    "source_hash": "ff2f989250a6"
+  },
+  "helper.launch.updater_incomplete": {
+    "text": "Засіб оновлення Mash неповний.",
+    "source_hash": "43c808c2338d"
+  },
+  "helper.popup.dismiss": {
+    "text": "(натисніть будь-яку клавішу, щоб закрити)",
+    "source_hash": "f57ff387149d"
+  },
+  "helper.setup.not_finished": {
+    "text": "Налаштування Mash не завершено, тому Mash не відкрився.",
+    "source_hash": "f7435b584992"
+  },
+  "helper.setup.open_again": {
+    "text": "Відкрийте Mash знову, щоб почати налаштування спочатку.",
+    "source_hash": "3c08c76f274a"
+  },
+  "helper.setup.press_enter": {
+    "text": "Натисніть Enter, щоб закрити це вікно.",
+    "source_hash": "3cbf0fb2a94f"
+  },
+  "plugin.image-popup.no-image": {
+    "text": "Немає зображення для показу: {file}",
+    "source_hash": "91aa57b30f47"
+  },
+  "plugin.image-popup.source-file": {
+    "text": "(саме зображення розташоване у {file})",
+    "source_hash": "acda13cd6347"
+  },
+  "plugin.image-popup.viu-missing": {
+    "text": "viu не встановлено. Установіть його командою: brew install viu",
+    "source_hash": "51d203b460ac"
+  },
+  "plugin.mash-update-notice.notice.apt-failed": {
+    "text": "Перевірте репозиторій APT і виконайте sudo apt update.",
+    "source_hash": "6e5d462c3fb3"
+  },
+  "plugin.mash-update-notice.notice.available-linux": {
+    "text": "У вас {installed}. Щоб оновити, виконайте: {command}",
+    "source_hash": "408651e42b2f"
+  },
+  "plugin.mash-update-notice.notice.available-macos": {
+    "text": "У вас {installed}. Відкрийте Mash, щоб оновити.",
+    "source_hash": "110061a9c5d1"
+  },
+  "plugin.mash-update-notice.notice.check-failed": {
+    "text": "Перевірте підключення до інтернету й повторіть спробу.",
+    "source_hash": "176afd02072f"
+  },
+  "plugin.mash-update-notice.notice.current-linux": {
+    "text": "У поточних метаданих APT не знайдено новішої версії Mash.",
+    "source_hash": "4076014ba5ad"
+  },
+  "plugin.mash-update-notice.notice.current-macos": {
+    "text": "Усе оновлено. Mash {version} — поточна версія.",
+    "source_hash": "541489679898"
+  },
+  "plugin.mash-update-notice.notice.previous-restored": {
+    "text": "Mash {installed} знову працює. Оновлення до {candidate} не завершилося.",
+    "source_hash": "e15f090dff62"
+  },
+  "plugin.mash-update-notice.notice.restart-required": {
+    "text": "Запущено {installed}. Mash {candidate} вже встановлено; перезапустіть Mash, щоб ним користуватися.",
+    "source_hash": "e1248557730a"
+  },
+  "plugin.mash-update-notice.notice.updated": {
+    "text": "Mash працює з новою версією.",
+    "source_hash": "e3caeafe33e1"
+  },
+  "plugin.mash-update-notice.pane.apt-failed": {
+    "text": "\n  В APT не знайдено інформації про оновлення.\n\n  Перевірте репозиторій Mash і виконайте sudo apt update.   (натисніть будь-яку клавішу, щоб закрити)",
+    "source_hash": "ae2c3f30f3cd"
+  },
+  "plugin.mash-update-notice.pane.available-linux": {
+    "text": "\n  Доступний Mash {candidate} (у вас {installed}).\n\n  Щоб оновити, виконайте:\n    sudo apt install --only-upgrade letsmash\n\n  Потім перезапустіть Mash.   (натисніть будь-яку клавішу, щоб закрити)",
+    "source_hash": "2073e20a4f2e"
+  },
+  "plugin.mash-update-notice.pane.check-failed": {
+    "text": "\n  Зараз не вдалося перевірити оновлення.\n\n  Перевірте підключення до інтернету й повторіть спробу.   (натисніть будь-яку клавішу, щоб закрити)",
+    "source_hash": "d716b0057955"
+  },
+  "plugin.mash-update-notice.pane.previous-restored": {
+    "text": "\n  Mash {installed} знову працює.\n\n  Оновлення до {candidate} не завершилося. Файли робочих просторів не було відновлено.\n\n  (натисніть будь-яку клавішу, щоб закрити)",
+    "source_hash": "23ce21e89b73"
+  },
+  "plugin.mash-update-notice.pane.restart-required": {
+    "text": "\n  Працює Mash {installed}; Mash {candidate} вже встановлено.\n\n  Збережіть роботу та перезапустіть Mash, щоб користуватися встановленою версією.\n  Завантаження не потрібне.   (натисніть будь-яку клавішу, щоб закрити)",
+    "source_hash": "8cfff1a68c6e"
+  },
+  "plugin.mash-update-notice.pane.update-prompt": {
+    "text": "\n  Доступний Mash {candidate} (у вас {installed}).\n\n  Натисніть u, щоб оновити зараз, або будь-яку іншу клавішу, щоб закрити.\n  Під час оновлення Mash закриється та знову відкриється з новою версією.\n\n  > ",
+    "source_hash": "e72a656d118c"
+  },
+  "plugin.mash-update-notice.pane.update-unavailable": {
+    "text": "\n  Доступний Mash {candidate} (у вас {installed}).\n\n  Завантажте його з:\n    {url}\n\n  (натисніть будь-яку клавішу, щоб закрити)",
+    "source_hash": "3559cf5d3977"
+  },
+  "plugin.mash-update-notice.pane.updated": {
+    "text": "\n  Mash {version} встановлено й запущено.\n\n  Ваші робочі простори й конфігурація залишаються у ~/.mash.\n\n  (натисніть будь-яку клавішу, щоб закрити)",
+    "source_hash": "b6ec8b2c9bee"
+  },
+  "plugin.mash-update-notice.pane.up-to-date-linux": {
+    "text": "\n  У поточних метаданих APT не знайдено новішої версії Mash.\n\n  Якщо списки пакунків могли застаріти, виконайте sudo apt update.   (натисніть будь-яку клавішу, щоб закрити)",
+    "source_hash": "e5f9e50c721f"
+  },
+  "plugin.mash-update-notice.pane.up-to-date-macos": {
+    "text": "\n  Усе оновлено (Mash {version}).\n\n  (натисніть будь-яку клавішу, щоб закрити)",
+    "source_hash": "0f6af22649b2"
+  },
+  "plugin.mash-update-notice.title.available": {
+    "text": "Доступний Mash {candidate}",
+    "source_hash": "e9ea02ee8c67"
+  },
+  "plugin.mash-update-notice.title.check-failed": {
+    "text": "Не вдалося перевірити оновлення Mash",
+    "source_hash": "43d510221839"
+  },
+  "plugin.mash-update-notice.title.previous-restored": {
+    "text": "Попередню версію Mash відновлено",
+    "source_hash": "db2ddd4e3f64"
+  },
+  "plugin.mash-update-notice.title.restart-required": {
+    "text": "Потрібно перезапустити Mash",
+    "source_hash": "c22b233a4d7d"
+  },
+  "plugin.mash-update-notice.title.up-to-date": {
+    "text": "Mash оновлено",
+    "source_hash": "cc9e6d5993b9"
+  },
+  "plugin.mash-update-notice.title.updated": {
+    "text": "Mash оновлено до {version}",
+    "source_hash": "855f75f65bcb"
+  }
+}

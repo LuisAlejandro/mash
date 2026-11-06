@@ -1,0 +1,98 @@
+{
+  "pi.header.restore": {
+    "text": "คืนค่าส่วนหัวในตัวของ pi",
+    "source_hash": "afcd79f821af"
+  },
+  "pi.header.restored": {
+    "text": "คืนค่าส่วนหัวในตัวแล้ว",
+    "source_hash": "c1e44d719693"
+  },
+  "pi.orchestration.answered": {
+    "text": "ผู้ประสานงานตอบ: {reply}",
+    "source_hash": "fc659f7aea92"
+  },
+  "pi.orchestration.cancelled": {
+    "text": "ยกเลิกคำถามแล้ว",
+    "source_hash": "4c742263cfe3"
+  },
+  "pi.orchestration.failed": {
+    "text": "คำถามถึงผู้ประสานงานล้มเหลว",
+    "source_hash": "1036eb4b3272"
+  },
+  "pi.orchestration.label": {
+    "text": "ถามผู้ประสานงาน",
+    "source_hash": "5369ae08b587"
+  },
+  "pi.orchestration.lookup-failed": {
+    "text": "ค้นหา Dispatch ไม่ได้",
+    "source_hash": "e8a8ac97005c"
+  },
+  "pi.orchestration.no-dispatch": {
+    "text": "ไม่มี Dispatch ที่เปิดอยู่สำหรับบานหน้าต่างนี้ ถามบุคคลด้วย ask_user",
+    "source_hash": "045255c705e5"
+  },
+  "pi.orchestration.pending": {
+    "text": "คำถาม {id} ยังค้างอยู่ เรียก ask_coordinator อีกครั้งโดยตั้ง resume เป็น id นั้น",
+    "source_hash": "a70e26ec54e8"
+  },
+  "pi.orchestration.unavailable": {
+    "text": "mash-orchestration ไม่พร้อมใช้งาน ({message}) ถามบุคคลด้วย ask_user",
+    "source_hash": "ee1fa62200a8"
+  },
+  "pi.orchestration.waiting": {
+    "text": "กำลังรอผู้ประสานงาน",
+    "source_hash": "41e36ff21f8a"
+  },
+  "pi.show-file.is-directory": {
+    "text": "{path} เป็นไดเรกทอรี ไม่ใช่ไฟล์",
+    "source_hash": "51405f5a7722"
+  },
+  "pi.show-file.label": {
+    "text": "แสดงไฟล์ให้บุคคล",
+    "source_hash": "1c16c0d820b1"
+  },
+  "pi.show-file.needs-path": {
+    "text": "show_file ต้องมีเส้นทาง",
+    "source_hash": "2709bc3725aa"
+  },
+  "pi.show-file.no-reason": {
+    "text": "ไม่ได้ระบุเหตุผล",
+    "source_hash": "bdb1872e7703"
+  },
+  "pi.show-file.no-such-file": {
+    "text": "ไม่มีไฟล์นี้: {path}",
+    "source_hash": "6b07882ca274"
+  },
+  "pi.show-file.not-shown-daemon": {
+    "text": "ไม่ได้แสดง: ดีมอน Fresh ไม่พร้อมใช้งานสำหรับ {name}",
+    "source_hash": "eee33afb1233"
+  },
+  "pi.show-file.not-shown-fresh": {
+    "text": "ไม่ได้แสดง: เปิด {name} ใน Fresh ไม่ได้ ({detail})",
+    "source_hash": "38000d407a37"
+  },
+  "pi.show-file.not-shown-herdr": {
+    "text": "ไม่ได้แสดง: เปิด {name} ใน Herdr ไม่ได้ ({detail})",
+    "source_hash": "ef35d0eb229e"
+  },
+  "pi.show-file.not-shown-no-editor": {
+    "text": "ไม่ได้แสดง: ไม่มีตัวแก้ไข Fresh ในแท็บนี้สำหรับ {name}",
+    "source_hash": "dd6f54bd1990"
+  },
+  "pi.show-file.not-shown-no-pane": {
+    "text": "ไม่ได้แสดง: ไม่มีบานหน้าต่าง Herdr สำหรับ {name}",
+    "source_hash": "b810ed171fce"
+  },
+  "pi.show-file.not-shown-other": {
+    "text": "ไม่ได้แสดง: ไม่มีตัวแสดงภายในสำหรับ {name}",
+    "source_hash": "c38cbe4e26f6"
+  },
+  "pi.show-file.shown-image": {
+    "text": "แสดงแล้ว: {name} เปิดอยู่ในช่องแบ่งแนวตั้งข้างตัวแก้ไข ที่ความละเอียดจริง",
+    "source_hash": "bbf2a8758fc7"
+  },
+  "pi.show-file.shown-text": {
+    "text": "แสดงแล้ว: {name} เปิดอยู่ในตัวแก้ไข Fresh ข้างบานหน้าต่างนี้",
+    "source_hash": "ac958177710d"
+  }
+}

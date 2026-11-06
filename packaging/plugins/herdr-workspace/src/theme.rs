@@ -213,6 +213,18 @@ fn apply_custom(t: &mut Theme, custom: &HashMap<String, String>) {
     }
 }
 
+/// Width of a dialog button: its widest label, in display columns, plus
+/// padding. Measured from the text so a longer translation never clips; the
+/// minimum keeps short English labels the size they have always been.
+pub fn button_width(labels: &[&str]) -> u16 {
+    let widest = labels
+        .iter()
+        .map(|label| ratatui::text::Line::from(*label).width())
+        .max()
+        .unwrap_or(0);
+    (widest as u16 + 2).max(12)
+}
+
 pub fn parse_color(raw: &str) -> Option<Color> {
     let s = raw.trim();
     if s.eq_ignore_ascii_case("reset") {
@@ -412,6 +424,22 @@ fn builtin(name: &str) -> Theme {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn button_width_fits_every_translation() {
+        for lang in crate::i18n::languages() {
+            let cancel = crate::i18n::text_in(lang, "plugin.herdr-workspace.button.cancel");
+            let save = crate::i18n::text_in(lang, "plugin.herdr-workspace.button.save");
+            let width = super::button_width(&[&cancel, &save]) as usize;
+            for label in [&cancel, &save] {
+                assert!(
+                    ratatui::text::Line::from(label.as_str()).width() < width,
+                    "{lang}: {label:?} does not fit {width}"
+                );
+            }
+        }
+        assert_eq!(super::button_width(&["[ Save ]"]), 12);
+    }
+
     use crate::config::Colors;
 
     /// A fixed base theme. `Theme::load()` reads the user's real Herdr config,
@@ -466,10 +494,7 @@ mod tests {
         assert_eq!(t.card_border(false, false).fg, Some(base.overlay));
         assert_eq!(t.card_text().fg, base.muted().fg);
         // Title with no override follows the border, as it always did.
-        assert_eq!(
-            t.card_title(true, true).fg,
-            t.card_border(true, true).fg
-        );
+        assert_eq!(t.card_title(true, true).fg, t.card_border(true, true).fg);
     }
 
     /// A typo must degrade to the inherited color, not a blank or black border.

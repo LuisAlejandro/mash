@@ -1,0 +1,362 @@
+{
+  "plugin.herdr-workspace.button.cancel": {
+    "text": "[ Abbrechen ]",
+    "source_hash": "e730ebdef196"
+  },
+  "plugin.herdr-workspace.button.save": {
+    "text": "[ Speichern ]",
+    "source_hash": "8f41c85fd49c"
+  },
+  "plugin.herdr-workspace.error.no_directory": {
+    "text": "Arbeitsbereich hat keinen Ordner",
+    "source_hash": "09507f73e42e"
+  },
+  "plugin.herdr-workspace.error.no_profiles": {
+    "text": "keine Profile in config.yaml",
+    "source_hash": "386b24a0cbc2"
+  },
+  "plugin.herdr-workspace.error.no_workspace": {
+    "text": "kein aktueller Arbeitsbereich; zuerst einen git-Arbeitsbereich öffnen",
+    "source_hash": "469ff9786131"
+  },
+  "plugin.herdr-workspace.error.select_profile": {
+    "text": "Profil auswählen",
+    "source_hash": "48087492edf9"
+  },
+  "plugin.herdr-workspace.form.directory": {
+    "text": "Ordner",
+    "source_hash": "c8f84c3c5378"
+  },
+  "plugin.herdr-workspace.form.error.name_empty": {
+    "text": "Name des Arbeitsbereichs fehlt",
+    "source_hash": "900d774ffa7f"
+  },
+  "plugin.herdr-workspace.form.error.not_directory": {
+    "text": "kein Ordner",
+    "source_hash": "3b2a43e3a5b1"
+  },
+  "plugin.herdr-workspace.form.hint": {
+    "text": "↑↓/pgup/pgdn/ctrl+j/k Ordner wählen · tab vervollständigen · enter weiter · esc abbrechen",
+    "source_hash": "177fb8ddb1f6"
+  },
+  "plugin.herdr-workspace.form.name": {
+    "text": "Name",
+    "source_hash": "dcd1d5223f73"
+  },
+  "plugin.herdr-workspace.form.no_matches": {
+    "text": "keine passenden Ordner",
+    "source_hash": "8a0b7eb98806"
+  },
+  "plugin.herdr-workspace.progress.footer": {
+    "text": "Layout wird angewendet — das Popup schließt sich, wenn es fertig ist",
+    "source_hash": "c4d428e38f1b"
+  },
+  "plugin.herdr-workspace.progress.gauge": {
+    "text": "Fortschritt",
+    "source_hash": "4664827f8e89"
+  },
+  "plugin.herdr-workspace.progress.working": {
+    "text": "Läuft",
+    "source_hash": "a92f0449a9f7"
+  },
+  "plugin.herdr-workspace.worktree.base_ref": {
+    "text": "Basis-Referenz",
+    "source_hash": "9c6c10f9d4c6"
+  },
+  "plugin.herdr-workspace.worktree.branch": {
+    "text": "Branch",
+    "source_hash": "52656e8104ee"
+  },
+  "plugin.herdr-workspace.worktree.error.base_empty": {
+    "text": "Basis-Referenz fehlt",
+    "source_hash": "fc7621cfcebf"
+  },
+  "plugin.herdr-workspace.worktree.error.branch_empty": {
+    "text": "Branch-Name fehlt",
+    "source_hash": "50f256f07996"
+  },
+  "plugin.herdr-workspace.worktree.error.unknown_ref": {
+    "text": "unbekannte Referenz `{ref}`",
+    "source_hash": "bc8df133c5c1"
+  },
+  "plugin.herdr-workspace.worktree.hint": {
+    "text": "↑↓/pgup/pgdn/ctrl+j/k Referenz wählen · tab vervollständigen · enter weiter · esc abbrechen",
+    "source_hash": "a7a9383e0b70"
+  },
+  "plugin.herdr-workspace.worktree.no_matches": {
+    "text": "keine passenden Referenzen",
+    "source_hash": "342b4bc4ea99"
+  },
+  "plugin.telescope.ask.agent_name": {
+    "text": "Agent-Name (a-z0-9_-): ",
+    "source_hash": "c282b483b831"
+  },
+  "plugin.telescope.ask.base_ref": {
+    "text": "Basis-Referenz (leer = Standard): ",
+    "source_hash": "83dcd25e5dd8"
+  },
+  "plugin.telescope.ask.branch_name": {
+    "text": "Branch-Name: ",
+    "source_hash": "73b89f123311"
+  },
+  "plugin.telescope.ask.new_pane_name": {
+    "text": "Neuer Panel-Name: ",
+    "source_hash": "f0d8ca6fb8fb"
+  },
+  "plugin.telescope.ask.new_tab_name": {
+    "text": "Name des neuen Tabs: ",
+    "source_hash": "ab715f5eeefd"
+  },
+  "plugin.telescope.ask.new_workspace_name": {
+    "text": "Name des neuen Arbeitsbereichs: ",
+    "source_hash": "1f1c54f1f88f"
+  },
+  "plugin.telescope.ask.prompt": {
+    "text": "Prompt: ",
+    "source_hash": "45ea9812454c"
+  },
+  "plugin.telescope.ask.remove_worktree": {
+    "text": "Worktree für {name} entfernen? [y/N] ",
+    "source_hash": "f70c7f093467"
+  },
+  "plugin.telescope.ask.rename_agent_name": {
+    "text": "Neuer Agent-Name (a-z0-9_-): ",
+    "source_hash": "7a151ffa422b"
+  },
+  "plugin.telescope.empty.agents": {
+    "text": "keine aktiven Agenten.",
+    "source_hash": "64a644e8fa2a"
+  },
+  "plugin.telescope.empty.files": {
+    "text": "keine Dateien im Ursprungsordner gefunden.",
+    "source_hash": "1a35fa2322e9"
+  },
+  "plugin.telescope.empty.no_origin_dir": {
+    "text": "kein brauchbarer Ursprungsordner zum Suchen gefunden.",
+    "source_hash": "9bf01c7629b4"
+  },
+  "plugin.telescope.empty.no_other_tab": {
+    "text": "kein anderer Tab, in den das Panel verschoben werden kann.",
+    "source_hash": "63852167a39a"
+  },
+  "plugin.telescope.entry.files": {
+    "text": "Dateien suchen…",
+    "source_hash": "149a9d15d113"
+  },
+  "plugin.telescope.entry.files_hint": {
+    "text": "@ eingeben, um hierher zu springen, und dann eine Datei wählen",
+    "source_hash": "709da3a1cc6f"
+  },
+  "plugin.telescope.entry.search": {
+    "text": "Inhalte suchen…",
+    "source_hash": "f59229c80c91"
+  },
+  "plugin.telescope.entry.search_hint": {
+    "text": "/ eingeben, um hierher zu springen und mit ripgrep zu suchen",
+    "source_hash": "5902de0f0b06"
+  },
+  "plugin.telescope.entry.workspace": {
+    "text": "Arbeitsbereich:",
+    "source_hash": "26a6b9a1e72f"
+  },
+  "plugin.telescope.file.pane": {
+    "text": "Neues Panel (teilen, rechts)",
+    "source_hash": "79d6a04fe6a4"
+  },
+  "plugin.telescope.file.window": {
+    "text": "Neues Fenster (Tab)",
+    "source_hash": "228471da3a5e"
+  },
+  "plugin.telescope.header.actions": {
+    "text": "↑↓ wählen · enter ausführen · @ Dateien · / Suche · esc abbrechen",
+    "source_hash": "f378fe331346"
+  },
+  "plugin.telescope.header.actions_only": {
+    "text": "↑↓ wählen · enter ausführen · esc abbrechen",
+    "source_hash": "358b2735de9b"
+  },
+  "plugin.telescope.header.files": {
+    "text": "↑↓ wählen · enter öffnen · backspace zurück",
+    "source_hash": "09937a318485"
+  },
+  "plugin.telescope.header.search": {
+    "text": "↑↓ wählen · enter öffnen · rg live · backspace zurück",
+    "source_hash": "92e50a4cbc77"
+  },
+  "plugin.telescope.native.close_pane": {
+    "text": "Panel schließen",
+    "source_hash": "7fa0f9613d91"
+  },
+  "plugin.telescope.native.close_tab": {
+    "text": "Tab schließen",
+    "source_hash": "50a3f9523122"
+  },
+  "plugin.telescope.native.close_workspace": {
+    "text": "Arbeitsbereich schließen",
+    "source_hash": "e5086f0455d5"
+  },
+  "plugin.telescope.native.focus_down": {
+    "text": "Panel unten fokussieren",
+    "source_hash": "634e72370a91"
+  },
+  "plugin.telescope.native.focus_left": {
+    "text": "Panel links fokussieren",
+    "source_hash": "2703127d3921"
+  },
+  "plugin.telescope.native.focus_right": {
+    "text": "Panel rechts fokussieren",
+    "source_hash": "bf3836bedbb7"
+  },
+  "plugin.telescope.native.focus_up": {
+    "text": "Panel oben fokussieren",
+    "source_hash": "f0ad95b3b130"
+  },
+  "plugin.telescope.native.interrupt_agent": {
+    "text": "Agenten unterbrechen (esc)…",
+    "source_hash": "c02ae808d617"
+  },
+  "plugin.telescope.native.move_pane_new_tab": {
+    "text": "Panel in neuen Tab verschieben",
+    "source_hash": "4b21a13e2c84"
+  },
+  "plugin.telescope.native.move_pane_new_workspace": {
+    "text": "Panel in neuen Arbeitsbereich verschieben",
+    "source_hash": "f451f1754798"
+  },
+  "plugin.telescope.native.move_pane_tab": {
+    "text": "Panel in anderen Tab verschieben…",
+    "source_hash": "663cea16681b"
+  },
+  "plugin.telescope.native.new_tab": {
+    "text": "Neuer Tab",
+    "source_hash": "1e08fda9c966"
+  },
+  "plugin.telescope.native.new_tab_named": {
+    "text": "Neuer Tab (benannt)…",
+    "source_hash": "a8670dddf8c6"
+  },
+  "plugin.telescope.native.new_workspace": {
+    "text": "Neuer Arbeitsbereich",
+    "source_hash": "df0caf1b27bd"
+  },
+  "plugin.telescope.native.new_workspace_here": {
+    "text": "Neuer Arbeitsbereich hier (benannt)…",
+    "source_hash": "41bf4921641c"
+  },
+  "plugin.telescope.native.new_worktree": {
+    "text": "Neuer Worktree hier",
+    "source_hash": "e22dc2615464"
+  },
+  "plugin.telescope.native.new_worktree_branch": {
+    "text": "Neuer Worktree auf Branch…",
+    "source_hash": "b32c49f90359"
+  },
+  "plugin.telescope.native.prompt_agent": {
+    "text": "Prompt an Agenten senden…",
+    "source_hash": "e7678c0d781d"
+  },
+  "plugin.telescope.native.reload_config": {
+    "text": "herdr-Konfiguration neu laden",
+    "source_hash": "3540ced939eb"
+  },
+  "plugin.telescope.native.remove_worktree": {
+    "text": "Diesen Worktree entfernen",
+    "source_hash": "01ca8116273b"
+  },
+  "plugin.telescope.native.rename_agent": {
+    "text": "Agenten umbenennen…",
+    "source_hash": "27dfb3075d0c"
+  },
+  "plugin.telescope.native.rename_pane": {
+    "text": "Panel umbenennen",
+    "source_hash": "405cae1ccaa7"
+  },
+  "plugin.telescope.native.rename_tab": {
+    "text": "Tab umbenennen",
+    "source_hash": "29365ea1847d"
+  },
+  "plugin.telescope.native.rename_workspace": {
+    "text": "Arbeitsbereich umbenennen",
+    "source_hash": "34f5e996c30f"
+  },
+  "plugin.telescope.native.resize_down": {
+    "text": "Panel nach unten vergrößern/verkleinern",
+    "source_hash": "77ed5a2e7fb0"
+  },
+  "plugin.telescope.native.resize_left": {
+    "text": "Panel nach links vergrößern/verkleinern",
+    "source_hash": "defda04803d1"
+  },
+  "plugin.telescope.native.resize_right": {
+    "text": "Panel nach rechts vergrößern/verkleinern",
+    "source_hash": "f2910218c90b"
+  },
+  "plugin.telescope.native.resize_up": {
+    "text": "Panel nach oben vergrößern/verkleinern",
+    "source_hash": "f19c067a8289"
+  },
+  "plugin.telescope.native.split_horizontal": {
+    "text": "Panel unten teilen (horizontal)",
+    "source_hash": "004b1057ce44"
+  },
+  "plugin.telescope.native.split_vertical": {
+    "text": "Panel rechts teilen (vertikal)",
+    "source_hash": "f0dd18b413a3"
+  },
+  "plugin.telescope.native.start_agent": {
+    "text": "Agenten in neuem Split starten…",
+    "source_hash": "b32fe7c2fbf1"
+  },
+  "plugin.telescope.native.swap_down": {
+    "text": "Panel mit dem unteren tauschen",
+    "source_hash": "9a8ad9aab9f6"
+  },
+  "plugin.telescope.native.swap_left": {
+    "text": "Panel mit dem linken tauschen",
+    "source_hash": "1510339a92f2"
+  },
+  "plugin.telescope.native.swap_right": {
+    "text": "Panel mit dem rechten tauschen",
+    "source_hash": "65cbd7e247ee"
+  },
+  "plugin.telescope.native.swap_up": {
+    "text": "Panel mit dem oberen tauschen",
+    "source_hash": "44b80631af06"
+  },
+  "plugin.telescope.native.zoom_pane": {
+    "text": "Zoom umschalten (Vollbild-Panel)",
+    "source_hash": "105f4ae38609"
+  },
+  "plugin.telescope.prompt.actions": {
+    "text": "herdr telescope ▸ ",
+    "source_hash": "7c5f98437004"
+  },
+  "plugin.telescope.prompt.agent": {
+    "text": "Agent ▸ ",
+    "source_hash": "d85334454461"
+  },
+  "plugin.telescope.prompt.agent_kind": {
+    "text": "Agent-Art ▸ ",
+    "source_hash": "125a5c4df55e"
+  },
+  "plugin.telescope.prompt.files": {
+    "text": "herdr Dateien ▸ ",
+    "source_hash": "528da619324c"
+  },
+  "plugin.telescope.prompt.files_count": {
+    "text": "telescope Dateien ▸  ({count} Dateien)",
+    "source_hash": "bc69f7b01e49"
+  },
+  "plugin.telescope.prompt.move_to_tab": {
+    "text": "in Tab verschieben ▸ ",
+    "source_hash": "cf64824d1647"
+  },
+  "plugin.telescope.prompt.open_in": {
+    "text": "öffnen in ▸ ",
+    "source_hash": "53a1a50464e7"
+  },
+  "plugin.telescope.prompt.search": {
+    "text": "herdr Suche ▸ ",
+    "source_hash": "7114dbae5e91"
+  }
+}

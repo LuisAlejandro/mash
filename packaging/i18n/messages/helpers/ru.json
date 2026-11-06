@@ -1,0 +1,182 @@
+{
+  "helper.launch.data_not_writable": {
+    "text": "{path} не является доступной для записи папкой. Подробности: {log}",
+    "source_hash": "c2daaf7abb17"
+  },
+  "helper.launch.data_prepare_failed": {
+    "text": "Mash не удалось подготовить {path}. Подробности: {log}",
+    "source_hash": "f1a3af24d2f1"
+  },
+  "helper.launch.environment_refused": {
+    "text": "Mash отклонил среду вне {path}. Подробности: {log}",
+    "source_hash": "6cba761820b9"
+  },
+  "helper.launch.linux_data_prepare_failed": {
+    "text": "Mash не удалось подготовить {path}.",
+    "source_hash": "67920ad8e50d"
+  },
+  "helper.launch.linux_update_settings_failed": {
+    "text": "Mash не удалось закрепить настройки обновления; файл сохранён.",
+    "source_hash": "a8cb9d5749da"
+  },
+  "helper.launch.refused_start": {
+    "text": "Mash отказался запускаться.",
+    "source_hash": "fea43a382106"
+  },
+  "helper.launch.setup_failed": {
+    "text": "Не удалось настроить {path}. Подробности: {log}",
+    "source_hash": "e891d0a29f1a"
+  },
+  "helper.launch.socket_outside": {
+    "text": "Mash отказался запускаться: сокет находится вне ~/.mash.",
+    "source_hash": "ddb5d709d6cd"
+  },
+  "helper.launch.update_location_invalid": {
+    "text": "Недопустимое расположение обновления Mash.",
+    "source_hash": "c53120b603c7"
+  },
+  "helper.launch.update_settings_failed": {
+    "text": "Mash не удалось закрепить настройки обновления. Подробности: {log}",
+    "source_hash": "31a1842ec5dc"
+  },
+  "helper.launch.update_state_unsafe": {
+    "text": "Состояние обновления Mash небезопасно.",
+    "source_hash": "f5d6ba096441"
+  },
+  "helper.launch.update_waiter_failed": {
+    "text": "Mash не удалось зарегистрировать процесс ожидания обновления.",
+    "source_hash": "ff2f989250a6"
+  },
+  "helper.launch.updater_incomplete": {
+    "text": "Средство обновления Mash неполное.",
+    "source_hash": "43c808c2338d"
+  },
+  "helper.popup.dismiss": {
+    "text": "(нажмите любую клавишу, чтобы закрыть)",
+    "source_hash": "f57ff387149d"
+  },
+  "helper.setup.not_finished": {
+    "text": "Настройка Mash не завершена, поэтому Mash не открылся.",
+    "source_hash": "f7435b584992"
+  },
+  "helper.setup.open_again": {
+    "text": "Откройте Mash ещё раз, чтобы начать настройку с самого начала.",
+    "source_hash": "3c08c76f274a"
+  },
+  "helper.setup.press_enter": {
+    "text": "Нажмите Enter, чтобы закрыть это окно.",
+    "source_hash": "3cbf0fb2a94f"
+  },
+  "plugin.image-popup.no-image": {
+    "text": "Нет изображения для показа: {file}",
+    "source_hash": "91aa57b30f47"
+  },
+  "plugin.image-popup.source-file": {
+    "text": "(само изображение находится в {file})",
+    "source_hash": "acda13cd6347"
+  },
+  "plugin.image-popup.viu-missing": {
+    "text": "viu не установлен. Установите его командой: brew install viu",
+    "source_hash": "51d203b460ac"
+  },
+  "plugin.mash-update-notice.notice.apt-failed": {
+    "text": "Проверьте репозиторий APT и выполните sudo apt update.",
+    "source_hash": "6e5d462c3fb3"
+  },
+  "plugin.mash-update-notice.notice.available-linux": {
+    "text": "У вас {installed}. Для обновления выполните: {command}",
+    "source_hash": "408651e42b2f"
+  },
+  "plugin.mash-update-notice.notice.available-macos": {
+    "text": "У вас {installed}. Откройте Mash, чтобы обновиться.",
+    "source_hash": "110061a9c5d1"
+  },
+  "plugin.mash-update-notice.notice.check-failed": {
+    "text": "Проверьте подключение к интернету и повторите попытку.",
+    "source_hash": "176afd02072f"
+  },
+  "plugin.mash-update-notice.notice.current-linux": {
+    "text": "В текущих метаданных APT не найдена более новая версия Mash.",
+    "source_hash": "4076014ba5ad"
+  },
+  "plugin.mash-update-notice.notice.current-macos": {
+    "text": "Всё обновлено. Mash {version} — текущая версия.",
+    "source_hash": "541489679898"
+  },
+  "plugin.mash-update-notice.notice.previous-restored": {
+    "text": "Mash {installed} снова работает. Обновление до {candidate} не завершилось.",
+    "source_hash": "e15f090dff62"
+  },
+  "plugin.mash-update-notice.notice.restart-required": {
+    "text": "Сейчас запущена версия {installed}. Mash {candidate} уже установлена; перезапустите Mash, чтобы использовать её.",
+    "source_hash": "e1248557730a"
+  },
+  "plugin.mash-update-notice.notice.updated": {
+    "text": "Mash работает с новой версией.",
+    "source_hash": "e3caeafe33e1"
+  },
+  "plugin.mash-update-notice.pane.apt-failed": {
+    "text": "\n  В APT не найдена информация об обновлении.\n\n  Проверьте репозиторий Mash и выполните sudo apt update.   (нажмите любую клавишу, чтобы закрыть)",
+    "source_hash": "ae2c3f30f3cd"
+  },
+  "plugin.mash-update-notice.pane.available-linux": {
+    "text": "\n  Доступна Mash {candidate} (у вас {installed}).\n\n  Для обновления выполните:\n    sudo apt install --only-upgrade letsmash\n\n  Затем перезапустите Mash.   (нажмите любую клавишу, чтобы закрыть)",
+    "source_hash": "2073e20a4f2e"
+  },
+  "plugin.mash-update-notice.pane.check-failed": {
+    "text": "\n  Сейчас не удалось проверить обновления.\n\n  Проверьте подключение к интернету и повторите попытку.   (нажмите любую клавишу, чтобы закрыть)",
+    "source_hash": "d716b0057955"
+  },
+  "plugin.mash-update-notice.pane.previous-restored": {
+    "text": "\n  Mash {installed} снова работает.\n\n  Обновление до {candidate} не завершилось. Файлы рабочих пространств не были откатаны.\n\n  (нажмите любую клавишу, чтобы закрыть)",
+    "source_hash": "23ce21e89b73"
+  },
+  "plugin.mash-update-notice.pane.restart-required": {
+    "text": "\n  Работает Mash {installed}; Mash {candidate} уже установлена.\n\n  Сохраните работу и перезапустите Mash, чтобы использовать установленную версию.\n  Скачивание не требуется.   (нажмите любую клавишу, чтобы закрыть)",
+    "source_hash": "8cfff1a68c6e"
+  },
+  "plugin.mash-update-notice.pane.update-prompt": {
+    "text": "\n  Доступна Mash {candidate} (у вас {installed}).\n\n  Нажмите u, чтобы обновить сейчас, или любую другую клавишу, чтобы закрыть.\n  При обновлении Mash закроется и снова откроется в новой версии.\n\n  > ",
+    "source_hash": "e72a656d118c"
+  },
+  "plugin.mash-update-notice.pane.update-unavailable": {
+    "text": "\n  Доступна Mash {candidate} (у вас {installed}).\n\n  Скачайте её:\n    {url}\n\n  (нажмите любую клавишу, чтобы закрыть)",
+    "source_hash": "3559cf5d3977"
+  },
+  "plugin.mash-update-notice.pane.updated": {
+    "text": "\n  Mash {version} установлена и работает.\n\n  Ваши рабочие пространства и настройки остаются в ~/.mash.\n\n  (нажмите любую клавишу, чтобы закрыть)",
+    "source_hash": "b6ec8b2c9bee"
+  },
+  "plugin.mash-update-notice.pane.up-to-date-linux": {
+    "text": "\n  В текущих метаданных APT не найдена более новая версия Mash.\n\n  Если списки пакетов устарели, выполните sudo apt update.   (нажмите любую клавишу, чтобы закрыть)",
+    "source_hash": "e5f9e50c721f"
+  },
+  "plugin.mash-update-notice.pane.up-to-date-macos": {
+    "text": "\n  Всё обновлено (Mash {version}).\n\n  (нажмите любую клавишу, чтобы закрыть)",
+    "source_hash": "0f6af22649b2"
+  },
+  "plugin.mash-update-notice.title.available": {
+    "text": "Доступна Mash {candidate}",
+    "source_hash": "e9ea02ee8c67"
+  },
+  "plugin.mash-update-notice.title.check-failed": {
+    "text": "Не удалось проверить обновления Mash",
+    "source_hash": "43d510221839"
+  },
+  "plugin.mash-update-notice.title.previous-restored": {
+    "text": "Восстановлена предыдущая версия Mash",
+    "source_hash": "db2ddd4e3f64"
+  },
+  "plugin.mash-update-notice.title.restart-required": {
+    "text": "Требуется перезапуск Mash",
+    "source_hash": "c22b233a4d7d"
+  },
+  "plugin.mash-update-notice.title.up-to-date": {
+    "text": "Mash обновлена",
+    "source_hash": "cc9e6d5993b9"
+  },
+  "plugin.mash-update-notice.title.updated": {
+    "text": "Mash обновлена до {version}",
+    "source_hash": "855f75f65bcb"
+  }
+}

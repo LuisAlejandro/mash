@@ -1,0 +1,98 @@
+{
+  "pi.header.restore": {
+    "text": "組み込みの pi ヘッダーを戻す",
+    "source_hash": "afcd79f821af"
+  },
+  "pi.header.restored": {
+    "text": "組み込みヘッダーを戻しました",
+    "source_hash": "c1e44d719693"
+  },
+  "pi.orchestration.answered": {
+    "text": "コーディネーターの回答: {reply}",
+    "source_hash": "fc659f7aea92"
+  },
+  "pi.orchestration.cancelled": {
+    "text": "質問は取り消されました。",
+    "source_hash": "4c742263cfe3"
+  },
+  "pi.orchestration.failed": {
+    "text": "コーディネーターへの質問が失敗しました。",
+    "source_hash": "1036eb4b3272"
+  },
+  "pi.orchestration.label": {
+    "text": "コーディネーターに尋ねる",
+    "source_hash": "5369ae08b587"
+  },
+  "pi.orchestration.lookup-failed": {
+    "text": "Dispatch を検索できませんでした。",
+    "source_hash": "e8a8ac97005c"
+  },
+  "pi.orchestration.no-dispatch": {
+    "text": "このペインに開いている Dispatch はありません。ask_user で本人に尋ねてください。",
+    "source_hash": "045255c705e5"
+  },
+  "pi.orchestration.pending": {
+    "text": "質問 {id} はまだ保留中です。resume にその id を指定して ask_coordinator を再度呼び出してください。",
+    "source_hash": "a70e26ec54e8"
+  },
+  "pi.orchestration.unavailable": {
+    "text": "mash-orchestration は利用できません ({message})。ask_user で本人に尋ねてください。",
+    "source_hash": "ee1fa62200a8"
+  },
+  "pi.orchestration.waiting": {
+    "text": "コーディネーターを待っています",
+    "source_hash": "41e36ff21f8a"
+  },
+  "pi.show-file.is-directory": {
+    "text": "{path} はディレクトリであり、ファイルではありません。",
+    "source_hash": "51405f5a7722"
+  },
+  "pi.show-file.label": {
+    "text": "ファイルを本人に見せる",
+    "source_hash": "1c16c0d820b1"
+  },
+  "pi.show-file.needs-path": {
+    "text": "show_file にはパスが必要です。",
+    "source_hash": "2709bc3725aa"
+  },
+  "pi.show-file.no-reason": {
+    "text": "理由は示されていません",
+    "source_hash": "bdb1872e7703"
+  },
+  "pi.show-file.no-such-file": {
+    "text": "ファイルがありません: {path}",
+    "source_hash": "6b07882ca274"
+  },
+  "pi.show-file.not-shown-daemon": {
+    "text": "表示されませんでした: {name} の Fresh デーモンが利用できません。",
+    "source_hash": "eee33afb1233"
+  },
+  "pi.show-file.not-shown-fresh": {
+    "text": "表示されませんでした: Fresh で {name} を開けませんでした ({detail})。",
+    "source_hash": "38000d407a37"
+  },
+  "pi.show-file.not-shown-herdr": {
+    "text": "表示されませんでした: Herdr で {name} を開けませんでした ({detail})。",
+    "source_hash": "ef35d0eb229e"
+  },
+  "pi.show-file.not-shown-no-editor": {
+    "text": "表示されませんでした: このタブに {name} 用の Fresh エディタがありません。",
+    "source_hash": "dd6f54bd1990"
+  },
+  "pi.show-file.not-shown-no-pane": {
+    "text": "表示されませんでした: {name} に使える Herdr ペインがありません。",
+    "source_hash": "b810ed171fce"
+  },
+  "pi.show-file.not-shown-other": {
+    "text": "表示されませんでした: {name} の内部ビューアがありません。",
+    "source_hash": "c38cbe4e26f6"
+  },
+  "pi.show-file.shown-image": {
+    "text": "表示しました: {name} をエディタの横の縦分割で、実解像度で開いています。",
+    "source_hash": "bbf2a8758fc7"
+  },
+  "pi.show-file.shown-text": {
+    "text": "表示しました: {name} をこのペインの横の Fresh エディタで開いています。",
+    "source_hash": "ac958177710d"
+  }
+}
