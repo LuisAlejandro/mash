@@ -14,6 +14,9 @@ bundle provides, before any dependency has been installed.
     assets.py resolve <component> <target>
     assets.py target                   # this host's target name
     assets.py components <target>      # components that must resolve
+    assets.py applies <component> <target>
+                                       # exit 0 pinned for the target, 4 scoped out of
+                                       # it by the manifest, 1 unknown
 """
 
 from __future__ import annotations
@@ -333,6 +336,22 @@ def _main(argv: list[str]) -> int:
             if manifest.applies_to(name, target):
                 print(name)
         return 0
+
+    if command == "applies":
+        # Installers need to tell a tool that does not exist for a platform (its
+        # upstream publishes no build there, so the manifest scopes it out) from
+        # one that failed to install. 4 is the same status mash-tool-install
+        # reports, so the setup wizard can skip the first and stop on the second.
+        if len(argv) < 4:
+            print("usage: assets.py applies <component> <target>", file=sys.stderr)
+            return 2
+        try:
+            manifest._component(argv[2])
+            target = normalise_target(argv[3])
+        except AssetError as error:
+            print(f"assets: {error}", file=sys.stderr)
+            return 1
+        return 0 if manifest.applies_to(argv[2], target) else 4
 
     if command == "specs":
         # One pinned install spec per line, for the installers that take the

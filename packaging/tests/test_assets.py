@@ -19,7 +19,11 @@ PINS = PACKAGING / "pins.txt"
 MANIFEST = PACKAGING / "assets.json"
 
 LINUX = ("linux-amd64", "linux-arm64")
-ALL_TARGETS = ("macos-arm64", "linux-amd64", "linux-arm64")
+ALL_TARGETS = ("macos-arm64", "macos-amd64", "linux-amd64", "linux-arm64")
+# Optional tools whose upstream publishes no macOS Intel binary. The manifest
+# scopes them out of macos-amd64 instead of shipping an arm64 build that
+# would download and never run.
+NO_MACOS_AMD64 = ("sentrux", "latexindent")
 
 
 class ManifestIntegrityTest(unittest.TestCase):
@@ -217,6 +221,9 @@ class TargetResolutionTest(unittest.TestCase):
             self.assertEqual("binary", self.manifest.strategy(name))
             for target in ALL_TARGETS:
                 with self.subTest(component=name, target=target):
+                    if name in NO_MACOS_AMD64 and target == "macos-amd64":
+                        self.assertFalse(self.manifest.applies_to(name, target))
+                        continue
                     self.assertTrue(self.manifest.applies_to(name, target))
                     spec = self.manifest.resolve(name, target)
                     self.assertRegex(spec["sha256"], r"^[0-9a-f]{64}$")
@@ -226,10 +233,53 @@ class TargetResolutionTest(unittest.TestCase):
     def test_macos_artifacts_are_macos_builds(self):
         """A Linux asset resolved for macOS would download and never run."""
         for name in ("sentrux", "marksman", "texlab", "latexindent", "rust-analyzer"):
+            for target in ("macos-arm64", "macos-amd64"):
+                with self.subTest(component=name, target=target):
+                    if not self.manifest.applies_to(name, target):
+                        continue
+                    url = self.manifest.resolve(name, target)["url"]
+                    self.assertNotIn("linux", url.lower())
+                    self.assertRegex(url.lower(), r"macos|darwin|apple")
+
+    def test_macos_amd64_never_resolves_an_arm64_artifact(self):
+        """An Intel Mac cannot run an arm64 binary: it would download and fail."""
+        checked = 0
+        for name, component in self.manifest.components.items():
+            if component.get("strategy") not in assets.DOWNLOADED:
+                continue
+            if not self.manifest.applies_to(name, "macos-amd64"):
+                continue
             with self.subTest(component=name):
-                url = self.manifest.resolve(name, "macos-arm64")["url"]
-                self.assertNotIn("linux", url.lower())
-                self.assertRegex(url.lower(), r"macos|darwin|apple")
+                url = self.manifest.resolve(name, "macos-amd64")["url"].lower()
+                self.assertNotRegex(url, r"arm64|aarch64")
+                checked += 1
+        self.assertGreater(checked, 15)
+
+    def test_applies_tells_a_scoped_out_tool_from_an_unknown_one(self):
+        """Installers skip a tool absent from a platform (4) but fail on a typo (1)."""
+        def applies(name, target):
+            return subprocess.run(
+                [sys.executable, str(PACKAGING / "assets.py"), "applies", name, target],
+                capture_output=True, text=True,
+            ).returncode
+
+        for name in NO_MACOS_AMD64:
+            with self.subTest(component=name):
+                self.assertEqual(4, applies(name, "macos-amd64"))
+                self.assertEqual(0, applies(name, "macos-arm64"))
+                self.assertEqual(0, applies(name, "linux-amd64"))
+        self.assertEqual(0, applies("node", "macos-amd64"))
+        self.assertEqual(1, applies("definitely-not-a-pin", "macos-amd64"))
+        self.assertEqual(1, applies("node", "freebsd-amd64"))
+
+    def test_macos_amd64_keeps_the_notifier_and_drops_the_arm64_only_tools(self):
+        self.assertTrue(self.manifest.applies_to("terminal-notifier", "macos-amd64"))
+        self.assertFalse(self.manifest.applies_to("terminal-notifier", "macos-arm64"))
+        self.assertTrue(self.manifest.applies_to("herdr-terminal-notifier", "macos-arm64"))
+        self.assertTrue(self.manifest.applies_to("herdr-terminal-notifier", "macos-amd64"))
+        for name in NO_MACOS_AMD64:
+            self.assertFalse(self.manifest.applies_to(name, "macos-amd64"))
+            self.assertTrue(self.manifest.applies_to(name, "macos-arm64"))
 
 
 class FailurePathsTest(unittest.TestCase):

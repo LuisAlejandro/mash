@@ -19,6 +19,8 @@ Download the latest [Mash release](https://github.com/LuisAlejandro/mash/release
 
 **macOS:** Open the signed, notarized DMG and copy Mash.app to Applications. Launch Mash from there.
 
+**macOS on Intel (experimental):** There is no release for Intel (x86_64) Macs. You can build Mash from source on one; see [INTEL-MAC.md](INTEL-MAC.md) for the steps and the known limitations.
+
 **Linux:** Download the `.deb` for your architecture, then install it with APT:
 
 ```sh

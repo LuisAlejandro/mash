@@ -419,5 +419,36 @@ env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" FAKE_UNAME=Darwin FAKE_REL
 check "a non-.app location still announces" test "$(count popup)" = 1
 check "a non-.app location offers no update" grep -q 'MASH_UPDATE_CAN_APPLY=0' "$calls"
 
+# --- a build with no release channel (macos-amd64) never updates ---------------
+# build.sh drops Resources/updates-disabled for any target the official releases
+# do not cover. The automatic check and the manual one must both honour it.
+nochan="$tmp/nochannel/Mash.app/Contents/Resources"
+mkdir -p "$nochan/bin"
+cp "$helper" "$nochan/bin/mash-update-notice"
+cp "$fake/herdr" "$nochan/bin/herdr"
+printf '#!/bin/bash\necho "notify $*" >>"$CALLS"\n' >"$nochan/bin/mash-notify"
+chmod +x "$nochan/bin/mash-notify"
+printf '0.1.1\n' >"$nochan/VERSION"
+printf 'No release channel for macos-amd64; updates are disabled in this build.\n' >"$nochan/updates-disabled"
+
+fresh mac-disabled
+env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" FAKE_UNAME=Darwin FAKE_RELEASE=0.9.0 \
+  bash "$nochan/bin/mash-update-notice" "$nochan" "$data" 2>"$tmp/stderr"
+check "a build without a release channel never asks GitHub" test "$(count curl)" = 0
+check "an automatic launch announces nothing" test ! -s "$calls"
+check "no release is recorded" test ! -e "$data/local/state/update-notice"
+check "the check time is not recorded" test ! -e "$data/local/state/update-checked"
+check "the reason is logged" grep -q 'updates are disabled' "$data/local/state/update-notice.log"
+
+: >"$calls"
+env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" FAKE_UNAME=Darwin FAKE_RELEASE=0.9.0 \
+  bash "$nochan/bin/mash-update-notice" --manual "$nochan" "$data" 2>"$tmp/stderr"
+check "a manual check still never asks GitHub" test "$(count curl)" = 0
+check "a manual check opens a notice pane that says why" \
+  grep -q 'popup plugin pane open --plugin mash-update-notice --entrypoint notice .*MASH_UPDATE_STATUS=updates-disabled' "$calls"
+check "a manual check offers no update" grep -q 'MASH_UPDATE_CAN_APPLY=0' "$calls"
+show_status updates-disabled Darwin
+check "the pane tells the user updates are disabled" grep -q 'Updates are disabled in this build' "$tmp/status-out"
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]
