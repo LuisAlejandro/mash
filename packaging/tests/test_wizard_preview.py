@@ -84,7 +84,11 @@ class WizardPreviewTest(unittest.TestCase):
                     columns = width + (columns == width)
                     size()
                     os.kill(process.pid, signal.SIGWINCH)
-                    return ANSI.sub("", drain(0.25).decode("utf-8", errors="replace"))
+                    output = drain(0.25)
+                    deadline = time.monotonic() + 3
+                    while not output.strip() and time.monotonic() < deadline and process.poll() is None:
+                        output += drain(0.1)
+                    return ANSI.sub("", output.decode("utf-8", errors="replace"))
 
                 try:
                     initial = b""
@@ -227,7 +231,13 @@ class WizardPreviewTest(unittest.TestCase):
                     columns = 81 if columns == 80 else 80
                     size()
                     os.kill(process.pid, signal.SIGWINCH)
-                    return ANSI.sub("", drain(0.2).decode("utf-8", errors="replace"))
+                    # Under a loaded machine the redraw can miss a fixed window;
+                    # keep reading until it arrives, up to a short deadline.
+                    output = drain(0.2)
+                    deadline = time.monotonic() + 3
+                    while not output.strip() and time.monotonic() < deadline and process.poll() is None:
+                        output += drain(0.1)
+                    return ANSI.sub("", output.decode("utf-8", errors="replace"))
 
                 try:
                     initial = b""
