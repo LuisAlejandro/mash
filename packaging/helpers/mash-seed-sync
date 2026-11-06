@@ -717,6 +717,131 @@ def sync_mcp_defaults(record, seen):
     return updated, kept
 
 
+def version_tuple(text):
+    parts = text.split(".")
+    if len(parts) != 3 or not all(part.isdigit() for part in parts):
+        return None
+    return tuple(int(part) for part in parts)
+
+
+def split_npm_spec(spec):
+    """`npm:<name>[@<version>]` -> (name, version or ""), keeping a scope's @."""
+    if not isinstance(spec, str) or not spec.startswith("npm:"):
+        return None, None
+    body = spec[len("npm:"):]
+    at = body.rfind("@")
+    if at <= 0:
+        return body, ""
+    return body[:at], body[at + 1:]
+
+
+def atomic_json(target, value):
+    mode = os.stat(target).st_mode & 0o777 if os.path.exists(target) else 0o600
+    tmp = target + f".mash-seed-sync-{os.getpid()}"
+    try:
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump(value, fh, indent=2)
+            fh.write("\n")
+        os.chmod(tmp, mode)
+        os.replace(tmp, target)
+    finally:
+        try:
+            os.unlink(tmp)
+        except FileNotFoundError:
+            pass
+
+
+def sync_bundled_pi_packages(files):
+    """Keep a user's Pi settings on the Pi packages this bundle ships.
+
+    settings.json is the user's once they edit it, so the tree sync keeps it --
+    and with it the `npm:<pkg>@<old>` pins an earlier Mash seeded. Pi resolves
+    a pin the bundled copy does not satisfy by downloading that old version
+    into pi/agent/npm and loading it instead of the bundle, so an upgrade never
+    took effect (pi-subagents 0.76.0, with its sandbox escape, kept running).
+
+    Only a bundled package whose pin is OLDER than the bundle's is moved, and
+    only its Pi-managed copy older than the bundle is removed, so Pi falls back
+    to the bundle. Packages Mash does not ship, and newer versions a user
+    chose, are left alone. Returns the number of changes.
+    """
+    try:
+        with open(os.path.join(res, "defaults", "pi", "settings.json"), encoding="utf-8") as fh:
+            shipped = json.load(fh).get("packages", [])
+    except (OSError, ValueError, AttributeError):
+        return 0
+    bundled = {}
+    for spec in shipped:
+        name, ver = split_npm_spec(spec)
+        if name and version_tuple(ver or ""):
+            bundled[name] = ver
+    if not bundled:
+        return 0
+    changes = 0
+
+    key = "pi/agent/settings.json"
+    target = safe_target(key)
+    if target and os.path.isfile(target) and not os.path.islink(target):
+        try:
+            with open(target, encoding="utf-8") as fh:
+                settings = json.load(fh)
+        except (OSError, ValueError):
+            settings = None
+        packages = settings.get("packages") if isinstance(settings, dict) else None
+        if isinstance(packages, list):
+            moved = 0
+            for index, entry in enumerate(packages):
+                spec = entry.get("source") if isinstance(entry, dict) else entry
+                name, ver = split_npm_spec(spec)
+                want = bundled.get(name)
+                have = version_tuple(ver or "")
+                if not want or not have or have >= version_tuple(want):
+                    continue
+                new_spec = f"npm:{name}@{want}"
+                if isinstance(entry, dict):
+                    entry["source"] = new_spec
+                else:
+                    packages[index] = new_spec
+                moved += 1
+            if moved:
+                atomic_json(target, settings)
+                changes += moved
+                # Now identical to the shipped default: hand it back to Mash.
+                source = os.path.join(res, "defaults", "pi", "settings.json")
+                if digest(target) == digest(source):
+                    files[key] = digest(target)
+
+    npm_dir = safe_target("pi/agent/npm")
+    if npm_dir and os.path.isdir(npm_dir) and not os.path.islink(npm_dir):
+        dropped = []
+        for name, want in bundled.items():
+            installed = os.path.join(npm_dir, "node_modules", *name.split("/"))
+            try:
+                with open(os.path.join(installed, "package.json"), encoding="utf-8") as fh:
+                    have = version_tuple(str(json.load(fh).get("version", "")))
+            except (OSError, ValueError, AttributeError):
+                continue
+            if not have or have >= version_tuple(want) or os.path.islink(installed):
+                continue
+            shutil.rmtree(installed, ignore_errors=True)
+            if not os.path.exists(installed):
+                dropped.append(name)
+        manifest = os.path.join(npm_dir, "package.json")
+        if dropped and os.path.isfile(manifest):
+            try:
+                with open(manifest, encoding="utf-8") as fh:
+                    pkg = json.load(fh)
+                deps = pkg.get("dependencies")
+                if isinstance(deps, dict) and any(name in deps for name in dropped):
+                    for name in dropped:
+                        deps.pop(name, None)
+                    atomic_json(manifest, pkg)
+            except (OSError, ValueError):
+                pass
+        changes += len(dropped)
+    return changes
+
+
 def main():
     version = bundle_version()
     if not version:
@@ -755,6 +880,9 @@ def main():
             install_expected(entry, target)
             files[key] = new_digest
             updated += 1
+
+    # After the tree pass: a rewrite before it would read as a user edit.
+    updated += sync_bundled_pi_packages(files)
 
     removed = 0
     for key in list(files):
