@@ -286,6 +286,7 @@ class I18nCatalogTest(unittest.TestCase):
     def problems(self, root: Path, sources: dict[str, str] | None = None) -> list[str]:
         return validate_i18n(root, sources)
 
+    # Covers AE6: a key missing from a language fails the gate and names both.
     def test_missing_translation_names_key_and_language(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = _fixture_catalogs(Path(tmp), {"helper.example": "Count {count}"})

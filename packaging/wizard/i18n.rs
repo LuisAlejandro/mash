@@ -57,8 +57,16 @@ pub fn set_language(code: &str) -> bool {
 }
 
 pub fn t(key: &str) -> String {
+    text_in(language(), key)
+}
+
+/// A key's text in one language, without changing the current language. Falls
+/// back to English, then to the key itself.
+pub fn text_in(code: &str, key: &str) -> String {
     let english = catalogs()["en"][key].as_str().unwrap_or(key);
-    let value = &catalogs()[language()][key];
+    let value = catalogs()
+        .get(code)
+        .map_or(&Value::Null, |catalog| &catalog[key]);
     value
         .as_str()
         .or_else(|| value["text"].as_str())
@@ -69,6 +77,14 @@ pub fn t(key: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // Covers AE1: every page's text comes from the chosen language's catalog.
+    #[test]
+    fn spanish_titles_come_from_the_spanish_catalog() {
+        let spanish = text_in("es", "wizard.language.title");
+        assert_ne!(spanish, text_in("en", "wizard.language.title"));
+        assert!(!spanish.is_empty() && spanish != "wizard.language.title");
+    }
 
     #[test]
     fn english_catalog_loads_by_default() {

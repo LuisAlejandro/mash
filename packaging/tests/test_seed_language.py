@@ -214,6 +214,7 @@ class SeededLanguageTest(unittest.TestCase):
 
         self.each_platform(check)
 
+    # Covers AE4: a Fresh locale the user set by hand survives a language change.
     def test_a_user_edit_survives_a_language_change(self):
         def check(platform):
             seeded = Seeded(self, platform, "es")
@@ -228,6 +229,8 @@ class SeededLanguageTest(unittest.TestCase):
 
         self.each_platform(check)
 
+    # Covers AE3: lazygit has no Mash config, so it follows LANG and shows its own
+    # fallback language instead of failing.
     def test_no_lazygit_config_is_seeded(self):
         def check(platform):
             seeded = Seeded(self, platform, "es")

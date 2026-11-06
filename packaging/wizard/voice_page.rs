@@ -40,7 +40,13 @@ pub struct VoicePage {
 
 impl VoicePage {
     pub fn new() -> Self {
-        let preferred = crate::language_page::voice_language(i18n::language())
+        Self::for_language(i18n::language())
+    }
+
+    /// The page as it opens for a given interface language. `new` uses the
+    /// current one; the wizard rebuilds the page when the language is chosen.
+    pub fn for_language(ui: &str) -> Self {
+        let preferred = crate::language_page::voice_language(ui)
             .and_then(|code| code.split('-').next())
             .unwrap_or("en");
         let offered = voice::offered_languages();
@@ -437,6 +443,24 @@ mod tests {
             page.on_key(KeyCode::Enter, KeyModifiers::NONE),
             Some(Decision::Save)
         ));
+    }
+
+    // Covers AE1: the dictation page pre-selects the chosen language.
+    #[test]
+    fn dictation_preselects_the_chosen_language() {
+        assert_eq!(
+            VoicePage::for_language("es").selected(),
+            vec!["es".to_string()]
+        );
+        assert_eq!(
+            VoicePage::for_language("th").selected(),
+            vec!["th".to_string()]
+        );
+        // An unknown interface language has no dictation model: English is pre-selected.
+        assert_eq!(
+            VoicePage::for_language("xx").selected(),
+            vec!["en".to_string()]
+        );
     }
 
     #[test]
