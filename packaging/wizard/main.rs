@@ -1342,6 +1342,9 @@ fn install_voice_model<B: Backend>(
 /// One helper call per component, so a failure is attributable and a tool that
 /// is already present costs nothing. Exit 3 means the platform supplies that
 /// tool; setup records it and continues rather than asking for a password.
+/// Exit 4 means the manifest has no build of the tool for this platform (Sentrux
+/// on an Intel Mac, say): setup records that too and carries on installing the
+/// rest, instead of failing the whole step on a tool that cannot exist here.
 fn install_mash_tools<B: Backend>(
     terminal: &mut Terminal<B>,
     completed: usize,
@@ -1356,6 +1359,7 @@ fn install_mash_tools<B: Backend>(
     }
     let mut installed = 0usize;
     let mut provided = 0usize;
+    let mut unavailable: Vec<&str> = Vec::new();
     let mut shown = messages.to_vec();
     for component in components {
         draw_apply(terminal, completed, total, step, &shown);
@@ -1379,26 +1383,60 @@ fn install_mash_tools<B: Backend>(
             .stderr(Stdio::null())
             .status()
             .map_err(|e| format!("{component}: {e}"))?;
-        match status.code() {
-            Some(0) => installed += 1,
-            Some(3) => {
+        match tool_outcome(component, status.code())? {
+            ToolOutcome::Installed => installed += 1,
+            ToolOutcome::Provided => {
                 provided += 1;
                 shown.push(format!(
                     "  {component}: provided by the system, not installed by Mash"
                 ));
             }
-            Some(code) => {
-                return Err(format!(
-                    "{component} failed to install (exit {code}); see {}",
-                    helper_log_path("mash-tool-install").display()
-                ))
+            ToolOutcome::Unavailable => {
+                unavailable.push(component);
+                shown.push(format!(
+                    "  {component}: not available for this platform, skipped"
+                ));
             }
-            None => return Err(format!("{component} ended without an exit status")),
         }
     }
-    Ok(format!(
-        "{installed} installed, {provided} provided by the system"
-    ))
+    Ok(tools_summary(installed, provided, &unavailable))
+}
+
+/// What one `mash-tool-install` run means for setup.
+#[derive(Debug, PartialEq)]
+enum ToolOutcome {
+    Installed,
+    /// Exit 3: the platform supplies the tool.
+    Provided,
+    /// Exit 4: the manifest has no build of the tool for this platform.
+    Unavailable,
+}
+
+/// Map the helper's exit status to an outcome, or to the error that stops the
+/// step. Only a failed install is an error: a tool that cannot exist on this
+/// platform must not take the rest of the selection down with it.
+fn tool_outcome(component: &str, code: Option<i32>) -> Result<ToolOutcome, String> {
+    match code {
+        Some(0) => Ok(ToolOutcome::Installed),
+        Some(3) => Ok(ToolOutcome::Provided),
+        Some(4) => Ok(ToolOutcome::Unavailable),
+        Some(code) => Err(format!(
+            "{component} failed to install (exit {code}); see {}",
+            helper_log_path("mash-tool-install").display()
+        )),
+        None => Err(format!("{component} ended without an exit status")),
+    }
+}
+
+fn tools_summary(installed: usize, provided: usize, unavailable: &[&str]) -> String {
+    let mut summary = format!("{installed} installed, {provided} provided by the system");
+    if !unavailable.is_empty() {
+        summary.push_str(&format!(
+            ", not available for this platform: {}",
+            unavailable.join(", ")
+        ));
+    }
+    summary
 }
 
 // mash-hindsight-install logs to setup/hindsight-install.log, and so on.
@@ -2742,6 +2780,42 @@ mod tests {
             Some(value) => unsafe { env::set_var("MASH_RES_ROOT", value) },
             None => unsafe { env::remove_var("MASH_RES_ROOT") },
         }
+    }
+
+    #[test]
+    fn a_tool_missing_on_this_platform_is_skipped_not_fatal() {
+        // Sentrux and latexindent publish no Intel Mac build, so the manifest
+        // scopes them out and mash-tool-install exits 4. Both are checked by
+        // default; failing the pinned step on them would stop first-run setup.
+        assert_eq!(tool_outcome("sentrux", Some(0)), Ok(ToolOutcome::Installed));
+        assert_eq!(tool_outcome("git", Some(3)), Ok(ToolOutcome::Provided));
+        assert_eq!(
+            tool_outcome("sentrux", Some(4)),
+            Ok(ToolOutcome::Unavailable)
+        );
+    }
+
+    #[test]
+    fn a_failed_install_still_stops_the_step() {
+        for code in [1, 2, 5, 127] {
+            let error = tool_outcome("texlab", Some(code)).unwrap_err();
+            assert!(error.contains("texlab failed to install"), "{error}");
+            assert!(error.contains(&format!("exit {code}")), "{error}");
+        }
+        let killed = tool_outcome("texlab", None).unwrap_err();
+        assert!(killed.contains("without an exit status"), "{killed}");
+    }
+
+    #[test]
+    fn the_tools_summary_names_what_this_platform_lacks() {
+        assert_eq!(
+            tools_summary(2, 1, &[]),
+            "2 installed, 1 provided by the system"
+        );
+        assert_eq!(
+            tools_summary(4, 0, &["sentrux", "latexindent"]),
+            "4 installed, 0 provided by the system, not available for this platform: sentrux, latexindent"
+        );
     }
 
     #[test]
