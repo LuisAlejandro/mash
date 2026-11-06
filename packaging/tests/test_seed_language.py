@@ -239,6 +239,18 @@ class SeededLanguageTest(unittest.TestCase):
 
         self.each_platform(check)
 
+    def test_a_language_path_that_is_not_a_file_seeds_english(self):
+        def check(platform):
+            seeded = Seeded(self, platform, "es")
+            seeded.sync()
+            language = seeded.data / "setup" / "language"
+            language.unlink()
+            language.mkdir()
+            seeded.sync()  # must not abort seeding
+            self.assertNotIn("locale", seeded.fresh_config())  # English: Fresh's own default
+
+        self.each_platform(check)
+
     def test_an_unknown_language_seeds_english(self):
         def check(platform):
             english = Seeded(self, platform, "en")

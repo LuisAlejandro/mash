@@ -126,21 +126,25 @@ $want
 mash_isolate_language() {
   local home="${1%/}" d code locale log line name lib_dir i18n
   d="$home/.mash"
+  # The catalogs are always where this library ships them, even before a
+  # language is chosen: an English install still needs them to show its text
+  # (a Pi extension without them would print raw message keys). In the bundle
+  # lib.sh sits in Resources/bin beside Resources/i18n; in the source tree it is
+  # packaging/lib.sh beside packaging/i18n. An inherited MASH_I18N_DIR is left
+  # alone when neither exists.
+  lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  if [ -d "$lib_dir/../i18n" ]; then
+    i18n="$(cd "$lib_dir/../i18n" && pwd)"
+    export MASH_I18N_DIR="$i18n"
+  elif [ -d "$lib_dir/i18n" ]; then
+    export MASH_I18N_DIR="$lib_dir/i18n"
+  fi
   if code="$(mash_language_code "$d")"; then
     locale="$(mash_language_locale "$code")"
     export MASH_LANGUAGE="$code"
     export LANG="$locale"
-    # In the bundle lib.sh sits in Resources/bin beside Resources/i18n; in the
-    # source tree it is packaging/lib.sh beside packaging/i18n. One candidate
-    # covers both, and an inherited MASH_I18N_DIR is left alone when neither
-    # exists rather than being pointed at nothing.
-    lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    if [ -d "$lib_dir/../i18n" ]; then
-      i18n="$(cd "$lib_dir/../i18n" && pwd)"
-      export MASH_I18N_DIR="$i18n"
-    elif [ -d "$lib_dir/i18n" ]; then
-      export MASH_I18N_DIR="$lib_dir/i18n"
-    fi
+    # Only a recorded language changes the locale; nothing is set above for an
+    # English or unknown install beyond the catalog location.
     for name in LC_ALL LC_ADDRESS LC_COLLATE LC_CTYPE LC_IDENTIFICATION \
       LC_MEASUREMENT LC_MESSAGES LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER \
       LC_TELEPHONE LC_TIME; do

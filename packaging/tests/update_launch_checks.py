@@ -143,6 +143,10 @@ class LaunchGateTests(unittest.TestCase):
     def test_pinned_native_lifecycle_typechecks(self):
         main = pinned_fork_text("macos/Sources/App/main.swift")
         if main is None:
+            # Without a fork checkout the proof is skipped; with one configured
+            # a missing pin is a real failure, not a silent skip.
+            if os.environ.get("MASH_GHOSTTY_SRC"):
+                self.fail("MASH_GHOSTTY_SRC is set but the pinned fork commit cannot be read")
             self.skipTest("needs pinned Ghostty source for the native lifecycle proof")
         self.assertIn("mashUpdateEntry()\nmashHandOffToSetup()", main)
         snippet = main.split("import MachO\n", 1)[1].split("// Mash: this binary", 1)[0]
@@ -160,6 +164,8 @@ class NativeEntryTests(unittest.TestCase):
         directory = pathlib.Path(temporary.name)
         main = pinned_fork_text("macos/Sources/App/main.swift")
         if main is None:
+            if os.environ.get("MASH_GHOSTTY_SRC"):
+                raise AssertionError("MASH_GHOSTTY_SRC is set but the pinned fork commit cannot be read")
             raise unittest.SkipTest("needs pinned Ghostty source for the native lifecycle")
         snippet = main[main.index("import MachO\n"):].split("\nmashUpdateEntry()\n", 1)[0]
         snippet = snippet.replace("FileManager.default.homeDirectoryForCurrentUser", 'URL(fileURLWithPath: ProcessInfo.processInfo.environment["HOME"]!)')

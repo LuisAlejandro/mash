@@ -119,7 +119,9 @@ LANGUAGE_PATH = os.path.join(data, "setup", "language")
 try:
     with open(LANGUAGE_PATH, encoding="utf-8") as fh:
         language_lines = fh.read().splitlines()
-except FileNotFoundError:
+except OSError:
+    # Missing, or not a regular file (a directory there is a user mistake that
+    # must not abort every seed): either way the language is absent.
     language_lines = []
 try:
     with open(os.path.join(res, "i18n", "languages.json"), encoding="utf-8") as fh:

@@ -120,6 +120,17 @@ assert_value "$out" LC_ALL es_MX.UTF-8
 assert_value "$out" LC_TIME es_MX.UTF-8
 assert_absent "$out" MASH_LANGUAGE
 
+# No language recorded (an install from before the wizard asked): the locale is
+# left as inherited and English is the default, but the catalogs stay reachable,
+# so Pi extensions show their English text instead of raw message keys.
+home="$tmp/home-none-catalogs"
+mkdir -p "$home/.mash/run" "$tmp/app/i18n"
+out="$(isolate_env "$home" "/usr/bin:/bin" LANG=es_MX.UTF-8 LC_ALL=es_MX.UTF-8)"
+assert_value "$out" LANG es_MX.UTF-8
+assert_value "$out" LC_ALL es_MX.UTF-8
+assert_absent "$out" MASH_LANGUAGE
+assert_value "$out" MASH_I18N_DIR "$tmp/app/i18n"
+
 # A code Mash does not ship behaves like no file: the launch still works, nothing
 # is exported, and the reason lands in the launch log once.
 home="$tmp/home-unknown"
