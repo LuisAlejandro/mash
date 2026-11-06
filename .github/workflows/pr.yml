@@ -58,7 +58,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: LuisAlejandro/ghostty
-          ref: 4f6d42cc331e33d655b1d39173092eb70d3bbcd7 # the pinned fork commit, as in packaging/assets.json
+          ref: 24f1c741be4e8d694bf11258b971de7e34043d64 # the pinned fork commit, as in packaging/assets.json
           path: ghostty-fork
           persist-credentials: false
 
