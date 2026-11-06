@@ -19,6 +19,7 @@ Usage: check-nib-branding.py <Ghostty.app or its Contents/Resources>
 """
 
 import pathlib
+import plistlib
 import sys
 
 # Strings that legitimately keep the word Ghostty: the Swift module name,
@@ -57,6 +58,29 @@ def inline_strings(data):
             continue
 
 
+def localized_text(data):
+    """The text of a .strings or .stringsdict file as Xcode ships it.
+
+    The source sheets are UTF-8, but the built bundle carries UTF-16 (with a
+    byte-order mark) or a binary property list, so all three are read.
+    """
+    if data.startswith(b"bplist"):
+        def strings(value):
+            if isinstance(value, dict):
+                for key, item in value.items():
+                    yield str(key)
+                    yield from strings(item)
+            elif isinstance(value, list):
+                for item in value:
+                    yield from strings(item)
+            elif isinstance(value, str):
+                yield value
+        return "\n".join(strings(plistlib.loads(data)))
+    if data.startswith((b"\xff\xfe", b"\xfe\xff")):
+        return data.decode("utf-16")
+    return data.decode("utf-8-sig")
+
+
 def main(argv):
     if len(argv) != 2:
         raise SystemExit(f"usage: {argv[0]} <Ghostty.app or its Contents/Resources>")
@@ -89,8 +113,8 @@ def main(argv):
             continue
         seen += 1
         try:
-            text = path.read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError) as exc:
+            text = localized_text(path.read_bytes())
+        except (OSError, UnicodeDecodeError, plistlib.InvalidFileException) as exc:
             failed = True
             print(f"  {path.name}: unreadable localization: {exc}", file=sys.stderr)
             continue
