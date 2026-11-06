@@ -31,12 +31,12 @@
  */
 
 import { spawn } from "node:child_process";
-import { existsSync, readFileSync, statSync } from "node:fs";
-import { basename, dirname, extname, isAbsolute, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { existsSync, statSync } from "node:fs";
+import { basename, extname, isAbsolute, resolve } from "node:path";
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
+import { t } from "./lib/mash-i18n.ts";
 
 // Raster formats only. SVG is deliberately absent: it is XML, and the image
 // popup decodes with `viu`, which rejects it outright
@@ -52,59 +52,6 @@ const TEXT_EXTENSIONS = new Set([
 	"c", "h", "cpp", "hpp", "css", "scss", "html", "xml", "svg", "sql", "zig", "swift", "lua",
 	"diff", "patch", "ini", "cfg", "env",
 ]);
-
-const PLACEHOLDER = /\{([A-Za-z_][A-Za-z0-9_]*)\}/g;
-const catalogs = new Map<string, Record<string, unknown>>();
-
-function i18nDirectories(): string[] {
-	const dirs: string[] = [];
-	const configured = (process.env.MASH_I18N_DIR || "").trim();
-	if (configured) dirs.push(configured);
-	const beside = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "i18n");
-	if (!dirs.includes(beside) && existsSync(join(beside, "languages.json"))) dirs.push(beside);
-	return dirs;
-}
-
-function catalog(dir: string, code: string): Record<string, unknown> {
-	const cacheKey = `${dir}\0${code}`;
-	const cached = catalogs.get(cacheKey);
-	if (cached) return cached;
-	let data: Record<string, unknown> = {};
-	try {
-		const loaded = JSON.parse(readFileSync(join(dir, "messages", "pi", `${code}.json`), "utf8"));
-		if (loaded && typeof loaded === "object") data = loaded;
-	} catch {
-		data = {};
-	}
-	catalogs.set(cacheKey, data);
-	return data;
-}
-
-function entryText(entry: unknown): string | undefined {
-	if (typeof entry === "string" && entry) return entry;
-	if (entry && typeof entry === "object" && "text" in entry) {
-		const text = (entry as { text?: unknown }).text;
-		if (typeof text === "string" && text) return text;
-	}
-	return undefined;
-}
-
-function t(key: string, values: Record<string, string> = {}): string {
-	const language = (process.env.MASH_LANGUAGE || "en").trim() || "en";
-	const codes = language === "en" ? ["en"] : [language, "en"];
-	let text: string | undefined;
-	for (const code of codes) {
-		for (const dir of i18nDirectories()) {
-			text = entryText(catalog(dir, code)[key]);
-			if (text) break;
-		}
-		if (text) break;
-	}
-	if (!text) return key;
-	return text.replace(PLACEHOLDER, (match, name: string) =>
-		Object.prototype.hasOwnProperty.call(values, name) ? values[name] : match,
-	);
-}
 
 function textResult(text: string, isError = false) {
 	return {
