@@ -703,18 +703,21 @@ impl App {
     }
 
     fn draw_buttons(&mut self, f: &mut Frame, area: Rect) {
+        let cancel = t("plugin.herdr-workspace.button.cancel");
+        let save = t("plugin.herdr-workspace.button.save");
+        let width = crate::theme::button_width(&[&cancel, &save]);
         let row = Layout::horizontal([
             Constraint::Fill(1),
-            Constraint::Length(16),
+            Constraint::Length(width),
             Constraint::Length(1),
-            Constraint::Length(16),
+            Constraint::Length(width),
         ])
         .split(area);
         self.cancel_box = row[1];
         self.save_box = row[3];
         f.render_widget(
             Paragraph::new(Line::from(Span::styled(
-                t("plugin.herdr-workspace.button.cancel"),
+                cancel,
                 self.theme.button(self.focus == Focus::Cancel, false),
             )))
             .centered(),
@@ -723,7 +726,7 @@ impl App {
         let save_ok = self.branch_committed && self.base_committed && !self.profiles.is_empty();
         f.render_widget(
             Paragraph::new(Line::from(Span::styled(
-                t("plugin.herdr-workspace.button.save"),
+                save,
                 self.theme.button(self.focus == Focus::Save, save_ok),
             )))
             .centered(),
@@ -859,9 +862,9 @@ mod tests {
         // same as form.rs's directory list -- not out of bounds, not a no-op.
         app.key_base(KeyCode::PageDown, KeyModifiers::NONE);
         assert_eq!(app.suggest_idx, 1); // (0 + 10) % 3 == 1
-        // PageUp mirrors Up's "already at the top -> jump focus to Branch"
-        // rule, not move_suggest's own wraparound -- the quantity moved (not
-        // 1) is irrelevant once idx is already 0, so this must NOT wrap to 2.
+                                        // PageUp mirrors Up's "already at the top -> jump focus to Branch"
+                                        // rule, not move_suggest's own wraparound -- the quantity moved (not
+                                        // 1) is irrelevant once idx is already 0, so this must NOT wrap to 2.
         app.suggest_idx = 0;
         app.key_base(KeyCode::PageUp, KeyModifiers::NONE);
         assert_eq!(app.focus, Focus::Branch);

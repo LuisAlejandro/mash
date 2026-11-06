@@ -688,18 +688,21 @@ impl App {
     }
 
     fn draw_buttons(&mut self, f: &mut Frame, area: Rect) {
+        let cancel = t("plugin.herdr-workspace.button.cancel");
+        let save = t("plugin.herdr-workspace.button.save");
+        let width = crate::theme::button_width(&[&cancel, &save]);
         let row = Layout::horizontal([
             Constraint::Fill(1),
-            Constraint::Length(16),
+            Constraint::Length(width),
             Constraint::Length(1),
-            Constraint::Length(16),
+            Constraint::Length(width),
         ])
         .split(area);
         self.cancel_box = row[1];
         self.save_box = row[3];
         f.render_widget(
             Paragraph::new(Line::from(Span::styled(
-                t("plugin.herdr-workspace.button.cancel"),
+                cancel,
                 self.theme.button(self.focus == Focus::Cancel, false),
             )))
             .centered(),
@@ -708,7 +711,7 @@ impl App {
         let save_ok = self.dir_committed && self.name_committed && !self.profiles.is_empty();
         f.render_widget(
             Paragraph::new(Line::from(Span::styled(
-                t("plugin.herdr-workspace.button.save"),
+                save,
                 self.theme.button(self.focus == Focus::Save, save_ok),
             )))
             .centered(),
@@ -897,7 +900,6 @@ mod tests {
         assert_eq!(step(75, 1, n), 0, "wraps forward at the end");
         assert_eq!(step(0, -1, n), 75, "wraps backward from the start");
     }
-
 
     /// A roomy window shows one row per candidate, up to the cap.
     #[test]

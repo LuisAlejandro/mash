@@ -12,70 +12,24 @@ use std::collections::HashMap;
 use std::sync::OnceLock;
 
 /// Every language code the catalogs ship, as written in `languages.json`.
-const CODES: &[&str] = &[
-    "bg", "cs", "de", "en", "es", "fr", "it", "ja", "ko", "pt-BR", "ru", "th", "uk", "vi", "zh-CN",
-];
-
 const ENGLISH: &str = include_str!("../messages/plugins-rust/en.json");
 
 /// Non-English catalogs. English is the source and lives in `ENGLISH`.
 const CATALOGS: &[(&str, &str)] = &[
-    (
-        "bg",
-        include_str!("../messages/plugins-rust/bg.json"),
-    ),
-    (
-        "cs",
-        include_str!("../messages/plugins-rust/cs.json"),
-    ),
-    (
-        "de",
-        include_str!("../messages/plugins-rust/de.json"),
-    ),
-    (
-        "es",
-        include_str!("../messages/plugins-rust/es.json"),
-    ),
-    (
-        "fr",
-        include_str!("../messages/plugins-rust/fr.json"),
-    ),
-    (
-        "it",
-        include_str!("../messages/plugins-rust/it.json"),
-    ),
-    (
-        "ja",
-        include_str!("../messages/plugins-rust/ja.json"),
-    ),
-    (
-        "ko",
-        include_str!("../messages/plugins-rust/ko.json"),
-    ),
-    (
-        "pt-BR",
-        include_str!("../messages/plugins-rust/pt-BR.json"),
-    ),
-    (
-        "ru",
-        include_str!("../messages/plugins-rust/ru.json"),
-    ),
-    (
-        "th",
-        include_str!("../messages/plugins-rust/th.json"),
-    ),
-    (
-        "uk",
-        include_str!("../messages/plugins-rust/uk.json"),
-    ),
-    (
-        "vi",
-        include_str!("../messages/plugins-rust/vi.json"),
-    ),
-    (
-        "zh-CN",
-        include_str!("../messages/plugins-rust/zh-CN.json"),
-    ),
+    ("bg", include_str!("../messages/plugins-rust/bg.json")),
+    ("cs", include_str!("../messages/plugins-rust/cs.json")),
+    ("de", include_str!("../messages/plugins-rust/de.json")),
+    ("es", include_str!("../messages/plugins-rust/es.json")),
+    ("fr", include_str!("../messages/plugins-rust/fr.json")),
+    ("it", include_str!("../messages/plugins-rust/it.json")),
+    ("ja", include_str!("../messages/plugins-rust/ja.json")),
+    ("ko", include_str!("../messages/plugins-rust/ko.json")),
+    ("pt-BR", include_str!("../messages/plugins-rust/pt-BR.json")),
+    ("ru", include_str!("../messages/plugins-rust/ru.json")),
+    ("th", include_str!("../messages/plugins-rust/th.json")),
+    ("uk", include_str!("../messages/plugins-rust/uk.json")),
+    ("vi", include_str!("../messages/plugins-rust/vi.json")),
+    ("zh-CN", include_str!("../messages/plugins-rust/zh-CN.json")),
 ];
 
 type Table = HashMap<String, String>;
@@ -83,9 +37,8 @@ type Table = HashMap<String, String>;
 /// Map a raw `MASH_LANGUAGE` value to a supported code. Anything else is English.
 pub fn resolve_language(raw: Option<&str>) -> &'static str {
     let wanted = raw.unwrap_or("").trim();
-    CODES
-        .iter()
-        .copied()
+    std::iter::once("en")
+        .chain(CATALOGS.iter().map(|(code, _)| *code))
         .find(|code| code.eq_ignore_ascii_case(wanted))
         .unwrap_or("en")
 }
@@ -148,10 +101,10 @@ pub fn text_in(lang: &str, key: &str) -> String {
     lookup(&table_for(lang), key)
 }
 
-/// Every supported language code, in catalog order.
+/// Every supported language code: English, then the translated catalogs.
 #[allow(dead_code)]
 pub fn languages() -> impl Iterator<Item = &'static str> {
-    CATALOGS.iter().map(|(code, _)| *code)
+    std::iter::once("en").chain(CATALOGS.iter().map(|(code, _)| *code))
 }
 
 /// Replace `{name}` placeholders in a translated template.
@@ -219,6 +172,22 @@ mod tests {
             lookup(&Table::new(), "plugin.missing.key"),
             "plugin.missing.key"
         );
+    }
+
+    #[test]
+    fn languages_match_the_language_table() {
+        let table: serde_json::Value =
+            serde_json::from_str(include_str!("../languages.json")).unwrap();
+        let mut expected: Vec<&str> = table
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|row| row["code"].as_str().unwrap())
+            .collect();
+        let mut actual: Vec<&str> = languages().collect();
+        expected.sort_unstable();
+        actual.sort_unstable();
+        assert_eq!(actual, expected);
     }
 
     #[test]

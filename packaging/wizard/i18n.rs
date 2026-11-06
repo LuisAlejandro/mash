@@ -27,7 +27,16 @@ const CATALOGS: &[(&str, &str)] = &[
     ("zh-CN", include_str!("../i18n/messages/wizard/zh-CN.json")),
 ];
 
-static CURRENT: AtomicUsize = AtomicUsize::new(3);
+/// Index of the current language in CATALOGS. usize::MAX means "not chosen yet",
+/// which reads as English, so the default never depends on the list's order.
+static CURRENT: AtomicUsize = AtomicUsize::new(usize::MAX);
+
+fn english_index() -> usize {
+    CATALOGS
+        .iter()
+        .position(|(code, _)| *code == "en")
+        .expect("the wizard ships an English catalog")
+}
 static PARSED: OnceLock<HashMap<&'static str, Value>> = OnceLock::new();
 
 fn catalogs() -> &'static HashMap<&'static str, Value> {
@@ -56,7 +65,10 @@ pub fn language() -> &'static str {
     if let Some(index) = THREAD_LANGUAGE.with(Cell::get) {
         return CATALOGS[index].0;
     }
-    CATALOGS[CURRENT.load(Ordering::Relaxed)].0
+    match CURRENT.load(Ordering::Relaxed) {
+        usize::MAX => CATALOGS[english_index()].0,
+        index => CATALOGS[index].0,
+    }
 }
 
 #[cfg(test)]
