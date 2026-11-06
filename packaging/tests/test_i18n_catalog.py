@@ -37,6 +37,9 @@ LOOKUP_PATTERNS = (
     # mash-t is the program; mash_say is lib.sh's wrapper that adds an English fallback.
     re.compile(r"\b(?:mash-t|mash_say)\s+['\"]?(" + KEY_PATTERN + r")(?![A-Za-z0-9_.-])"),
     re.compile(r"\b(?:t|translate|mash_t|mashT|i18n)\s*!?\s*\(\s*['\"](" + KEY_PATTERN + r")[\'\"]"),
+    # A key named on its own, e.g. returned for a later t() call (match arms,
+    # constants), is a use too. Only whole quoted keys count.
+    re.compile(r"\"(" + KEY_PATTERN + r")\""),
 )
 SOURCE_SUFFIXES = {".mjs", ".js", ".py", ".rs", ".sh", ".bash", ".zsh", ".ts"}
 

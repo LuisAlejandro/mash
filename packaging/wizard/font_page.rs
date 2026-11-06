@@ -21,7 +21,6 @@ use std::{
 use crate::theme::Theme;
 
 const DEFAULT_FONT: &str = "MesloLGS NF";
-const NO_FONT_LIST_WARNING: &str = "wizard.font.warning_no_list";
 const MIN_SIZE: u8 = 6;
 const MAX_SIZE: u8 = 72;
 const THEME: u8 = 0;
@@ -122,7 +121,8 @@ pub struct FontPage {
     filter: String,
     size: u8,
     focus: u8,
-    warning: Option<String>,
+    /// The terminal could not list its fonts, so only the default is offered.
+    no_font_list: bool,
     pub theme: Theme,
     pub keybindings: Keybindings,
     live: Option<LivePreview>,
@@ -146,14 +146,14 @@ impl FontPage {
         } else {
             resources.join("bin/mash-terminal")
         };
-        let (fonts, warning) = match Command::new(&binary).arg("+list-fonts").output() {
+        let (fonts, no_font_list) = match Command::new(&binary).arg("+list-fonts").output() {
             Ok(output) if output.status.success() => (
                 Self::parse_fonts(&String::from_utf8_lossy(&output.stdout)),
-                None,
+                false,
             ),
-            _ => (vec![], Some(NO_FONT_LIST_WARNING.into())),
+            _ => (vec![], true),
         };
-        let mut page = Self::with_fonts(fonts, warning);
+        let mut page = Self::with_fonts(fonts, no_font_list);
         if let Ok(current) = fs::read_to_string(config) {
             page.use_current(&current);
         }
@@ -188,7 +188,7 @@ impl FontPage {
             .collect()
     }
 
-    fn with_fonts(mut fonts: Vec<String>, warning: Option<String>) -> Self {
+    fn with_fonts(mut fonts: Vec<String>, no_font_list: bool) -> Self {
         if !fonts.iter().any(|family| family == DEFAULT_FONT) {
             fonts.push(DEFAULT_FONT.into());
         }
@@ -204,7 +204,7 @@ impl FontPage {
             filter: String::new(),
             size: if cfg!(target_os = "linux") { 10 } else { 13 },
             focus: LIST,
-            warning,
+            no_font_list,
             theme: Theme::Dark,
             keybindings: Keybindings::Mash,
             live: None,
@@ -596,9 +596,7 @@ impl FontPage {
     fn draw_fonts(&self, frame: &mut Frame, area: Rect) {
         let body = wizard_style::section(frame, area, &i18n::t("wizard.font.family_section"));
         let matches = self.matching();
-        let count = body
-            .height
-            .saturating_sub(u16::from(self.warning.is_some())) as usize;
+        let count = body.height.saturating_sub(u16::from(self.no_font_list)) as usize;
         let cursor = matches
             .iter()
             .position(|index| *index == self.selected)
@@ -631,15 +629,11 @@ impl FontPage {
             ));
         }
         frame.render_widget(Paragraph::new(lines), body);
-        if let Some(warning) = &self.warning {
+        if self.no_font_list {
             let row = Rect::new(body.x, body.bottom().saturating_sub(1), body.width, 1);
-            let warning = if warning == NO_FONT_LIST_WARNING {
-                i18n::t("wizard.font.warning_no_list")
-            } else {
-                warning.clone()
-            };
             frame.render_widget(
-                Paragraph::new(warning).style(Style::default().fg(wizard_style::RED)),
+                Paragraph::new(i18n::t("wizard.font.warning_no_list"))
+                    .style(Style::default().fg(wizard_style::RED)),
                 row,
             );
         }
@@ -771,7 +765,7 @@ mod tests {
         fs::write(&config, ORIGINAL).unwrap();
         let terminal = Command::new("sleep").arg("30").spawn().unwrap();
         let mut page =
-            FontPage::with_fonts(vec!["JetBrains Mono".into(), DEFAULT_FONT.into()], None);
+            FontPage::with_fonts(vec!["JetBrains Mono".into(), DEFAULT_FONT.into()], false);
         page.use_current(ORIGINAL);
         page.start_live_preview(&config, terminal.id());
         page.live.as_mut().unwrap().delay = Duration::ZERO;
@@ -832,7 +826,7 @@ mod tests {
         assert_eq!(fs::read_to_string(dir.join("config")).unwrap(), ORIGINAL);
 
         let custom = "font-size = 13\ntheme = Dracula\n";
-        let mut page = FontPage::with_fonts(vec![DEFAULT_FONT.into()], None);
+        let mut page = FontPage::with_fonts(vec![DEFAULT_FONT.into()], false);
         page.theme = Theme::Light;
         assert!(page.render(custom).contains("theme = Dracula\n"));
     }
@@ -978,7 +972,7 @@ mod tests {
 
     #[test]
     fn without_a_terminal_or_config_there_is_no_preview() {
-        let mut page = FontPage::with_fonts(vec![DEFAULT_FONT.into()], None);
+        let mut page = FontPage::with_fonts(vec![DEFAULT_FONT.into()], false);
         page.start_live_preview(Path::new("/nonexistent/mash/ghostty/config"), 4242);
         assert!(page.live.is_none());
         let dir = TempDir::new("live-font-none");
@@ -996,7 +990,7 @@ mod tests {
             "JetBrains Mono\n  JetBrains Mono Bold\n\nMesloLGS NF\n  MesloLGS NF Regular\n\n",
         );
         assert_eq!(fonts, ["JetBrains Mono", "MesloLGS NF"]);
-        let mut page = FontPage::with_fonts(fonts, None);
+        let mut page = FontPage::with_fonts(fonts, false);
         assert_eq!(page.fonts[page.selected], DEFAULT_FONT);
         assert_eq!(page.size, if cfg!(target_os = "linux") { 10 } else { 13 });
         page.use_current("font-family = \"JetBrains Mono\"\nfont-size = 17\n");
@@ -1014,7 +1008,7 @@ mod tests {
 
     #[test]
     fn filtering_and_size_pick_preserve_the_rest_of_ghostty_config() {
-        let mut page = FontPage::with_fonts(vec!["JetBrains Mono".into()], None);
+        let mut page = FontPage::with_fonts(vec!["JetBrains Mono".into()], false);
         for c in "jet".chars() {
             page.on_key(KeyCode::Char(c), KeyModifiers::NONE);
         }
@@ -1036,7 +1030,7 @@ mod tests {
 
     #[test]
     fn font_rows_and_size_controls_are_clickable() {
-        let mut page = FontPage::with_fonts(vec!["JetBrains Mono".into()], None);
+        let mut page = FontPage::with_fonts(vec!["JetBrains Mono".into()], false);
         let mut terminal = Terminal::new(TestBackend::new(80, 28)).unwrap();
         terminal.draw(|frame| page.draw(frame)).unwrap();
         let buffer = terminal.backend().buffer();
@@ -1068,7 +1062,7 @@ mod tests {
 
     #[test]
     fn keybinding_mode_defaults_to_mash_and_changes_by_keyboard_and_click() {
-        let mut page = FontPage::with_fonts(vec!["JetBrains Mono".into()], None);
+        let mut page = FontPage::with_fonts(vec!["JetBrains Mono".into()], false);
         assert_eq!(page.keybindings, Keybindings::Mash);
         let mut terminal = Terminal::new(TestBackend::new(80, 28)).unwrap();
         terminal.draw(|frame| page.draw(frame)).unwrap();
@@ -1086,7 +1080,7 @@ mod tests {
     #[test]
     fn mode_is_absent_until_written_and_a_retry_reads_it_back() {
         let dir = TempDir::new("mode-test");
-        let mut page = FontPage::with_fonts(vec!["JetBrains Mono".into()], None);
+        let mut page = FontPage::with_fonts(vec!["JetBrains Mono".into()], false);
         assert_eq!(Keybindings::current(&dir), Keybindings::Mash);
         page.keybindings = Keybindings::Native;
         page.save_mode(&dir).unwrap();

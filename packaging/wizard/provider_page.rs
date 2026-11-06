@@ -734,7 +734,7 @@ impl ProviderPage {
                     .find(|candidate| candidate.id() == api)
                     .map_or(api.clone(), |candidate| candidate.label().into());
                 self.accepted_api = Some(api);
-                i18n::t("wizard.provider.connected").replace("{label}", &label)
+                i18n::fill(&i18n::t("wizard.provider.connected"), &[("label", &&label)])
             }
             Ok(Outcome::Models {
                 ids,
@@ -757,8 +757,10 @@ impl ProviderPage {
                     &self.configured_provider(),
                     self.current.as_ref(),
                 ));
-                let mut text = i18n::t("wizard.provider.models_reported")
-                    .replace("{count}", &self.local_models.len().to_string());
+                let mut text = i18n::fill(
+                    &i18n::t("wizard.provider.models_reported"),
+                    &[("count", &&self.local_models.len().to_string())],
+                );
                 if !complete {
                     text.push(' ');
                     text.push_str(&i18n::t("wizard.provider.list_incomplete"));
@@ -773,16 +775,22 @@ impl ProviderPage {
                 ..
             }) => {
                 self.source_revision = Some(revision);
-                i18n::t("wizard.provider.credential_label").replace("{label}", &label)
+                i18n::fill(
+                    &i18n::t("wizard.provider.credential_label"),
+                    &[("label", &&label)],
+                )
             }
             Ok(Outcome::Source {
                 reason: Some(reason),
                 ..
-            }) => i18n::t("wizard.provider.credential_unusable")
-                .replace("{label}", &pi_connection::explain_saved(&reason)),
-            Ok(Outcome::Source { label, .. }) => {
-                i18n::t("wizard.provider.credential_unusable").replace("{label}", &label)
-            }
+            }) => i18n::fill(
+                &i18n::t("wizard.provider.credential_unusable"),
+                &[("label", &&pi_connection::explain_saved(&reason))],
+            ),
+            Ok(Outcome::Source { label, .. }) => i18n::fill(
+                &i18n::t("wizard.provider.credential_unusable"),
+                &[("label", &&label)],
+            ),
             Ok(Outcome::Refused { message }) | Err(message) => message,
         });
     }
@@ -1026,8 +1034,10 @@ impl ProviderPage {
             .filter(|preset| preset.requires_model)
         {
             if !self.local_model_allowed() {
-                return Err(i18n::t("wizard.provider.choose_reported")
-                    .replace("{label}", &preset.display_name()));
+                return Err(i18n::fill(
+                    &i18n::t("wizard.provider.choose_reported"),
+                    &[("label", &&preset.display_name())],
+                ));
             }
         }
         if self.needs_probe() {
@@ -1290,17 +1300,19 @@ impl ProviderPage {
                     }
                 },
                 |(provider, model)| {
-                    i18n::t("wizard.common.keep_current_model")
-                        .replace("{provider}", &provider)
-                        .replace("{model}", &model)
+                    i18n::fill(
+                        &i18n::t("wizard.common.keep_current_model"),
+                        &[("provider", &&provider), ("model", &&model)],
+                    )
                 },
             ),
             SearchChoice::Chat => self.chat_model().map_or_else(
                 || i18n::t("wizard.search.use_chat_unset").into(),
                 |(provider, model)| {
-                    i18n::t("wizard.search.use_chat_model")
-                        .replace("{provider}", &provider)
-                        .replace("{model}", &model)
+                    i18n::fill(
+                        &i18n::t("wizard.search.use_chat_model"),
+                        &[("provider", &&provider), ("model", &&model)],
+                    )
                 },
             ),
             _ => choice.label().into(),
@@ -1320,11 +1332,15 @@ impl ProviderPage {
                     i18n::t("wizard.provider.custom_endpoint")
                 };
                 if saved.model.is_empty() {
-                    i18n::t("wizard.common.keep_current_provider").replace("{provider}", &provider)
+                    i18n::fill(
+                        &i18n::t("wizard.common.keep_current_provider"),
+                        &[("provider", &&provider)],
+                    )
                 } else {
-                    i18n::t("wizard.common.keep_current_model")
-                        .replace("{provider}", &provider)
-                        .replace("{model}", &saved.model)
+                    i18n::fill(
+                        &i18n::t("wizard.common.keep_current_model"),
+                        &[("provider", &&provider), ("model", &&saved.model)],
+                    )
                 }
             },
         )
@@ -1367,12 +1383,13 @@ impl ProviderPage {
             return self.current.as_ref().map_or_else(
                 || i18n::t("wizard.common.set_up_later").into(),
                 |(provider, model)| {
-                    i18n::t("wizard.common.keep_current_model")
-                        .replace("{provider}", provider)
-                        .replace("{model}", model)
-                        .chars()
-                        .filter(|c| !c.is_control())
-                        .collect()
+                    i18n::fill(
+                        &i18n::t("wizard.common.keep_current_model"),
+                        &[("provider", &provider), ("model", &model)],
+                    )
+                    .chars()
+                    .filter(|c| !c.is_control())
+                    .collect()
                 },
             );
         }
@@ -2053,9 +2070,15 @@ impl ProviderPage {
         // point says what already changed rather than rolling back Pi's file.
         result.map_err(|error| {
             if wrote_credentials {
-                i18n::t("wizard.provider.partly_saved").replace("{error}", &error)
+                i18n::fill(
+                    &i18n::t("wizard.provider.partly_saved"),
+                    &[("error", &&error)],
+                )
             } else if saving_files {
-                i18n::t("wizard.provider.partly_applied").replace("{error}", &error)
+                i18n::fill(
+                    &i18n::t("wizard.provider.partly_applied"),
+                    &[("error", &&error)],
+                )
             } else {
                 error
             }
@@ -2396,11 +2419,13 @@ impl ProviderPage {
         }
         if body.height > 0 {
             frame.render_widget(
-                Paragraph::new(
-                    i18n::t("wizard.provider.list_hint")
-                        .replace("{index}", &(self.provider_row() + 1).to_string())
-                        .replace("{count}", &options.len().to_string()),
-                )
+                Paragraph::new(i18n::fill(
+                    &i18n::t("wizard.provider.list_hint"),
+                    &[
+                        ("index", &&(self.provider_row() + 1).to_string()),
+                        ("count", &&options.len().to_string()),
+                    ],
+                ))
                 .style(Style::default().fg(wizard_style::MUTED)),
                 Rect::new(body.x, body.bottom() - 1, body.width, 1),
             );
@@ -2526,7 +2551,8 @@ impl ProviderPage {
                     ServiceSource::Saved => i18n::t("wizard.search.uses_saved").into(),
                     ServiceSource::New => i18n::t("wizard.search.new_key_note").into(),
                     ServiceSource::Later => {
-                        let mut text = i18n::t("wizard.search.later_note").replace("{id}", id);
+                        let mut text =
+                            i18n::fill(&i18n::t("wizard.search.later_note"), &[("id", &id)]);
                         if choice == SearchChoice::Azure {
                             text.push(' ');
                             text.push_str(&i18n::t("wizard.search.azure_note"));
@@ -2898,18 +2924,24 @@ impl ProviderPage {
                             }
                             Page::Model => format!(
                                 " {} ",
-                                i18n::t("wizard.shell.next")
-                                    .replace("{page}", &i18n::t("wizard.page.web_search"))
+                                i18n::fill(
+                                    &i18n::t("wizard.shell.next"),
+                                    &[("page", &&i18n::t("wizard.page.web_search"))]
+                                )
                             ),
                             Page::WebSearch => format!(
                                 " {} ",
-                                i18n::t("wizard.shell.next")
-                                    .replace("{page}", &i18n::t("wizard.page.memory"))
+                                i18n::fill(
+                                    &i18n::t("wizard.shell.next"),
+                                    &[("page", &&i18n::t("wizard.page.memory"))]
+                                )
                             ),
                             Page::Hindsight => format!(
                                 " {} ",
-                                i18n::t("wizard.shell.next")
-                                    .replace("{page}", &i18n::t("wizard.font.title"))
+                                i18n::fill(
+                                    &i18n::t("wizard.shell.next"),
+                                    &[("page", &&i18n::t("wizard.font.title"))]
+                                )
                             ),
                         },
                     ),
@@ -3151,7 +3183,10 @@ fn validate_input(input: &Input, pi: bool, needs_key: bool) -> Result<(), String
         } else {
             i18n::t("wizard.page.memory")
         };
-        return Err(i18n::t("wizard.common.enter_model_id").replace("{label}", &label));
+        return Err(i18n::fill(
+            &i18n::t("wizard.common.enter_model_id"),
+            &[("label", &&label)],
+        ));
     }
     Ok(())
 }
@@ -3190,10 +3225,16 @@ fn validate_credentials(input: &Input, pi: bool, needs_key: bool) -> Result<(), 
         }
     }
     if choice == Choice::Compatible && !valid_https_url(input.url.trim()) {
-        return Err(i18n::t("wizard.common.https_no_credentials").replace("{label}", &label));
+        return Err(i18n::fill(
+            &i18n::t("wizard.common.https_no_credentials"),
+            &[("label", &&label)],
+        ));
     }
     if needs_key && (input.key.is_empty() || !input.key.chars().all(|c| c.is_ascii_graphic())) {
-        return Err(i18n::t("wizard.common.key_invalid").replace("{label}", &label));
+        return Err(i18n::fill(
+            &i18n::t("wizard.common.key_invalid"),
+            &[("label", &&label)],
+        ));
     }
     Ok(())
 }
@@ -3250,9 +3291,10 @@ fn read_hindsight_values(path: &Path) -> Result<Map<String, Value>, String> {
 
 fn read_json_object(path: &Path) -> Result<Map<String, Value>, String> {
     if path.is_symlink() {
-        return Err(
-            i18n::t("wizard.common.symlink_at").replace("{path}", &path.display().to_string())
-        );
+        return Err(i18n::fill(
+            &i18n::t("wizard.common.symlink_at"),
+            &[("path", &&path.display().to_string())],
+        ));
     }
     if !path.exists() {
         return Ok(Map::new());
@@ -3260,14 +3302,21 @@ fn read_json_object(path: &Path) -> Result<Map<String, Value>, String> {
     let text = fs::read_to_string(path).map_err(|e| e.to_string())?;
     serde_json::from_str::<Value>(&text)
         .map_err(|e| {
-            i18n::t("wizard.common.invalid_json")
-                .replace("{path}", &path.display().to_string())
-                .replace("{error}", &e.to_string())
+            i18n::fill(
+                &i18n::t("wizard.common.invalid_json"),
+                &[
+                    ("path", &&path.display().to_string()),
+                    ("error", &&e.to_string()),
+                ],
+            )
         })?
         .as_object()
         .cloned()
         .ok_or_else(|| {
-            i18n::t("wizard.common.expected_object").replace("{path}", &path.display().to_string())
+            i18n::fill(
+                &i18n::t("wizard.common.expected_object"),
+                &[("path", &&path.display().to_string())],
+            )
         })
 }
 
@@ -3286,8 +3335,12 @@ fn save_hindsight(
     if path.is_symlink() {
         return Err(i18n::t("wizard.memory.symlink_config").into());
     }
-    let original = fs::read_to_string(path)
-        .map_err(|e| i18n::t("wizard.memory.config_error").replace("{error}", &e.to_string()))?;
+    let original = fs::read_to_string(path).map_err(|e| {
+        i18n::fill(
+            &i18n::t("wizard.memory.config_error"),
+            &[("error", &&e.to_string())],
+        )
+    })?;
     let values = [
         ("HINDSIGHT_API_LLM_PROVIDER", Some(provider)),
         ("HINDSIGHT_API_LLM_MODEL", model),
@@ -3335,9 +3388,10 @@ fn save_hindsight(
 
 pub(crate) fn write_private(path: &Path, text: &str) -> Result<(), String> {
     if path.is_symlink() {
-        return Err(
-            i18n::t("wizard.common.symlink_at").replace("{path}", &path.display().to_string())
-        );
+        return Err(i18n::fill(
+            &i18n::t("wizard.common.symlink_at"),
+            &[("path", &&path.display().to_string())],
+        ));
     }
     let parent = path.parent().ok_or(i18n::t("wizard.common.missing_dir"))?;
     fs::create_dir_all(parent).map_err(|e| e.to_string())?;

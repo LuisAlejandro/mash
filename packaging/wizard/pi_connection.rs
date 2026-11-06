@@ -24,7 +24,10 @@ pub struct Preset {
 impl Preset {
     /// The name shown to the user: the product name plus a translated "(local)".
     pub fn display_name(&self) -> String {
-        i18n::t("wizard.connection.local_server").replace("{name}", self.name)
+        i18n::fill(
+            &i18n::t("wizard.connection.local_server"),
+            &[("name", &self.name)],
+        )
     }
 }
 
@@ -130,9 +133,10 @@ fn with_status(message: &str, http: Option<u64>) -> String {
     http.map_or_else(
         || message.to_string(),
         |status| {
-            i18n::t("wizard.connection.http_status")
-                .replace("{message}", message)
-                .replace("{status}", &status.to_string())
+            i18n::fill(
+                &i18n::t("wizard.connection.http_status"),
+                &[("message", &message), ("status", &&status.to_string())],
+            )
         },
     )
 }

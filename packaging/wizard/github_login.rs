@@ -91,13 +91,13 @@ impl GithubLogin {
     }
 
     /// The label of the page's GitHub button for the current state.
-    pub fn button_label(&self) -> &'static str {
+    /// The catalog key of the button's label for the current state.
+    pub fn button_label_key(&self) -> &'static str {
         match self.status {
-            Status::Unavailable(_) => " Sign in to GitHub ",
-            Status::SignedOut => " Sign in to GitHub ",
-            Status::Starting | Status::Waiting { .. } => " Cancel ",
-            Status::SignedIn(_) => " Sign out ",
-            Status::Failed(_) => " Try again ",
+            Status::Unavailable(_) | Status::SignedOut => "wizard.github.sign_in",
+            Status::Starting | Status::Waiting { .. } => "wizard.github.cancel",
+            Status::SignedIn(_) => "wizard.github.sign_out",
+            Status::Failed(_) => "wizard.github.retry",
         }
     }
 
@@ -201,9 +201,10 @@ impl GithubLogin {
         let mut child = match command.spawn() {
             Ok(child) => child,
             Err(error) => {
-                self.status = Status::Failed(
-                    i18n::t("wizard.github.start_failed").replace("{error}", &error.to_string()),
-                );
+                self.status = Status::Failed(i18n::fill(
+                    &i18n::t("wizard.github.start_failed"),
+                    &[("error", &&error.to_string())],
+                ));
                 return;
             }
         };
@@ -496,7 +497,7 @@ mod tests {
             login.status(),
             &Status::Failed("expired_token: the device code has expired".into())
         );
-        assert_eq!(login.button_label(), " Try again ");
+        assert_eq!(login.button_label_key(), "wizard.github.retry");
     }
 
     #[test]
@@ -506,7 +507,7 @@ mod tests {
         wait_until(&mut login, |status| {
             matches!(status, Status::Waiting { .. })
         });
-        assert_eq!(login.button_label(), " Cancel ");
+        assert_eq!(login.button_label_key(), "wizard.github.cancel");
         let started = Instant::now();
         login.activate();
         assert!(

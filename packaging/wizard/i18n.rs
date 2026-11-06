@@ -112,6 +112,14 @@ pub fn t(key: &str) -> String {
     text_in(language(), key)
 }
 
+/// Replace each `{name}` in `template` with its value, in order.
+pub fn fill(template: &str, vars: &[(&str, &dyn std::fmt::Display)]) -> String {
+    vars.iter()
+        .fold(template.to_string(), |text, (name, value)| {
+            text.replace(&format!("{{{name}}}"), &value.to_string())
+        })
+}
+
 /// A key's text in one language, without changing the current language. Falls
 /// back to English, then to the key itself.
 pub fn text_in(code: &str, key: &str) -> String {

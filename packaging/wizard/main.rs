@@ -884,7 +884,10 @@ fn setup_failure_lines(error: &str, log: &Path) -> Vec<String> {
             .take(400)
             .collect(),
         String::new(),
-        i18n::t("wizard.setup.details").replace("{path}", &log.display().to_string()),
+        i18n::fill(
+            &i18n::t("wizard.setup.details"),
+            &[("path", &&log.display().to_string())],
+        ),
         i18n::t("wizard.setup.saved_reopen"),
     ]
 }
@@ -1432,8 +1435,10 @@ fn install_mash_tools<B: Backend>(
                 provided += 1;
                 shown.push(format!(
                     "  {}",
-                    i18n::t("wizard.setup.report.system_provided")
-                        .replace("{component}", component)
+                    i18n::fill(
+                        &i18n::t("wizard.setup.report.system_provided"),
+                        &[("component", &component)]
+                    )
                 ));
             }
             Some(code) => {
@@ -1445,9 +1450,13 @@ fn install_mash_tools<B: Backend>(
             None => return Err(format!("{component} ended without an exit status")),
         }
     }
-    Ok(i18n::t("wizard.setup.report.counts")
-        .replace("{installed}", &installed.to_string())
-        .replace("{provided}", &provided.to_string()))
+    Ok(i18n::fill(
+        &i18n::t("wizard.setup.report.counts"),
+        &[
+            ("installed", &&installed.to_string()),
+            ("provided", &&provided.to_string()),
+        ],
+    ))
 }
 
 // mash-hindsight-install logs to setup/hindsight-install.log, and so on.
@@ -1521,13 +1530,19 @@ fn apply_steps<B: Backend>(
             } else if missing.is_empty() {
                 i18n::t("wizard.setup.report.all_installed")
             } else {
-                i18n::t("wizard.setup.report.missing").replace("{tools}", &missing.join(", "))
+                i18n::fill(
+                    &i18n::t("wizard.setup.report.missing"),
+                    &[("tools", &&missing.join(", "))],
+                )
             };
             for tool in &plan.apple {
                 if !apple_tool_available(tool) {
                     report.push_str(&format!(
                         " {}",
-                        i18n::t("wizard.setup.report.apple_tools").replace("{tool}", tool)
+                        i18n::fill(
+                            &i18n::t("wizard.setup.report.apple_tools"),
+                            &[("tool", &tool)]
+                        )
                     ));
                 }
             }
@@ -2045,7 +2060,7 @@ fn draw_github(frame: &mut Frame, area: Rect, github: &github_login::GithubLogin
         Status::Starting => (i18n::t("wizard.github.starting"), wizard_style::MUTED),
         Status::Waiting { .. } => (i18n::t("wizard.github.waiting"), wizard_style::YELLOW),
         Status::SignedIn(Some(user)) => (
-            i18n::t("wizard.github.signed_in_as").replace("{user}", user),
+            i18n::fill(&i18n::t("wizard.github.signed_in_as"), &[("user", &user)]),
             wizard_style::GREEN,
         ),
         Status::SignedIn(None) => (i18n::t("wizard.github.signed_in"), wizard_style::GREEN),
@@ -2062,13 +2077,7 @@ fn draw_github(frame: &mut Frame, area: Rect, github: &github_login::GithubLogin
     }
     // Same filled, centred treatment as Start config wizard, and sized the same
     // way: from the label, so a longer translation is never clipped.
-    let button_label = match github.button_label().trim() {
-        "Cancel" => i18n::t("wizard.github.cancel"),
-        "Sign out" => i18n::t("wizard.github.sign_out"),
-        "Try again" => i18n::t("wizard.github.retry"),
-        _ => i18n::t("wizard.github.sign_in"),
-    };
-    let button_text = format!(" {button_label} ");
+    let button_text = format!(" {} ", i18n::t(github.button_label_key()));
     let button_width = 23
         .max(Line::from(button_text.as_str()).width() as u16)
         .min(area.width);
@@ -2112,9 +2121,10 @@ fn draw_github(frame: &mut Frame, area: Rect, github: &github_login::GithubLogin
                 String::new()
             }),
         ]));
-        details.push(Line::from(
-            i18n::t("wizard.github.approve").replace("{url}", url),
-        ));
+        details.push(Line::from(i18n::fill(
+            &i18n::t("wizard.github.approve"),
+            &[("url", &url)],
+        )));
     } else if matches!(github.status(), Status::SignedOut | Status::Failed(_)) {
         details.push(Line::from(i18n::t("wizard.github.usage")));
     }

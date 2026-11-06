@@ -89,15 +89,19 @@ impl Provider {
     pub fn key_label(&self) -> String {
         match self.id.as_str() {
             "amazon-bedrock" => i18n::t("wizard.providers.key_bedrock"),
-            "google-vertex" => {
-                i18n::t("wizard.providers.key_api").replace("{name}", "Google Cloud")
-            }
+            "google-vertex" => i18n::fill(
+                &i18n::t("wizard.providers.key_api"),
+                &[("name", &"Google Cloud")],
+            ),
             _ => localized_key_name(&self.key_name),
         }
     }
 
     pub fn login_guidance(&self) -> String {
-        let base = i18n::t("wizard.providers.login_deferred").replace("{id}", &self.id);
+        let base = i18n::fill(
+            &i18n::t("wizard.providers.login_deferred"),
+            &[("id", &&self.id)],
+        );
         match setup_row(&self.id) {
             Some((hint, _)) => format!("{base} {hint}"),
             None => base,
@@ -109,10 +113,16 @@ impl Provider {
             return Some(guidance);
         }
         if !self.api_key {
-            return Some(i18n::t("wizard.providers.guidance.generic").replace("{id}", &self.id));
+            return Some(i18n::fill(
+                &i18n::t("wizard.providers.guidance.generic"),
+                &[("id", &&self.id)],
+            ));
         }
         if self.oauth {
-            return Some(i18n::t("wizard.providers.guidance.oauth").replace("{id}", &self.id));
+            return Some(i18n::fill(
+                &i18n::t("wizard.providers.guidance.oauth"),
+                &[("id", &&self.id)],
+            ));
         }
         None
     }
@@ -122,10 +132,10 @@ impl Provider {
 /// pattern; any other name is shown as the catalog gives it.
 fn localized_key_name(key_name: &str) -> String {
     if let Some(name) = key_name.strip_suffix(" API key") {
-        return i18n::t("wizard.providers.key_api").replace("{name}", name);
+        return i18n::fill(&i18n::t("wizard.providers.key_api"), &[("name", &name)]);
     }
     if let Some(name) = key_name.strip_suffix(" token") {
-        return i18n::t("wizard.providers.key_token").replace("{name}", name);
+        return i18n::fill(&i18n::t("wizard.providers.key_token"), &[("name", &name)]);
     }
     match key_name {
         "AWS credentials or bearer token" => i18n::t("wizard.providers.key_aws"),
