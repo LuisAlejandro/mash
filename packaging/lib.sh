@@ -233,7 +233,8 @@ mash_isolate_language() {
     done
     if [ "${MASH_UNAME:-$(uname -s)}" = Linux ] && mash_language_locale_missing "$locale"; then
       export LANG=C.UTF-8
-      export LANGUAGE="$code"
+      # gettext's own form (pt_BR, not pt-BR); it falls back from ll_CC to ll.
+      export LANGUAGE="${locale%%.*}"
     fi
     return 0
   fi

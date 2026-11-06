@@ -166,9 +166,16 @@ home="$tmp/home-vi-missing"
 set_language "$home" vi
 out="$(isolate_env "$home" "$linux_path" MASH_UNAME=Linux LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8)"
 assert_value "$out" LANG C.UTF-8
-assert_value "$out" LANGUAGE vi
+assert_value "$out" LANGUAGE vi_VN
 assert_value "$out" MASH_LANGUAGE vi
 assert_absent "$out" LC_ALL
+
+# LANGUAGE is gettext's ll_CC, not Mash's code: Ghostty ships pt_BR, not pt-BR.
+home="$tmp/home-pt-missing"
+set_language "$home" pt-BR
+out="$(isolate_env "$home" "$linux_path" MASH_UNAME=Linux LANG=en_US.UTF-8)"
+assert_value "$out" LANGUAGE pt_BR
+assert_value "$out" MASH_LANGUAGE pt-BR
 
 # The point of that fallback: a non-interactive shell started under it says
 # nothing about a locale it cannot set.
