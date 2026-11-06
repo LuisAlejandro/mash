@@ -17,12 +17,16 @@ platforms = ["linux", "macos"]
 id = "notice"
 title = "Mash update"
 placement = "popup"
+# Outer cells, border included. The script sees 53x9 (herdr 0.9.3 subtracts
+# the border and one more column). 11 is the smallest height at which every
+# shipped notice translation fits when wrapped at that width.
 width = 56
-height = 9
+height = 11
 command = ["bash", "notice.sh"]
 
 # Taller than the notice: this one shows download progress, verification and a
-# confirmation in the same box.
+# confirmation in the same box. The prompt translations fit in 61x14, so the
+# box stays 64x16.
 [[panes]]
 id = "update"
 title = "Mash update"
@@ -35,6 +39,7 @@ command = ["bash", "update.sh"]
 id = "updated"
 title = "Mash updated"
 placement = "popup"
+# 56x9 still holds the longest updated translation (53x7 inside the border).
 width = 56
 height = 9
 command = ["bash", "updated.sh"]

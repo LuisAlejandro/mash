@@ -34,7 +34,8 @@ KEY_PATTERN = (
 )
 KEY = re.compile(r"(?<![A-Za-z0-9_.-])(?:" + KEY_PATTERN + r")")
 LOOKUP_PATTERNS = (
-    re.compile(r"\bmash-t\s+['\"]?(" + KEY_PATTERN + r")(?![A-Za-z0-9_.-])"),
+    # mash-t is the program; mash_say is lib.sh's wrapper that adds an English fallback.
+    re.compile(r"\b(?:mash-t|mash_say)\s+['\"]?(" + KEY_PATTERN + r")(?![A-Za-z0-9_.-])"),
     re.compile(r"\b(?:t|translate|mash_t|mashT|i18n)\s*!?\s*\(\s*['\"](" + KEY_PATTERN + r")[\'\"]"),
 )
 SOURCE_SUFFIXES = {".mjs", ".js", ".py", ".rs", ".sh", ".bash", ".zsh", ".ts"}
@@ -379,6 +380,12 @@ class I18nCatalogTest(unittest.TestCase):
             for code in EXPECTED_CODES:
                 with self.subTest(code=code):
                     self.assertTrue((destination / "i18n" / "messages" / "helpers" / f"{code}.json").is_file())
+
+    def test_mash_say_counts_as_a_lookup(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = _fixture_catalogs(Path(tmp), {"helper.example": "Hello"})
+            problems = self.problems(root, {"packaging/plugins/x/notice.sh": "mash_say helper.example 'Hello'\n"})
+        self.assertFalse(any("helper.example" in problem for problem in problems), problems)
 
     def test_component_needs_all_fifteen_languages(self):
         with tempfile.TemporaryDirectory() as tmp:

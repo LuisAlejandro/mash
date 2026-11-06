@@ -169,37 +169,64 @@ mash_macos_app() {
   [ -n "$team" ] && [ "$team" != "not set" ]
 }
 
+# Message lookup shared with the launchers and the popups; see
+# mash_messages_bind and mash_say in lib.sh. The popup panes resolve their own
+# copy, because the Herdr server starts them with its environment, not this one.
+mash_bind_messages() {
+  local self lib
+  self="$(cd "$(dirname "$0")" && pwd)"
+  for lib in "$res/bin/lib.sh" "$self/../lib.sh"; do
+    if [ -f "$lib" ]; then
+      # shellcheck disable=SC1090
+      source "$lib"
+      mash_messages_bind "$d"
+      export MASH_LANGUAGE="${MASH_LANGUAGE:-}"
+      export MASH_I18N_DIR="${mash_messages_i18n:-}"
+      return 0
+    fi
+  done
+  mash_say() {
+    local text="$2" arg
+    shift 2
+    for arg in "$@"; do
+      text="${text//"{${arg%%=*}}"/${arg#*=}}"
+    done
+    printf '%s' "$text"
+  }
+}
+
 mash_show_notice() {
   local title body command herdr
+  mash_bind_messages
   if [ "$manual_status" = up-to-date ]; then
-    title="$(mash-t plugin.mash-update-notice.title.up-to-date)"
+    title="$(mash_say plugin.mash-update-notice.title.up-to-date 'Mash is up to date')"
     if [ "$system" = Darwin ]; then
-      body="$(mash-t plugin.mash-update-notice.notice.current-macos "version=$installed")"
+      body="$(mash_say plugin.mash-update-notice.notice.current-macos 'Everything is up to date. Mash {version} is current.' "version=$installed")"
     else
-      body="$(mash-t plugin.mash-update-notice.notice.current-linux)"
+      body="$(mash_say plugin.mash-update-notice.notice.current-linux 'No newer Mash version found in the current APT metadata.')"
     fi
   elif [ "$manual_status" = restart-required ]; then
-    title="$(mash-t plugin.mash-update-notice.title.restart-required)"
-    body="$(mash-t plugin.mash-update-notice.notice.restart-required "installed=$installed" "candidate=$candidate")"
+    title="$(mash_say plugin.mash-update-notice.title.restart-required 'Mash restart required')"
+    body="$(mash_say plugin.mash-update-notice.notice.restart-required 'You are running {installed}. Mash {candidate} is already installed; restart Mash to use it.' "installed=$installed" "candidate=$candidate")"
   elif [ "$manual_status" = restored-previous ]; then
-    title="$(mash-t plugin.mash-update-notice.title.previous-restored)"
-    body="$(mash-t plugin.mash-update-notice.notice.previous-restored "installed=$installed" "candidate=$candidate")"
+    title="$(mash_say plugin.mash-update-notice.title.previous-restored 'Previous Mash restored')"
+    body="$(mash_say plugin.mash-update-notice.notice.previous-restored 'Mash {installed} is running again. The update to {candidate} did not complete.' "installed=$installed" "candidate=$candidate")"
   elif [ "$manual_status" = check-unavailable ]; then
-    title="$(mash-t plugin.mash-update-notice.title.check-failed)"
-    body="$(mash-t plugin.mash-update-notice.notice.check-failed)"
+    title="$(mash_say plugin.mash-update-notice.title.check-failed "Couldn't check for Mash updates")"
+    body="$(mash_say plugin.mash-update-notice.notice.check-failed 'Check your internet connection and try again.')"
   elif [ "$manual_status" = apt-unavailable ]; then
-    title="$(mash-t plugin.mash-update-notice.title.check-failed)"
-    body="$(mash-t plugin.mash-update-notice.notice.apt-failed)"
+    title="$(mash_say plugin.mash-update-notice.title.check-failed "Couldn't check for Mash updates")"
+    body="$(mash_say plugin.mash-update-notice.notice.apt-failed 'Verify the APT repository and run sudo apt update.')"
   elif [ "$entrypoint" = updated ]; then
-    title="$(mash-t plugin.mash-update-notice.title.updated "version=$installed")"
-    body="$(mash-t plugin.mash-update-notice.notice.updated)"
+    title="$(mash_say plugin.mash-update-notice.title.updated 'Mash updated to {version}' "version=$installed")"
+    body="$(mash_say plugin.mash-update-notice.notice.updated 'Mash is running the new version.')"
   elif [ "$system" = Darwin ]; then
-    title="$(mash-t plugin.mash-update-notice.title.available "candidate=$candidate")"
-    body="$(mash-t plugin.mash-update-notice.notice.available-macos "installed=$installed")"
+    title="$(mash_say plugin.mash-update-notice.title.available 'Mash {candidate} is available' "candidate=$candidate")"
+    body="$(mash_say plugin.mash-update-notice.notice.available-macos 'You have {installed}. Open Mash to update.' "installed=$installed")"
   else
     command="sudo apt install --only-upgrade letsmash"
-    title="$(mash-t plugin.mash-update-notice.title.available "candidate=$candidate")"
-    body="$(mash-t plugin.mash-update-notice.notice.available-linux "installed=$installed" "command=$command")"
+    title="$(mash_say plugin.mash-update-notice.title.available 'Mash {candidate} is available' "candidate=$candidate")"
+    body="$(mash_say plugin.mash-update-notice.notice.available-linux 'You have {installed}. To upgrade, run: {command}' "installed=$installed" "command=$command")"
   fi
 
   # Desktop notification. On Linux notify-send (libnotify-bin) is not
@@ -224,11 +251,21 @@ mash_show_notice() {
     sleep 0.2
   done
   sleep 2
-  local width=56 height=9
-  if [ "$entrypoint" = update ]; then
+  # Outer cells, border included. Herdr 0.9.3 gives the script width-3 columns
+  # and height-2 rows. Notice is 56x11 so the longest translation fits; the
+  # updated confirmation still fits in 56x9; update stays 64x16 for the download.
+  # packaging/tests/test_notice_fits.py measures every catalog against that.
+  local width=56 height=11
+  case "$entrypoint" in
+  update)
     width=64
     height=16
-  fi
+    ;;
+  updated)
+    width=56
+    height=9
+    ;;
+  esac
   "$herdr" plugin pane open --plugin mash-update-notice --entrypoint "$entrypoint" \
     --placement popup --width "$width" --height "$height" --focus \
     --env "MASH_UPDATE_INSTALLED=$installed" \
@@ -237,7 +274,9 @@ mash_show_notice() {
     --env "MASH_UPDATE_APP=$app" \
     --env "MASH_UPDATE_DATA=$d" \
     --env "MASH_UPDATE_STATUS=$manual_status" \
-    --env "MASH_UPDATE_SYSTEM=$system" >/dev/null 2>&1 || true
+    --env "MASH_UPDATE_SYSTEM=$system" \
+    --env "MASH_LANGUAGE=${MASH_LANGUAGE:-}" \
+    --env "MASH_I18N_DIR=${MASH_I18N_DIR:-}" >/dev/null 2>&1 || true
 }
 
 # --- decide --------------------------------------------------------------------

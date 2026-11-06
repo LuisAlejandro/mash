@@ -81,6 +81,80 @@ mash_language_code() {
   printf '%s\n' "$code"
 }
 
+# Message lookup for scripts that the Herdr server starts directly, such as
+# plugin popups. Their environment belongs to whatever started the server, so
+# they cannot rely on an inherited PATH, MASH_LANGUAGE or MASH_I18N_DIR.
+#
+#   mash_messages_bind <data-dir>
+#     Resolves mash-t and the i18n tree beside this library, and the language
+#     from <data-dir>/setup/language unless MASH_LANGUAGE is already set.
+#   mash_say KEY FALLBACK [name=value...]
+#     Prints the catalog text, or FALLBACK (English) when mash-t or the key is
+#     unavailable. Placeholders are filled literally in both cases.
+mash_messages_t=""
+mash_messages_i18n=""
+mash_messages_bind() {
+  local here code
+  here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  mash_messages_t=""
+  mash_messages_i18n=""
+  if [ -x "$here/mash-t" ]; then
+    mash_messages_t="$here/mash-t"
+  elif [ -x "$here/helpers/mash-t" ]; then
+    mash_messages_t="$here/helpers/mash-t"
+  fi
+  if [ -d "$here/../i18n/messages" ]; then
+    mash_messages_i18n="$(cd "$here/../i18n" && pwd)"
+  elif [ -d "$here/i18n/messages" ]; then
+    mash_messages_i18n="$here/i18n"
+  elif [ -n "${MASH_I18N_DIR:-}" ] && [ -d "$MASH_I18N_DIR/messages" ]; then
+    mash_messages_i18n="$MASH_I18N_DIR"
+  fi
+  if [ -z "${MASH_LANGUAGE:-}" ] && code="$(mash_language_code "${1:-}" 2>/dev/null)"; then
+    MASH_LANGUAGE="$code"
+    export MASH_LANGUAGE
+  fi
+}
+
+# Fill {name} from name=value arguments. Values are inserted literally, so a
+# path containing '&' or a backslash is not reinterpreted.
+mash_messages_fill() {
+  local text="$1" arg name value out
+  shift
+  for arg in "$@"; do
+    name="${arg%%=*}"
+    value="${arg#*=}"
+    out=""
+    while true; do
+      case "$text" in
+      *"{$name}"*)
+        out="$out${text%%"{$name}"*}$value"
+        text="${text#*"{$name}"}"
+        ;;
+      *)
+        text="$out$text"
+        break
+        ;;
+      esac
+    done
+  done
+  printf '%s' "$text"
+}
+
+mash_say() {
+  local key="$1" fallback="$2" text=""
+  shift 2
+  if [ -n "$mash_messages_t" ] && [ -n "$mash_messages_i18n" ]; then
+    text="$(MASH_LANGUAGE="${MASH_LANGUAGE:-}" MASH_I18N_DIR="$mash_messages_i18n" \
+      "$mash_messages_t" "$key" "$@" 2>/dev/null)" || text=""
+  fi
+  if [ -n "$text" ]; then
+    printf '%s' "$text"
+  else
+    mash_messages_fill "$fallback" "$@"
+  fi
+}
+
 # True when this host cannot resolve a POSIX locale.
 #
 # `locale -a` spells names the host's own way -- Ubuntu lists de_DE.utf8 where
