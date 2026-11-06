@@ -85,6 +85,9 @@ elif args[:1] == ["resolve-shell"]:
             print(f"GRAMMARS_SHA256={digest}")
     else:
         sys.exit(1)
+elif args[:1] == ["applies"]:
+    # Scoped out of this target by the manifest (4), or simply unknown (1).
+    sys.exit(4 if component == "arm-only-tool" else 1)
 else:
     sys.exit(1)
 PY
@@ -331,6 +334,31 @@ if [ "$(uname -s)" = Linux ]; then
   }
 fi
 
+# A tool the manifest scopes out of the target (Sentrux and latexindent publish no
+# Intel Mac build) is not a failed install: it exits 4, which setup reports and
+# skips, and it leaves nothing behind. Anything else that cannot resolve still
+# exits 1, so a real failure is never mistaken for an absent tool.
+status=0
+run arm-only-tool || status=$?
+[ "$status" = 4 ] || {
+  echo "a tool scoped out of the target exited $status, not 4" >&2
+  exit 1
+}
+[ ! -e "$data/bin/arm-only-tool" ] && [ ! -e "$data/local/tools/arm-only-tool" ] || {
+  echo "a tool scoped out of the target left files behind" >&2
+  exit 1
+}
+grep -q 'arm-only-tool is not available for linux-amd64' "$data/setup/tool-install.log" || {
+  echo "the log does not say why arm-only-tool was skipped" >&2
+  exit 1
+}
+status=0
+run no-such-tool || status=$?
+[ "$status" = 1 ] || {
+  echo "an unknown tool exited $status, not 1" >&2
+  exit 1
+}
+
 # macOS pinned release binaries, against the real manifest and the real
 # downloads: an unversioned formula cannot honour a pin, so these four must
 # install from the manifest and answer with the pinned version. Network-bound,
@@ -345,7 +373,22 @@ if [ "$(uname -s)" = Darwin ] && [ "${MASH_TOOL_INSTALL_NETWORK:-0}" = 1 ]; then
   realdata="$tmp/realhome/.mash"
   mkdir -p "$realdata"
 
+  host_target="$(python3 "$real/assets/assets.py" target)"
   for component in marksman texlab latexindent sentrux rust-analyzer; do
+    # Sentrux and latexindent have no macos-amd64 build, so the manifest scopes
+    # them out of that target: they must report "not available" (4), not fail.
+    applies=0
+    python3 "$real/assets/assets.py" applies "$component" "$host_target" || applies=$?
+    if [ "$applies" = 4 ]; then
+      status=0
+      env -i HOME="$tmp/realhome" PATH=/usr/bin:/bin MASH_DATA_DIR="$realdata" \
+        MASH_INSTALL_BINARY_ONLY=1 "$real/bin/mash-tool-install" "$component" || status=$?
+      [ "$status" = 4 ] || {
+        echo "$component is not pinned for $host_target but exited $status, not 4" >&2
+        exit 1
+      }
+      continue
+    fi
     if ! env -i HOME="$tmp/realhome" PATH=/usr/bin:/bin MASH_DATA_DIR="$realdata" \
       MASH_INSTALL_BINARY_ONLY=1 "$real/bin/mash-tool-install" "$component"; then
       echo "$component did not install from the manifest on macOS" >&2
@@ -371,14 +414,17 @@ if [ "$(uname -s)" = Darwin ] && [ "${MASH_TOOL_INSTALL_NETWORK:-0}" = 1 ]; then
   }
 
   # Sentrux keeps its state and checksummed grammars inside Mash's data folder.
-  [ -d "$realdata/.sentrux/plugins" ] || {
-    echo "sentrux grammars were not installed into Mash's data folder" >&2
-    exit 1
-  }
-  [ ! -e "$tmp/realhome/.sentrux" ] || {
-    echo "sentrux wrote into the real home" >&2
-    exit 1
-  }
+  # Where the manifest scopes it out (macos-amd64) there is nothing to check.
+  if python3 "$real/assets/assets.py" applies sentrux "$host_target"; then
+    [ -d "$realdata/.sentrux/plugins" ] || {
+      echo "sentrux grammars were not installed into Mash's data folder" >&2
+      exit 1
+    }
+    [ ! -e "$tmp/realhome/.sentrux" ] || {
+      echo "sentrux wrote into the real home" >&2
+      exit 1
+    }
+  fi
 
   # The pinned step must refuse a component that is not a pinned binary.
   if env -i HOME="$tmp/realhome" PATH=/usr/bin:/bin MASH_DATA_DIR="$realdata" \
