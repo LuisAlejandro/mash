@@ -90,7 +90,7 @@
       "install": "bundled",
       "repo": "LuisAlejandro/ghostty",
       "ref": "fork-main",
-      "commit": "28c94a2db10247fa9ca3db3a17cdafb4cce20707",
+      "commit": "876699179f66a5161b059fe1dd09047190533524",
       "frontends": {
         "macos-arm64": "swift",
         "linux-amd64": "gtk",
