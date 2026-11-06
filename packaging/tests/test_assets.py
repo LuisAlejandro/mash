@@ -99,7 +99,9 @@ class PinProjectionTest(unittest.TestCase):
         manifest = assets.Manifest.load()
         with tempfile.TemporaryDirectory() as tmp:
             drifted = Path(tmp) / "pins.txt"
-            drifted.write_text(PINS.read_text().replace("herdr 0.9.3", "herdr 0.9.2"))
+            text = PINS.read_text()
+            line = next(l for l in text.splitlines() if l.startswith("herdr "))
+            drifted.write_text(text.replace(line, "herdr 0.0.0-drifted"))
             problems = manifest.pin_problems(drifted)
         self.assertTrue(problems)
         self.assertTrue(any("herdr" in problem for problem in problems))
