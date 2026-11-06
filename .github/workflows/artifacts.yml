@@ -34,7 +34,7 @@ env:
   # 0.16.0; the fork commit is what makes a release reproducible.
   ZIG_VERSION: "0.16.0"
   GHOSTTY_FORK: "LuisAlejandro/ghostty"
-  GHOSTTY_FORK_REF: "mash-multilingual"
+  GHOSTTY_FORK_REF: "fork-main"
   # Full SHA, compared exactly: a short prefix could collide, and this pin is
   # what makes a released DMG traceable to a specific terminal build. Move it
   # whenever the fork gains a commit.
