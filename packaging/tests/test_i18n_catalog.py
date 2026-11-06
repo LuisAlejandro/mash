@@ -387,6 +387,26 @@ class I18nCatalogTest(unittest.TestCase):
             problems = self.problems(root, {"packaging/plugins/x/notice.sh": "mash_say helper.example 'Hello'\n"})
         self.assertFalse(any("helper.example" in problem for problem in problems), problems)
 
+    def test_shell_fallbacks_match_the_english_catalog(self):
+        # mash_say prints its fallback when mash-t is unavailable, so that text is
+        # what an English user sees; it must not drift from the catalog.
+        call = re.compile(r"""\bmash_say ([a-z0-9_.-]+) (?:'([^']*)'|"([^"]*)")""")
+        english = {}
+        for component in sorted((I18N / "messages").iterdir()):
+            if component.is_dir():
+                english.update(json.loads((component / "en.json").read_text(encoding="utf-8")))
+        checked = 0
+        for name, source in discover_sources(REPO).items():
+            for match in call.finditer(source):
+                key = match.group(1)
+                fallback = match.group(2) if match.group(2) is not None else match.group(3)
+                if "$" in fallback:  # interpolated in the caller; not a literal copy
+                    continue
+                checked += 1
+                with self.subTest(file=name, key=key):
+                    self.assertEqual(english.get(key), fallback)
+        self.assertGreater(checked, 0, "no mash_say fallbacks found")
+
     def test_component_needs_all_fifteen_languages(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = _fixture_catalogs(Path(tmp), {"helper.example": "Hello"})

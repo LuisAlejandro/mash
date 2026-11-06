@@ -93,15 +93,22 @@ mash_language_code() {
 #     unavailable. Placeholders are filled literally in both cases.
 mash_messages_t=""
 mash_messages_i18n=""
+mash_messages_python=""
 mash_messages_bind() {
   local here code
   here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   mash_messages_t=""
   mash_messages_i18n=""
+  mash_messages_python=""
   if [ -x "$here/mash-t" ]; then
     mash_messages_t="$here/mash-t"
   elif [ -x "$here/helpers/mash-t" ]; then
     mash_messages_t="$here/helpers/mash-t"
+  fi
+  # mash-t is a Python script. A Dock launch hands Mash a minimal PATH, so the
+  # bundled interpreter is used when there is one rather than a bare python3.
+  if [ -x "$here/../python/bin/python3" ]; then
+    mash_messages_python="$here/../python/bin/python3"
   fi
   if [ -d "$here/../i18n/messages" ]; then
     mash_messages_i18n="$(cd "$here/../i18n" && pwd)"
@@ -146,7 +153,7 @@ mash_say() {
   shift 2
   if [ -n "$mash_messages_t" ] && [ -n "$mash_messages_i18n" ]; then
     text="$(MASH_LANGUAGE="${MASH_LANGUAGE:-}" MASH_I18N_DIR="$mash_messages_i18n" \
-      "$mash_messages_t" "$key" "$@" 2>/dev/null)" || text=""
+      ${mash_messages_python:+"$mash_messages_python"} "$mash_messages_t" "$key" "$@" 2>/dev/null)" || text=""
   fi
   if [ -n "$text" ]; then
     printf '%s' "$text"

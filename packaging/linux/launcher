@@ -13,6 +13,8 @@ d="$home/.mash"
 
 # shellcheck source=lib.sh
 . "$res/bin/lib.sh"
+# Messages below come from the catalogs in the chosen language (lib.sh).
+mash_messages_bind "$d"
 # shellcheck source=launch-common.sh
 . "$res/bin/launch-common.sh"
 
@@ -34,14 +36,14 @@ export MASH_BIN="$res/bin:$res/node/bin:$res/python/bin:$d/bin"
 # skills and no plugins, and Herdr would start against an empty tree. A failure
 # here is fatal on both platforms; say why instead of vanishing under set -e.
 mash_seed_all "$res" "$d" "$home" || {
-  printf '%s\n' "$(PATH="$res/bin:$res/python/bin:$PATH" MASH_LANGUAGE="$(mash_language_code "$d" 2>/dev/null || true)" MASH_I18N_DIR="$res/i18n" mash-t helper.launch.linux_data_prepare_failed "path=$d" 2>/dev/null || printf 'Mash could not prepare %s.' "$d")" >&2
+  printf '%s\n' "$(mash_say helper.launch.linux_data_prepare_failed 'Mash could not prepare {path}.' "path=$d")" >&2
   exit 1
 }
 
 # Mash ships its own terminal, Herdr and Fresh, so self-updates are pinned off
 # as they are on macOS. Never replaces a file, only flips existing keys.
 mash_force_updates "$home" || {
-  printf '%s\n' "$(PATH="$res/bin:$res/python/bin:$PATH" MASH_LANGUAGE="$(mash_language_code "$d" 2>/dev/null || true)" MASH_I18N_DIR="$res/i18n" mash-t helper.launch.linux_update_settings_failed 2>/dev/null || printf '%s' 'Mash could not pin its update settings; the file was kept.')" >&2
+  printf '%s\n' "$(mash_say helper.launch.linux_update_settings_failed 'Mash could not pin its update settings; the file was kept.')" >&2
   exit 1
 }
 
@@ -51,7 +53,7 @@ mash_isolate "$home"
 case "$HERDR_SOCKET_PATH" in
 "$d/run/"*) ;;
 *)
-  printf '%s\n' "$(PATH="$res/bin:$res/python/bin:$PATH" MASH_LANGUAGE="$(mash_language_code "$d" 2>/dev/null || true)" MASH_I18N_DIR="$res/i18n" mash-t helper.launch.socket_outside 2>/dev/null || printf '%s' 'Mash refused to start: socket outside ~/.mash.')" >&2
+  printf '%s\n' "$(mash_say helper.launch.socket_outside 'Mash refused to start: socket outside ~/.mash.')" >&2
   exit 1
   ;;
 esac
