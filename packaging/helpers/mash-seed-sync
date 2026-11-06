@@ -205,6 +205,7 @@ TREES = [
     ("defaults/plugins", "config/herdr/plugins/config"),
     ("defaults/atuin", "config/atuin"),
     ("defaults/lazydocker", "config/lazydocker"),
+    ("defaults/herdr-auto-title", "config/herdr-auto-title"),
     ("defaults/mash-config/references", "config/mash/references"),
     ("defaults/mash-config/venvs", "config/mash/venvs"),
 ]

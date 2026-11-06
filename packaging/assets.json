@@ -618,20 +618,20 @@
       "commit": "56ebe016c394eada4acc7f70bcb999b01932daf9"
     },
     "herdr.auto-title": {
-      "version": "0.9.1",
+      "version": "0.20.0",
       "strategy": "git",
       "install": "bundled",
       "repo": "kryptamine/herdr-auto-title",
-      "ref": "v0.9.1",
-      "commit": "bb74c548c3a9f8efb7b898809a29145c2729dac2"
+      "ref": "v0.20.0",
+      "commit": "d8603171bde954fa2db57bf6013c548daa6f58c1"
     },
     "persiyanov.reviewr": {
-      "version": "0.39.0",
+      "version": "0.49.1",
       "strategy": "git",
       "install": "bundled",
       "repo": "persiyanov/herdr-reviewr",
-      "ref": "v0.39.0",
-      "commit": "cd618b48dc1f4d2cc092f3f26827ac72fb44773e"
+      "ref": "v0.49.1",
+      "commit": "92c51e2bd4e2caf42fa00bc193ae2f48955df64f"
     },
     "herdr-workspace": {
       "version": "0.1.2",

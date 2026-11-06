@@ -37,8 +37,8 @@ prettier-plugin-svelte 4.1.1
 annotate 0.9.9
 herdr-terminal-notifier 0.1.0
 fullerzz.sesh 0.16.0
-herdr.auto-title 0.9.1
-persiyanov.reviewr 0.39.0
+herdr.auto-title 0.20.0
+persiyanov.reviewr 0.49.1
 herdr-workspace 0.1.2
 telescope 0.1.2
 ray.plugin-manager 0.6.0
