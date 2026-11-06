@@ -1,10 +1,10 @@
-Fresh 0.5.1
+Fresh 0.5.7
 
-This download includes fresh-0.5.1-patched.tar.gz: the complete corresponding
-source of the Fresh 0.5.1 binary shipped in Mash.app, under the GNU General
-Public License, version 2.
+This download includes fresh-0.5.7-patched.tar.gz: the complete corresponding
+source of the Fresh 0.5.7 binary shipped in Mash.app, under the GNU General
+Public License, version 3 or (at your option) any later version.
 
-Mash changes three things in that source, and all patches are in the archive
+Mash changes four things in that source, and all patches are in the archive
 and in Mash's public repository (packaging/patches/):
 
   - fresh-config-dir.patch     take the config and data directories from
@@ -15,23 +15,26 @@ and in Mash's public repository (packaging/patches/):
                                context menu
   - fresh-warn-logs.patch      default diagnostics to WARN while honoring
                                RUST_LOG for opt-in debugging
+  - fresh-explorer-clipboard.patch
+                               share the file explorer's copy/cut clipboard
+                               between Fresh processes through the data
+                               directory
 
-GPL-2.0 section 2(a) asks that modified files state that they were changed.
-The patched Rust files carry dated "Modified by Mash" comments for that
-reason. The remaining patched file, crates/fresh-editor-core/locales/en.json,
-is JSON and cannot carry a comment;
-the patch in the archive is the record of that change.
+GPL-3.0 section 5(a) asks that a modified work carry prominent notices stating
+that it was changed, and when.
+The patched source files under crates/*/src carry dated "Modified by Mash"
+comments for that reason. The other patched files -- the JSON locale
+crates/fresh-editor-core/locales/en.json, which cannot carry a comment, and the
+test files under crates/fresh-editor/tests -- are recorded by the patches in the
+archive.
 
 The archive is the exact source the binary was built from, patches included,
 together with the build files Mash used, so it needs no separate offer.
 
-Fresh's own LICENSE file is the GNU General Public License, version 2, June
-1991, and the upstream Cargo.toml names that license GPL-2.0. The license
-text's "How to Apply" section offers version 2 or, at your option, any later
-version.
-
-Homebrew and the Mash plan describe Fresh as GPL-3.0-or-later. The license
-that applies is the LICENSE file inside the archive, not that description.
+Fresh's own LICENSE file is the GNU General Public License, version 3, 29 June
+2007, and the upstream Cargo.toml names that license GPL-3.0-or-later. Fresh
+0.5.1, which earlier Mash releases shipped, carried GPL-2.0 instead; this
+release follows the license of the source it ships.
 
 This notice covers Fresh only. It does not license Herdr, Ghostty, pi, or the
 rest of Mash under the GPL.

@@ -7,7 +7,7 @@
  //! Runtime configuration I/O operations.
  //!
  //! This module contains system directory detection and config loading utilities
-@@ -1053,21 +1056,27 @@
+@@ -966,21 +969,27 @@ impl DirectoryContext {
      /// Create a DirectoryContext from the system directories
      /// This should ONLY be called from main()
      pub fn from_system() -> std::io::Result<Self> {
@@ -47,7 +47,7 @@
  
          Ok(Self {
              data_dir,
-@@ -1194,6 +1203,27 @@
+@@ -1092,6 +1101,27 @@ impl DirectoryContext {
      ///
      /// On macOS, this prioritizes `~/.config/fresh` over `~/Library/Application Support/fresh`
      /// to match the documented configuration location.

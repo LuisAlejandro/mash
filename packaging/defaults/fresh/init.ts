@@ -124,6 +124,10 @@ function herdrAnnotateDir(): string | null {
  * Removes the file when the selection collapses, so a stale selection can never
  * be picked up. Every path is wrapped: an unhandled rejection is fatal to
  * Fresh's plugin thread.
+ *
+ * Fresh 0.5.2 made `writeFile` refuse an existing file and dropped
+ * `removePath` from the plugin API, so the rewrite is `replaceFile` and the
+ * removal runs `rm -f` on the host -- where herdr-annotate reads the file.
  */
 async function herdrAnnotateSyncSelection() {
   try {
@@ -139,7 +143,7 @@ async function herdrAnnotateSyncSelection() {
     if (!selection || end <= start) {
       if (HERDR_ANNOTATE.active) {
         HERDR_ANNOTATE.active = false;
-        editor.removePath(path);
+        editor.spawnHostProcess("rm", ["-f", path]).result.catch(function () {});
       }
       return;
     }
@@ -147,7 +151,7 @@ async function herdrAnnotateSyncSelection() {
     const text = await editor.getBufferText(editor.getActiveBufferId(), start, end);
     if (!text || !text.trim()) return;
 
-    if (editor.writeFile(path, text)) {
+    if (editor.replaceFile(path, text)) {
       HERDR_ANNOTATE.active = true;
     }
   } catch (error) {
@@ -170,7 +174,7 @@ editor.setInterval(250, "herdrAnnotateSyncSelection");
 editor.on("ready", function () {
   try {
     editor
-      .spawnProcess("id", ["-u"])
+      .spawnHostProcess("id", ["-u"])
       .result.then(function (result) {
         const uid = (result.stdout || "").trim();
         if (uid) HERDR_ANNOTATE.uid = uid;
