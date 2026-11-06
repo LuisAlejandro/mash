@@ -1,3 +1,6 @@
+// Shared by the herdr-workspace and telescope plugin crates, which include it
+// with #[path]. It sits beside the catalogs it embeds, so it travels with
+// packaging/i18n wherever the build stages that tree before compiling.
 //! UI text in the language Mash chose in the wizard (`MASH_LANGUAGE`).
 //!
 //! The catalogs are shared by every Rust component in
@@ -13,65 +16,65 @@ const CODES: &[&str] = &[
     "bg", "cs", "de", "en", "es", "fr", "it", "ja", "ko", "pt-BR", "ru", "th", "uk", "vi", "zh-CN",
 ];
 
-const ENGLISH: &str = include_str!("../../../i18n/messages/plugins-rust/en.json");
+const ENGLISH: &str = include_str!("../messages/plugins-rust/en.json");
 
 /// Non-English catalogs. English is the source and lives in `ENGLISH`.
 const CATALOGS: &[(&str, &str)] = &[
     (
         "bg",
-        include_str!("../../../i18n/messages/plugins-rust/bg.json"),
+        include_str!("../messages/plugins-rust/bg.json"),
     ),
     (
         "cs",
-        include_str!("../../../i18n/messages/plugins-rust/cs.json"),
+        include_str!("../messages/plugins-rust/cs.json"),
     ),
     (
         "de",
-        include_str!("../../../i18n/messages/plugins-rust/de.json"),
+        include_str!("../messages/plugins-rust/de.json"),
     ),
     (
         "es",
-        include_str!("../../../i18n/messages/plugins-rust/es.json"),
+        include_str!("../messages/plugins-rust/es.json"),
     ),
     (
         "fr",
-        include_str!("../../../i18n/messages/plugins-rust/fr.json"),
+        include_str!("../messages/plugins-rust/fr.json"),
     ),
     (
         "it",
-        include_str!("../../../i18n/messages/plugins-rust/it.json"),
+        include_str!("../messages/plugins-rust/it.json"),
     ),
     (
         "ja",
-        include_str!("../../../i18n/messages/plugins-rust/ja.json"),
+        include_str!("../messages/plugins-rust/ja.json"),
     ),
     (
         "ko",
-        include_str!("../../../i18n/messages/plugins-rust/ko.json"),
+        include_str!("../messages/plugins-rust/ko.json"),
     ),
     (
         "pt-BR",
-        include_str!("../../../i18n/messages/plugins-rust/pt-BR.json"),
+        include_str!("../messages/plugins-rust/pt-BR.json"),
     ),
     (
         "ru",
-        include_str!("../../../i18n/messages/plugins-rust/ru.json"),
+        include_str!("../messages/plugins-rust/ru.json"),
     ),
     (
         "th",
-        include_str!("../../../i18n/messages/plugins-rust/th.json"),
+        include_str!("../messages/plugins-rust/th.json"),
     ),
     (
         "uk",
-        include_str!("../../../i18n/messages/plugins-rust/uk.json"),
+        include_str!("../messages/plugins-rust/uk.json"),
     ),
     (
         "vi",
-        include_str!("../../../i18n/messages/plugins-rust/vi.json"),
+        include_str!("../messages/plugins-rust/vi.json"),
     ),
     (
         "zh-CN",
-        include_str!("../../../i18n/messages/plugins-rust/zh-CN.json"),
+        include_str!("../messages/plugins-rust/zh-CN.json"),
     ),
 ];
 

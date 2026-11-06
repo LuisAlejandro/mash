@@ -12,6 +12,7 @@
 mod context;
 mod files;
 mod herdr;
+#[path = "../../../i18n/rust/i18n.rs"]
 mod i18n;
 mod keys;
 mod native;

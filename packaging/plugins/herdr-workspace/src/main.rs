@@ -13,6 +13,7 @@ mod edit;
 mod form;
 mod git;
 mod herdr;
+#[path = "../../../i18n/rust/i18n.rs"]
 mod i18n;
 mod popup;
 mod theme;
