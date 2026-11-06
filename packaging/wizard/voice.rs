@@ -568,6 +568,14 @@ const LANGUAGE_NAMES: &[(&str, &str)] = &[
     ("zh", "Mandarin (Chinese)"),
 ];
 
+fn cldr_names() -> &'static Value {
+    static NAMES: std::sync::OnceLock<Value> = std::sync::OnceLock::new();
+    NAMES.get_or_init(|| {
+        serde_json::from_str(include_str!("data/language-names.json"))
+            .expect("language-names.json is valid JSON")
+    })
+}
+
 pub fn display_name(language: &str) -> String {
     let language_code = canonical(language);
     let localized = match language_code.as_str() {
@@ -591,11 +599,78 @@ pub fn display_name(language: &str) -> String {
     if let Some(name) = localized {
         return name;
     }
+    // Every other dictation language: its CLDR name in the interface language
+    // (data/language-names.json, from scripts/language-names.swift). English
+    // keeps the names below.
+    if let Some(name) = cldr_names()[i18n::language()][language_code.as_str()].as_str() {
+        if i18n::language() != "en" {
+            return name.to_string();
+        }
+    }
     LANGUAGE_NAMES
         .iter()
         .find(|(table_code, _)| *table_code == language_code)
         .map(|(_, name)| (*name).to_string())
         .unwrap_or_else(|| language.to_string())
+}
+
+/// Accented Latin letters that occur in the language names, and the letter
+/// each sorts as, so "Árabe" sorts with the A's and not after "Z". Byte order
+/// is kept for other scripts, which already sort sensibly that way.
+const SORT_FOLD: &[(char, char)] = &[
+    ('à', 'a'),
+    ('á', 'a'),
+    ('â', 'a'),
+    ('ã', 'a'),
+    ('ä', 'a'),
+    ('å', 'a'),
+    ('ā', 'a'),
+    ('ạ', 'a'),
+    ('ả', 'a'),
+    ('ầ', 'a'),
+    ('ậ', 'a'),
+    ('ç', 'c'),
+    ('č', 'c'),
+    ('ď', 'd'),
+    ('đ', 'd'),
+    ('è', 'e'),
+    ('é', 'e'),
+    ('ê', 'e'),
+    ('ě', 'e'),
+    ('ế', 'e'),
+    ('ể', 'e'),
+    ('ệ', 'e'),
+    ('í', 'i'),
+    ('ï', 'i'),
+    ('ĩ', 'i'),
+    ('ñ', 'n'),
+    ('ň', 'n'),
+    ('ó', 'o'),
+    ('ô', 'o'),
+    ('ö', 'o'),
+    ('ồ', 'o'),
+    ('ổ', 'o'),
+    ('ř', 'r'),
+    ('š', 's'),
+    ('ú', 'u'),
+    ('ü', 'u'),
+    ('ư', 'u'),
+    ('ụ', 'u'),
+    ('ứ', 'u'),
+    ('ỳ', 'y'),
+    ('ž', 'z'),
+];
+
+fn sort_key(name: &str) -> String {
+    name.to_lowercase()
+        .chars()
+        .map(|c| {
+            SORT_FOLD
+                .iter()
+                .find(|(from, _)| *from == c)
+                .map_or(c, |(_, to)| *to)
+        })
+        .collect()
 }
 
 /// Every language the picker offers: benchmarked, and English first, then
@@ -619,9 +694,7 @@ pub fn offered_languages() -> Vec<(String, String)> {
         if right == "en" {
             return Ordering::Greater;
         }
-        display_name(left)
-            .to_lowercase()
-            .cmp(&display_name(right).to_lowercase())
+        sort_key(&display_name(left)).cmp(&sort_key(&display_name(right)))
     });
     offered
         .into_iter()
@@ -702,6 +775,39 @@ mod tests {
         assert_eq!(pick.fast.id, "Fun-ASR-Nano-2512");
         assert!(!pick.best.needs_detector);
         assert!(pick.fast.needs_detector);
+    }
+
+    #[test]
+    fn every_dictation_language_has_a_name_in_every_interface_language() {
+        let table: Value = serde_json::from_str(include_str!("../i18n/languages.json")).unwrap();
+        for row in table.as_array().unwrap() {
+            let ui = row["code"].as_str().unwrap();
+            for (code, _) in LANGUAGE_NAMES {
+                assert!(
+                    cldr_names()[ui][*code]
+                        .as_str()
+                        .is_some_and(|name| !name.is_empty()),
+                    "{ui}: no name for {code}; rerun scripts/language-names.swift"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn accented_names_sort_with_their_base_letter() {
+        let mut names = vec!["Zulú", "Árabe", "Alemán", "Búlgaro"];
+        names.sort_by_key(|name| sort_key(name));
+        assert_eq!(names, ["Alemán", "Árabe", "Búlgaro", "Zulú"]);
+    }
+
+    #[test]
+    fn a_non_mash_language_is_named_in_the_interface_language() {
+        let _language = i18n::override_language("es");
+        assert_eq!(display_name("ar"), "Árabe");
+        assert_eq!(display_name("es"), i18n::t("wizard.voice.name.es"));
+        drop(_language);
+        let _english = i18n::override_language("en");
+        assert_eq!(display_name("ar"), "Arabic");
     }
 
     #[test]

@@ -252,10 +252,14 @@ const ACTIVE_ROW: Color = Color::Rgb(51, 51, 51);
 pub const PAGE_COUNT: usize = 7;
 
 pub fn page_title(title: &str, index: usize) -> String {
-    i18n::t("wizard.shell.page_title")
-        .replace("{title}", title)
-        .replace("{current}", &(index + 1).to_string())
-        .replace("{total}", &PAGE_COUNT.to_string())
+    i18n::fill(
+        &i18n::t("wizard.shell.page_title"),
+        &[
+            ("title", &title),
+            ("current", &&(index + 1).to_string()),
+            ("total", &&PAGE_COUNT.to_string()),
+        ],
+    )
 }
 
 pub fn page_label(index: usize) -> String {
@@ -530,19 +534,26 @@ pub fn preview_hint(frame: &mut Frame) {
         // Same rows page_area stacks: header, blank, page list, blank.
         let header = if shows_logo(area) { LOGO_ROWS + 1 } else { 2 };
         let width = SIDEBAR_WIDTH - 2;
+        let row = Rect::new(
+            area.x + 1,
+            area.y + 1 + header + PAGE_COUNT as u16 + 2,
+            width,
+            1,
+        );
+        // The normal hint already sits in this row. Clear it first: a wide
+        // character drawn over half of an older wide one is lost otherwise,
+        // which garbled CJK hints.
+        frame.render_widget(ratatui::widgets::Clear, row);
         frame.render_widget(
-            Paragraph::new(format!(
-                "{:<width$}",
-                format!(" {}", i18n::t("wizard.shell.preview_hint")),
-                width = width as usize
-            ))
+            Paragraph::new({
+                // Padded by display width, not characters: CJK text is two
+                // columns per character, and the row must cover the normal hint.
+                let hint = format!(" {}", i18n::t("wizard.shell.preview_hint"));
+                let pad = (width as usize).saturating_sub(Line::from(hint.as_str()).width());
+                format!("{hint}{}", " ".repeat(pad))
+            })
             .style(Style::default().fg(MUTED).bg(PANEL)),
-            Rect::new(
-                area.x + 1,
-                area.y + 1 + header + PAGE_COUNT as u16 + 2,
-                width,
-                1,
-            ),
+            row,
         );
     }
 }
@@ -831,6 +842,41 @@ pub mod tests {
             .collect::<String>();
         assert!(text.contains("←/→ pages · Esc back"));
         assert!(!text.contains("Tab to move"));
+    }
+
+    #[test]
+    fn preview_hint_is_whole_in_wide_scripts() {
+        for code in ["ja", "ko", "zh-CN", "th"] {
+            let _language = i18n::override_language(code);
+            let mut terminal = Terminal::new(TestBackend::new(120, 30)).unwrap();
+            terminal
+                .draw(|frame| {
+                    page_area(frame, Some(0));
+                    preview_hint(frame);
+                })
+                .unwrap();
+            let buffer = terminal.backend().buffer();
+            // A wide character fills two cells; the second holds no glyph of its
+            // own, so it is skipped when reading the row back.
+            let rows: Vec<String> = (0..buffer.area.height)
+                .map(|y| {
+                    let mut row = String::new();
+                    let mut x = 0;
+                    while x < buffer.area.width {
+                        let symbol = buffer[(x, y)].symbol();
+                        row.push_str(symbol);
+                        x += Line::from(symbol).width().max(1) as u16;
+                    }
+                    row
+                })
+                .collect();
+            let hint = i18n::t("wizard.shell.preview_hint");
+            assert!(
+                rows.iter().any(|row| row.contains(&hint)),
+                "{code}: hint {hint:?} not whole in {:?}",
+                rows.iter().find(|row| row.contains("←"))
+            );
+        }
     }
 
     #[test]

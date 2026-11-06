@@ -294,7 +294,10 @@ impl VoicePage {
         if hidden > 0 {
             lines.push((
                 Line::from(Span::styled(
-                    i18n::t("wizard.voice.more").replace("{count}", &hidden.to_string()),
+                    i18n::fill(
+                        &i18n::t("wizard.voice.more"),
+                        &[("count", &&hidden.to_string())],
+                    ),
                     Style::default().fg(wizard_style::MUTED),
                 )),
                 None,
@@ -323,6 +326,14 @@ impl VoicePage {
                 None,
             )),
             Some(pick) => {
+                // Both role labels share one column, sized to the wider
+                // translation plus a space, so the model name never touches it.
+                let label_width = [Role::Best, Role::Fast]
+                    .iter()
+                    .map(|role| Line::from(role.label()).width())
+                    .max()
+                    .unwrap_or(0)
+                    + 1;
                 for role in [Role::Best, Role::Fast] {
                     let row = self.role_row(role);
                     let focused = self.row == row;
@@ -330,7 +341,12 @@ impl VoicePage {
                     let radio = if self.role == role { "(*)" } else { "( )" };
                     lines.push((
                         Line::from(vec![
-                            Span::raw(format!("{radio} {:<5}", role.label())),
+                            Span::raw({
+                                let label = role.label();
+                                let pad =
+                                    label_width.saturating_sub(Line::from(label.as_str()).width());
+                                format!("{radio} {label}{}", " ".repeat(pad))
+                            }),
                             Span::styled(
                                 pick.model(role).row(),
                                 Style::default().add_modifier(Modifier::BOLD),
@@ -361,9 +377,9 @@ impl VoicePage {
                         Line::from(Span::styled(
                             format!(
                                 "  {}",
-                                i18n::t("wizard.voice.detector_notice").replace(
-                                    "{size}",
-                                    &voice::human_size(voice::detector_bytes()),
+                                i18n::fill(
+                                    &i18n::t("wizard.voice.detector_notice"),
+                                    &[("size", &&voice::human_size(voice::detector_bytes()),)]
                                 )
                             ),
                             Style::default().fg(wizard_style::MUTED),
