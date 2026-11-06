@@ -91,7 +91,9 @@ def main(argv):
     seen = 0
     failed = False
     for name in NIB_FILES:
-        path = root / name
+        path = root / "Base.lproj" / name
+        if not path.is_file():
+            path = root / name
         if not path.is_file():
             continue
         seen += 1
