@@ -205,6 +205,9 @@ mash_show_notice() {
     else
       body="$(mash_say plugin.mash-update-notice.notice.current-linux 'No newer Mash version found in the current APT metadata.')"
     fi
+  elif [ "$manual_status" = updates-disabled ]; then
+    title="Mash updates are disabled"
+    body="This build has no release channel of its own. Rebuild Mash from source to update it."
   elif [ "$manual_status" = restart-required ]; then
     title="$(mash_say plugin.mash-update-notice.title.restart-required 'Mash restart required')"
     body="$(mash_say plugin.mash-update-notice.notice.restart-required 'You are running {installed}. Mash {candidate} is already installed; restart Mash to use it.' "installed=$installed" "candidate=$candidate")"
@@ -287,6 +290,21 @@ can_apply=0
 check_ok=0
 manual_status=""
 entrypoint=notice
+
+# build.sh marks a build for an architecture the official releases do not cover.
+# It has no release channel of its own, so it never asks GitHub and never offers
+# a download built for another CPU -- this is the single switch for both the
+# automatic check herdr-pane starts and the manual one. A manual check says so
+# instead of doing nothing.
+if [ -e "$res/updates-disabled" ]; then
+  mash_log "updates are disabled in this build ($res/updates-disabled)"
+  if [ "$manual" = 1 ]; then
+    installed="$(mash_read_line "$res/VERSION")"
+    manual_status=updates-disabled
+    mash_show_notice
+  fi
+  exit 0
+fi
 
 # The native executable exports its captured version. Never substitute mutable
 # on-disk metadata when a runtime identity is available.
