@@ -38,7 +38,7 @@ env:
   # Full SHA, compared exactly: a short prefix could collide, and this pin is
   # what makes a released DMG traceable to a specific terminal build. Move it
   # whenever the fork gains a commit.
-  GHOSTTY_FORK_COMMIT: "24f1c741be4e8d694bf11258b971de7e34043d64"
+  GHOSTTY_FORK_COMMIT: "8d1a952d6d8b16fc0c2ce9595279470d53d44f84"
   # Mash Programming Skills, whose skills and agents are copied into the app.
   # The build refuses any other version. Both skills repos now cut releases and
   # tag them, so the pin is the tag rather than a commit SHA: a tag names a
