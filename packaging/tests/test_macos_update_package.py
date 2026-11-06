@@ -50,7 +50,7 @@ class MacOSUpdatePackageTest(unittest.TestCase):
         self.assertLess(stager.index("$pi_packages"), stager.index('mash_set_pi_project_dir "$res"'))
 
     def test_defaults_merge_with_already_staged_runtime_files(self):
-        """Shared staging creates defaults/pi for typebox and the voice catalog.
+        """Shared staging creates defaults/pi for the voice catalog.
         Copying the directory itself afterwards would nest defaults/defaults.
         Exercise the actual copy command against that pre-existing layout.
         """
