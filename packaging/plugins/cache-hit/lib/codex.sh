@@ -20,10 +20,10 @@ rollout_for_session() {
     local hex="${session_id:0:8}${session_id:9:4}"
     local sec=$(( 16#$hex / 1000 ))
     local d_utc d_loc d_prev d_next
-    d_utc=$(LC_ALL=C date -u -r "$sec" +%Y/%m/%d 2>/dev/null || LC_ALL=C date -u -d "@$sec" +%Y/%m/%d 2>/dev/null)
-    d_loc=$(LC_ALL=C date -r "$sec" +%Y/%m/%d 2>/dev/null || LC_ALL=C date -d "@$sec" +%Y/%m/%d 2>/dev/null)
-    d_prev=$(LC_ALL=C date -u -r "$((sec - 86400))" +%Y/%m/%d 2>/dev/null || LC_ALL=C date -u -d "@$((sec - 86400))" +%Y/%m/%d 2>/dev/null)
-    d_next=$(LC_ALL=C date -u -r "$((sec + 86400))" +%Y/%m/%d 2>/dev/null || LC_ALL=C date -u -d "@$((sec + 86400))" +%Y/%m/%d 2>/dev/null)
+    d_utc=$(date -u -r "$sec" +%Y/%m/%d 2>/dev/null || date -u -d "@$sec" +%Y/%m/%d 2>/dev/null)
+    d_loc=$(date -r "$sec" +%Y/%m/%d 2>/dev/null || date -d "@$sec" +%Y/%m/%d 2>/dev/null)
+    d_prev=$(date -u -r "$((sec - 86400))" +%Y/%m/%d 2>/dev/null || date -u -d "@$((sec - 86400))" +%Y/%m/%d 2>/dev/null)
+    d_next=$(date -u -r "$((sec + 86400))" +%Y/%m/%d 2>/dev/null || date -u -d "@$((sec + 86400))" +%Y/%m/%d 2>/dev/null)
     for candidate in \
       "$SESSIONS_DIR/$d_utc"/*"$session_id"*.jsonl \
       "$SESSIONS_DIR/$d_loc"/*"$session_id"*.jsonl \
@@ -41,9 +41,9 @@ rollout_for_session() {
 
   # Fast path: check flat and recent date-partitioned paths first (avoids full tree scans on network filesystems)
   local d_now d_now_utc m_now
-  d_now=$(LC_ALL=C date +%Y/%m/%d)
-  d_now_utc=$(LC_ALL=C date -u +%Y/%m/%d)
-  m_now=$(LC_ALL=C date +%Y/%m)
+  d_now=$(date +%Y/%m/%d)
+  d_now_utc=$(date -u +%Y/%m/%d)
+  m_now=$(date +%Y/%m)
   for candidate in \
     "$SESSIONS_DIR"/*"$session_id"*.jsonl \
     "$SESSIONS_DIR/$d_now"/*"$session_id"*.jsonl \
@@ -93,7 +93,7 @@ rollout_for_session() {
 }
 parse_timestamp() {
   local value=${1%%.*}; value=${value%Z}
-  LC_ALL=C date -j -u -f '%Y-%m-%dT%H:%M:%S' "$value" +%s 2>/dev/null || LC_ALL=C date -u -d "$1" +%s 2>/dev/null
+  date -j -u -f '%Y-%m-%dT%H:%M:%S' "$value" +%s 2>/dev/null || date -u -d "$1" +%s 2>/dev/null
 }
 latest_usage() {
   local path=$1 session_id=$2
