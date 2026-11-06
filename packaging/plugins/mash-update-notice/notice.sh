@@ -18,6 +18,11 @@ up-to-date)
     printf '  (any key closes)'
   fi
   ;;
+updates-disabled)
+  printf '\n  Updates are disabled in this build of Mash (%s).\n\n' "${installed:-unknown}"
+  printf '  Official releases do not cover this architecture.\n'
+  printf '  To update, rebuild Mash from source.   (any key closes)'
+  ;;
 restart-required)
   printf '\n  Mash %s is running; Mash %s is already installed.\n\n' "${installed:-unknown}" "${candidate:-unknown}"
   printf '  Save work and restart Mash to use the installed version.\n'
