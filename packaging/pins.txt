@@ -44,8 +44,8 @@ telescope 0.1.2
 ray.plugin-manager 0.6.0
 mash-programming-skills 0.6.0
 sentrux 0.5.7
-hindsight-embed 0.8.3
-hindsight-api 0.8.3
+hindsight-embed 1.2.0
+hindsight-api 1.2.0
 cua-driver 0.33.3
 agent-browser 0.38.2
 chrome-devtools-mcp 1.12.0

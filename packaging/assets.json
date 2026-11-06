@@ -694,13 +694,13 @@
       }
     },
     "hindsight-embed": {
-      "version": "0.8.3",
+      "version": "1.2.0",
       "strategy": "pip",
       "install": "user",
       "package": "hindsight-embed"
     },
     "hindsight-api": {
-      "version": "0.8.3",
+      "version": "1.2.0",
       "strategy": "pip",
       "install": "user",
       "package": "hindsight-api-slim"
