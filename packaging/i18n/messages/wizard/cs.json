@@ -1350,5 +1350,189 @@
   "wizard.memory.own_key": {
     "text": "Paměť používá vlastní klíč, nikdy přihlášení do Pi. Návrhy modelů nezaručují kompatibilitu s pamětí.",
     "source_hash": "5e9f06b7afef"
+  },
+  "wizard.setup.title": {
+    "text": "Nastavení Mash",
+    "source_hash": "9a6b9e8768aa"
+  },
+  "wizard.setup.quit_title": {
+    "text": "Ukončit nastavení Mash?",
+    "source_hash": "fca13bacb3db"
+  },
+  "wizard.setup.not_finished": {
+    "text": "Nastavení není dokončené, takže se Mash zatím neotevře.",
+    "source_hash": "7126b47d6f0c"
+  },
+  "wizard.setup.reopen": {
+    "text": "Otevřete Mash znovu a začněte nastavení od začátku.",
+    "source_hash": "3c08c76f274a"
+  },
+  "wizard.setup.quit_action": {
+    "text": "ukončit nastavení",
+    "source_hash": "fbbf0c02026a"
+  },
+  "wizard.setup.other_key": {
+    "text": "jakákoli jiná klávesa",
+    "source_hash": "53e6aac5af12"
+  },
+  "wizard.setup.keep_going": {
+    "text": "pokračovat",
+    "source_hash": "6e7ecf10083e"
+  },
+  "wizard.setup.could_not_finish": {
+    "text": "Nastavení se nepodařilo dokončit",
+    "source_hash": "923e2d2bfa67"
+  },
+  "wizard.setup.press_enter": {
+    "text": "Pokračujte stisknutím Enter",
+    "source_hash": "0a593337307e"
+  },
+  "wizard.setup.continue_open": {
+    "text": "Pokračovat — otevřít Mash",
+    "source_hash": "08a87d4e2372"
+  },
+  "wizard.setup.details": {
+    "text": "Podrobnosti: {path}",
+    "source_hash": "a33894398867"
+  },
+  "wizard.setup.saved_reopen": {
+    "text": "Některé volby už mohou být uložené. Nastavení se při dalším spuštění otevře znovu.",
+    "source_hash": "0de801ae7cf2"
+  },
+  "wizard.setup.unknown_error": {
+    "text": "Nastavení přerušila neznámá chyba.",
+    "source_hash": "eb9d67c96506"
+  },
+  "wizard.setup.model_check": {
+    "text": "Kontrola modelu",
+    "source_hash": "2d2297acd2aa"
+  },
+  "wizard.setup.checking": {
+    "text": "Kontrola uložené místní konfigurace...",
+    "source_hash": "c777a13b3e35"
+  },
+  "wizard.setup.notes": {
+    "text": "Poznámky ke konfiguraci (neblokující)",
+    "source_hash": "ffc8480c82a9"
+  },
+  "wizard.setup.no_auth_checked": {
+    "text": "Ověření serveru ani nároku účtu neproběhlo.",
+    "source_hash": "e148bf76d6d3"
+  },
+  "wizard.setup.skip_check": {
+    "text": "Přeskočit kontrolu",
+    "source_hash": "48e595221f47"
+  },
+  "wizard.setup.continue": {
+    "text": "Pokračovat",
+    "source_hash": "31fbef162594"
+  },
+  "wizard.setup.auth_skipped": {
+    "text": "Model je nastavený; ověření přihlášení neproběhlo.",
+    "source_hash": "bb1cc09f22e5"
+  },
+  "wizard.setup.model_unavailable": {
+    "text": "Kontrola modelu Pi není dostupná. Vaše konfigurace zůstala zachovaná; po nastavení použijte v Pi /model a /login.",
+    "source_hash": "8ed5b781187b"
+  },
+  "wizard.setup.installing": {
+    "text": "Instalace Mash",
+    "source_hash": "fd2247be3921"
+  },
+  "wizard.setup.progress": {
+    "text": "Průběh",
+    "source_hash": "4664827f8e89"
+  },
+  "wizard.setup.ready": {
+    "text": "Připraveno ke spuštění Mash",
+    "source_hash": "07a824807aab"
+  },
+  "wizard.setup.waiting_daemon": {
+    "text": "...čeká se, až paměťová služba odpoví na svém portu",
+    "source_hash": "65eeaf94876f"
+  },
+  "wizard.setup.result.installed": {
+    "text": "nainstalováno",
+    "source_hash": "a51a6c19a1ff"
+  },
+  "wizard.setup.result.model_installed": {
+    "text": "model nainstalován",
+    "source_hash": "06627dd23cd9"
+  },
+  "wizard.setup.result.daemon_up": {
+    "text": "služba běží, modely v mezipaměti",
+    "source_hash": "97145954e7ce"
+  },
+  "wizard.setup.result.already_installed": {
+    "text": "už je nainstalováno",
+    "source_hash": "48544614ca22"
+  },
+  "wizard.setup.step.check_tools": {
+    "text": "Kontrola vybraných nástrojů",
+    "source_hash": "3a7228d80436"
+  },
+  "wizard.setup.step.mash_tools": {
+    "text": "Instalace nástrojů do Mash",
+    "source_hash": "7914823478f2"
+  },
+  "wizard.setup.step.brew": {
+    "text": "Instalace balíčků Homebrew",
+    "source_hash": "873564eb35a2"
+  },
+  "wizard.setup.step.npm": {
+    "text": "Instalace balíčků npm",
+    "source_hash": "cd52241c4b6e"
+  },
+  "wizard.setup.step.pinned": {
+    "text": "Instalace připnutých nástrojů do Mash",
+    "source_hash": "53c70a54d6da"
+  },
+  "wizard.setup.step.python": {
+    "text": "Instalace balíčků Python",
+    "source_hash": "d4c51d15c8bc"
+  },
+  "wizard.setup.step.cua": {
+    "text": "Instalace CUA Driver",
+    "source_hash": "7fe6a9fd27d1"
+  },
+  "wizard.setup.step.memory": {
+    "text": "Instalace prostředí paměti",
+    "source_hash": "816b368aa540"
+  },
+  "wizard.setup.step.memory_models": {
+    "text": "Spuštění paměti a stažení jejích modelů",
+    "source_hash": "9ef8dd5a39e3"
+  },
+  "wizard.setup.step.dictation": {
+    "text": "Instalace modelu pro diktování",
+    "source_hash": "7abdc07c8460"
+  },
+  "wizard.identity.key_openpgp_only": {
+    "text": "Váš Git podepisuje přes SSH nebo X.509; Mash podepisuje pouze klíči OpenPGP",
+    "source_hash": "8021a5c51452"
+  },
+  "wizard.setup.report.host_tools": {
+    "text": "Nástroje systému jsou k dispozici; instaluji připnuté nástroje Mash.",
+    "source_hash": "5e1366b18b91"
+  },
+  "wizard.setup.report.all_installed": {
+    "text": "Vše vybrané už je nainstalované.",
+    "source_hash": "34a4459dc684"
+  },
+  "wizard.setup.report.missing": {
+    "text": "Chybí: {tools}",
+    "source_hash": "1d0c96cc3733"
+  },
+  "wizard.setup.report.counts": {
+    "text": "nainstalováno: {installed}, poskytnuto systémem: {provided}",
+    "source_hash": "eed3d543f37f"
+  },
+  "wizard.setup.report.system_provided": {
+    "text": "{component}: poskytuje systém, neinstaloval Mash",
+    "source_hash": "17adcbb8f3e1"
+  },
+  "wizard.setup.report.apple_tools": {
+    "text": "{tool} je součástí vývojářských nástrojů Apple (spusťte xcode-select --install).",
+    "source_hash": "a35d7759a429"
   }
 }

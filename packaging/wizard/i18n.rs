@@ -6,6 +6,9 @@ use std::{
     sync::OnceLock,
 };
 
+#[cfg(test)]
+use std::cell::Cell;
+
 const CATALOGS: &[(&str, &str)] = &[
     ("bg", include_str!("../i18n/messages/wizard/bg.json")),
     ("cs", include_str!("../i18n/messages/wizard/cs.json")),
@@ -41,8 +44,45 @@ fn catalogs() -> &'static HashMap<&'static str, Value> {
     })
 }
 
+#[cfg(test)]
+thread_local! {
+    static THREAD_LANGUAGE: Cell<Option<usize>> = const { Cell::new(None) };
+}
+
 pub fn language() -> &'static str {
+    // Tests render several languages in parallel. A thread-local override keeps
+    // one test's Spanish screen from rewriting the language every other test sees.
+    #[cfg(test)]
+    if let Some(index) = THREAD_LANGUAGE.with(Cell::get) {
+        return CATALOGS[index].0;
+    }
     CATALOGS[CURRENT.load(Ordering::Relaxed)].0
+}
+
+#[cfg(test)]
+pub struct LanguageOverride;
+
+#[cfg(test)]
+impl Drop for LanguageOverride {
+    fn drop(&mut self) {
+        THREAD_LANGUAGE.with(|cell| cell.set(None));
+    }
+}
+
+/// Render `code` from `t` on this test thread, then restore the process default.
+#[cfg(test)]
+pub fn override_language(code: &str) -> LanguageOverride {
+    let index = CATALOGS
+        .iter()
+        .position(|(candidate, _)| *candidate == code)
+        .unwrap_or_else(|| panic!("unknown language {code}"));
+    THREAD_LANGUAGE.with(|cell| cell.set(Some(index)));
+    LanguageOverride
+}
+
+#[cfg(test)]
+pub fn language_codes() -> impl Iterator<Item = &'static str> {
+    CATALOGS.iter().map(|(code, _)| *code)
 }
 
 pub fn set_language(code: &str) -> bool {

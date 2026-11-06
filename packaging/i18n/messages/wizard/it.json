@@ -1350,5 +1350,189 @@
   "wizard.memory.own_key": {
     "text": "La memoria usa una chiave propria, mai un accesso Pi. I suggerimenti di modelli non garantiscono la compatibilità con la memoria.",
     "source_hash": "5e9f06b7afef"
+  },
+  "wizard.setup.title": {
+    "text": "Configurazione di Mash",
+    "source_hash": "9a6b9e8768aa"
+  },
+  "wizard.setup.quit_title": {
+    "text": "Uscire dalla configurazione di Mash?",
+    "source_hash": "fca13bacb3db"
+  },
+  "wizard.setup.not_finished": {
+    "text": "La configurazione non è completa, quindi Mash non si apre ancora.",
+    "source_hash": "7126b47d6f0c"
+  },
+  "wizard.setup.reopen": {
+    "text": "Riapri Mash per ricominciare la configurazione dall'inizio.",
+    "source_hash": "3c08c76f274a"
+  },
+  "wizard.setup.quit_action": {
+    "text": "esci dalla configurazione",
+    "source_hash": "fbbf0c02026a"
+  },
+  "wizard.setup.other_key": {
+    "text": "qualsiasi altro tasto",
+    "source_hash": "53e6aac5af12"
+  },
+  "wizard.setup.keep_going": {
+    "text": "continua",
+    "source_hash": "6e7ecf10083e"
+  },
+  "wizard.setup.could_not_finish": {
+    "text": "La configurazione non è riuscita a terminare",
+    "source_hash": "923e2d2bfa67"
+  },
+  "wizard.setup.press_enter": {
+    "text": "Premi Invio per continuare",
+    "source_hash": "0a593337307e"
+  },
+  "wizard.setup.continue_open": {
+    "text": "Continua — apri Mash",
+    "source_hash": "08a87d4e2372"
+  },
+  "wizard.setup.details": {
+    "text": "Dettagli: {path}",
+    "source_hash": "a33894398867"
+  },
+  "wizard.setup.saved_reopen": {
+    "text": "Alcune scelte potrebbero essere già salvate. La configurazione si riapre al prossimo avvio.",
+    "source_hash": "0de801ae7cf2"
+  },
+  "wizard.setup.unknown_error": {
+    "text": "Un errore sconosciuto ha interrotto la configurazione.",
+    "source_hash": "eb9d67c96506"
+  },
+  "wizard.setup.model_check": {
+    "text": "Verifica del modello",
+    "source_hash": "2d2297acd2aa"
+  },
+  "wizard.setup.checking": {
+    "text": "Verifica della configurazione locale salvata...",
+    "source_hash": "c777a13b3e35"
+  },
+  "wizard.setup.notes": {
+    "text": "Note di configurazione (non bloccanti)",
+    "source_hash": "ffc8480c82a9"
+  },
+  "wizard.setup.no_auth_checked": {
+    "text": "Non sono stati verificati l'autenticazione del server né il diritto dell'account.",
+    "source_hash": "e148bf76d6d3"
+  },
+  "wizard.setup.skip_check": {
+    "text": "Salta la verifica",
+    "source_hash": "48e595221f47"
+  },
+  "wizard.setup.continue": {
+    "text": "Continua",
+    "source_hash": "31fbef162594"
+  },
+  "wizard.setup.auth_skipped": {
+    "text": "Modello configurato; l'autenticazione non è stata tentata.",
+    "source_hash": "bb1cc09f22e5"
+  },
+  "wizard.setup.model_unavailable": {
+    "text": "La verifica del modello di Pi non è disponibile. La tua configurazione è stata mantenuta; dopo la configurazione usa /model e /login in Pi.",
+    "source_hash": "8ed5b781187b"
+  },
+  "wizard.setup.installing": {
+    "text": "Installazione di Mash",
+    "source_hash": "fd2247be3921"
+  },
+  "wizard.setup.progress": {
+    "text": "Avanzamento",
+    "source_hash": "4664827f8e89"
+  },
+  "wizard.setup.ready": {
+    "text": "Pronto per avviare Mash",
+    "source_hash": "07a824807aab"
+  },
+  "wizard.setup.waiting_daemon": {
+    "text": "...in attesa che il servizio di memoria risponda sulla sua porta",
+    "source_hash": "65eeaf94876f"
+  },
+  "wizard.setup.result.installed": {
+    "text": "installato",
+    "source_hash": "a51a6c19a1ff"
+  },
+  "wizard.setup.result.model_installed": {
+    "text": "modello installato",
+    "source_hash": "06627dd23cd9"
+  },
+  "wizard.setup.result.daemon_up": {
+    "text": "servizio attivo, modelli in cache",
+    "source_hash": "97145954e7ce"
+  },
+  "wizard.setup.result.already_installed": {
+    "text": "già installato",
+    "source_hash": "48544614ca22"
+  },
+  "wizard.setup.step.check_tools": {
+    "text": "Verifica gli strumenti scelti",
+    "source_hash": "3a7228d80436"
+  },
+  "wizard.setup.step.mash_tools": {
+    "text": "Installa gli strumenti in Mash",
+    "source_hash": "7914823478f2"
+  },
+  "wizard.setup.step.brew": {
+    "text": "Installa i pacchetti Homebrew",
+    "source_hash": "873564eb35a2"
+  },
+  "wizard.setup.step.npm": {
+    "text": "Installa i pacchetti npm",
+    "source_hash": "cd52241c4b6e"
+  },
+  "wizard.setup.step.pinned": {
+    "text": "Installa gli strumenti bloccati in Mash",
+    "source_hash": "53c70a54d6da"
+  },
+  "wizard.setup.step.python": {
+    "text": "Installa i pacchetti Python",
+    "source_hash": "d4c51d15c8bc"
+  },
+  "wizard.setup.step.cua": {
+    "text": "Installa CUA Driver",
+    "source_hash": "7fe6a9fd27d1"
+  },
+  "wizard.setup.step.memory": {
+    "text": "Installa l'ambiente di memoria",
+    "source_hash": "816b368aa540"
+  },
+  "wizard.setup.step.memory_models": {
+    "text": "Avvia la memoria e scarica i suoi modelli",
+    "source_hash": "9ef8dd5a39e3"
+  },
+  "wizard.setup.step.dictation": {
+    "text": "Installa il modello di dettatura",
+    "source_hash": "7abdc07c8460"
+  },
+  "wizard.identity.key_openpgp_only": {
+    "text": "Il tuo Git firma con SSH o X.509; Mash firma solo con chiavi OpenPGP",
+    "source_hash": "8021a5c51452"
+  },
+  "wizard.setup.report.host_tools": {
+    "text": "Gli strumenti di sistema sono presenti; installo gli strumenti bloccati di Mash.",
+    "source_hash": "5e1366b18b91"
+  },
+  "wizard.setup.report.all_installed": {
+    "text": "Tutto ciò che è stato scelto è già installato.",
+    "source_hash": "34a4459dc684"
+  },
+  "wizard.setup.report.missing": {
+    "text": "Mancano: {tools}",
+    "source_hash": "1d0c96cc3733"
+  },
+  "wizard.setup.report.counts": {
+    "text": "{installed} installati, {provided} forniti dal sistema",
+    "source_hash": "eed3d543f37f"
+  },
+  "wizard.setup.report.system_provided": {
+    "text": "{component}: fornito dal sistema, non installato da Mash",
+    "source_hash": "17adcbb8f3e1"
+  },
+  "wizard.setup.report.apple_tools": {
+    "text": "{tool} fa parte degli strumenti di sviluppo Apple (esegui xcode-select --install).",
+    "source_hash": "a35d7759a429"
   }
 }

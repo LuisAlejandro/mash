@@ -1350,5 +1350,189 @@
   "wizard.memory.own_key": {
     "text": "记忆使用自己的密钥，从不使用 Pi 登录。模型建议不保证与记忆兼容。",
     "source_hash": "5e9f06b7afef"
+  },
+  "wizard.setup.title": {
+    "text": "Mash 设置",
+    "source_hash": "9a6b9e8768aa"
+  },
+  "wizard.setup.quit_title": {
+    "text": "退出 Mash 设置？",
+    "source_hash": "fca13bacb3db"
+  },
+  "wizard.setup.not_finished": {
+    "text": "设置尚未完成，Mash 还不会打开。",
+    "source_hash": "7126b47d6f0c"
+  },
+  "wizard.setup.reopen": {
+    "text": "再次打开 Mash 即可从头开始设置。",
+    "source_hash": "3c08c76f274a"
+  },
+  "wizard.setup.quit_action": {
+    "text": "退出设置",
+    "source_hash": "fbbf0c02026a"
+  },
+  "wizard.setup.other_key": {
+    "text": "任意其他键",
+    "source_hash": "53e6aac5af12"
+  },
+  "wizard.setup.keep_going": {
+    "text": "继续",
+    "source_hash": "6e7ecf10083e"
+  },
+  "wizard.setup.could_not_finish": {
+    "text": "设置未能完成",
+    "source_hash": "923e2d2bfa67"
+  },
+  "wizard.setup.press_enter": {
+    "text": "按 Enter 继续",
+    "source_hash": "0a593337307e"
+  },
+  "wizard.setup.continue_open": {
+    "text": "继续 — 打开 Mash",
+    "source_hash": "08a87d4e2372"
+  },
+  "wizard.setup.details": {
+    "text": "详情：{path}",
+    "source_hash": "a33894398867"
+  },
+  "wizard.setup.saved_reopen": {
+    "text": "部分选择可能已保存。下次启动时会重新打开设置。",
+    "source_hash": "0de801ae7cf2"
+  },
+  "wizard.setup.unknown_error": {
+    "text": "未知错误中断了设置。",
+    "source_hash": "eb9d67c96506"
+  },
+  "wizard.setup.model_check": {
+    "text": "模型检查",
+    "source_hash": "2d2297acd2aa"
+  },
+  "wizard.setup.checking": {
+    "text": "正在检查已保存的本地配置...",
+    "source_hash": "c777a13b3e35"
+  },
+  "wizard.setup.notes": {
+    "text": "配置说明（不阻塞）",
+    "source_hash": "ffc8480c82a9"
+  },
+  "wizard.setup.no_auth_checked": {
+    "text": "未检查服务器身份验证或账户授权。",
+    "source_hash": "e148bf76d6d3"
+  },
+  "wizard.setup.skip_check": {
+    "text": "跳过检查",
+    "source_hash": "48e595221f47"
+  },
+  "wizard.setup.continue": {
+    "text": "继续",
+    "source_hash": "31fbef162594"
+  },
+  "wizard.setup.auth_skipped": {
+    "text": "模型已配置；未尝试身份验证。",
+    "source_hash": "bb1cc09f22e5"
+  },
+  "wizard.setup.model_unavailable": {
+    "text": "Pi 模型检查不可用。你的配置已保留；设置完成后请在 Pi 中使用 /model 和 /login。",
+    "source_hash": "8ed5b781187b"
+  },
+  "wizard.setup.installing": {
+    "text": "Mash 安装",
+    "source_hash": "fd2247be3921"
+  },
+  "wizard.setup.progress": {
+    "text": "进度",
+    "source_hash": "4664827f8e89"
+  },
+  "wizard.setup.ready": {
+    "text": "可以启动 Mash 了",
+    "source_hash": "07a824807aab"
+  },
+  "wizard.setup.waiting_daemon": {
+    "text": "...正在等待记忆服务在其端口上响应",
+    "source_hash": "65eeaf94876f"
+  },
+  "wizard.setup.result.installed": {
+    "text": "已安装",
+    "source_hash": "a51a6c19a1ff"
+  },
+  "wizard.setup.result.model_installed": {
+    "text": "模型已安装",
+    "source_hash": "06627dd23cd9"
+  },
+  "wizard.setup.result.daemon_up": {
+    "text": "服务已运行，模型已缓存",
+    "source_hash": "97145954e7ce"
+  },
+  "wizard.setup.result.already_installed": {
+    "text": "已经安装",
+    "source_hash": "48544614ca22"
+  },
+  "wizard.setup.step.check_tools": {
+    "text": "检查所选工具",
+    "source_hash": "3a7228d80436"
+  },
+  "wizard.setup.step.mash_tools": {
+    "text": "将工具安装到 Mash",
+    "source_hash": "7914823478f2"
+  },
+  "wizard.setup.step.brew": {
+    "text": "安装 Homebrew 软件包",
+    "source_hash": "873564eb35a2"
+  },
+  "wizard.setup.step.npm": {
+    "text": "安装 npm 软件包",
+    "source_hash": "cd52241c4b6e"
+  },
+  "wizard.setup.step.pinned": {
+    "text": "将固定工具安装到 Mash",
+    "source_hash": "53c70a54d6da"
+  },
+  "wizard.setup.step.python": {
+    "text": "安装 Python 软件包",
+    "source_hash": "d4c51d15c8bc"
+  },
+  "wizard.setup.step.cua": {
+    "text": "安装 CUA Driver",
+    "source_hash": "7fe6a9fd27d1"
+  },
+  "wizard.setup.step.memory": {
+    "text": "安装记忆环境",
+    "source_hash": "816b368aa540"
+  },
+  "wizard.setup.step.memory_models": {
+    "text": "启动记忆并获取其模型",
+    "source_hash": "9ef8dd5a39e3"
+  },
+  "wizard.setup.step.dictation": {
+    "text": "安装听写模型",
+    "source_hash": "7abdc07c8460"
+  },
+  "wizard.identity.key_openpgp_only": {
+    "text": "你的 Git 使用 SSH 或 X.509 签名；Mash 仅使用 OpenPGP 密钥签名",
+    "source_hash": "8021a5c51452"
+  },
+  "wizard.setup.report.host_tools": {
+    "text": "系统工具已存在；正在安装 Mash 的固定工具。",
+    "source_hash": "5e1366b18b91"
+  },
+  "wizard.setup.report.all_installed": {
+    "text": "所选内容均已安装。",
+    "source_hash": "34a4459dc684"
+  },
+  "wizard.setup.report.missing": {
+    "text": "缺少：{tools}",
+    "source_hash": "1d0c96cc3733"
+  },
+  "wizard.setup.report.counts": {
+    "text": "已安装 {installed} 个，系统提供 {provided} 个",
+    "source_hash": "eed3d543f37f"
+  },
+  "wizard.setup.report.system_provided": {
+    "text": "{component}：由系统提供，Mash 未安装",
+    "source_hash": "17adcbb8f3e1"
+  },
+  "wizard.setup.report.apple_tools": {
+    "text": "{tool} 随 Apple 开发者工具提供（运行 xcode-select --install）。",
+    "source_hash": "a35d7759a429"
   }
 }

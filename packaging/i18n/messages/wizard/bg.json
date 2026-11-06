@@ -1350,5 +1350,189 @@
   "wizard.memory.own_key": {
     "text": "Паметта използва собствен ключ, никога вход в Pi. Предложенията за модели не гарантират съвместимост с паметта.",
     "source_hash": "5e9f06b7afef"
+  },
+  "wizard.setup.title": {
+    "text": "Настройка на Mash",
+    "source_hash": "9a6b9e8768aa"
+  },
+  "wizard.setup.quit_title": {
+    "text": "Да изляза ли от настройката на Mash?",
+    "source_hash": "fca13bacb3db"
+  },
+  "wizard.setup.not_finished": {
+    "text": "Настройката не е завършена, затова Mash още не се отваря.",
+    "source_hash": "7126b47d6f0c"
+  },
+  "wizard.setup.reopen": {
+    "text": "Отворете Mash отново, за да започнете настройката отначало.",
+    "source_hash": "3c08c76f274a"
+  },
+  "wizard.setup.quit_action": {
+    "text": "изход от настройката",
+    "source_hash": "fbbf0c02026a"
+  },
+  "wizard.setup.other_key": {
+    "text": "всеки друг клавиш",
+    "source_hash": "53e6aac5af12"
+  },
+  "wizard.setup.keep_going": {
+    "text": "продължаване",
+    "source_hash": "6e7ecf10083e"
+  },
+  "wizard.setup.could_not_finish": {
+    "text": "Настройката не можа да завърши",
+    "source_hash": "923e2d2bfa67"
+  },
+  "wizard.setup.press_enter": {
+    "text": "Натиснете Enter, за да продължите",
+    "source_hash": "0a593337307e"
+  },
+  "wizard.setup.continue_open": {
+    "text": "Продължи — отвори Mash",
+    "source_hash": "08a87d4e2372"
+  },
+  "wizard.setup.details": {
+    "text": "Подробности: {path}",
+    "source_hash": "a33894398867"
+  },
+  "wizard.setup.saved_reopen": {
+    "text": "Някои избори може вече да са запазени. Настройката се отваря отново при следващото стартиране.",
+    "source_hash": "0de801ae7cf2"
+  },
+  "wizard.setup.unknown_error": {
+    "text": "Неизвестна грешка прекъсна настройката.",
+    "source_hash": "eb9d67c96506"
+  },
+  "wizard.setup.model_check": {
+    "text": "Проверка на модела",
+    "source_hash": "2d2297acd2aa"
+  },
+  "wizard.setup.checking": {
+    "text": "Проверка на запазената локална конфигурация...",
+    "source_hash": "c777a13b3e35"
+  },
+  "wizard.setup.notes": {
+    "text": "Бележки по конфигурацията (без блокиране)",
+    "source_hash": "ffc8480c82a9"
+  },
+  "wizard.setup.no_auth_checked": {
+    "text": "Не беше проверена автентикация към сървър или право на акаунт.",
+    "source_hash": "e148bf76d6d3"
+  },
+  "wizard.setup.skip_check": {
+    "text": "Пропусни проверката",
+    "source_hash": "48e595221f47"
+  },
+  "wizard.setup.continue": {
+    "text": "Продължи",
+    "source_hash": "31fbef162594"
+  },
+  "wizard.setup.auth_skipped": {
+    "text": "Моделът е настроен; автентикация не беше опитана.",
+    "source_hash": "bb1cc09f22e5"
+  },
+  "wizard.setup.model_unavailable": {
+    "text": "Проверката на модела на Pi не е достъпна. Конфигурацията ви е запазена; използвайте /model и /login в Pi след настройката.",
+    "source_hash": "8ed5b781187b"
+  },
+  "wizard.setup.installing": {
+    "text": "Инсталиране на Mash",
+    "source_hash": "fd2247be3921"
+  },
+  "wizard.setup.progress": {
+    "text": "Напредък",
+    "source_hash": "4664827f8e89"
+  },
+  "wizard.setup.ready": {
+    "text": "Готово за стартиране на Mash",
+    "source_hash": "07a824807aab"
+  },
+  "wizard.setup.waiting_daemon": {
+    "text": "...изчакване услугата за памет да отговори на порта си",
+    "source_hash": "65eeaf94876f"
+  },
+  "wizard.setup.result.installed": {
+    "text": "инсталирано",
+    "source_hash": "a51a6c19a1ff"
+  },
+  "wizard.setup.result.model_installed": {
+    "text": "моделът е инсталиран",
+    "source_hash": "06627dd23cd9"
+  },
+  "wizard.setup.result.daemon_up": {
+    "text": "услугата работи, моделите са кеширани",
+    "source_hash": "97145954e7ce"
+  },
+  "wizard.setup.result.already_installed": {
+    "text": "вече е инсталирано",
+    "source_hash": "48544614ca22"
+  },
+  "wizard.setup.step.check_tools": {
+    "text": "Проверка на избраните инструменти",
+    "source_hash": "3a7228d80436"
+  },
+  "wizard.setup.step.mash_tools": {
+    "text": "Инсталиране на инструменти в Mash",
+    "source_hash": "7914823478f2"
+  },
+  "wizard.setup.step.brew": {
+    "text": "Инсталиране на пакети от Homebrew",
+    "source_hash": "873564eb35a2"
+  },
+  "wizard.setup.step.npm": {
+    "text": "Инсталиране на npm пакети",
+    "source_hash": "cd52241c4b6e"
+  },
+  "wizard.setup.step.pinned": {
+    "text": "Инсталиране на фиксирани инструменти в Mash",
+    "source_hash": "53c70a54d6da"
+  },
+  "wizard.setup.step.python": {
+    "text": "Инсталиране на Python пакети",
+    "source_hash": "d4c51d15c8bc"
+  },
+  "wizard.setup.step.cua": {
+    "text": "Инсталиране на CUA Driver",
+    "source_hash": "7fe6a9fd27d1"
+  },
+  "wizard.setup.step.memory": {
+    "text": "Инсталиране на средата за памет",
+    "source_hash": "816b368aa540"
+  },
+  "wizard.setup.step.memory_models": {
+    "text": "Стартиране на паметта и изтегляне на моделите ѝ",
+    "source_hash": "9ef8dd5a39e3"
+  },
+  "wizard.setup.step.dictation": {
+    "text": "Инсталиране на модела за диктовка",
+    "source_hash": "7abdc07c8460"
+  },
+  "wizard.identity.key_openpgp_only": {
+    "text": "Вашият Git подписва с SSH или X.509; Mash подписва само с OpenPGP ключове",
+    "source_hash": "8021a5c51452"
+  },
+  "wizard.setup.report.host_tools": {
+    "text": "Инструментите на системата са налични; инсталирам фиксираните инструменти на Mash.",
+    "source_hash": "5e1366b18b91"
+  },
+  "wizard.setup.report.all_installed": {
+    "text": "Всичко избрано вече е инсталирано.",
+    "source_hash": "34a4459dc684"
+  },
+  "wizard.setup.report.missing": {
+    "text": "Липсват: {tools}",
+    "source_hash": "1d0c96cc3733"
+  },
+  "wizard.setup.report.counts": {
+    "text": "инсталирани: {installed}, предоставени от системата: {provided}",
+    "source_hash": "eed3d543f37f"
+  },
+  "wizard.setup.report.system_provided": {
+    "text": "{component}: предоставен от системата, не е инсталиран от Mash",
+    "source_hash": "17adcbb8f3e1"
+  },
+  "wizard.setup.report.apple_tools": {
+    "text": "{tool} идва с инструментите за разработчици на Apple (изпълнете xcode-select --install).",
+    "source_hash": "a35d7759a429"
   }
 }

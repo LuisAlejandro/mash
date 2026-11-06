@@ -1350,5 +1350,189 @@
   "wizard.memory.own_key": {
     "text": "A memória usa a própria chave, nunca um login do Pi. As sugestões de modelo não garantem compatibilidade com a memória.",
     "source_hash": "5e9f06b7afef"
+  },
+  "wizard.setup.title": {
+    "text": "Configuração do Mash",
+    "source_hash": "9a6b9e8768aa"
+  },
+  "wizard.setup.quit_title": {
+    "text": "Sair da configuração do Mash?",
+    "source_hash": "fca13bacb3db"
+  },
+  "wizard.setup.not_finished": {
+    "text": "A configuração não terminou, então o Mash ainda não abre.",
+    "source_hash": "7126b47d6f0c"
+  },
+  "wizard.setup.reopen": {
+    "text": "Abra o Mash novamente para começar a configuração do início.",
+    "source_hash": "3c08c76f274a"
+  },
+  "wizard.setup.quit_action": {
+    "text": "sair da configuração",
+    "source_hash": "fbbf0c02026a"
+  },
+  "wizard.setup.other_key": {
+    "text": "qualquer outra tecla",
+    "source_hash": "53e6aac5af12"
+  },
+  "wizard.setup.keep_going": {
+    "text": "continuar",
+    "source_hash": "6e7ecf10083e"
+  },
+  "wizard.setup.could_not_finish": {
+    "text": "A configuração não pôde terminar",
+    "source_hash": "923e2d2bfa67"
+  },
+  "wizard.setup.press_enter": {
+    "text": "Pressione Enter para continuar",
+    "source_hash": "0a593337307e"
+  },
+  "wizard.setup.continue_open": {
+    "text": "Continuar — abrir o Mash",
+    "source_hash": "08a87d4e2372"
+  },
+  "wizard.setup.details": {
+    "text": "Detalhes: {path}",
+    "source_hash": "a33894398867"
+  },
+  "wizard.setup.saved_reopen": {
+    "text": "Algumas escolhas já podem estar salvas. A configuração reabre no próximo início.",
+    "source_hash": "0de801ae7cf2"
+  },
+  "wizard.setup.unknown_error": {
+    "text": "Um erro desconhecido interrompeu a configuração.",
+    "source_hash": "eb9d67c96506"
+  },
+  "wizard.setup.model_check": {
+    "text": "Verificação do modelo",
+    "source_hash": "2d2297acd2aa"
+  },
+  "wizard.setup.checking": {
+    "text": "Verificando a configuração local salva...",
+    "source_hash": "c777a13b3e35"
+  },
+  "wizard.setup.notes": {
+    "text": "Notas de configuração (não bloqueantes)",
+    "source_hash": "ffc8480c82a9"
+  },
+  "wizard.setup.no_auth_checked": {
+    "text": "A autenticação do servidor e o direito da conta não foram verificados.",
+    "source_hash": "e148bf76d6d3"
+  },
+  "wizard.setup.skip_check": {
+    "text": "Pular verificação",
+    "source_hash": "48e595221f47"
+  },
+  "wizard.setup.continue": {
+    "text": "Continuar",
+    "source_hash": "31fbef162594"
+  },
+  "wizard.setup.auth_skipped": {
+    "text": "Modelo configurado; a autenticação não foi tentada.",
+    "source_hash": "bb1cc09f22e5"
+  },
+  "wizard.setup.model_unavailable": {
+    "text": "A verificação de modelo do Pi não está disponível. Sua configuração foi mantida; use /model e /login no Pi após a configuração.",
+    "source_hash": "8ed5b781187b"
+  },
+  "wizard.setup.installing": {
+    "text": "Instalação do Mash",
+    "source_hash": "fd2247be3921"
+  },
+  "wizard.setup.progress": {
+    "text": "Progresso",
+    "source_hash": "4664827f8e89"
+  },
+  "wizard.setup.ready": {
+    "text": "Pronto para abrir o Mash",
+    "source_hash": "07a824807aab"
+  },
+  "wizard.setup.waiting_daemon": {
+    "text": "...aguardando o serviço de memória responder na porta dele",
+    "source_hash": "65eeaf94876f"
+  },
+  "wizard.setup.result.installed": {
+    "text": "instalado",
+    "source_hash": "a51a6c19a1ff"
+  },
+  "wizard.setup.result.model_installed": {
+    "text": "modelo instalado",
+    "source_hash": "06627dd23cd9"
+  },
+  "wizard.setup.result.daemon_up": {
+    "text": "serviço ativo, modelos em cache",
+    "source_hash": "97145954e7ce"
+  },
+  "wizard.setup.result.already_installed": {
+    "text": "já instalado",
+    "source_hash": "48544614ca22"
+  },
+  "wizard.setup.step.check_tools": {
+    "text": "Verificar as ferramentas escolhidas",
+    "source_hash": "3a7228d80436"
+  },
+  "wizard.setup.step.mash_tools": {
+    "text": "Instalar ferramentas no Mash",
+    "source_hash": "7914823478f2"
+  },
+  "wizard.setup.step.brew": {
+    "text": "Instalar pacotes do Homebrew",
+    "source_hash": "873564eb35a2"
+  },
+  "wizard.setup.step.npm": {
+    "text": "Instalar pacotes do npm",
+    "source_hash": "cd52241c4b6e"
+  },
+  "wizard.setup.step.pinned": {
+    "text": "Instalar ferramentas fixadas no Mash",
+    "source_hash": "53c70a54d6da"
+  },
+  "wizard.setup.step.python": {
+    "text": "Instalar pacotes do Python",
+    "source_hash": "d4c51d15c8bc"
+  },
+  "wizard.setup.step.cua": {
+    "text": "Instalar o CUA Driver",
+    "source_hash": "7fe6a9fd27d1"
+  },
+  "wizard.setup.step.memory": {
+    "text": "Instalar o ambiente de memória",
+    "source_hash": "816b368aa540"
+  },
+  "wizard.setup.step.memory_models": {
+    "text": "Iniciar a memória e baixar os modelos dela",
+    "source_hash": "9ef8dd5a39e3"
+  },
+  "wizard.setup.step.dictation": {
+    "text": "Instalar o modelo de ditado",
+    "source_hash": "7abdc07c8460"
+  },
+  "wizard.identity.key_openpgp_only": {
+    "text": "Seu Git assina com SSH ou X.509; o Mash assina apenas com chaves OpenPGP",
+    "source_hash": "8021a5c51452"
+  },
+  "wizard.setup.report.host_tools": {
+    "text": "As ferramentas do sistema estão presentes; instalando as ferramentas fixadas do Mash.",
+    "source_hash": "5e1366b18b91"
+  },
+  "wizard.setup.report.all_installed": {
+    "text": "Tudo o que foi escolhido já está instalado.",
+    "source_hash": "34a4459dc684"
+  },
+  "wizard.setup.report.missing": {
+    "text": "Faltando: {tools}",
+    "source_hash": "1d0c96cc3733"
+  },
+  "wizard.setup.report.counts": {
+    "text": "{installed} instalados, {provided} fornecidos pelo sistema",
+    "source_hash": "eed3d543f37f"
+  },
+  "wizard.setup.report.system_provided": {
+    "text": "{component}: fornecido pelo sistema, não instalado pelo Mash",
+    "source_hash": "17adcbb8f3e1"
+  },
+  "wizard.setup.report.apple_tools": {
+    "text": "{tool} vem com as ferramentas de desenvolvedor da Apple (execute xcode-select --install).",
+    "source_hash": "a35d7759a429"
   }
 }

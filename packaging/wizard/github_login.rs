@@ -19,10 +19,20 @@ use std::{
 
 const DEVICE_URL: &str = "https://github.com/login/device";
 
+/// Why GitHub sign-in cannot run. Drawn with `i18n::t` so the wording follows
+/// the language chosen later on the first page, not the language at construction.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum UnavailableReason {
+    /// Mash's GitHub config is a symlink, so it is not kept inside Mash.
+    ConfigInside,
+    /// The bundled `gh` cannot be executed.
+    CliUnavailable,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Status {
     /// Sign-in cannot run here; the reason is shown instead of a button.
-    Unavailable(String),
+    Unavailable(UnavailableReason),
     SignedOut,
     /// `gh` is asking GitHub for a code.
     Starting,
@@ -104,13 +114,13 @@ impl GithubLogin {
     /// What is known without the network: the config's own sign-in.
     fn local_status(&self) -> Status {
         if self.config.is_symlink() || self.config.join("hosts.yml").is_symlink() {
-            return Status::Unavailable(i18n::t("wizard.github.config_inside").into());
+            return Status::Unavailable(UnavailableReason::ConfigInside);
         }
         if self.preview {
             return Status::SignedOut;
         }
         if !self.gh_runs() {
-            return Status::Unavailable(i18n::t("wizard.github.cli_unavailable").into());
+            return Status::Unavailable(UnavailableReason::CliUnavailable);
         }
         // Only Mash's own hosts file counts. `gh auth token` also answers from
         // the system keychain, where the user's personal gh keeps its login
