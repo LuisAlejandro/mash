@@ -643,13 +643,24 @@ mash_build_ghostty() {
   fi
   echo "building Ghostty from $src @ ${commit:0:12}"
 
+  # The released arm64 build uses the fork's default universal GhosttyKit and
+  # lets xcodebuild pick its standard architectures. A macos-amd64 build runs on
+  # one CPU only, so it builds the native slice alone -- half the Zig work -- and
+  # pins xcodebuild to the same architecture: Release builds every standard
+  # architecture, and an arm64 link against an x86_64-only framework would fail.
+  local zig_args=() xcode_args=()
+  if [ "$target" = "macos-amd64" ]; then
+    zig_args=(-Dxcframework-target=native)
+    xcode_args=(ARCHS=x86_64 ONLY_ACTIVE_ARCH=YES)
+  fi
+
   # GhosttyKit is the Zig core the Swift app links against. Built release,
   # without the app: xcodebuild produces that part.
   (
     cd "$src"
     PATH="$(dirname "$zig"):$PATH" \
       TOOLCHAINS="$ghostty_metal_toolchain" \
-      "$zig" build -Doptimize=ReleaseFast -Demit-macos-app=false
+      "$zig" build -Doptimize=ReleaseFast -Demit-macos-app=false "${zig_args[@]+"${zig_args[@]}"}"
   ) || { echo "GhosttyKit build failed." >&2; exit 1; }
 
   # The app itself. Upstream's CI notes this must not run under Nix; we never
@@ -657,7 +668,7 @@ mash_build_ghostty() {
   (
     cd "$src/macos"
     TOOLCHAINS="$ghostty_metal_toolchain" \
-      xcodebuild -target Ghostty -configuration Release
+      xcodebuild -target Ghostty -configuration Release "${xcode_args[@]+"${xcode_args[@]}"}"
   ) || { echo "Ghostty.app build failed." >&2; exit 1; }
 
   local built="$src/macos/build/Release/Ghostty.app"
@@ -822,6 +833,18 @@ mash_build_plugins() {
       https://github.com/dot/herdr-terminal-notifier.git "$work/src/notifier"
     mash_copy_tree "$work/src/notifier" "$plugins/dot.terminal-notifier"
     local notifier="$plugins/dot.terminal-notifier/assets/HerdrNotify.app"
+    # The plugin ships its terminal-notifier executable for arm64 only. A target
+    # for which the manifest pins its own build (macos-amd64) gets that one in
+    # the same bundle, so the notifier keeps working there. The re-signing below
+    # replaces the plugin's stale _CodeSignature either way.
+    if mash_assets components "$target" | grep -qx terminal-notifier; then
+      mash_fetch_pinned terminal-notifier "$target" "$work/notifier-bin" || {
+        echo "could not stage terminal-notifier for $target" >&2
+        exit 1
+      }
+      cp "$work/notifier-bin/terminal-notifier" "$notifier/Contents/MacOS/terminal-notifier"
+      chmod 755 "$notifier/Contents/MacOS/terminal-notifier"
+    fi
     local plist="$notifier/Contents/Info.plist"
     /usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier app.mash.notifications' "$plist"
     # Notification Center draws the alert's name and icon from the bundle that

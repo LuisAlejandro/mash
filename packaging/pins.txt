@@ -37,6 +37,7 @@ prettier 3.9.9
 prettier-plugin-svelte 4.1.1
 annotate 0.9.9
 herdr-terminal-notifier 0.1.0
+terminal-notifier 2.0.0
 fullerzz.sesh 0.14.0
 herdr.auto-title 0.9.1
 persiyanov.reviewr 0.39.0
