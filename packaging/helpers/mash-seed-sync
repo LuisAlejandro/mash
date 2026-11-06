@@ -410,23 +410,44 @@ def native_herdr(text):
 
 
 def herdr_labels(text):
-    """Swap Mash's English Herdr labels for the language's, one assignment at a time."""
-    for english, translated in HERDR_LABELS:
-        if translated == english:
-            continue
-        for field in ("description", "window_title"):
-            text = text.replace(f'{field} = "{english}"', f'{field} = "{translated}"')
-    return text
+    """Swap Mash's English Herdr labels for the language's in one pass.
+
+    One pass, so a translation that happens to equal another English label is
+    never translated twice. The value is written as a JSON string, which is also
+    a valid TOML basic string: quotes, backslashes and control characters in a
+    translation are escaped instead of breaking the Herdr config.
+    """
+    table = {english: translated for english, translated in HERDR_LABELS if translated != english}
+    if not table:
+        return text
+    pattern = re.compile(
+        r'^(?P<lead>[ \t]*(?:description|window_title)[ \t]*=[ \t]*)"(?P<english>[^"\\\n]*)"',
+        re.MULTILINE,
+    )
+
+    def swap(match):
+        translated = table.get(match.group("english"))
+        if translated is None:
+            return match.group(0)
+        return match.group("lead") + json.dumps(translated, ensure_ascii=False)
+
+    return pattern.sub(swap, text)
 
 
 def lazydocker_language(text, code):
-    """Name the language explicitly, under lazydocker's own gui: section."""
+    """Name the language explicitly, under lazydocker's own gui: section.
+
+    The shipped default has that section; without it, one is added rather than
+    aborting every seed for one tool's language.
+    """
     lines = text.splitlines(keepends=True)
     for index, line in enumerate(lines):
         if line.rstrip("\n") == "gui:":
             lines.insert(index + 1, f"  language: {code}\n")
             return "".join(lines)
-    raise SystemExit("lazydocker config has no gui: section")
+    if text and not text.endswith("\n"):
+        text += "\n"
+    return text + f"gui:\n  language: {code}\n"
 
 
 def rendered_bytes(source, target, kind=None, rel_in_tree=""):

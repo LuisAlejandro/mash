@@ -251,6 +251,33 @@ class SeededLanguageTest(unittest.TestCase):
 
         self.each_platform(check)
 
+    def test_a_translation_with_quotes_still_renders_valid_toml(self):
+        def check(platform):
+            seeded = Seeded(self, platform, "fr")
+            # A translation may contain quotes or backslashes; the label must be
+            # escaped, not end the TOML string early.
+            catalog = seeded.res / "i18n" / "messages" / "herdr" / "fr.json"
+            data = json.loads(catalog.read_text(encoding="utf-8"))
+            key = "herdr.command.source-control"
+            data[key]["text"] = 'Contrôle "source" \\ test'
+            catalog.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            seeded.sync()
+            config = seeded.herdr_config()  # parses, so the string was escaped
+
+            def strings(value):
+                if isinstance(value, dict):
+                    for item in value.values():
+                        yield from strings(item)
+                elif isinstance(value, list):
+                    for item in value:
+                        yield from strings(item)
+                elif isinstance(value, str):
+                    yield value
+
+            self.assertIn(data[key]["text"], set(strings(config)))
+
+        self.each_platform(check)
+
     def test_an_unknown_language_seeds_english(self):
         def check(platform):
             english = Seeded(self, platform, "en")

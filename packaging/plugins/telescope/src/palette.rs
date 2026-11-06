@@ -199,29 +199,40 @@ struct Selection {
 
 /// Prompt shown in action mode. Mode switches key off these exact strings, and
 /// both sides read the same catalog, so a translated prompt still switches modes.
+/// Translated text that fzf puts inside a bound action, such as
+/// `change-prompt[...]`. fzf ends that argument at the first `]`, and a control
+/// character ends the binding, so both are removed. The `--prompt` argument goes
+/// through the same function, so the prompt fzf reports back still matches
+/// `mode_of`.
+fn fzf_text(text: String) -> String {
+    text.chars()
+        .filter(|c| *c != ']' && !c.is_control())
+        .collect()
+}
+
 pub fn actions_prompt() -> String {
-    t("plugin.telescope.prompt.actions")
+    fzf_text(t("plugin.telescope.prompt.actions"))
 }
 pub fn files_prompt() -> String {
-    t("plugin.telescope.prompt.files")
+    fzf_text(t("plugin.telescope.prompt.files"))
 }
 pub fn search_prompt() -> String {
-    t("plugin.telescope.prompt.search")
+    fzf_text(t("plugin.telescope.prompt.search"))
 }
 fn actions_header() -> String {
-    t("plugin.telescope.header.actions")
+    fzf_text(t("plugin.telescope.header.actions"))
 }
 /// ACTIONS-ONLY header: the same hint minus the `@ files` / `/ search` affordances,
 /// which are disabled in that mode. Advertising a key that does nothing is worse
 /// than a shorter hint.
 fn actions_only_header() -> String {
-    t("plugin.telescope.header.actions_only")
+    fzf_text(t("plugin.telescope.header.actions_only"))
 }
 fn files_header() -> String {
-    t("plugin.telescope.header.files")
+    fzf_text(t("plugin.telescope.header.files"))
 }
 fn search_header() -> String {
-    t("plugin.telescope.header.search")
+    fzf_text(t("plugin.telescope.header.search"))
 }
 
 const ACTION_PREVIEW_WIN: &str = "down,3,wrap,border-top";
@@ -1062,6 +1073,41 @@ fn ask_with_prompt_default(prompt: &str, default: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn fzf_text_drops_the_bracket_and_control_characters() {
+        assert_eq!(fzf_text("a]b\nc\td".to_string()), "abcd");
+        assert_eq!(fzf_text("Archivos ›".to_string()), "Archivos ›");
+    }
+
+    #[test]
+    fn every_language_keeps_three_distinct_prompts() {
+        // mode_of tells the modes apart by prompt text, so two equal
+        // translations would put fzf in the wrong mode.
+        for lang in crate::i18n::languages() {
+            let prompts: Vec<String> = ["actions", "files", "search"]
+                .iter()
+                .map(|mode| {
+                    fzf_text(crate::i18n::text_in(
+                        lang,
+                        &format!("plugin.telescope.prompt.{mode}"),
+                    ))
+                })
+                .collect();
+            assert_ne!(
+                prompts[0], prompts[1],
+                "{lang}: actions and files prompts match"
+            );
+            assert_ne!(
+                prompts[0], prompts[2],
+                "{lang}: actions and search prompts match"
+            );
+            assert_ne!(
+                prompts[1], prompts[2],
+                "{lang}: files and search prompts match"
+            );
+        }
+    }
 
     #[test]
     fn at_switch_enters_files_on_at() {

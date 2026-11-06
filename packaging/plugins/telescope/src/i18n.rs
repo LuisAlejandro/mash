@@ -139,6 +139,18 @@ pub fn t(key: &str) -> String {
     lookup(active(), key)
 }
 
+/// The text for `key` in one supported language, falling back to English.
+#[allow(dead_code)]
+pub fn text_in(lang: &str, key: &str) -> String {
+    lookup(&table_for(lang), key)
+}
+
+/// Every supported language code, in catalog order.
+#[allow(dead_code)]
+pub fn languages() -> impl Iterator<Item = &'static str> {
+    CATALOGS.iter().map(|(code, _)| *code)
+}
+
 /// Replace `{name}` placeholders in a translated template.
 pub fn fill(template: &str, vars: &[(&str, &str)]) -> String {
     vars.iter()
