@@ -215,6 +215,10 @@ p=sys.argv[1]; d=json.load(open(p)); d["mcpServers"].pop("mcp-b"); json.dump(d,o
 PY
 run_sync >/dev/null 2>&1
 chk "unmodified dropped file removed" '[ ! -e "$d/config/ghostty/themes/Monokai" ]'
+# The dropped theme was the only file in themes/, so the directory goes with it;
+# config/ghostty still holds the user's config, so the walk stops there.
+chk "a directory the drop emptied is removed" '[ ! -e "$d/config/ghostty/themes" ]'
+chk "a directory that still has files stays" '[ -f "$d/config/ghostty/config" ]'
 chk "record forgot it" '! rec_has config/ghostty/themes/Monokai'
 chk "edited file still present" '[ -f "$d/pi/agent/skills/demo/SKILL.md" ]'
 chk "dropped unchanged MCP server removed" 'python3 - "$d/pi/agent/mcp.json" <<PY

@@ -916,6 +916,16 @@ def main():
                 files.pop(key, None)
             except OSError:
                 pass
+            else:
+                # Take the directories the drop emptied with it, up to (never
+                # including) the data folder; a non-empty one stops the walk.
+                parent = os.path.dirname(target)
+                while os.path.realpath(parent) != os.path.realpath(data):
+                    try:
+                        os.rmdir(parent)
+                    except OSError:
+                        break
+                    parent = os.path.dirname(parent)
         # A modified dropped default stays and remains tracked. If the user later
         # restores the shipped bytes, a subsequent release can safely remove it.
 
