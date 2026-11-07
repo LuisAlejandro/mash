@@ -17,13 +17,16 @@
   ⌘⇧1-9      Zu Tab N wechseln                                    ⌘⌥P        Snippets (Snippet-Ausführer)
   ⌘⇧M        Tab umbenennen                                       ⌘P         Dateisuche
   ⌘⇧W        Tab schließen                                        ⌘⇧P        Befehlspalette
-── Bereiche ──                                                    ⌘⌥L        Sitzungssuche
-  ⌘⌥← ↓ ↑ →  Bereich links / unten / oben / rechts fokussieren    ⌘K / ⌘L    Anmerken -- aufnehmen / einfügen
-  ⌘⌥[ / ⌘⌥]  Vorherigen / nächsten Bereich wählen                 ⌘⇧L        Anmerkungen verwalten
-  ⌘⌥\ ⌘⌥-    Vertikal / horizontal teilen                         ⌥G         Link oder ID wählen
-  ⌘⌥W        Bereich schließen                                    ⌘⇧X        Plugin-Verwaltung
-  ⌘⌥Z        Bereich zoomen                                       ⌘⌥Y        Agent aus Nachricht abzweigen
-  ⌘⌥R        Größenmodus
+  ⌘⌥⇧[       Tab nach links verschieben                           ⌘⌥⇧F       Dateien und Aktionen durchsuchen
+  ⌘⌥⇧]       Tab nach rechts verschieben                          ⌘⌥L        Sitzungssuche
+── Bereiche ──                                                    ⌘K / ⌘L    Anmerken -- aufnehmen / einfügen
+  ⌘⌥← ↓ ↑ →  Bereich links / unten / oben / rechts fokussieren    ⌘⇧L        Anmerkungen verwalten
+  ⌘⌥[ / ⌘⌥]  Vorherigen / nächsten Bereich wählen                 ⌥G         Link oder ID wählen
+  ⌘⌥\ ⌘⌥-    Vertikal / horizontal teilen                         ⌘⇧X        Plugin-Verwaltung
+  ⌘⌥W        Bereich schließen                                    ⌘⌥Y        Agent aus Nachricht abzweigen
+  ⌘⌥Z        Bereich zoomen                                       ⌘⌥⇧Y       Agent neben Bereich abzweigen
+  ⌘⌥R        Größenmodus                                          ⌘⌃Y        Agent in neuen Arbeitsbereich abzweigen
+  ⌘⌥K        Bereich leeren
                                                                 ── Global ──
 ── Editor ──                                                      ⌘⇧I        Hilfe
   ⌘O         Datei öffnen                                         ⌘I         Einstellungen

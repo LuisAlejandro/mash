@@ -6,6 +6,7 @@ trước khi Mash tồn tại -- nên di chuyển ô dùng Ctrl+Super, và đổ
 gian làm việc tránh Ctrl+Alt+Shift+R. Trong ô, shell giữ mỗi tổ hợp Ctrl đơn
 (Ctrl+C, Ctrl+R, Ctrl+U) và Fresh giữ các tổ hợp soạn thảo.
 
+  Ctrl+Alt+Shift+K     Xóa khung
   Ctrl+Alt+W           Đóng ô
   Ctrl+Shift+W         Đóng thẻ
   Ctrl+Alt+Shift+W     Đóng không gian làm việc
@@ -16,6 +17,8 @@ gian làm việc tránh Ctrl+Alt+Shift+R. Trong ô, shell giữ mỗi tổ hợp
   Ctrl+Super+Up        Tới ô bên trên
   Ctrl+Alt+Shift+G     Đi tới phiên
   Ctrl+Shift+I         Trợ giúp
+  Alt+Shift+[          Di chuyển tab sang trái
+  Alt+Shift+]          Di chuyển tab sang phải
   Ctrl+Shift+Down      Tác nhân tiếp theo
   Ctrl+Alt+]           Ô tiếp theo
   Ctrl+Tab             Thẻ tiếp theo
@@ -57,7 +60,10 @@ gian làm việc tránh Ctrl+Alt+Shift+R. Trong ô, shell giữ mỗi tổ hợp
   Ctrl+Alt+Shift+E     Cây làm việc mới (hồ sơ bố cục)
   Ctrl+Alt+Shift+O     Chọn không gian làm việc
   Ctrl+Shift+P         Bảng lệnh
+  Ctrl+Alt+Shift+F     Tìm tệp và thao tác
   Ctrl+Alt+Shift+Y     Tách tác tử từ tin nhắn
+  Ctrl+Super+Y         Tạo nhánh Agent bên cạnh khung
+  Ctrl+Super+Shift+Y   Tạo nhánh Agent vào không gian làm việc mới
   Ctrl+Alt+Shift+L     Tìm kiếm phiên
 
 Sao chép / dán: Ctrl+Shift+C / Ctrl+Shift+V, hoặc dùng chuột. Tổ hợp soạn thảo

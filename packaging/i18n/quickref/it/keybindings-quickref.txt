@@ -17,13 +17,16 @@
   ⌘⇧1-9      Passa alla scheda N                            ⌘⌥P        Snippet (esecutore di snippet)
   ⌘⇧M        Rinomina scheda                                ⌘P         Ricerca file
   ⌘⇧W        Chiudi scheda                                  ⌘⇧P        Palette dei comandi
-── Riquadri ──                                              ⌘⌥L        Ricerca sessioni
-  ⌘⌥← ↓ ↑ →  Fuoco riquadro sinistra / giù / su / destra    ⌘K / ⌘L    Annota -- cattura / incolla
-  ⌘⌥[ / ⌘⌥]  Riquadro precedente / successivo               ⌘⇧L        Annotazioni -- gestisci
-  ⌘⌥\ ⌘⌥-    Dividi verticale / orizzontale                 ⌥G         Scegli link o ID
-  ⌘⌥W        Chiudi riquadro                                ⌘⇧X        Gestore plugin
-  ⌘⌥Z        Zoom riquadro                                  ⌘⌥Y        Deriva agente da messaggio
-  ⌘⌥R        Modalità dimensione
+  ⌘⌥⇧[       Sposta scheda a sinistra                       ⌘⌥⇧F       Cerca file e azioni
+  ⌘⌥⇧]       Sposta scheda a destra                         ⌘⌥L        Ricerca sessioni
+── Riquadri ──                                              ⌘K / ⌘L    Annota -- cattura / incolla
+  ⌘⌥← ↓ ↑ →  Fuoco riquadro sinistra / giù / su / destra    ⌘⇧L        Annotazioni -- gestisci
+  ⌘⌥[ / ⌘⌥]  Riquadro precedente / successivo               ⌥G         Scegli link o ID
+  ⌘⌥\ ⌘⌥-    Dividi verticale / orizzontale                 ⌘⇧X        Gestore plugin
+  ⌘⌥W        Chiudi riquadro                                ⌘⌥Y        Deriva agente da messaggio
+  ⌘⌥Z        Zoom riquadro                                  ⌘⌥⇧Y       Biforca agente accanto al riquadro
+  ⌘⌥R        Modalità dimensione                            ⌘⌃Y        Biforca agente in una nuova area di lavoro
+  ⌘⌥K        Pulisci riquadro
                                                           ── Globale ──
 ── Editor ──                                                ⌘⇧I        Aiuto
   ⌘O         Apri file                                      ⌘I         Impostazioni

@@ -6,6 +6,7 @@ GNOME ยึดสองชุดนั้นไว้และคืนไม�
 และการเปลี่ยนชื่อพื้นที่ทำงานหลีกเลี่ยง Ctrl+Alt+Shift+R ในบาน เชลล์เก็บชุด
 Ctrl เดี่ยวๆ (Ctrl+C, Ctrl+R, Ctrl+U) ไว้ และ Fresh เก็บชุดแก้ไขไว้
 
+  Ctrl+Alt+Shift+K     ล้างพาเนล
   Ctrl+Alt+W           ปิดบาน
   Ctrl+Shift+W         ปิดแท็บ
   Ctrl+Alt+Shift+W     ปิดพื้นที่ทำงาน
@@ -16,6 +17,8 @@ Ctrl เดี่ยวๆ (Ctrl+C, Ctrl+R, Ctrl+U) ไว้ และ Fresh �
   Ctrl+Super+Up        ไปที่บานด้านบน
   Ctrl+Alt+Shift+G     ไปที่เซสชัน
   Ctrl+Shift+I         วิธีใช้
+  Alt+Shift+[          ย้ายแท็บไปทางซ้าย
+  Alt+Shift+]          ย้ายแท็บไปทางขวา
   Ctrl+Shift+Down      เอเจนต์ถัดไป
   Ctrl+Alt+]           บานถัดไป
   Ctrl+Tab             แท็บถัดไป
@@ -57,7 +60,10 @@ Ctrl เดี่ยวๆ (Ctrl+C, Ctrl+R, Ctrl+U) ไว้ และ Fresh �
   Ctrl+Alt+Shift+E     เวิร์กทรีใหม่ (โปรไฟล์เลย์เอาต์)
   Ctrl+Alt+Shift+O     เลือกพื้นที่ทำงาน
   Ctrl+Shift+P         พาเลตคำสั่ง
+  Ctrl+Alt+Shift+F     ค้นหาไฟล์และการกระทำ
   Ctrl+Alt+Shift+Y     แยกเอเจนต์จากข้อความ
+  Ctrl+Super+Y         แยกเอเจนต์ไว้ข้างพาเนล
+  Ctrl+Super+Shift+Y   แยกเอเจนต์ไปยังเวิร์กสเปซใหม่
   Ctrl+Alt+Shift+L     ค้นหาเซสชัน
 
 คัดลอก / วาง: Ctrl+Shift+C / Ctrl+Shift+V หรือใช้เมาส์ ชุดแก้ไขของ Fresh

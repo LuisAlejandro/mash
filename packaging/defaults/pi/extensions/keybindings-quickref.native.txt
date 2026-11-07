@@ -55,6 +55,17 @@ menu, and Pi's Left arrow.
   ;                Command palette
   Shift+Y          Fork agent from message
   Shift+E          Session search
+  Ctrl+F           Search files and actions
+  Ctrl+Y           Fork agent beside current pane
+  Ctrl+Shift+Y     Fork agent into new workspace
+  {                Previous workspace
+  }                Next workspace
+  Shift+↑          Previous agent
+  Shift+↓          Next agent
+  Shift+←          Move tab left
+  Shift+→          Move tab right
+  Shift+Backspace  Remove worktree
+  Ctrl+K           Clear pane
 
   ── Fresh (its own default keys) ──
   Ctrl+S           Save

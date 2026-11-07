@@ -7,6 +7,7 @@ Ctrl+Super を使い、ワークスペースの名前変更は Ctrl+Alt+Shift+R
 を避けます。ペインの中ではシェルが Ctrl
 単体のコード（Ctrl+C、Ctrl+R、Ctrl+U）を、Fresh が編集のコードを保ちます。
 
+  Ctrl+Alt+Shift+K     ペインをクリア
   Ctrl+Alt+W           ペインを閉じる
   Ctrl+Shift+W         タブを閉じる
   Ctrl+Alt+Shift+W     ワークスペースを閉じる
@@ -17,6 +18,8 @@ Ctrl+Super を使い、ワークスペースの名前変更は Ctrl+Alt+Shift+R
   Ctrl+Super+Up        上のペインへ
   Ctrl+Alt+Shift+G     セッションへ移動
   Ctrl+Shift+I         ヘルプ
+  Alt+Shift+[          タブを左へ移動
+  Alt+Shift+]          タブを右へ移動
   Ctrl+Shift+Down      次のエージェント
   Ctrl+Alt+]           次のペイン
   Ctrl+Tab             次のタブ
@@ -58,7 +61,10 @@ Ctrl+Super を使い、ワークスペースの名前変更は Ctrl+Alt+Shift+R
   Ctrl+Alt+Shift+E     新しいワークツリー（レイアウトプロファイル）
   Ctrl+Alt+Shift+O     ワークスペースの選択
   Ctrl+Shift+P         コマンドパレット
+  Ctrl+Alt+Shift+F     ファイルとアクションを検索
   Ctrl+Alt+Shift+Y     メッセージからエージェントを分岐
+  Ctrl+Super+Y         ペインの横にエージェントを分岐
+  Ctrl+Super+Shift+Y   新しいワークスペースにエージェントを分岐
   Ctrl+Alt+Shift+L     セッション検索
 
 コピー / 貼り付け: Ctrl+Shift+C / Ctrl+Shift+V、またはマウス。Fresh

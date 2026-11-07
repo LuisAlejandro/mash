@@ -19,6 +19,10 @@ For each, the Cursor-style table (MashMenus' plain tables, window.blp's
 defaults/herdr/keys.native.toml. Native items send a prefix sequence such as
 `ctrl+b>n`.
 
+The check also runs the other way: every chord a keymap binds must have a menu
+item in that mode on that platform, or an entry in NOT_IN_MENU saying why not.
+Without it a new binding silently never reaches the menus.
+
 Usage: menu-chords.py <ghostty-src> [<packaging-dir>]
 Exits non-zero and names every offending item.
 """
@@ -77,7 +81,11 @@ def herdr_chords(path):
         if name == "command":
             continue
         for chord in value if isinstance(value, list) else [value]:
-            # "cmd+ctrl+1..9" is a range, not a chord an item can send.
+            # "cmd+ctrl+1..9" is a range, not a chord an item can send, and the
+            # indexed selectors (tab, workspace and agent by number) are
+            # deliberately keyboard-only: nine menu items per family would bury
+            # the actions that have no other route. Skipping the range here is
+            # what exempts them from the coverage check below.
             if isinstance(chord, str) and chord and ".." not in chord:
                 found.add(normalise(chord))
     for command in keys.get("command", []):
@@ -106,33 +114,40 @@ HERDR_STOCK = {
 
 
 def native_display(chord):
-    """Show a Herdr prefix sequence in the GTK Native menu's label."""
+    """Show a Herdr prefix sequence in the GTK Native menu's label: the key as
+    typed, lowercase plain and uppercase shifted, e.g. "Ctrl+B t", "Ctrl+B T",
+    "Ctrl+B {", "Ctrl+B Ctrl+K", "Ctrl+B Shift+Tab"."""
     prefix, key = chord.split(">", 1)
     if prefix != HERDR_PREFIX:
         return None
-    shifted = key.startswith("shift+")
-    if shifted:
-        key = key[len("shift+"):]
-    if key == "tab":
-        key = ("Shift+" if shifted else "") + "Tab"
-    elif shifted and key == "slash":
-        key = "?"
-    else:
-        key = {"minus": "-", "semicolon": ";", "backtick": "`"}.get(key, key)
-        if shifted:
-            key = key.upper() if len(key) == 1 else "Shift+" + key
-    return "Ctrl+B " + key
+    parts = key.split("+")
+    mods, key = parts[:-1], parts[-1]
+    shifted_char = {"slash": "?", "bracket_left": "{", "bracket_right": "}"}
+    named = {"tab": "Tab", "backspace": "Backspace", "arrow_up": "Up", "arrow_down": "Down",
+             "arrow_left": "Left", "arrow_right": "Right"}
+    punct = {"minus": "-", "semicolon": ";", "backtick": "`", "backquote": "`",
+             "bracket_left": "[", "bracket_right": "]"}
+    if mods == ["shift"] and key in shifted_char:
+        return "Ctrl+B " + shifted_char[key]
+    if mods == ["shift"] and len(key) == 1:
+        return "Ctrl+B " + key.upper()
+    name = named.get(key) or punct.get(key) or (key.upper() if mods else key)
+    return "Ctrl+B " + "".join(m.capitalize() + "+" for m in mods) + name
 
 
 def native_chords(path):
     """Every sequence the Native Herdr keymap binds: stock keys, minus the ones
-    keys.native.toml unbinds, plus its Mash commands."""
+    keys.native.toml unbinds, plus the keys it gives unbound actions and its
+    Mash commands."""
     native = tomllib.loads(path.read_text(encoding="utf-8"))
     found = set()
     for action, key in HERDR_STOCK.items():
         if native["keys"].get(action) != "":
             found.add(normalise(f"{HERDR_PREFIX}>{key}"))
-    for key in native["commands"].values():
+    # Actions Herdr leaves unbound, given a prefix key by keys.native.toml.
+    for key in list(native["keys"].values()) + list(native["commands"].values()):
+        if not key:
+            continue
         found.add(normalise(key.replace("prefix+", HERDR_PREFIX + ">", 1)))
     return found
 
@@ -185,6 +200,24 @@ def linux_items(src):
     return tables
 
 
+# Bound chords that deliberately have no menu item of their own, with why. Every
+# other chord a keymap binds must appear in that mode's menu on both platforms,
+# so a new binding fails here until someone decides where it belongs.
+NOT_IN_MENU = {
+    "cursor": {
+        normalise("f24"): "the neutered prefix key, not an action",
+        normalise("cmd+shift+n"): "synonym of New Dev Tab (cmd+t)",
+        normalise("cmd+alt+n"): "synonym of New Agent Tab (cmd+alt+t)",
+        normalise("ctrl+shift+n"): "synonym of New Dev Tab (ctrl+alt+t)",
+        normalise("ctrl+alt+n"): "synonym of New Agent Tab (ctrl+alt+shift+t)",
+    },
+    "native": {
+        normalise("ctrl+b>c"): "stock new tab; the dev-tab plugin shapes it into New Dev Tab",
+        normalise("ctrl+b>w"): "Herdr's own picker; the menu's Workspace Picker is the sesh plugin",
+    },
+}
+
+
 def main(argv):
     if not 2 <= len(argv) <= 3:
         raise SystemExit(f"usage: {argv[0]} <ghostty-src> [<packaging-dir>]")
@@ -205,6 +238,12 @@ def main(argv):
             ("native", native, "the Native keymap"),
         ):
             items = tables[mode]
+            shown = {normalise(chord) for _, chord in items}
+            for chord in sorted(bound - shown - set(NOT_IN_MENU[mode])):
+                problems.append(
+                    f"{platform} {mode}: {source} binds {chord}, which no menu item "
+                    "sends; add an item or list it in NOT_IN_MENU"
+                )
             if len(items) < 30:
                 problems.append(
                     f"{platform} {mode}: found only {len(items)} menu chords; the "

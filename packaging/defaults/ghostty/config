@@ -212,10 +212,6 @@ keybind = super+alt+arrow_right=unbind
 keybind = super+alt+arrow_up=unbind
 keybind = super+alt+arrow_down=unbind
 
-# Release cmd+shift+backspace so Herdr uses it for close_workspace, matching
-# Orca's workspace.delete (also Backspace-based). Was never bound in Ghostty.
-keybind = super+shift+backspace=unbind
-
 # Release cmd+k so Herdr's annotate.capture receives it. Ghostty gives up
 # clear_screen; ctrl+l (terminal-native) still clears the screen.
 keybind = super+k=unbind

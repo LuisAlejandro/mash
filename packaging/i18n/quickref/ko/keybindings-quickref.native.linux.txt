@@ -54,6 +54,17 @@ Ctrl+B(파일 탐색기), Pi의 Ctrl+B(커서 왼쪽), OpenCode의 Ctrl+B(백그
   ;                명령 팔레트
   Shift+Y          메시지에서 에이전트 분기
   Shift+E          세션 검색
+  Ctrl+F           파일 및 동작 검색
+  Ctrl+Y           창 옆에 에이전트 분기
+  Ctrl+Shift+Y     새 워크스페이스로 에이전트 분기
+  {                이전 워크스페이스
+  }                다음 워크스페이스
+  Shift+↑          이전 에이전트
+  Shift+↓          다음 에이전트
+  Shift+←          탭을 왼쪽으로 이동
+  Shift+→          탭을 오른쪽으로 이동
+  Shift+Backspace  워크트리 제거
+  Ctrl+K           창 지우기
 
   ── Fresh (기본 단축키) ──
   Ctrl+S           저장
