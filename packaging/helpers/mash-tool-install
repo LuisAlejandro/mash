@@ -17,6 +17,11 @@
 #
 # Exit 3 means "provided by the system": the tool is expected from the platform
 # package manager, so setup should report it and continue rather than fail.
+# Exit 4 means "not available for this platform": the manifest scopes the tool
+# out of the target because its upstream publishes no build for it there (for
+# example Sentrux on Intel Macs). Setup reports it and continues. Any other
+# failure, including a tool that is pinned for the target but cannot install,
+# still exits 1.
 #
 #   mash-tool-install sentrux
 #   mash-tool-install cua-driver linux-arm64
@@ -98,6 +103,14 @@ fi
 trap 'rm -rf "$lock"' EXIT
 
 spec="$("$resolver_python" "$manifest" resolve-shell "$component" "$target")" || {
+  # A tool the manifest deliberately scopes out of this target is not a failed
+  # install: there is nothing to install. Anything else that cannot resolve is.
+  applies=0
+  "$resolver_python" "$manifest" applies "$component" "$target" >/dev/null 2>&1 || applies=$?
+  if [ "$applies" = 4 ]; then
+    say "$component is not available for $target; skipping"
+    exit 4
+  fi
   say "$component is not pinned for $target"
   exit 1
 }

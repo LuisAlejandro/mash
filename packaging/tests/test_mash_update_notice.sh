@@ -49,7 +49,12 @@ stub() { # stub NAME BODY -- a fake tool on the isolated PATH
   printf '#!/bin/bash\n%s\n' "$2" >"$fake/$1"
   chmod +x "$fake/$1"
 }
-stub uname 'echo "${FAKE_UNAME:-Linux}"'
+# `uname -m` answers the CPU the updater must match; an OS-only stub would let a
+# helper pick the DMG for the wrong architecture and still look green.
+stub uname 'case "${1:-}" in
+-m) echo "${FAKE_ARCH:-$(/usr/bin/uname -m)}" ;;
+*) echo "${FAKE_UNAME:-Linux}" ;;
+esac'
 stub sleep ':'
 stub dpkg-query '[ -n "${FAKE_INSTALLED:-}" ] || exit 1; printf %s "$FAKE_INSTALLED"'
 stub apt-cache 'printf "letsmash:\n  Installed: %s\n  Candidate: %s\n" "${FAKE_INSTALLED:-(none)}" "${FAKE_CANDIDATE:-}"'
@@ -57,9 +62,17 @@ stub apt-cache 'printf "letsmash:\n  Installed: %s\n  Candidate: %s\n" "${FAKE_I
 stub dpkg '[ "$1" = --compare-versions ] && [ "$3" = gt ] || exit 2
 [ "$2" != "$4" ] && [ "$(printf "%s\n%s\n" "$2" "$4" | sort -V | tail -1)" = "$2" ]'
 # One release payload, shaped like the GitHub API's.
+# The payload names the DMG for this machine's CPU, because a release that
+# carries no asset for an architecture offers nothing to install there.
 stub curl 'echo "curl $*" >>"$CALLS"
 [ -n "${FAKE_CURL_RC:-}" ] && exit "$FAKE_CURL_RC" 2>/dev/null
-printf "{\"tag_name\": \"%s\", \"name\": \"Release\"}\n" "${FAKE_RELEASE-0.2.0}"'
+case "$(uname -m)" in
+arm64) arch=arm64 ;;
+*) arch=amd64 ;;
+esac
+[ -n "${FAKE_NO_ASSET:-}" ] && arch=other
+release="${FAKE_RELEASE-0.2.0}"
+printf "{\"tag_name\": \"%s\", \"name\": \"Release\", \"assets\": [{\"name\": \"Mash-%s-mac-%s.dmg\"}]}\n" "$release" "$release" "$arch"'
 stub notify-send 'echo "notify $*" >>"$CALLS"'
 stub clear ':'
 stub gdbus 'echo "gdbus $*" >>"$CALLS"; exit "${FAKE_GDBUS_RC:-0}"'
@@ -283,6 +296,29 @@ mac_manual FAKE_RELEASE=not-a-version
 check "manual check rejects an unparseable release tag" \
   grep -q 'MASH_UPDATE_STATUS=check-unavailable' "$calls"
 
+# --- an architecture the release does not cover ---------------------------------
+# macos-amd64 has a DMG only while Intel is a released target. When a release
+# carries none, this Mac is told it is up to date instead of being handed a
+# download built for a different CPU.
+fresh mac-manual-no-asset
+setversion 0.1.1
+mac_manual FAKE_RELEASE=0.3.0 FAKE_NO_ASSET=1
+check "a release without this CPU's DMG reports up to date" \
+  grep -q 'MASH_UPDATE_STATUS=up-to-date' "$calls"
+check "a release without this CPU's DMG reports up to date" \
+  grep -q 'MASH_UPDATE_STATUS=up-to-date' "$calls"
+check "the missing architecture is logged" \
+  grep -q 'has no amd64 DMG for this Mac\|has no arm64 DMG for this Mac' \
+  "$data/local/state/update-notice.log"
+
+fresh mac-auto-no-asset
+setversion 0.1.1
+mac FAKE_RELEASE=0.3.0 FAKE_NO_ASSET=1
+check "an automatic check announces nothing without this CPU's DMG" \
+  bash -c '! grep -qE "notify|popup" "$1"' _ "$calls"
+check "no release is recorded without this CPU's DMG" \
+  test ! -e "$data/local/state/update-notice"
+
 fresh linux-manual-current
 run_manual FAKE_INSTALLED=0.2.0 FAKE_CANDIDATE=0.2.0
 check "manual Linux check reports that Mash is up to date" \
@@ -489,6 +525,37 @@ env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" \
   >"$tmp/status-out" 2>"$tmp/status-stderr" || true
 check "image popup without mash-t prints English" \
   grep -q 'No image to show:' "$tmp/status-out"
+
+# --- a build with no release channel (macos-amd64) never updates ---------------
+# build.sh drops Resources/updates-disabled for any target the official releases
+# do not cover. The automatic check and the manual one must both honour it.
+nochan="$tmp/nochannel/Mash.app/Contents/Resources"
+mkdir -p "$nochan/bin"
+cp "$helper" "$nochan/bin/mash-update-notice"
+cp "$fake/herdr" "$nochan/bin/herdr"
+printf '#!/bin/bash\necho "notify $*" >>"$CALLS"\n' >"$nochan/bin/mash-notify"
+chmod +x "$nochan/bin/mash-notify"
+printf '0.1.1\n' >"$nochan/VERSION"
+printf 'No release channel for macos-amd64; updates are disabled in this build.\n' >"$nochan/updates-disabled"
+
+fresh mac-disabled
+env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" FAKE_UNAME=Darwin FAKE_RELEASE=0.9.0 \
+  bash "$nochan/bin/mash-update-notice" "$nochan" "$data" 2>"$tmp/stderr"
+check "a build without a release channel never asks GitHub" test "$(count curl)" = 0
+check "an automatic launch announces nothing" test ! -s "$calls"
+check "no release is recorded" test ! -e "$data/local/state/update-notice"
+check "the check time is not recorded" test ! -e "$data/local/state/update-checked"
+check "the reason is logged" grep -q 'updates are disabled' "$data/local/state/update-notice.log"
+
+: >"$calls"
+env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" FAKE_UNAME=Darwin FAKE_RELEASE=0.9.0 \
+  bash "$nochan/bin/mash-update-notice" --manual "$nochan" "$data" 2>"$tmp/stderr"
+check "a manual check still never asks GitHub" test "$(count curl)" = 0
+check "a manual check opens a notice pane that says why" \
+  grep -q 'popup plugin pane open --plugin mash-update-notice --entrypoint notice .*MASH_UPDATE_STATUS=updates-disabled' "$calls"
+check "a manual check offers no update" grep -q 'MASH_UPDATE_CAN_APPLY=0' "$calls"
+show_status updates-disabled Darwin
+check "the pane tells the user updates are disabled" grep -q 'Updates are disabled in this build' "$tmp/status-out"
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

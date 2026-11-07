@@ -6,6 +6,10 @@
       "os": "macos",
       "arch": "arm64"
     },
+    "macos-amd64": {
+      "os": "macos",
+      "arch": "amd64"
+    },
     "linux-amd64": {
       "os": "linux",
       "arch": "amd64"
@@ -17,6 +21,7 @@
   },
   "supportedTargets": [
     "macos-arm64",
+    "macos-amd64",
     "linux-amd64",
     "linux-arm64"
   ],
@@ -64,10 +69,12 @@
     "pi-ask-user",
     "pi-monokai-pro",
     "pi-web-search",
+    "typebox",
     "prettier",
     "prettier-plugin-svelte",
     "annotate",
     "herdr-terminal-notifier",
+    "terminal-notifier",
     "fullerzz.sesh",
     "herdr.auto-title",
     "persiyanov.reviewr",
@@ -92,6 +99,7 @@
       "commit": "5b53478aa719d7bcf536fe1d3591868f1a5f648e",
       "frontends": {
         "macos-arm64": "swift",
+        "macos-amd64": "swift",
         "linux-amd64": "gtk",
         "linux-arm64": "gtk"
       }
@@ -117,6 +125,12 @@
           "sha256": "f1a0773148e4ad392a75123f6ac6f23031d8957c658bb5525528aab12015bee5",
           "archive": "tar.gz",
           "member": "bin/herdr"
+        },
+        "macos-amd64": {
+          "url": "https://github.com/herdrdev/herdr/releases/download/v0.9.3/herdr-macos-x86_64",
+          "sha256": "db62d548ff3e832b087a96b1894a08d26be3905f1830309cd556783f215d4054",
+          "archive": "raw",
+          "member": "herdr-macos-x86_64"
         },
         "linux-amd64": {
           "url": "https://github.com/herdrdev/herdr/releases/download/v0.9.5/herdr-linux-x86_64",
@@ -168,6 +182,12 @@
           "archive": "tar.gz",
           "member": "node-v24.16.0-darwin-arm64"
         },
+        "macos-amd64": {
+          "url": "https://nodejs.org/dist/v24.16.0/node-v24.16.0-darwin-x64.tar.gz",
+          "sha256": "298b4c7b3cb80765c8703e42b90324a4ece3b6634947b89e769c3c980ab55185",
+          "archive": "tar.gz",
+          "member": "node-v24.16.0-darwin-x64"
+        },
         "linux-amd64": {
           "url": "https://nodejs.org/dist/v24.16.0/node-v24.16.0-linux-x64.tar.gz",
           "sha256": "2faf6a387e9b62b888e21c54f01249fb27537ffecf1842f29f4c919d0a59a0ff",
@@ -190,6 +210,12 @@
         "macos-arm64": {
           "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261003/cpython-3.13.16%2B20261003-aarch64-apple-darwin-install_only.tar.gz",
           "sha256": "d8975d7df4f08f7b1c7aafcdfacbddcec3d366415f2c1a72b2466b6850815933",
+          "archive": "tar.gz",
+          "member": "python"
+        },
+        "macos-amd64": {
+          "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261003/cpython-3.13.16%2B20261003-x86_64-apple-darwin-install_only.tar.gz",
+          "sha256": "8e9cb087305bfb8969f68a905f79f41469d4aa5220c1aa71ada7fc9953bdba0f",
           "archive": "tar.gz",
           "member": "python"
         },
@@ -223,6 +249,12 @@
           "archive": "tar.gz",
           "member": "lazygit"
         },
+        "macos-amd64": {
+          "url": "https://github.com/jesseduffield/lazygit/releases/download/v0.65.1/lazygit_0.65.1_darwin_x86_64.tar.gz",
+          "sha256": "fde13daf583511aa24c42ca154911643231a5af784c7cdd8117264b2fc035b33",
+          "archive": "tar.gz",
+          "member": "lazygit"
+        },
         "linux-amd64": {
           "url": "https://github.com/jesseduffield/lazygit/releases/download/v0.66.2/lazygit_0.66.2_linux_x86_64.tar.gz",
           "sha256": "158efc9ddfa1241fab5fb3526bb442c8dc6c4b1904d73213b9e4e93e03c52034",
@@ -245,6 +277,12 @@
         "macos-arm64": {
           "url": "https://github.com/jesseduffield/lazydocker/releases/download/v0.25.2/lazydocker_0.25.2_Darwin_arm64.tar.gz",
           "sha256": "4a54d7b4abdf255b2bce9806641eac5568d5b7fbc820c1b5d3f9e34ea1367d60",
+          "archive": "tar.gz",
+          "member": "lazydocker"
+        },
+        "macos-amd64": {
+          "url": "https://github.com/jesseduffield/lazydocker/releases/download/v0.25.2/lazydocker_0.25.2_Darwin_x86_64.tar.gz",
+          "sha256": "af70b6e234089aa24924db25fc201d17f224e76d334e743e4595d30cf83a013b",
           "archive": "tar.gz",
           "member": "lazydocker"
         },
@@ -273,6 +311,12 @@
           "archive": "tar.gz",
           "member": "pet"
         },
+        "macos-amd64": {
+          "url": "https://github.com/knqyf263/pet/releases/download/v1.0.1/pet_1.0.1_darwin_amd64.tar.gz",
+          "sha256": "463504d65d898ea62ef38d513e852fb4e9068993276a600085947231237a4ff9",
+          "archive": "tar.gz",
+          "member": "pet"
+        },
         "linux-amd64": {
           "url": "https://github.com/knqyf263/pet/releases/download/v1.0.1/pet_1.0.1_linux_amd64.tar.gz",
           "sha256": "be6ca6b64953f3c63430b1519382bdf56a062a03944b9a3723513b285c91dd20",
@@ -298,6 +342,12 @@
           "archive": "raw",
           "member": "viu-aarch64-apple-darwin"
         },
+        "macos-amd64": {
+          "url": "https://github.com/atanunq/viu/releases/download/v1.6.1/viu-x86_64-apple-darwin",
+          "sha256": "5caacc8c8bcac5eb1b0e933947e01a1fb412211b9d40f925610636cb7e13154a",
+          "archive": "raw",
+          "member": "viu-x86_64-apple-darwin"
+        },
         "linux-amd64": {
           "url": "https://github.com/atanunq/viu/releases/download/v1.6.1/viu-x86_64-unknown-linux-musl",
           "sha256": "f108265ff0441406290d5f53f64a2b88d4db530a7389a5dcd771bf782aa3ec6e",
@@ -322,6 +372,12 @@
           "sha256": "644e92d5667e2ebbc00758c71d5974bc907d238eaa6cdc32b24eb73dce7f9a5a",
           "archive": "tar.gz",
           "member": "atuin-aarch64-apple-darwin/atuin"
+        },
+        "macos-amd64": {
+          "url": "https://github.com/atuinsh/atuin/releases/download/v18.23.0/atuin-x86_64-apple-darwin.tar.gz",
+          "sha256": "f87ff4bef3f818f81474713dfc964008793a77ade12f8076f9a82237695a587a",
+          "archive": "tar.gz",
+          "member": "atuin-x86_64-apple-darwin/atuin"
         },
         "linux-amd64": {
           "url": "https://github.com/atuinsh/atuin/releases/download/v18.24.5/atuin-x86_64-unknown-linux-gnu.tar.gz",
@@ -383,6 +439,12 @@
           "archive": "zip",
           "member": "gh_2.103.3_macOS_arm64/bin/gh"
         },
+        "macos-amd64": {
+          "url": "https://github.com/cli/cli/releases/download/v2.103.3/gh_2.103.3_macOS_amd64.zip",
+          "sha256": "a2f86418f4350ae6e9ec60d5000bdf7665728436946a97fc27fe50e6ae752682",
+          "archive": "zip",
+          "member": "gh_2.103.3_macOS_amd64/bin/gh"
+        },
         "linux-amd64": {
           "url": "https://github.com/cli/cli/releases/download/v2.103.3/gh_2.103.3_linux_amd64.tar.gz",
           "sha256": "4c806978ffce1cec70853302a56d70ac6da4f19bae7adca4e1a8ab00633dd91d",
@@ -418,6 +480,12 @@
           "archive": "gz",
           "member": "rust-analyzer"
         },
+        "macos-amd64": {
+          "url": "https://github.com/rust-lang/rust-analyzer/releases/download/2026-09-28/rust-analyzer-x86_64-apple-darwin.gz",
+          "sha256": "d032c0eb75e4597cc8ffc35ea4cdbd9eecc8341936b6edac6749e679fc3f0682",
+          "archive": "gz",
+          "member": "rust-analyzer"
+        },
         "linux-amd64": {
           "url": "https://github.com/rust-lang/rust-analyzer/releases/download/2026-11-02/rust-analyzer-x86_64-unknown-linux-gnu.gz",
           "sha256": "5249da68c3f36bb77ea7d401824f5e8bd8d0a47a162daf5f72208eb7c1bf1500",
@@ -438,6 +506,12 @@
       "install": "user",
       "artifacts": {
         "macos-arm64": {
+          "url": "https://github.com/artempyanykh/marksman/releases/download/2026-02-08/marksman-macos",
+          "sha256": "6a801c17b5ac0dba69787c5282b3b3bd416e66c96253fae098d311c6bbd1833b",
+          "archive": "raw",
+          "member": "marksman-macos"
+        },
+        "macos-amd64": {
           "url": "https://github.com/artempyanykh/marksman/releases/download/2026-02-08/marksman-macos",
           "sha256": "6a801c17b5ac0dba69787c5282b3b3bd416e66c96253fae098d311c6bbd1833b",
           "archive": "raw",
@@ -465,6 +539,12 @@
         "macos-arm64": {
           "url": "https://github.com/latex-lsp/texlab/releases/download/v5.26.0/texlab-aarch64-macos.tar.gz",
           "sha256": "af7972ffd230711ba04ada9b69cc32ce9111d9196ba69538062872faefdbee56",
+          "archive": "tar.gz",
+          "member": "texlab"
+        },
+        "macos-amd64": {
+          "url": "https://github.com/latex-lsp/texlab/releases/download/v5.26.0/texlab-x86_64-macos.tar.gz",
+          "sha256": "6091611f756b28e1a57612b130c196df4b0bb6e22dde5cf5d890578513397daf",
           "archive": "tar.gz",
           "member": "texlab"
         },
@@ -505,7 +585,12 @@
           "archive": "raw",
           "member": "latexindent-linux-arm64"
         }
-      }
+      },
+      "targets": [
+        "macos-arm64",
+        "linux-amd64",
+        "linux-arm64"
+      ]
     },
     "bash-language-server": {
       "version": "5.8.1",
@@ -573,6 +658,12 @@
       "install": "bundled",
       "package": "pi-web-search"
     },
+    "typebox": {
+      "version": "1.3.36",
+      "strategy": "npm",
+      "install": "bundled",
+      "package": "typebox"
+    },
     "shfmt": {
       "referenceVersion": "3.14.1",
       "strategy": "package",
@@ -606,8 +697,25 @@
       "ref": "master",
       "commit": "321cb6e18df7c5e42030c019ed9e7c812f8998f5",
       "targets": [
-        "macos-arm64"
+        "macos-arm64",
+        "macos-amd64"
       ]
+    },
+    "terminal-notifier": {
+      "version": "2.0.0",
+      "strategy": "binary",
+      "install": "bundled",
+      "targets": [
+        "macos-amd64"
+      ],
+      "artifacts": {
+        "macos-amd64": {
+          "url": "https://github.com/julienXX/terminal-notifier/releases/download/2.0.0/terminal-notifier-2.0.0.zip",
+          "sha256": "316e767d979d12adb12c3538931b245108f8b1064af44087414c096cb3376d0c",
+          "archive": "zip",
+          "member": "terminal-notifier.app/Contents/MacOS/terminal-notifier"
+        }
+      }
     },
     "fullerzz.sesh": {
       "version": "0.16.0",
@@ -691,7 +799,12 @@
           "grammars_url": "https://github.com/sentrux/sentrux/releases/download/v0.5.7/grammars-linux-aarch64.tar.gz",
           "grammars_sha256": "f1fb8b4d10f962f3cdca71eaf68662dfa971e50e22d3b8947d1bc229c417f253"
         }
-      }
+      },
+      "targets": [
+        "macos-arm64",
+        "linux-amd64",
+        "linux-arm64"
+      ]
     },
     "hindsight-embed": {
       "version": "1.2.0",
@@ -715,6 +828,12 @@
           "sha256": "5f71191c082ca07c9dfc13b7c9a6eec60a82818c245a93534cc0eb7911471d72",
           "archive": "tar.gz",
           "member": "cua-driver-rs-0.38.0-darwin-arm64"
+        },
+        "macos-amd64": {
+          "url": "https://github.com/trycua/cua/releases/download/cua-driver-rs-v0.33.3/cua-driver-rs-0.33.3-darwin-x86_64.tar.gz",
+          "sha256": "c1ca411206ba703137d4a3cf4b6f7e1f62511e1e12e7de238a36b40cfcc484f3",
+          "archive": "tar.gz",
+          "member": "cua-driver-rs-0.33.3-darwin-x86_64"
         },
         "linux-amd64": {
           "url": "https://github.com/trycua/cua/releases/download/cua-driver-rs-v0.38.0/cua-driver-rs-0.38.0-linux-x86_64.tar.gz",
@@ -759,6 +878,12 @@
           "archive": "tar.gz",
           "member": "."
         },
+        "macos-amd64": {
+          "url": "https://static.rust-lang.org/dist/rust-1.98.1-x86_64-apple-darwin.tar.gz",
+          "sha256": "443a1165abbac41c9143b83ff837c0fb1d8c03d2f8fb1da27427bc9fc646aad3",
+          "archive": "tar.gz",
+          "member": "."
+        },
         "linux-amd64": {
           "url": "https://static.rust-lang.org/dist/rust-1.98.1-x86_64-unknown-linux-gnu.tar.gz",
           "sha256": "24ba1338a2d35c5a3247936546429e163fa674d726102af18bdf624582c57aea",
@@ -784,6 +909,12 @@
           "archive": "tar.gz",
           "member": "."
         },
+        "macos-amd64": {
+          "url": "https://go.dev/dl/go1.26.4.darwin-amd64.tar.gz",
+          "sha256": "05dc9b5f9997744520aaebb3d5deaa7c755371aebbfb7f97c2511a9f3367538d",
+          "archive": "tar.gz",
+          "member": "."
+        },
         "linux-amd64": {
           "url": "https://go.dev/dl/go1.26.4.linux-amd64.tar.gz",
           "sha256": "1153d3d50e0ac764b447adfe05c2bcf08e889d42a02e0fe0259bd47f6733ad7f",
@@ -806,6 +937,12 @@
         "macos-arm64": {
           "url": "https://github.com/starship/starship/releases/download/v1.27.0/starship-aarch64-apple-darwin.tar.gz",
           "sha256": "5362da8cb2928f98f3ce0ffda697cf0f8de70081db000dae316d6d3a404f6cf0",
+          "archive": "tar.gz",
+          "member": "starship"
+        },
+        "macos-amd64": {
+          "url": "https://github.com/starship/starship/releases/download/v1.27.0/starship-x86_64-apple-darwin.tar.gz",
+          "sha256": "344e4d38787e0aa86dd522ae5462e6fb6da1227691f81a79ffed480a4563ccb3",
           "archive": "tar.gz",
           "member": "starship"
         },

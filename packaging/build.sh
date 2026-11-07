@@ -25,17 +25,25 @@ case "$dest" in
 esac
 
 home="$(dscl . -read "/Users/$(id -un)" NFSHomeDirectory | awk '{print $2}')"
-[ "$(uname -m)" = "arm64" ] || {
-  echo "Mash builds for arm64 only." >&2
+case "$(uname -m)" in
+arm64 | x86_64) ;;
+*)
+  echo "Mash builds for arm64 or x86_64 macOS only." >&2
   exit 1
-}
+  ;;
+esac
 # The manifest target this build resolves every pinned artifact for. The Linux
-# adapter derives it the same way; nothing may assume a literal.
+# adapter derives it the same way; nothing may assume a literal. Apple silicon is
+# the official, released build; Intel (macos-amd64) is built from source with the
+# pins the manifest keeps for it.
 target="$(python3 "$root/packaging/assets.py" target)"
-[ "$target" = "macos-arm64" ] || {
-  echo "expected target macos-arm64, resolved $target" >&2
+case "$target" in
+macos-arm64 | macos-amd64) ;;
+*)
+  echo "expected target macos-arm64 or macos-amd64, resolved $target" >&2
   exit 1
-}
+  ;;
+esac
 
 ship_helpers=(
   mash-bin
@@ -203,8 +211,20 @@ mash_resolve herdr "$target" || {
   echo "could not resolve the pinned herdr bottle" >&2
   exit 1
 }
-fetch_bottle herdr "$URL" "$SHA256"
-take_bin herdr "$(bottle_bin herdr herdr)"
+case "$URL" in
+https://ghcr.io/*)
+  fetch_bottle herdr "$URL" "$SHA256"
+  take_bin herdr "$(bottle_bin herdr herdr)"
+  ;;
+*)
+  # A plain release binary (macos-amd64). It links only system libraries, so
+  # there is no bottle and nothing to embed.
+  mash_fetch_pinned herdr "$target" "$work/tools" || {
+    echo "could not stage the pinned herdr binary" >&2
+    exit 1
+  }
+  ;;
+esac
 
 # Host utilities (git, gh, fzf, fd, bat, rg, jq, delta, eza, zoxide) and
 # Fresh's formatters and language servers are installed on the user's machine
@@ -222,8 +242,13 @@ take_bin herdr "$(bottle_bin herdr herdr)"
 ghostty_fork="${MASH_GHOSTTY_SRC:-$home/Development/ghostty}"
 [ -d "$ghostty_fork/.git" ] || ghostty_fork="/Volumes/Documents/Software/ghostty"
 ghostty_zig_version="0.16.0"
-ghostty_zig_url="https://ziglang.org/download/0.16.0/zig-aarch64-macos-0.16.0.tar.xz"
+case "$(uname -m)" in
+arm64) zig_arch=aarch64 ;;
+*) zig_arch=x86_64 ;;
+esac
+ghostty_zig_url="https://ziglang.org/download/$ghostty_zig_version/zig-$zig_arch-macos-$ghostty_zig_version.tar.xz"
 zig_bin="/Volumes/Documents/Software/tools/zig-$ghostty_zig_version/zig"
+[ -x "$zig_bin" ] || zig_bin="$home/Development/tools/zig-$ghostty_zig_version/zig"
 # The identifier is Xcode-version-specific, so it is read back from the Xcode
 # in use rather than hardcoded: an Xcode update changes it, and `xcrun metal`
 # fails for a known-but-uninstalled toolchain while silently ignoring an
@@ -437,6 +462,17 @@ data_compat="v1:$(shasum -a 256 "$root/packaging/pins.txt" | awk '{print $1}')"
 # The shared seed ownership helper needs the same release id on macOS as on
 # Linux, where build-common.sh already stages Resources/VERSION.
 printf '%s\n' "$version" >"$app/Contents/Resources/VERSION"
+# A release publishes a DMG for each macOS target listed here, so those builds
+# update themselves like any other. A target outside this set has no release
+# channel of its own, and this marker keeps mash-update-notice from asking
+# GitHub or offering it a download built for a different CPU.
+case "$target" in
+macos-arm64 | macos-amd64) ;;
+*)
+  printf 'No release channel for %s; updates are disabled in this build.\n' "$target" \
+    >"$app/Contents/Resources/updates-disabled"
+  ;;
+esac
 
 # The fork's MainMenu.xib carries the Mash names, so nothing is rewritten here.
 # This only asserts the result: no compiled nib may still show Ghostty to a user.

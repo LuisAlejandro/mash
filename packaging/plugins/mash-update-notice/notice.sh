@@ -45,6 +45,11 @@ up-to-date)
       "version=${installed:-unknown}")"
   fi
   ;;
+updates-disabled)
+  printf '\n  Updates are disabled in this build of Mash (%s).\n\n' "${installed:-unknown}"
+  printf '  Official releases do not cover this architecture.\n'
+  printf '  To update, rebuild Mash from source.   (any key closes)'
+  ;;
 restart-required)
   printf '%s' "$(mash_say plugin.mash-update-notice.pane.restart-required \
     $'\n  Mash {installed} is running; Mash {candidate} is already installed.\n\n  Save work and restart Mash to use the installed version.\n  No download is needed.   (any key closes)' \

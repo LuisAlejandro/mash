@@ -21,6 +21,15 @@
 #include <time.h>
 #include <unistd.h>
 
+/* The executable this helper identifies is the one running on this host, so the
+ * Mach-O slice it reads is the host's own: arm64 on Apple silicon, x86_64 on
+ * Intel. Hardcoding arm64 made every Intel build fail to find its own UUID. */
+#if defined(__arm64__)
+#define MASH_CPU_TYPE CPU_TYPE_ARM64
+#else
+#define MASH_CPU_TYPE CPU_TYPE_X86_64
+#endif
+
 static int info(pid_t pid, struct proc_bsdinfo *p) {
     return proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, p, sizeof(*p)) == sizeof(*p) && p->pbi_uid == getuid() && p->pbi_status != SZOMB;
 }
@@ -48,7 +57,7 @@ static int uuid(const char *path) {
         const struct fat_arch *arch = (const void *)(base + sizeof(*fat));
         int found = 0;
         for (uint32_t i = 0; i < count; i++) {
-            if (OSSwapBigToHostInt32(arch[i].cputype) == CPU_TYPE_ARM64) {
+            if (OSSwapBigToHostInt32(arch[i].cputype) == MASH_CPU_TYPE) {
                 offset = OSSwapBigToHostInt32(arch[i].offset);
                 length = OSSwapBigToHostInt32(arch[i].size);
                 found = 1; break;
@@ -58,7 +67,7 @@ static int uuid(const char *path) {
     }
     if (offset > size || length > size - offset || length < sizeof(struct mach_header_64)) goto bad;
     const struct mach_header_64 *header = (const void *)(base + offset);
-    if (header->magic != MH_MAGIC_64 || header->cputype != CPU_TYPE_ARM64 || header->sizeofcmds > length - sizeof(*header)) goto bad;
+    if (header->magic != MH_MAGIC_64 || header->cputype != MASH_CPU_TYPE || header->sizeofcmds > length - sizeof(*header)) goto bad;
     size_t pos = offset + sizeof(*header), end = pos + header->sizeofcmds;
     for (uint32_t i = 0; i < header->ncmds; i++) {
         if (pos > end || end - pos < sizeof(struct load_command)) goto bad;
