@@ -129,6 +129,18 @@ mash_macos_candidate() {
     return 1
   fi
   mash_write "$checked" "$now"
+  # The asset a Mac can install is named for its own CPU. A release that carries
+  # no asset for this architecture offers nothing to this Mac, so the check is
+  # "no newer version" rather than a failed or impossible download.
+  local arch
+  case "$(uname -m)" in
+  arm64) arch=arm64 ;;
+  x86_64) arch=amd64 ;;
+  *)
+    mash_log "macos: $(uname -m) is not an architecture the updater knows"
+    return 1
+    ;;
+  esac
   local body
   if ! body="$(curl -fsSL --max-time 10 \
     -H 'Accept: application/vnd.github+json' \
@@ -136,16 +148,30 @@ mash_macos_candidate() {
     mash_log "macos: release check failed"
     return 1
   fi
-  candidate="$(printf '%s' "$body" | python3 -c 'import json,sys
+  local parsed present
+  parsed="$(printf '%s' "$body" | python3 -c 'import json,sys
+arch = sys.argv[1]
 try:
-    print(json.load(sys.stdin).get("tag_name", "").strip().lstrip("vV"))
+    data = json.load(sys.stdin)
 except Exception:
-    pass' 2>/dev/null)"
+    raise SystemExit(0)
+tag = str(data.get("tag_name", "")).strip().lstrip("vV")
+names = {asset.get("name", "") for asset in data.get("assets", [])}
+print(tag)
+print("1" if "Mash-%s-mac-%s.dmg" % (tag, arch) in names else "0")' "$arch" 2>/dev/null)"
+  candidate="$(printf '%s\n' "$parsed" | sed -n '1p')"
+  present="$(printf '%s\n' "$parsed" | sed -n '2p')"
   if [ -z "$candidate" ] || [[ ! "$candidate" =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]; then
     mash_log "macos: release tag '$candidate' is not a Mash version"
     return 1
   fi
+  # The check itself succeeded, so a release that has no DMG for this Mac means
+  # "nothing new for you", not "update checking is broken".
   check_ok=1
+  if [ "$present" != 1 ]; then
+    mash_log "macos: $candidate has no $arch DMG for this Mac"
+    return 1
+  fi
   mash_version_gt "$candidate" "$installed"
 }
 

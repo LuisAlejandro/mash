@@ -49,7 +49,12 @@ stub() { # stub NAME BODY -- a fake tool on the isolated PATH
   printf '#!/bin/bash\n%s\n' "$2" >"$fake/$1"
   chmod +x "$fake/$1"
 }
-stub uname 'echo "${FAKE_UNAME:-Linux}"'
+# `uname -m` answers the CPU the updater must match; an OS-only stub would let a
+# helper pick the DMG for the wrong architecture and still look green.
+stub uname 'case "${1:-}" in
+-m) echo "${FAKE_ARCH:-$(/usr/bin/uname -m)}" ;;
+*) echo "${FAKE_UNAME:-Linux}" ;;
+esac'
 stub sleep ':'
 stub dpkg-query '[ -n "${FAKE_INSTALLED:-}" ] || exit 1; printf %s "$FAKE_INSTALLED"'
 stub apt-cache 'printf "letsmash:\n  Installed: %s\n  Candidate: %s\n" "${FAKE_INSTALLED:-(none)}" "${FAKE_CANDIDATE:-}"'
@@ -57,9 +62,17 @@ stub apt-cache 'printf "letsmash:\n  Installed: %s\n  Candidate: %s\n" "${FAKE_I
 stub dpkg '[ "$1" = --compare-versions ] && [ "$3" = gt ] || exit 2
 [ "$2" != "$4" ] && [ "$(printf "%s\n%s\n" "$2" "$4" | sort -V | tail -1)" = "$2" ]'
 # One release payload, shaped like the GitHub API's.
+# The payload names the DMG for this machine's CPU, because a release that
+# carries no asset for an architecture offers nothing to install there.
 stub curl 'echo "curl $*" >>"$CALLS"
 [ -n "${FAKE_CURL_RC:-}" ] && exit "$FAKE_CURL_RC" 2>/dev/null
-printf "{\"tag_name\": \"%s\", \"name\": \"Release\"}\n" "${FAKE_RELEASE-0.2.0}"'
+case "$(uname -m)" in
+arm64) arch=arm64 ;;
+*) arch=amd64 ;;
+esac
+[ -n "${FAKE_NO_ASSET:-}" ] && arch=other
+release="${FAKE_RELEASE-0.2.0}"
+printf "{\"tag_name\": \"%s\", \"name\": \"Release\", \"assets\": [{\"name\": \"Mash-%s-mac-%s.dmg\"}]}\n" "$release" "$release" "$arch"'
 stub notify-send 'echo "notify $*" >>"$CALLS"'
 stub clear ':'
 stub gdbus 'echo "gdbus $*" >>"$CALLS"; exit "${FAKE_GDBUS_RC:-0}"'
@@ -282,6 +295,29 @@ setversion 0.1.1
 mac_manual FAKE_RELEASE=not-a-version
 check "manual check rejects an unparseable release tag" \
   grep -q 'MASH_UPDATE_STATUS=check-unavailable' "$calls"
+
+# --- an architecture the release does not cover ---------------------------------
+# macos-amd64 has a DMG only while Intel is a released target. When a release
+# carries none, this Mac is told it is up to date instead of being handed a
+# download built for a different CPU.
+fresh mac-manual-no-asset
+setversion 0.1.1
+mac_manual FAKE_RELEASE=0.3.0 FAKE_NO_ASSET=1
+check "a release without this CPU's DMG reports up to date" \
+  grep -q 'MASH_UPDATE_STATUS=up-to-date' "$calls"
+check "a release without this CPU's DMG reports up to date" \
+  grep -q 'MASH_UPDATE_STATUS=up-to-date' "$calls"
+check "the missing architecture is logged" \
+  grep -q 'has no amd64 DMG for this Mac\|has no arm64 DMG for this Mac' \
+  "$data/local/state/update-notice.log"
+
+fresh mac-auto-no-asset
+setversion 0.1.1
+mac FAKE_RELEASE=0.3.0 FAKE_NO_ASSET=1
+check "an automatic check announces nothing without this CPU's DMG" \
+  bash -c '! grep -qE "notify|popup" "$1"' _ "$calls"
+check "no release is recorded without this CPU's DMG" \
+  test ! -e "$data/local/state/update-notice"
 
 fresh linux-manual-current
 run_manual FAKE_INSTALLED=0.2.0 FAKE_CANDIDATE=0.2.0
