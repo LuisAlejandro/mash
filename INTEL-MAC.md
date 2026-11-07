@@ -144,8 +144,8 @@ RUST_TEST_THREADS=4 make test                    # see the note below
 - Rough duration on an i9-9980HK: ~45 min cold; `make test`, ~5 min.
 - `build.sh` deletes `dist/.build` on start (toolchains are downloaded again)
   but keeps `dist/.cargo-target` if it fails, so a retry recompiles little.
-- `build.sh` idempotently applies the menu patches to the copy of the Ghostty
-  fork (`mash-ghostty-patch-menu`), so that copy ends up modified.
+- `build.sh` builds the menu into the terminal from the fork itself; it does not
+  patch the checkout, so the Ghostty tree stays as the pin left it.
 - Homebrew no longer publishes bottles for Intel, so installing tools (for
   example `git-lfs`) compiles from source.
 
