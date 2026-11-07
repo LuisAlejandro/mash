@@ -78,13 +78,27 @@ isolate_run() {
 
 [ -f "$root/i18n/languages.json" ] || fail "missing $root/i18n/languages.json"
 
-# de: the chosen language, its own locale, and no LC_* left over from the
-# environment the app was started from.
+locales_available="$({ locale -a || true; } 2>/dev/null)"
+
+# de: the chosen language, and no LC_* left over from the environment the app
+# was started from. Where the host ships de_DE.UTF-8, LANG names it; on Linux
+# without that locale, AE8 applies (C.UTF-8 + LANGUAGE) like the vi stub below.
 home="$tmp/home-de"
 set_language "$home" de
 out="$(isolate_env "$home" "/usr/bin:/bin" \
 	LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 LC_TIME=en_US.UTF-8 LC_NUMERIC=de_DE.UTF-8)"
-assert_value "$out" LANG de_DE.UTF-8
+if printf '%s\n' "$locales_available" | grep -iE '^de_DE\.utf-?8$' >/dev/null; then
+	assert_value "$out" LANG de_DE.UTF-8
+	assert_absent "$out" LANGUAGE
+else
+	case "$(uname -s)" in
+	Linux)
+		assert_value "$out" LANG C.UTF-8
+		assert_value "$out" LANGUAGE de_DE
+		;;
+	*) fail "expected de_DE.UTF-8 on this host, but locale -a lists none" ;;
+	esac
+fi
 assert_value "$out" MASH_LANGUAGE de
 assert_value "$out" MASH_I18N_DIR "$tmp/app/i18n"
 assert_absent "$out" LC_ALL
@@ -94,8 +108,7 @@ assert_absent "$out" LC_NUMERIC
 # AE5: the locale is real, not just an environment string. Only where the host
 # actually ships it -- a Linux image without de_DE.UTF-8 cannot print German day
 # names, and that case is AE8's fallback below, not this one.
-locales="$({ locale -a || true; } 2>/dev/null)"
-if printf '%s\n' "$locales" | grep -iE '^de_DE\.utf-?8$' >/dev/null; then
+if printf '%s\n' "$locales_available" | grep -iE '^de_DE\.utf-?8$' >/dev/null; then
 	home="$tmp/home-date"
 	set_language "$home" de
 	epoch=1700000000
@@ -246,7 +259,9 @@ printf '%s:x:0:0::%s:/bin/sh\n' "$(id -un)" "$HOME"
 EOF
 cat >"$pane_stub/account-shell" <<'EOF'
 #!/bin/sh
-printf 'LANG=%s\n' "${LANG:-}"
+printf 'LANG=%s' "${LANG:-}"
+[ -n "${LANGUAGE:-}" ] && printf ' LANGUAGE=%s' "$LANGUAGE"
+printf '\n'
 EOF
 chmod 755 "$pane_stub/dscl" "$pane_stub/getent" "$pane_stub/account-shell"
 cp "$root/mash-shell" "$root/lib.sh" "$tmp/pane/bin/"
@@ -257,10 +272,34 @@ pane_lang() {
 	env -i HOME="$home" PATH="$pane_stub:/usr/bin:/bin" MASH_BIN="$tmp/pane/bin" \
 		MASH_USER_SHELL="$pane_stub/account-shell" bash "$tmp/pane/bin/mash-shell"
 }
-[ "$(pane_lang)" = "LANG=es_MX.UTF-8" ] || fail "a new pane did not pick up language=es: $(pane_lang)"
-set_language "$home" ja
-[ "$(pane_lang)" = "LANG=ja_JP.UTF-8" ] ||
-	fail "a pane kept the old language after the file changed: $(pane_lang)"
+if printf '%s\n' "$locales_available" | grep -iE '^es_MX\.utf-?8$' >/dev/null; then
+	[ "$(pane_lang)" = "LANG=es_MX.UTF-8" ] ||
+		fail "a new pane did not pick up language=es: $(pane_lang)"
+	set_language "$home" ja
+	if printf '%s\n' "$locales_available" | grep -iE '^ja_JP\.utf-?8$' >/dev/null; then
+		[ "$(pane_lang)" = "LANG=ja_JP.UTF-8" ] ||
+			fail "a pane kept the old language after the file changed: $(pane_lang)"
+	else
+		case "$(uname -s)" in
+		Linux)
+			[ "$(pane_lang)" = "LANG=C.UTF-8 LANGUAGE=ja_JP" ] ||
+				fail "a pane kept the old language after the file changed: $(pane_lang)"
+			;;
+		*) fail "expected ja_JP.UTF-8 on this host, but locale -a lists none" ;;
+		esac
+	fi
+else
+	case "$(uname -s)" in
+	Linux)
+		[ "$(pane_lang)" = "LANG=C.UTF-8 LANGUAGE=es_MX" ] ||
+			fail "a new pane did not pick up language=es: $(pane_lang)"
+		set_language "$home" ja
+		[ "$(pane_lang)" = "LANG=C.UTF-8 LANGUAGE=ja_JP" ] ||
+			fail "a pane kept the old language after the file changed: $(pane_lang)"
+		;;
+	*) fail "expected es_MX.UTF-8 on this host, but locale -a lists none" ;;
+	esac
+fi
 
 # KTD1: the map lib.sh keeps cannot drift from the language table.
 rows=0

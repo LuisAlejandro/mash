@@ -51,13 +51,23 @@ log="$(mktemp)"
 trap 'rm -f "$log"' EXIT
 
 run_suites() {
-	local label="$1" s
+	local label="$1" s status
 	shift
 	for s in "${suites[@]}"; do
-		if ! env "$@" bash "$s" >"$log" 2>&1; then
+		env "$@" bash "$s" >"$log" 2>&1
+		status=$?
+		case "$status" in
+		0) ;;
+		77)
+			# Same convention as ./scripts/test.sh: optional suites skip with 77.
+			cat "$log" >&2
+			printf 'SKIP: %s under %s\n' "$s" "$label" >&2
+			;;
+		*)
 			cat "$log" >&2
 			fail "$s failed under $label"
-		fi
+			;;
+		esac
 	done
 	printf 'PASS: %d suite(s) under %s\n' "${#suites[@]}" "$label"
 }

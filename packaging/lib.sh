@@ -223,14 +223,16 @@ mash_isolate_language() {
   if code="$(mash_language_code "$d")"; then
     locale="$(mash_language_locale "$code")"
     export MASH_LANGUAGE="$code"
-    export LANG="$locale"
-    # Only a recorded language changes the locale; nothing is set above for an
-    # English or unknown install beyond the catalog location.
+    # Clear LC_* before setting LANG: an inherited LC_NUMERIC (etc.) makes Bash
+    # reconcile every category to the old locale while LANG names the new one,
+    # and `locale -a` in mash_language_locale_missing then reads availability
+    # for the wrong name (R5, AE8; packaging/tests/test_mash_language_env.sh).
     for name in LC_ALL LC_ADDRESS LC_COLLATE LC_CTYPE LC_IDENTIFICATION \
       LC_MEASUREMENT LC_MESSAGES LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER \
       LC_TELEPHONE LC_TIME; do
       unset "$name"
     done
+    export LANG="$locale"
     if [ "${MASH_UNAME:-$(uname -s)}" = Linux ] && mash_language_locale_missing "$locale"; then
       export LANG=C.UTF-8
       # gettext's own form (pt_BR, not pt-BR); it falls back from ll_CC to ll.
