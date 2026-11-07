@@ -815,23 +815,25 @@ def sync_bundled_pi_packages(files):
     if npm_dir and os.path.isdir(npm_dir) and not os.path.islink(npm_dir):
         dropped = []
         for name, want in bundled.items():
-            installed = os.path.join(npm_dir, "node_modules", *name.split("/"))
+            installed = safe_target("pi/agent/npm/node_modules/" + name)
+            if installed is None or os.path.islink(installed):
+                continue
             try:
                 with open(os.path.join(installed, "package.json"), encoding="utf-8") as fh:
                     have = version_tuple(str(json.load(fh).get("version", "")))
             except (OSError, ValueError, AttributeError):
                 continue
-            if not have or have >= version_tuple(want) or os.path.islink(installed):
+            if not have or have >= version_tuple(want):
                 continue
             shutil.rmtree(installed, ignore_errors=True)
             if not os.path.exists(installed):
                 dropped.append(name)
-        manifest = os.path.join(npm_dir, "package.json")
-        if dropped and os.path.isfile(manifest):
+        manifest = safe_target("pi/agent/npm/package.json")
+        if dropped and manifest and os.path.isfile(manifest) and not os.path.islink(manifest):
             try:
                 with open(manifest, encoding="utf-8") as fh:
                     pkg = json.load(fh)
-                deps = pkg.get("dependencies")
+                deps = pkg.get("dependencies") if isinstance(pkg, dict) else None
                 if isinstance(deps, dict) and any(name in deps for name in dropped):
                     for name in dropped:
                         deps.pop(name, None)

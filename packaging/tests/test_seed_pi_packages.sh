@@ -80,6 +80,51 @@ printf '2.0.1\n' >"$res/VERSION"
 run_sync
 chk "a second pass changes nothing" '[ "$(cat "$s" "$d/pi/agent/npm/package.json" | cksum)" = "$before" ]'
 
+# A user can relocate their npm tree, a scope, or one package with a symlink.
+# Never traverse one to delete a package outside Mash's data directory.
+for relative in node_modules node_modules/@scope node_modules/pi-subagents; do
+  d="$tmp/data-${relative//\//-}"
+  outside="$tmp/outside-${relative//\//-}"
+  link="$d/pi/agent/npm/$relative"
+  case "$relative" in
+    node_modules) metadata="$outside/pi-subagents/package.json" ;;
+    node_modules/@scope) metadata="$outside/pi-theme/package.json" ;;
+    *) metadata="$outside/package.json" ;;
+  esac
+  mkdir -p "$(dirname "$metadata")" "$(dirname "$link")"
+  printf '{"version":"0.1.0"}\n' >"$metadata"
+  cp "$metadata" "$tmp/expected.json"
+  ln -s "$outside" "$link"
+  printf '{"dependencies":{"pi-subagents":"^0.76.0","@scope/pi-theme":"^0.1.0"}}\n' \
+    >"$d/pi/agent/npm/package.json"
+  cp "$d/pi/agent/npm/package.json" "$tmp/expected-npm.json"
+  if ! run_sync; then fail "sync with symlinked $relative"; fi
+  chk "outside package behind $relative stays intact" 'cmp -s "$metadata" "$tmp/expected.json"'
+  chk "the $relative symlink stays intact" '[ -L "$link" ]'
+  chk "dependencies behind $relative stay registered" \
+    'cmp -s "$d/pi/agent/npm/package.json" "$tmp/expected-npm.json"'
+done
+
+# Cleanup may not replace a user's symlinked manifest, and a non-object
+# manifest must not crash first-launch reconciliation.
+for kind in symlink nonobject; do
+  d="$tmp/data-manifest-$kind"
+  installed pi-subagents 0.76.0
+  manifest="$d/pi/agent/npm/package.json"
+  if [ "$kind" = symlink ]; then
+    printf '{"dependencies":{"pi-subagents":"^0.76.0"}}\n' >"$tmp/outside-manifest.json"
+    ln -s "$tmp/outside-manifest.json" "$manifest"
+  else
+    printf '[]\n' >"$tmp/outside-manifest.json"
+    cp "$tmp/outside-manifest.json" "$manifest"
+  fi
+  if ! run_sync; then fail "sync with $kind npm manifest"; fi
+  chk "a $kind npm manifest is kept" 'cmp -s "$manifest" "$tmp/outside-manifest.json"'
+  if [ "$kind" = symlink ]; then
+    chk "the npm manifest symlink is kept" '[ -L "$manifest" ]'
+  fi
+done
+
 echo
 if [ "$failures" -eq 0 ]; then
   echo "test_seed_pi_packages: PASSED"
