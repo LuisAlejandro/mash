@@ -6,6 +6,7 @@ Ctrl은 편집 수식키이므로 Mash 자체의 키 가족은 Ctrl+Alt와 Ctrl+
 워크스페이스 이름 바꾸기는 Ctrl+Alt+Shift+R을 피합니다. 창 안에서는 셸이 Ctrl
 하나짜리 조합(Ctrl+C, Ctrl+R, Ctrl+U)을, Fresh가 편집 조합을 그대로 가집니다.
 
+  Ctrl+Alt+Shift+K     창 지우기
   Ctrl+Alt+W           창 닫기
   Ctrl+Shift+W         탭 닫기
   Ctrl+Alt+Shift+W     워크스페이스 닫기
@@ -16,6 +17,8 @@ Ctrl은 편집 수식키이므로 Mash 자체의 키 가족은 Ctrl+Alt와 Ctrl+
   Ctrl+Super+Up        위 창으로
   Ctrl+Alt+Shift+G     세션으로 이동
   Ctrl+Shift+I         도움말
+  Alt+Shift+[          탭을 왼쪽으로 이동
+  Alt+Shift+]          탭을 오른쪽으로 이동
   Ctrl+Shift+Down      다음 에이전트
   Ctrl+Alt+]           다음 창
   Ctrl+Tab             다음 탭
@@ -57,7 +60,10 @@ Ctrl은 편집 수식키이므로 Mash 자체의 키 가족은 Ctrl+Alt와 Ctrl+
   Ctrl+Alt+Shift+E     새 작업 트리 (레이아웃 프로필)
   Ctrl+Alt+Shift+O     작업 공간 선택
   Ctrl+Shift+P         명령 팔레트
+  Ctrl+Alt+Shift+F     파일 및 동작 검색
   Ctrl+Alt+Shift+Y     메시지에서 에이전트 분기
+  Ctrl+Super+Y         창 옆에 에이전트 분기
+  Ctrl+Super+Shift+Y   새 워크스페이스로 에이전트 분기
   Ctrl+Alt+Shift+L     세션 검색
 
 복사 / 붙여 넣기: Ctrl+Shift+C / Ctrl+Shift+V, 또는 마우스. Fresh 자체의 편집

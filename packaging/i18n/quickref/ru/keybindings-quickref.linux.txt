@@ -7,6 +7,7 @@ Ctrl+Alt и Ctrl+Shift. Два захвата GNOME сидят в этом пр�
 избегает Ctrl+Alt+Shift+R. Внутри панели оболочка сохраняет каждый голый
 аккорд Ctrl (Ctrl+C, Ctrl+R, Ctrl+U), а Fresh — аккорды правки.
 
+  Ctrl+Alt+Shift+K     Очистить панель
   Ctrl+Alt+W           Закрыть панель
   Ctrl+Shift+W         Закрыть вкладку
   Ctrl+Alt+Shift+W     Закрыть пространство
@@ -17,6 +18,8 @@ Ctrl+Alt и Ctrl+Shift. Два захвата GNOME сидят в этом пр�
   Ctrl+Super+Up        Фокус на панель сверху
   Ctrl+Alt+Shift+G     Перейти к сессии
   Ctrl+Shift+I         Справка
+  Alt+Shift+[          Переместить вкладку влево
+  Alt+Shift+]          Переместить вкладку вправо
   Ctrl+Shift+Down      Следующий агент
   Ctrl+Alt+]           Следующая панель
   Ctrl+Tab             Следующая вкладка
@@ -58,7 +61,10 @@ Ctrl+Alt и Ctrl+Shift. Два захвата GNOME сидят в этом пр�
   Ctrl+Alt+Shift+E     Новое рабочее дерево (профиль раскладки)
   Ctrl+Alt+Shift+O     Выбор рабочего пространства
   Ctrl+Shift+P         Палитра команд
+  Ctrl+Alt+Shift+F     Поиск по файлам и действиям
   Ctrl+Alt+Shift+Y     Ответвить агента из сообщения
+  Ctrl+Super+Y         Форк агента рядом с панелью
+  Ctrl+Super+Shift+Y   Форк агента в новое рабочее пространство
   Ctrl+Alt+Shift+L     Поиск по сессиям
 
 Копировать/вставить: Ctrl+Shift+C / Ctrl+Shift+V или мышь. Аккорды правки

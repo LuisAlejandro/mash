@@ -7,6 +7,7 @@ por isso o foco do painel usa Ctrl+Super, e renomear o espaço de trabalho
 evita Ctrl+Alt+Shift+R. Dentro de um painel o shell mantém cada acorde Ctrl
 sozinho (Ctrl+C, Ctrl+R, Ctrl+U) e o Fresh mantém os de edição.
 
+  Ctrl+Alt+Shift+K     Limpar painel
   Ctrl+Alt+W           Fechar painel
   Ctrl+Shift+W         Fechar aba
   Ctrl+Alt+Shift+W     Fechar espaço de trabalho
@@ -17,6 +18,8 @@ sozinho (Ctrl+C, Ctrl+R, Ctrl+U) e o Fresh mantém os de edição.
   Ctrl+Super+Up        Focar painel de cima
   Ctrl+Alt+Shift+G     Ir para a sessão
   Ctrl+Shift+I         Ajuda
+  Alt+Shift+[          Mover aba para a esquerda
+  Alt+Shift+]          Mover aba para a direita
   Ctrl+Shift+Down      Próximo agente
   Ctrl+Alt+]           Próximo painel
   Ctrl+Tab             Próxima aba
@@ -58,7 +61,10 @@ sozinho (Ctrl+C, Ctrl+R, Ctrl+U) e o Fresh mantém os de edição.
   Ctrl+Alt+Shift+E     Nova árvore de trabalho (perfil de layout)
   Ctrl+Alt+Shift+O     Seletor de espaços de trabalho
   Ctrl+Shift+P         Paleta de comandos
+  Ctrl+Alt+Shift+F     Buscar arquivos e ações
   Ctrl+Alt+Shift+Y     Bifurcar agente a partir da mensagem
+  Ctrl+Super+Y         Criar ramificação do agente ao lado do painel
+  Ctrl+Super+Shift+Y   Criar ramificação do agente em novo espaço de trabalho
   Ctrl+Alt+Shift+L     Pesquisar sessões
 
 Copiar/colar: Ctrl+Shift+C / Ctrl+Shift+V, ou o mouse. Os acordes de edição do

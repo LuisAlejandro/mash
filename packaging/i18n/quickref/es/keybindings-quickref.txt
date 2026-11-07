@@ -17,13 +17,16 @@
   ⌘⇧1-9      Cambiar a la pestaña N                                ⌘⌥P        Fragmentos (ejecutor de fragmentos)
   ⌘⇧M        Renombrar pestaña                                     ⌘P         Buscador de archivos
   ⌘⇧W        Cerrar pestaña                                        ⌘⇧P        Paleta de comandos
-── Paneles ──                                                      ⌘⌥L        Buscar en sesiones
-  ⌘⌥← ↓ ↑ →  Enfocar panel izquierda / abajo / arriba / derecha    ⌘K / ⌘L    Anotar -- capturar / pegar
-  ⌘⌥[ / ⌘⌥]  Panel anterior / siguiente                            ⌘⇧L        Anotaciones -- gestionar
-  ⌘⌥\ ⌘⌥-    Dividir vertical / horizontal                         ⌥G         Elegir enlace o ID
-  ⌘⌥W        Cerrar panel                                          ⌘⇧X        Gestor de plugins
-  ⌘⌥Z        Ampliar panel                                         ⌘⌥Y        Bifurcar agente desde un mensaje
-  ⌘⌥R        Modo de tamaño
+  ⌘⌥⇧[       Mover pestaña a la izquierda                          ⌘⌥⇧F       Buscar archivos y acciones
+  ⌘⌥⇧]       Mover pestaña a la derecha                            ⌘⌥L        Buscar en sesiones
+── Paneles ──                                                      ⌘K / ⌘L    Anotar -- capturar / pegar
+  ⌘⌥← ↓ ↑ →  Enfocar panel izquierda / abajo / arriba / derecha    ⌘⇧L        Anotaciones -- gestionar
+  ⌘⌥[ / ⌘⌥]  Panel anterior / siguiente                            ⌥G         Elegir enlace o ID
+  ⌘⌥\ ⌘⌥-    Dividir vertical / horizontal                         ⌘⇧X        Gestor de plugins
+  ⌘⌥W        Cerrar panel                                          ⌘⌥Y        Bifurcar agente desde un mensaje
+  ⌘⌥Z        Ampliar panel                                         ⌘⌥⇧Y       Bifurcar agente junto al panel
+  ⌘⌥R        Modo de tamaño                                        ⌘⌃Y        Bifurcar agente en un nuevo espacio de trabajo
+  ⌘⌥K        Limpiar panel
                                                                  ── Global ──
 ── Editor ──                                                       ⌘⇧I        Ayuda
   ⌘O         Abrir archivo                                         ⌘I         Ajustes

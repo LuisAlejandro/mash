@@ -55,6 +55,17 @@ Ctrl+E oder sein Menü verwenden, und bei Pi die Pfeiltaste links.
   ;                Befehlspalette
   Shift+Y          Agent aus Nachricht abzweigen
   Shift+E          Sitzungssuche
+  Ctrl+F           Dateien und Aktionen durchsuchen
+  Ctrl+Y           Agent neben Bereich abzweigen
+  Ctrl+Shift+Y     Agent in neuen Arbeitsbereich abzweigen
+  {                Vorheriger Arbeitsbereich
+  }                Nächster Arbeitsbereich
+  Shift+↑          Vorheriger Agent
+  Shift+↓          Nächster Agent
+  Shift+←          Tab nach links verschieben
+  Shift+→          Tab nach rechts verschieben
+  Shift+Backspace  Worktree entfernen
+  Ctrl+K           Bereich leeren
 
   ── Fresh (eigene Standardtasten) ──
   Ctrl+S           Speichern

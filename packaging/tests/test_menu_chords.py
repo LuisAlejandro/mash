@@ -85,6 +85,23 @@ class MenuChordTest(unittest.TestCase):
         for table in ("macOS cursor:", "macOS native:", "Linux cursor:", "Linux native:"):
             self.assertIn(table, result.stdout)
 
+    def test_binding_without_a_menu_item_fails(self):
+        root = fork_root()
+        if root is None:
+            self.skipTest("Ghostty fork not available (set MASH_GHOSTTY_SRC)")
+        with tempfile.TemporaryDirectory() as tmp:
+            herdr = Path(tmp) / "defaults/herdr"
+            shutil.copytree(PACKAGING / "defaults/herdr", herdr)
+            with (herdr / "config.toml").open("a") as fh:
+                fh.write('\n[[keys.command]]\nkey = "cmd+alt+shift+q"\n'
+                         'type = "shell"\ncommand = "true"\ndescription = "x"\n')
+            result = subprocess.run(
+                [sys.executable, str(CHECKER), str(root), tmp],
+                capture_output=True, text=True,
+            )
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn("alt+cmd+shift+q, which no menu item sends", result.stderr)
+
     def test_update_check_is_in_both_platform_keymaps(self):
         root = fork_root()
         if root is None:

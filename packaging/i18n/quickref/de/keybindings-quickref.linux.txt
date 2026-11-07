@@ -8,6 +8,7 @@ Arbeitsbereichs meidet Ctrl+Alt+Shift+R. Innerhalb eines Bereichs behält die
 Shell jeden bloßen Ctrl-Akkord (Ctrl+C, Ctrl+R, Ctrl+U), und Fresh behält die
 Bearbeitungstasten.
 
+  Ctrl+Alt+Shift+K     Bereich leeren
   Ctrl+Alt+W           Bereich schließen
   Ctrl+Shift+W         Tab schließen
   Ctrl+Alt+Shift+W     Arbeitsbereich schließen
@@ -18,6 +19,8 @@ Bearbeitungstasten.
   Ctrl+Super+Up        Bereich nach oben fokussieren
   Ctrl+Alt+Shift+G     Zur Sitzung gehen
   Ctrl+Shift+I         Hilfe
+  Alt+Shift+[          Tab nach links verschieben
+  Alt+Shift+]          Tab nach rechts verschieben
   Ctrl+Shift+Down      Nächster Agent
   Ctrl+Alt+]           Nächster Bereich
   Ctrl+Tab             Nächster Tab
@@ -59,7 +62,10 @@ Bearbeitungstasten.
   Ctrl+Alt+Shift+E     Neuer Worktree (Layout-Profil)
   Ctrl+Alt+Shift+O     Arbeitsbereich-Auswahl
   Ctrl+Shift+P         Befehlspalette
+  Ctrl+Alt+Shift+F     Dateien und Aktionen durchsuchen
   Ctrl+Alt+Shift+Y     Agent aus Nachricht abzweigen
+  Ctrl+Super+Y         Agent neben Bereich abzweigen
+  Ctrl+Super+Shift+Y   Agent in neuen Arbeitsbereich abzweigen
   Ctrl+Alt+Shift+L     Sitzungssuche
 
 Kopieren/Einfügen: Ctrl+Shift+C / Ctrl+Shift+V oder die Maus. Die eigenen

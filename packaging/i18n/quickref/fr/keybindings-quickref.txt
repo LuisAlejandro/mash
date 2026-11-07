@@ -17,13 +17,16 @@
   ⌘⇧1-9      Aller à l'onglet N                                  ⌘⌥P        Extraits (exécuteur d'extraits)
   ⌘⇧M        Renommer l'onglet                                   ⌘P         Recherche de fichiers
   ⌘⇧W        Fermer l'onglet                                     ⌘⇧P        Palette de commandes
-── Volets ──                                                     ⌘⌥L        Recherche de sessions
-  ⌘⌥← ↓ ↑ →  Focus volet gauche / bas / haut / droite            ⌘K / ⌘L    Annoter -- capturer / coller
-  ⌘⌥[ / ⌘⌥]  Volet précédent / suivant                           ⌘⇧L        Annotations -- gérer
-  ⌘⌥\ ⌘⌥-    Diviser vertical / horizontal                       ⌥G         Choisir un lien ou un ID
-  ⌘⌥W        Fermer le volet                                     ⌘⇧X        Gestionnaire de plugins
-  ⌘⌥Z        Zoomer le volet                                     ⌘⌥Y        Détacher un agent depuis un message
-  ⌘⌥R        Mode de taille
+  ⌘⌥⇧[       Déplacer l'onglet à gauche                          ⌘⌥⇧F       Rechercher des fichiers et des actions
+  ⌘⌥⇧]       Déplacer l'onglet à droite                          ⌘⌥L        Recherche de sessions
+── Volets ──                                                     ⌘K / ⌘L    Annoter -- capturer / coller
+  ⌘⌥← ↓ ↑ →  Focus volet gauche / bas / haut / droite            ⌘⇧L        Annotations -- gérer
+  ⌘⌥[ / ⌘⌥]  Volet précédent / suivant                           ⌥G         Choisir un lien ou un ID
+  ⌘⌥\ ⌘⌥-    Diviser vertical / horizontal                       ⌘⇧X        Gestionnaire de plugins
+  ⌘⌥W        Fermer le volet                                     ⌘⌥Y        Détacher un agent depuis un message
+  ⌘⌥Z        Zoomer le volet                                     ⌘⌥⇧Y       Dériver l'Agent à côté du volet
+  ⌘⌥R        Mode de taille                                      ⌘⌃Y        Dériver l'Agent dans un nouvel espace de travail
+  ⌘⌥K        Effacer le volet
                                                                ── Global ──
 ── Éditeur ──                                                    ⌘⇧I        Aide
   ⌘O         Ouvrir un fichier                                   ⌘I         Réglages

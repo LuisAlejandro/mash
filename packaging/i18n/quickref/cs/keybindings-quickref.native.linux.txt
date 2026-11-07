@@ -55,6 +55,17 @@ nabídku ve Fresh a levou šipku v Pi.
   ;                Paleta příkazů
   Shift+Y          Odbočit agenta ze zprávy
   Shift+E          Hledání v relacích
+  Ctrl+F           Hledat v souborech a akcích
+  Ctrl+Y           Rozvětvit agenta vedle panelu
+  Ctrl+Shift+Y     Rozvětvit agenta do nového pracovního prostoru
+  {                Předchozí pracovní prostor
+  }                Další pracovní prostor
+  Shift+↑          Předchozí agent
+  Shift+↓          Další agent
+  Shift+←          Přesunout kartu doleva
+  Shift+→          Přesunout kartu doprava
+  Shift+Backspace  Odebrat pracovní strom
+  Ctrl+K           Vymazat panel
 
   ── Fresh (vlastní výchozí klávesy) ──
   Ctrl+S           Uložit

@@ -257,6 +257,17 @@ switch_tab = "cmd+shift+1..9"
 # cmd+shift+x is where the plugin manager is bound, below.
 close_tab = "cmd+shift+w"
 
+# Move the active tab one place left or right: the tab family's cmd+shift
+# brackets plus alt for "move", the way the pane family adds alt to cmd.
+# Herdr ships both unset. Free in Ghostty (live and default) and Fresh.
+move_tab_previous = "cmd+alt+shift+["
+move_tab_next = "cmd+alt+shift+]"
+
+# Clear the focused pane's screen and scrollback. Herdr ships it unset. The
+# pane family's cmd+alt plus k, the key terminals use for clear; cmd+k itself is
+# annotate. Free in Ghostty (live and default) and Fresh.
+clear_pane = "cmd+alt+k"
+
 # cmd+shift+t: new tab running a plain shell. The native new_tab action cannot
 # serve this (see above), so the script creates the tab carrying a label the
 # dev-tab hook skips. Requires `keybind = super+shift+t=unbind` in
@@ -667,3 +678,27 @@ key = "cmd+shift+u"
 type = "shell"
 command = '"${HERDR_BIN_PATH%/*}/mash-update-notice" --manual "${HERDR_BIN_PATH%/*}/.." "$HOME/.mash"'
 description = "Check for Updates"
+
+# The full command palette: actions, files (@) and content search (/). cmd+shift+p
+# is the actions-only variant; this is its "find" sibling. Free in Ghostty
+# (live and default) and Fresh (its cmd+alt+f is find in buffer, unshifted).
+[[keys.command]]
+key = "cmd+alt+shift+f"
+type = "plugin_action"
+command = "telescope.open"
+description = "Search files and actions"
+
+# Fork the focused agent's session from a chosen message into a split beside
+# it, or into a new workspace. Siblings of cmd+alt+y: shift for the pane, the
+# workspace family's cmd+ctrl for the workspace. Free in Ghostty and Fresh.
+[[keys.command]]
+key = "cmd+alt+shift+y"
+type = "plugin_action"
+command = "fork-from-message.fork-pane"
+description = "Fork agent beside current pane"
+
+[[keys.command]]
+key = "cmd+ctrl+y"
+type = "plugin_action"
+command = "fork-from-message.fork-workspace"
+description = "Fork agent into new workspace"
