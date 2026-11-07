@@ -1501,7 +1501,6 @@ fn tools_summary(installed: usize, provided: usize, unavailable: &[&str]) -> Str
     }
     summary
 }
-}
 
 // mash-hindsight-install logs to setup/hindsight-install.log, and so on.
 fn helper_log_path(script_name: &str) -> PathBuf {
