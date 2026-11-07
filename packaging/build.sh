@@ -462,13 +462,17 @@ data_compat="v1:$(shasum -a 256 "$root/packaging/pins.txt" | awk '{print $1}')"
 # The shared seed ownership helper needs the same release id on macOS as on
 # Linux, where build-common.sh already stages Resources/VERSION.
 printf '%s\n' "$version" >"$app/Contents/Resources/VERSION"
-# Official releases, and so the updater, cover macos-arm64 only. Any other target
-# has no release channel of its own: this marker keeps mash-update-notice from
-# asking GitHub or offering it a download built for a different CPU.
-if [ "$target" != "macos-arm64" ]; then
+# A release publishes a DMG for each macOS target listed here, so those builds
+# update themselves like any other. A target outside this set has no release
+# channel of its own, and this marker keeps mash-update-notice from asking
+# GitHub or offering it a download built for a different CPU.
+case "$target" in
+macos-arm64 | macos-amd64) ;;
+*)
   printf 'No release channel for %s; updates are disabled in this build.\n' "$target" \
     >"$app/Contents/Resources/updates-disabled"
-fi
+  ;;
+esac
 
 # The fork's MainMenu.xib carries the Mash names, so nothing is rewritten here.
 # This only asserts the result: no compiled nib may still show Ghostty to a user.

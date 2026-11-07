@@ -50,7 +50,16 @@ team_of() { codesign -dv "$1" 2>&1 | sed -n 's/^TeamIdentifier=//p' | head -n 1;
 old_uuid="$("$bin/mash-update-processes" uuid "$app/Contents/MacOS/mash-terminal")" || fail 'The current executable could not be identified.'
 mash_update_bundle_is "$app" "$installed" "$old_uuid" || fail 'The installed app changed; restart Mash before updating.'
 mash_update_change old_uuid "$old_uuid" || fail 'Could not record the previous build.'
-asset="Mash-$candidate-mac-arm64.dmg"
+# Both Mac architectures are published, and a build may only install the DMG for
+# its own CPU: the other one would replace a working Mash with a bundle this Mac
+# cannot run. The suffix follows the running executable, which is also what
+# `uname -m` reports under Rosetta.
+case "$(uname -m)" in
+arm64) asset_arch=arm64 ;;
+x86_64) asset_arch=amd64 ;;
+*) fail "This Mac's architecture has no Mash update." ;;
+esac
+asset="Mash-$candidate-mac-$asset_arch.dmg"
 printf '  Downloading Mash %s...\n' "$candidate"
 curl -fL --retry 2 --max-time 1800 --progress-bar -o "$work/$asset" \
   "https://github.com/LuisAlejandro/mash/releases/download/$candidate/$asset" || fail 'Download failed.'
