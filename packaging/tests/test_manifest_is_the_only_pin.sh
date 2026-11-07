@@ -60,7 +60,7 @@ for component in fullerzz.sesh herdr.auto-title persiyanov.reviewr ray.plugin-ma
 done
 
 # npm specs carry the version in the same argument as the name.
-expect "typebox spec" "$(mash_package_spec typebox)" "typebox@$(manifest_version typebox)"
+expect "pi-subagents spec" "$(mash_package_spec pi-subagents)" "pi-subagents@$(manifest_version pi-subagents)"
 
 # --- 2. no build script still hardcodes a pinned version --------------------
 # Each entry is a component and a pattern that would appear only in a
@@ -86,7 +86,6 @@ rust_version="$(manifest_version rust)"
 go_version="$(manifest_version go)"
 fresh_version="$(manifest_version fresh)"
 zsh_version="$(manifest_version zsh-autosuggestions)"
-typebox_version="$(manifest_version typebox)"
 chrome_version="$(manifest_version chrome-devtools-mcp)"
 hindsight_version="$(manifest_version hindsight-embed)"
 skills_version="$(manifest_version mash-programming-skills)"
@@ -97,7 +96,6 @@ check_absent "rust ($rust_version)" "rust-${rust_version}-"
 check_absent "go ($go_version)" "go${go_version}\."
 check_absent "fresh ($fresh_version)" "fresh-${fresh_version}[^\"']|tags/v${fresh_version}"
 check_absent "zsh-autosuggestions ($zsh_version)" "zsh-autosuggestions-${zsh_version}"
-check_absent "typebox ($typebox_version)" "typebox@${typebox_version}"
 check_absent "chrome-devtools-mcp ($chrome_version)" "chrome-devtools-mcp@${chrome_version}"
 check_absent "hindsight ($hindsight_version)" "printf '${hindsight_version}"
 check_absent "mash-programming-skills ($skills_version)" "!= \"${skills_version}\""

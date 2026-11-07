@@ -312,6 +312,7 @@ mash_seed_all() {
   mash_seed_missing "$res/defaults/plugins" "$d/config/herdr/plugins/config" || return 1
   mash_seed_missing "$res/defaults/atuin" "$d/config/atuin" || return 1
   mash_seed_missing "$res/defaults/lazydocker" "$d/config/lazydocker" || return 1
+  mash_seed_missing "$res/defaults/herdr-auto-title" "$d/config/herdr-auto-title" || return 1
   mash_seed_programming_skills || printf 'Mash: optional Programming Skills seeding failed; continuing.\n' >&2
   mash_seed_hindsight || printf 'Mash: optional memory seeding failed; continuing.\n' >&2
   return 0

@@ -39,7 +39,7 @@ function useEditor(options = {}) {
 		flush: () => {
 			state.flushed += 1;
 		},
-		spawnProcess: (command, args) => {
+		spawnHostProcess: (command, args) => {
 			state.spawns.push([command, args]);
 			return Promise.resolve(state.spawnResult);
 		},
