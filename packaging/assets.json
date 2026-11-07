@@ -656,11 +656,11 @@
       "commit": "8ed222ab7efe735b3ef5e037e7ee81d6d7650e4e"
     },
     "mash-programming-skills": {
-      "version": "0.6.0",
+      "version": "0.6.1",
       "strategy": "git",
       "install": "bundled",
       "repo": "LuisAlejandro/mash-programming-skills",
-      "ref": "0.6.0"
+      "ref": "0.6.1"
     },
     "sentrux": {
       "version": "0.5.7",
@@ -706,32 +706,32 @@
       "package": "hindsight-api-slim"
     },
     "cua-driver": {
-      "version": "0.33.3",
+      "version": "0.38.0",
       "strategy": "binary",
       "install": "user",
       "artifacts": {
         "macos-arm64": {
-          "url": "https://github.com/trycua/cua/releases/download/cua-driver-rs-v0.33.3/cua-driver-rs-0.33.3-darwin-arm64.tar.gz",
-          "sha256": "4c477303dd83b36d169e367c02483923337ed8d1de48afaf0eca6f448b109585",
+          "url": "https://github.com/trycua/cua/releases/download/cua-driver-rs-v0.38.0/cua-driver-rs-0.38.0-darwin-arm64.tar.gz",
+          "sha256": "5f71191c082ca07c9dfc13b7c9a6eec60a82818c245a93534cc0eb7911471d72",
           "archive": "tar.gz",
-          "member": "cua-driver-rs-0.33.3-darwin-arm64"
+          "member": "cua-driver-rs-0.38.0-darwin-arm64"
         },
         "linux-amd64": {
-          "url": "https://github.com/trycua/cua/releases/download/cua-driver-rs-v0.33.3/cua-driver-rs-0.33.3-linux-x86_64.tar.gz",
-          "sha256": "ec3e2816bc0321ba6c606b59b9cfc1eb6d08ce51029e9169114058d1131de420",
+          "url": "https://github.com/trycua/cua/releases/download/cua-driver-rs-v0.38.0/cua-driver-rs-0.38.0-linux-x86_64.tar.gz",
+          "sha256": "a305cbd531f94d6413c5db300c33df68e3adbe8b92b9604cf8e645c5f6cb1fa3",
           "archive": "tar.gz",
-          "member": "cua-driver-rs-0.33.3-linux-x86_64"
+          "member": "cua-driver-rs-0.38.0-linux-x86_64"
         },
         "linux-arm64": {
-          "url": "https://github.com/trycua/cua/releases/download/cua-driver-rs-v0.33.3/cua-driver-rs-0.33.3-linux-arm64.tar.gz",
-          "sha256": "ae0697ed784e042707eba80d854d5e68372ead545f83ad5f04ef1ca987daa4c2",
+          "url": "https://github.com/trycua/cua/releases/download/cua-driver-rs-v0.38.0/cua-driver-rs-0.38.0-linux-arm64.tar.gz",
+          "sha256": "ed8a51125ade8807c7717c3dde13d62bd31e6275e6b5e2446cf018d0b01d93b3",
           "archive": "tar.gz",
-          "member": "cua-driver-rs-0.33.3-linux-arm64"
+          "member": "cua-driver-rs-0.38.0-linux-arm64"
         }
       }
     },
     "agent-browser": {
-      "version": "0.38.2",
+      "version": "0.41.2",
       "strategy": "npm",
       "install": "user",
       "package": "agent-browser"

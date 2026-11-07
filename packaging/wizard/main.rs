@@ -44,7 +44,7 @@ use std::{
 
 // CUA Driver's installer takes its version from the environment; every other
 // tool names manifest components resolved by packaging/assets.json.
-const CUA_DRIVER_PIN: &str = "0.33.3";
+const CUA_DRIVER_PIN: &str = "0.38.0";
 
 struct IdentityPage {
     name: String,
