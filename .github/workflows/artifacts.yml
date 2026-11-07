@@ -248,7 +248,9 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: macos-release-artifacts
+          # One artifact per architecture: two matrix legs uploading the same
+          # name is a conflict the upload action refuses outright.
+          name: macos-${{ matrix.asset_arch }}-release-artifacts
           path: release-artifacts/
           retention-days: 7
 
