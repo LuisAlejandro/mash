@@ -1008,6 +1008,16 @@ mash_install_skills() {
     mash_require_text "$pi/skills/mash-sentrux/SKILL.md" 'absolute path' \
       "mash-sentrux does not require an absolute Sentrux scan path"
   fi
+  # These skills stop unless the tool reports exactly the version the skills
+  # release pins, so a Mash pin that moves alone leaves the skill refusing to
+  # run. Move both pins together: here and in mash-programming-skills.
+  local tool want
+  for tool in agent-browser cua-driver; do
+    [ -f "$pi/skills/$tool/SKILL.md" ] || continue
+    want="$(mash_version "$tool")" || exit 1
+    mash_require_text "$pi/skills/$tool/SKILL.md" "is not \`$want\`" \
+      "the $tool skill requires a version other than Mash's pin $want"
+  done
   [ -d "$pi/agents" ] || {
     echo "agents were not staged" >&2
     exit 1
