@@ -54,6 +54,17 @@ Ctrl+B（后台会话）都不可用；请用 Fresh 的 Ctrl+E 或菜单，以�
   ;                命令面板
   Shift+Y          从消息分叉代理
   Shift+E          会话搜索
+  Ctrl+F           搜索文件和操作
+  Ctrl+Y           在窗格旁派生智能体
+  Ctrl+Shift+Y     派生智能体到新工作区
+  {                上一个工作区
+  }                下一个工作区
+  Shift+↑          上一个代理
+  Shift+↓          下一个代理
+  Shift+←          向左移动标签页
+  Shift+→          向右移动标签页
+  Shift+Backspace  移除工作树
+  Ctrl+K           清空窗格
 
   ── Fresh（自带默认键） ──
   Ctrl+S           保存

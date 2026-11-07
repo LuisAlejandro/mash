@@ -17,13 +17,16 @@
   ⌘⇧1-9      Přepnout na kartu N                              ⌘⌥P        Úryvky (spuštění)
   ⌘⇧M        Přejmenovat kartu                                ⌘P         Hledání souborů
   ⌘⇧W        Zavřít kartu                                     ⌘⇧P        Paleta příkazů
-── Panely ──                                                  ⌘⌥L        Hledání v relacích
-  ⌘⌥← ↓ ↑ →  Zaměřit panel vlevo / dolů / nahoru / vpravo     ⌘K / ⌘L    Poznámka -- zachytit / vložit
-  ⌘⌥[ / ⌘⌥]  Předchozí / další panel                          ⌘⇧L        Poznámka -- spravovat
-  ⌘⌥\ ⌘⌥-    Rozdělit svisle / vodorovně                      ⌥G         Vybrat odkaz nebo ID
-  ⌘⌥W        Zavřít panel                                     ⌘⇧X        Správce pluginů
-  ⌘⌥Z        Zvětšit panel                                    ⌘⌥Y        Odbočit agenta ze zprávy
-  ⌘⌥R        Změna velikosti
+  ⌘⌥⇧[       Přesunout kartu doleva                           ⌘⌥⇧F       Hledat v souborech a akcích
+  ⌘⌥⇧]       Přesunout kartu doprava                          ⌘⌥L        Hledání v relacích
+── Panely ──                                                  ⌘K / ⌘L    Poznámka -- zachytit / vložit
+  ⌘⌥← ↓ ↑ →  Zaměřit panel vlevo / dolů / nahoru / vpravo     ⌘⇧L        Poznámka -- spravovat
+  ⌘⌥[ / ⌘⌥]  Předchozí / další panel                          ⌥G         Vybrat odkaz nebo ID
+  ⌘⌥\ ⌘⌥-    Rozdělit svisle / vodorovně                      ⌘⇧X        Správce pluginů
+  ⌘⌥W        Zavřít panel                                     ⌘⌥Y        Odbočit agenta ze zprávy
+  ⌘⌥Z        Zvětšit panel                                    ⌘⌥⇧Y       Rozvětvit agenta vedle panelu
+  ⌘⌥R        Změna velikosti                                  ⌘⌃Y        Rozvětvit agenta do nového pracovního prostoru
+  ⌘⌥K        Vymazat panel
                                                             ── Globální ──
 ── Editor ──                                                  ⌘⇧I        Nápověda
   ⌘O         Otevřít soubor                                   ⌘I         Nastavení

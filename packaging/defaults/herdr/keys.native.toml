@@ -9,8 +9,9 @@
 # defaults for everything not set here.
 #
 # [keys] holds the only stock actions Native sets: the two whose stock prefix
-# key the herdr-workspace plugin takes over below. An empty string unbinds the
-# native action without falling back to its default.
+# key the herdr-workspace plugin takes over below (an empty string unbinds the
+# native action without falling back to its default), and the actions Herdr
+# leaves unbound by default, given free prefix keys.
 #
 # [commands] maps each Cursor-style [[keys.command]] description to its Native
 # key: a free prefix key, mnemonic where one is free. "Free" means no Herdr
@@ -20,6 +21,17 @@
 [keys]
 new_workspace = ""
 new_worktree = ""
+# Actions Herdr ships with no key at all, so stock Native could not reach them
+# and the Native menus could not offer them. Free prefix keys, mirroring the
+# Cursor-style chords where a mnemonic carries over.
+remove_worktree = "prefix+shift+backspace"
+previous_workspace = "prefix+shift+["
+next_workspace = "prefix+shift+]"
+previous_agent = "prefix+shift+up"
+next_agent = "prefix+shift+down"
+move_tab_previous = "prefix+shift+left"
+move_tab_next = "prefix+shift+right"
+clear_pane = "prefix+ctrl+k"
 
 [commands]
 "new dev tab (editor + agent)" = "prefix+t"
@@ -43,3 +55,6 @@ new_worktree = ""
 "Fork agent from message" = "prefix+shift+y"
 "Session search" = "prefix+shift+e"
 "Check for Updates" = "prefix+shift+z"
+"Search files and actions" = "prefix+ctrl+f"
+"Fork agent beside current pane" = "prefix+ctrl+y"
+"Fork agent into new workspace" = "prefix+ctrl+shift+y"

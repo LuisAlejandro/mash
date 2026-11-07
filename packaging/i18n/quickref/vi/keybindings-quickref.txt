@@ -17,13 +17,16 @@
   ⌘⇧1-9      Chuyển tới thẻ N                                 ⌘⌥P        Đoạn mã (trình thực thi)
   ⌘⇧M        Đổi tên thẻ                                      ⌘P         Tìm tệp
   ⌘⇧W        Đóng thẻ                                         ⌘⇧P        Bảng lệnh
-── Ô ──                                                       ⌘⌥L        Tìm kiếm phiên
-  ⌘⌥← ↓ ↑ →  Tới ô trái / xuống / lên / phải                  ⌘K / ⌘L    Chú thích -- lấy / dán
-  ⌘⌥[ / ⌘⌥]  Ô trước / sau                                    ⌘⇧L        Chú thích -- quản lý
-  ⌘⌥\ ⌘⌥-    Chia dọc / ngang                                 ⌥G         Chọn liên kết hoặc ID
-  ⌘⌥W        Đóng ô                                           ⌘⇧X        Trình quản lý plugin
-  ⌘⌥Z        Phóng ô                                          ⌘⌥Y        Tách tác tử từ tin nhắn
-  ⌘⌥R        Đổi kích thước
+  ⌘⌥⇧[       Di chuyển tab sang trái                          ⌘⌥⇧F       Tìm tệp và thao tác
+  ⌘⌥⇧]       Di chuyển tab sang phải                          ⌘⌥L        Tìm kiếm phiên
+── Ô ──                                                       ⌘K / ⌘L    Chú thích -- lấy / dán
+  ⌘⌥← ↓ ↑ →  Tới ô trái / xuống / lên / phải                  ⌘⇧L        Chú thích -- quản lý
+  ⌘⌥[ / ⌘⌥]  Ô trước / sau                                    ⌥G         Chọn liên kết hoặc ID
+  ⌘⌥\ ⌘⌥-    Chia dọc / ngang                                 ⌘⇧X        Trình quản lý plugin
+  ⌘⌥W        Đóng ô                                           ⌘⌥Y        Tách tác tử từ tin nhắn
+  ⌘⌥Z        Phóng ô                                          ⌘⌥⇧Y       Tạo nhánh Agent bên cạnh khung
+  ⌘⌥R        Đổi kích thước                                   ⌘⌃Y        Tạo nhánh Agent vào không gian làm việc mới
+  ⌘⌥K        Xóa khung
                                                             ── Toàn cục ──
 ── Trình soạn thảo ──                                         ⌘⇧I        Trợ giúp
   ⌘O         Mở tệp                                           ⌘I         Cài đặt

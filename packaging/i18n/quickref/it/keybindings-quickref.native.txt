@@ -55,6 +55,17 @@ usa Ctrl+E di Fresh o il suo menu, e la freccia sinistra di Pi.
   ;                Palette dei comandi
   Shift+Y          Deriva agente da messaggio
   Shift+E          Ricerca sessioni
+  Ctrl+F           Cerca file e azioni
+  Ctrl+Y           Biforca agente accanto al riquadro
+  Ctrl+Shift+Y     Biforca agente in una nuova area di lavoro
+  {                Spazio di lavoro precedente
+  }                Spazio di lavoro successivo
+  Shift+↑          Agente precedente
+  Shift+↓          Agente successivo
+  Shift+←          Sposta scheda a sinistra
+  Shift+→          Sposta scheda a destra
+  Shift+Backspace  Rimuovi worktree
+  Ctrl+K           Pulisci riquadro
 
   ── Fresh (i suoi tasti predefiniti) ──
   Ctrl+S           Salva

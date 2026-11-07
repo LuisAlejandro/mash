@@ -7,6 +7,7 @@ Ctrl+Super instead, and workspace rename avoids Ctrl+Alt+Shift+R. Inside a pane
 the shell keeps every bare Ctrl chord (Ctrl+C, Ctrl+R, Ctrl+U) and Fresh keeps
 the editing ones.
 
+  Ctrl+Alt+Shift+K Clear pane
   Ctrl+Alt+W       Close pane
   Ctrl+Shift+W     Close tab
   Ctrl+Alt+Shift+W Close workspace
@@ -17,6 +18,8 @@ the editing ones.
   Ctrl+Super+Up    Focus pane up
   Ctrl+Alt+Shift+G Go to session
   Ctrl+Shift+I     Help
+  Alt+Shift+[      Move tab left
+  Alt+Shift+]      Move tab right
   Ctrl+Shift+Down  Next agent
   Ctrl+Alt+]       Next pane
   Ctrl+Tab         Next tab
@@ -58,7 +61,10 @@ the editing ones.
   Ctrl+Alt+Shift+E New worktree (layout profile)
   Ctrl+Alt+Shift+O Workspace picker
   Ctrl+Shift+P     Command palette
+  Ctrl+Alt+Shift+F Search files and actions
   Ctrl+Alt+Shift+Y Fork agent from message
+  Ctrl+Super+Y     Fork agent beside current pane
+  Ctrl+Super+Shift+Y Fork agent into new workspace
   Ctrl+Alt+Shift+L Session search
 
 Copy/paste: Ctrl+Shift+C / Ctrl+Shift+V, or the mouse. Fresh's own editing

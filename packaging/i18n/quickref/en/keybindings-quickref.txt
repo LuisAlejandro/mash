@@ -17,13 +17,16 @@
   ⌘⇧1-9      Switch to tab N                            ⌘⌥P        Snippets (snippet executor)
   ⌘⇧M        Rename tab                                 ⌘P         File finder
   ⌘⇧W        Close tab                                  ⌘⇧P        Command palette
-── Panes ──                                             ⌘⌥L        Session search
-  ⌘⌥← ↓ ↑ →  Focus pane left / down / up / right        ⌘K / ⌘L    Annotate -- capture / paste
-  ⌘⌥[ / ⌘⌥]  Cycle pane previous / next                 ⌘⇧L        Annotate -- manage
-  ⌘⌥\ ⌘⌥-    Split vertical / horizontal                ⌥G         Pick link or ID
-  ⌘⌥W        Close pane                                 ⌘⇧X        Plugin manager
-  ⌘⌥Z        Zoom pane                                  ⌘⌥Y        Fork agent from message
-  ⌘⌥R        Resize mode
+  ⌘⌥⇧[       Move tab left                              ⌘⌥⇧F       Search files and actions
+  ⌘⌥⇧]       Move tab right                             ⌘⌥L        Session search
+── Panes ──                                             ⌘K / ⌘L    Annotate -- capture / paste
+  ⌘⌥← ↓ ↑ →  Focus pane left / down / up / right        ⌘⇧L        Annotate -- manage
+  ⌘⌥[ / ⌘⌥]  Cycle pane previous / next                 ⌥G         Pick link or ID
+  ⌘⌥\ ⌘⌥-    Split vertical / horizontal                ⌘⇧X        Plugin manager
+  ⌘⌥W        Close pane                                 ⌘⌥Y        Fork agent from message
+  ⌘⌥Z        Zoom pane                                  ⌘⌥⇧Y       Fork agent beside current pane
+  ⌘⌥R        Resize mode                                ⌘⌃Y        Fork agent into new workspace
+  ⌘⌥K        Clear pane
                                                         ── Global ──
 ── Editor ──                                            ⌘⇧I        Help
   ⌘O         Open file                                  ⌘I         Settings

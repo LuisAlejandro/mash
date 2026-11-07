@@ -8,7 +8,8 @@ host), and checks:
   Ghostty's config (`mash-keybindings = cursor`), so picking Native never alters
   the Cursor-style files;
 - Native keeps every non-keybinding setting and drops every Mash keybinding;
-- the Mash-extra prefix keys collide with nothing.
+- the Mash-extra prefix keys, and the ones Native gives actions Herdr leaves
+  unbound, collide with nothing.
 
 `herdr config check` rejects an unparseable key but says nothing about one that
 shadows a stock binding (prefix+n is accepted as a custom command and silently
@@ -114,14 +115,12 @@ class NativeRenderingTest(unittest.TestCase):
                     {k: v for k, v in native.items() if k != "keys"},
                 )
 
-    def test_herdr_sets_no_stock_key_except_the_plugin_takeovers(self):
+    def test_herdr_sets_only_the_native_table_keys(self):
+        table = tomllib.loads((DEFAULTS / "herdr" / "keys.native.toml").read_text())["keys"]
         for platform in PLATFORMS:
             with self.subTest(platform=platform):
                 keys = herdr(platform, "native")["keys"]
-                self.assertEqual(
-                    {k: v for k, v in keys.items() if k != "command"},
-                    {"new_workspace": "", "new_worktree": ""},
-                )
+                self.assertEqual({k: v for k, v in keys.items() if k != "command"}, table)
 
     def test_herdr_commands_keep_their_bodies(self):
         for platform in PLATFORMS:
@@ -207,13 +206,23 @@ class NativeRenderingTest(unittest.TestCase):
                 # Every Native extra key is on the sheet, written as the user types it.
                 extras = sheet.split("── Mash extras")[1].split("── Fresh")[0]
                 listed = {line.split()[0] for line in extras.splitlines()[1:] if line.strip()}
-                spell = {"backtick": "`", "semicolon": ";"}
-                for command in herdr(platform, "native")["keys"]["command"]:
-                    bare = command["key"][len("prefix+"):]
-                    shown = spell.get(bare, bare)
-                    if shown.startswith("shift+"):
-                        shown = "Shift+" + shown[len("shift+"):].upper()
-                    self.assertIn(shown, listed, command["description"])
+                keys = herdr(platform, "native")["keys"]
+                assigned = [(c["key"], c["description"]) for c in keys["command"]] + [
+                    (v, k) for k, v in keys.items() if k != "command" and v
+                ]
+                for key, what in assigned:
+                    self.assertIn(sheet_spelling(key[len("prefix+"):]), listed, what)
+
+
+def sheet_spelling(key):
+    """A Herdr prefix key as the Native sheet writes it: `Shift+C`, `{`, `Ctrl+K`."""
+    *mods, bare = key.split("+")
+    named = {"backtick": "`", "semicolon": ";", "backspace": "Backspace",
+             "up": "↑", "down": "↓", "left": "←", "right": "→"}
+    if mods == ["shift"] and bare in ("[", "]"):
+        return {"[": "{", "]": "}"}[bare]
+    shown = named.get(bare, bare.upper() if mods else bare)
+    return "".join(m.capitalize() + "+" for m in mods) + shown
 
 
 class NativeKeyTableTest(unittest.TestCase):
@@ -234,8 +243,11 @@ class NativeKeyTableTest(unittest.TestCase):
             key for key, action in HERDR_STOCK_PREFIX_KEYS.items()
             if self.table["keys"].get(action) == ""
         }
+        # Actions Herdr leaves unbound get a prefix key here, under the same rules
+        # as Mash's commands: free of every stock key and of each other.
+        assigned = {action: key for action, key in self.table["keys"].items() if key}
         seen = {}
-        for description, key in self.table["commands"].items():
+        for description, key in list(self.table["commands"].items()) + list(assigned.items()):
             with self.subTest(command=description):
                 self.assertTrue(key.startswith("prefix+"), key)
                 bare = key[len("prefix+"):]
@@ -248,8 +260,11 @@ class NativeKeyTableTest(unittest.TestCase):
         used = {key[len("prefix+"):] for key in self.table["commands"].values()}
         for action, value in self.table["keys"].items():
             with self.subTest(action=action):
-                self.assertEqual(value, "")
                 stock = [k for k, a in HERDR_STOCK_PREFIX_KEYS.items() if a == action]
+                if value:
+                    # A key Native adds, never a change to a stock binding.
+                    self.assertFalse(stock, f"{action} has stock key {stock}; Native keeps stock keys")
+                    continue
                 self.assertTrue(stock and set(stock) <= used, f"{action} unbound but its key is unused")
 
     @unittest.skipUnless(shutil.which("herdr"), "herdr is not installed")

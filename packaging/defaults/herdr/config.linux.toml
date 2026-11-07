@@ -242,6 +242,17 @@ switch_tab = "alt+1..9"
 # reopen-closed-tab action.
 close_tab = "ctrl+shift+w"
 
+# Move the active tab one place left or right. Alt is the Linux tab-index
+# modifier (switch_tab = alt+1..9), so alt+shift+[ / ] moves it. Herdr ships
+# both unset. Free in Ghostty's Linux defaults, Fresh and GNOME.
+move_tab_previous = "alt+shift+["
+move_tab_next = "alt+shift+]"
+
+# Clear the focused pane's screen and scrollback. Herdr ships it unset.
+# ctrl+alt+k is annotate, so the shifted variant; free in Ghostty's Linux
+# defaults, Fresh and GNOME.
+clear_pane = "ctrl+alt+shift+k"
+
 # serve this (see above), so the script creates the tab carrying a label the
 # dev-tab hook skips. Requires `keybind = super+shift+t=unbind` in
 # the Ghostty config, which stays for this chord.
@@ -628,3 +639,28 @@ key = "ctrl+alt+shift+u"
 type = "shell"
 command = '"${HERDR_BIN_PATH%/*}/mash-update-notice" --manual "${HERDR_BIN_PATH%/*}/.." "$HOME/.mash"'
 description = "Check for Updates"
+
+# The full command palette: actions, files (@) and content search (/). Fresh's
+# ctrl+alt+f is find in buffer, so the shifted variant; free in Ghostty's Linux
+# defaults, Fresh and GNOME.
+[[keys.command]]
+key = "ctrl+alt+shift+f"
+type = "plugin_action"
+command = "telescope.open"
+description = "Search files and actions"
+
+# Fork the focused agent's session from a chosen message into a split beside
+# it, or into a new workspace. ctrl+alt+shift+y is the plain fork, so these sit
+# on ctrl+super, the Linux pane modifier; free in Ghostty's Linux defaults,
+# Fresh and GNOME.
+[[keys.command]]
+key = "ctrl+super+y"
+type = "plugin_action"
+command = "fork-from-message.fork-pane"
+description = "Fork agent beside current pane"
+
+[[keys.command]]
+key = "ctrl+super+shift+y"
+type = "plugin_action"
+command = "fork-from-message.fork-workspace"
+description = "Fork agent into new workspace"

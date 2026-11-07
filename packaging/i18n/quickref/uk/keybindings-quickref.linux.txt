@@ -7,6 +7,7 @@ GNOME читає клавішу в композиторі, перш ніж Mash 
 Усередині панелі оболонка лишає кожен голий акорд Ctrl (Ctrl+C, Ctrl+R,
 Ctrl+U), а Fresh — акорди редагування.
 
+  Ctrl+Alt+Shift+K     Очистити панель
   Ctrl+Alt+W           Закрити панель
   Ctrl+Shift+W         Закрити вкладку
   Ctrl+Alt+Shift+W     Закрити простір
@@ -17,6 +18,8 @@ Ctrl+U), а Fresh — акорди редагування.
   Ctrl+Super+Up        Фокус на панель зверху
   Ctrl+Alt+Shift+G     Перейти до сесії
   Ctrl+Shift+I         Довідка
+  Alt+Shift+[          Перемістити вкладку ліворуч
+  Alt+Shift+]          Перемістити вкладку праворуч
   Ctrl+Shift+Down      Наступний агент
   Ctrl+Alt+]           Наступна панель
   Ctrl+Tab             Наступна вкладка
@@ -58,7 +61,10 @@ Ctrl+U), а Fresh — акорди редагування.
   Ctrl+Alt+Shift+E     Нове робоче дерево (профіль розкладки)
   Ctrl+Alt+Shift+O     Вибір робочого простору
   Ctrl+Shift+P         Палітра команд
+  Ctrl+Alt+Shift+F     Пошук файлів і дій
   Ctrl+Alt+Shift+Y     Відгалузити агента з повідомлення
+  Ctrl+Super+Y         Створити агента поруч із панеллю
+  Ctrl+Super+Shift+Y   Створити агента в новому робочому просторі
   Ctrl+Alt+Shift+L     Пошук сесій
 
 Копіювати/вставити: Ctrl+Shift+C / Ctrl+Shift+V або миша. Акорди редагування

@@ -251,9 +251,10 @@ impl GithubLogin {
             return;
         };
         self.child = None;
-        // Output written just before exit may still be in the channel.
+        // Output written just before exit may still be in the channel, or still
+        // on its way from the reader threads after the pipes close.
         if let Some(output) = self.output.take() {
-            for line in output.try_iter().collect::<Vec<_>>() {
+            while let Ok(line) = output.recv() {
                 self.read_line(&line);
             }
         }

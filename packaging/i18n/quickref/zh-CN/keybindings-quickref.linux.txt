@@ -6,6 +6,7 @@ Ctrl 是编辑修饰键，所以 Mash 自己的键位家族放在 Ctrl+Alt 和 C
 Ctrl+Alt+Shift+R。在窗格内，外壳保留每个单独的 Ctrl
 组合（Ctrl+C、Ctrl+R、Ctrl+U），Fresh 保留编辑组合。
 
+  Ctrl+Alt+Shift+K     清空窗格
   Ctrl+Alt+W           关闭窗格
   Ctrl+Shift+W         关闭标签页
   Ctrl+Alt+Shift+W     关闭工作区
@@ -16,6 +17,8 @@ Ctrl+Alt+Shift+R。在窗格内，外壳保留每个单独的 Ctrl
   Ctrl+Super+Up        聚焦上方窗格
   Ctrl+Alt+Shift+G     跳转到会话
   Ctrl+Shift+I         帮助
+  Alt+Shift+[          向左移动标签页
+  Alt+Shift+]          向右移动标签页
   Ctrl+Shift+Down      下一个代理
   Ctrl+Alt+]           下一个窗格
   Ctrl+Tab             下一个标签页
@@ -57,7 +60,10 @@ Ctrl+Alt+Shift+R。在窗格内，外壳保留每个单独的 Ctrl
   Ctrl+Alt+Shift+E     新建工作树（布局配置）
   Ctrl+Alt+Shift+O     工作区选择器
   Ctrl+Shift+P         命令面板
+  Ctrl+Alt+Shift+F     搜索文件和操作
   Ctrl+Alt+Shift+Y     从消息分叉代理
+  Ctrl+Super+Y         在窗格旁派生智能体
+  Ctrl+Super+Shift+Y   派生智能体到新工作区
   Ctrl+Alt+Shift+L     会话搜索
 
 复制/粘贴：Ctrl+Shift+C / Ctrl+Shift+V，或使用鼠标。Fresh

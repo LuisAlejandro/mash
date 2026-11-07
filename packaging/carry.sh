@@ -451,15 +451,19 @@ mash_ghostty_trim_check() {
   for item in "Make Ghostty the Default Terminal" "Check for Updates..." \
     "Undo" "Redo" "Change Terminal Title..." "Float on Top" \
     "Use as Default" "Ghostty Help" "About Ghostty" "Hide Ghostty" \
-    "Quit Ghostty"; do
+    "Quit Ghostty" "Close" "Close All Windows" "Paste Selection" "Select All" \
+    "Terminal Read-only" "Show/Hide All Terminals"; do
     if grep -qF "title=\"$item\"" "$xib" 2>/dev/null; then
       echo "Ghostty fork reintroduced the macOS menu item '$item'" >&2
       status=1
     fi
   done
-  # Items Mash keeps, including the renamed app-menu entries.
+  # Items Mash keeps, including the renamed app-menu entries. One window makes
+  # Close and Close All Windows the same as Close Window, and Show/Hide the same
+  # as Hide Mash; Select All and Paste Selection act on Herdr's whole screen;
+  # Read-only locks every key out of Herdr. Those are removed above.
   for item in "About Mash" "Hide Mash" "Quit Mash" "Close Window" "Copy" \
-    "Paste" "Show/Hide All Terminals" "Terminal Read-only"; do
+    "Paste"; do
     grep -qF "title=\"$item\"" "$xib" 2>/dev/null || {
       echo "Ghostty fork lost the macOS menu item '$item'" >&2
       status=1
@@ -468,9 +472,36 @@ mash_ghostty_trim_check() {
   # The terminal right-click menu is built in Swift, not the xib.
   local surface_view="$src/macos/Sources/Ghostty/Surface View/SurfaceView_AppKit.swift"
   for item in "Split Right" "Split Left" "Split Down" "Split Up" \
-    "Toggle Terminal Inspector" "Change Tab Title..." "Change Terminal Title..."; do
+    "Toggle Terminal Inspector" "Change Tab Title..." "Change Terminal Title..." \
+    "Reset Terminal" "Terminal Read-only"; do
     if grep -qF "withTitle: \"$item\"" "$surface_view" 2>/dev/null; then
       echo "Ghostty fork reintroduced '$item' in the macOS terminal context menu" >&2
+      status=1
+    fi
+  done
+  # Native window tabbing makes AppKit add Show Tab Bar, Show All Tabs, Show
+  # Previous/Next Tab, Move Tab to New Window and Merge All Windows to the menus,
+  # and Show Tab Bar stacks a native tab bar above Herdr's.
+  grep -qF 'tabbingMode = .disallowed' \
+    "$src/macos/Sources/Features/Terminal/Window Styles/TerminalWindow.swift" 2>/dev/null &&
+    grep -qF 'NSWindow.allowsAutomaticWindowTabbing = false' \
+      "$src/macos/Sources/App/AppDelegate.swift" 2>/dev/null || {
+    echo "Ghostty fork allows native window tabbing again" >&2
+    status=1
+  }
+  # A full reset drops the modes Herdr set on the terminal it draws on, and
+  # clear_screen does nothing on Herdr's alternate screen: neither is a GTK menu
+  # item or a registered window action.
+  for needle in 'action: "win.reset"' 'action: "win.clear"' \
+    'action: "surface.notify-on-next-command-finish"' 'action: "app.open-config"'; do
+    if grep -qF "$needle" "$gtk_window" "$gtk_surface" 2>/dev/null; then
+      echo "Ghostty fork reintroduced '$needle' in the GTK menus" >&2
+      status=1
+    fi
+  done
+  for name in reset clear; do
+    if grep -qF ".init(\"$name\", " "$src/src/apprt/gtk/class/window.zig" 2>/dev/null; then
+      echo "Ghostty fork still registers the GTK window action '$name'" >&2
       status=1
     fi
   done

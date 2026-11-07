@@ -7,6 +7,7 @@ esista -- perciò il fuoco dei riquadri usa Ctrl+Super, e rinominare lo spazio
 di lavoro evita Ctrl+Alt+Shift+R. Dentro un riquadro la shell tiene ogni
 accordo Ctrl nudo (Ctrl+C, Ctrl+R, Ctrl+U) e Fresh tiene quelli di modifica.
 
+  Ctrl+Alt+Shift+K     Pulisci riquadro
   Ctrl+Alt+W           Chiudi riquadro
   Ctrl+Shift+W         Chiudi scheda
   Ctrl+Alt+Shift+W     Chiudi spazio di lavoro
@@ -17,6 +18,8 @@ accordo Ctrl nudo (Ctrl+C, Ctrl+R, Ctrl+U) e Fresh tiene quelli di modifica.
   Ctrl+Super+Up        Fuoco riquadro in alto
   Ctrl+Alt+Shift+G     Vai alla sessione
   Ctrl+Shift+I         Aiuto
+  Alt+Shift+[          Sposta scheda a sinistra
+  Alt+Shift+]          Sposta scheda a destra
   Ctrl+Shift+Down      Agente successivo
   Ctrl+Alt+]           Riquadro successivo
   Ctrl+Tab             Scheda successiva
@@ -58,7 +61,10 @@ accordo Ctrl nudo (Ctrl+C, Ctrl+R, Ctrl+U) e Fresh tiene quelli di modifica.
   Ctrl+Alt+Shift+E     Nuovo worktree (profilo di layout)
   Ctrl+Alt+Shift+O     Selettore spazi di lavoro
   Ctrl+Shift+P         Palette dei comandi
+  Ctrl+Alt+Shift+F     Cerca file e azioni
   Ctrl+Alt+Shift+Y     Deriva agente da messaggio
+  Ctrl+Super+Y         Biforca agente accanto al riquadro
+  Ctrl+Super+Shift+Y   Biforca agente in una nuova area di lavoro
   Ctrl+Alt+Shift+L     Ricerca sessioni
 
 Copia/incolla: Ctrl+Shift+C / Ctrl+Shift+V, o il mouse. Gli accordi di

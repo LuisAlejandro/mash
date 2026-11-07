@@ -55,6 +55,17 @@ gauche) et Ctrl+B d'OpenCode (session en arrière-plan) ne sont pas disponibles
   ;                Palette de commandes
   Shift+Y          Détacher un agent depuis un message
   Shift+E          Recherche de sessions
+  Ctrl+F           Rechercher des fichiers et des actions
+  Ctrl+Y           Dériver l'Agent à côté du volet
+  Ctrl+Shift+Y     Dériver l'Agent dans un nouvel espace de travail
+  {                Espace de travail précédent
+  }                Espace de travail suivant
+  Shift+↑          Agent précédent
+  Shift+↓          Agent suivant
+  Shift+←          Déplacer l'onglet à gauche
+  Shift+→          Déplacer l'onglet à droite
+  Shift+Backspace  Retirer l'arbre de travail
+  Ctrl+K           Effacer le volet
 
   ── Fresh (ses touches par défaut) ──
   Ctrl+S           Enregistrer

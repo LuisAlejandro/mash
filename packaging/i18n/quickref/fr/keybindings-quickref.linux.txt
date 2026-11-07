@@ -8,6 +8,7 @@ l'espace de travail évite Ctrl+Alt+Shift+R. Dans un volet, le shell garde
 chaque accord Ctrl seul (Ctrl+C, Ctrl+R, Ctrl+U) et Fresh garde ceux de
 l'édition.
 
+  Ctrl+Alt+Shift+K     Effacer le volet
   Ctrl+Alt+W           Fermer le volet
   Ctrl+Shift+W         Fermer l'onglet
   Ctrl+Alt+Shift+W     Fermer l'espace de travail
@@ -18,6 +19,8 @@ l'édition.
   Ctrl+Super+Up        Focus volet du haut
   Ctrl+Alt+Shift+G     Aller à la session
   Ctrl+Shift+I         Aide
+  Alt+Shift+[          Déplacer l'onglet à gauche
+  Alt+Shift+]          Déplacer l'onglet à droite
   Ctrl+Shift+Down      Agent suivant
   Ctrl+Alt+]           Volet suivant
   Ctrl+Tab             Onglet suivant
@@ -59,7 +62,10 @@ l'édition.
   Ctrl+Alt+Shift+E     Nouvel arbre de travail (profil de disposition)
   Ctrl+Alt+Shift+O     Sélecteur d'espaces de travail
   Ctrl+Shift+P         Palette de commandes
+  Ctrl+Alt+Shift+F     Rechercher des fichiers et des actions
   Ctrl+Alt+Shift+Y     Détacher un agent depuis un message
+  Ctrl+Super+Y         Dériver l'Agent à côté du volet
+  Ctrl+Super+Shift+Y   Dériver l'Agent dans un nouvel espace de travail
   Ctrl+Alt+Shift+L     Recherche de sessions
 
 Copier/coller : Ctrl+Shift+C / Ctrl+Shift+V, ou la souris. Les accords

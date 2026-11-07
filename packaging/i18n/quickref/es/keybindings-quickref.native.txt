@@ -55,6 +55,17 @@ Ctrl+E de Fresh o su menú, y la flecha izquierda de Pi.
   ;                Paleta de comandos
   Shift+Y          Bifurcar agente desde un mensaje
   Shift+E          Buscar en sesiones
+  Ctrl+F           Buscar archivos y acciones
+  Ctrl+Y           Bifurcar agente junto al panel
+  Ctrl+Shift+Y     Bifurcar agente en un nuevo espacio de trabajo
+  {                Espacio de trabajo anterior
+  }                Espacio de trabajo siguiente
+  Shift+↑          Agente anterior
+  Shift+↓          Agente siguiente
+  Shift+←          Mover pestaña a la izquierda
+  Shift+→          Mover pestaña a la derecha
+  Shift+Backspace  Quitar árbol de trabajo
+  Ctrl+K           Limpiar panel
 
   ── Fresh (sus teclas predeterminadas) ──
   Ctrl+S           Guardar

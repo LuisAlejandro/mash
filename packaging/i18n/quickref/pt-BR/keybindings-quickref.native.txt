@@ -55,6 +55,17 @@ disponíveis; use Ctrl+E do Fresh ou o menu dele, e a seta esquerda do Pi.
   ;                Paleta de comandos
   Shift+Y          Bifurcar agente a partir da mensagem
   Shift+E          Pesquisar sessões
+  Ctrl+F           Buscar arquivos e ações
+  Ctrl+Y           Criar ramificação do agente ao lado do painel
+  Ctrl+Shift+Y     Criar ramificação do agente em novo espaço de trabalho
+  {                Espaço de trabalho anterior
+  }                Próximo espaço de trabalho
+  Shift+↑          Agente anterior
+  Shift+↓          Próximo agente
+  Shift+←          Mover aba para a esquerda
+  Shift+→          Mover aba para a direita
+  Shift+Backspace  Remover árvore de trabalho
+  Ctrl+K           Limpar painel
 
   ── Fresh (as teclas padrão dele) ──
   Ctrl+S           Salvar

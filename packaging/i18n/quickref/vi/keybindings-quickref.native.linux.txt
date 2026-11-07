@@ -55,6 +55,17 @@ tên trái trong Pi.
   ;                Bảng lệnh
   Shift+Y          Tách tác tử từ tin nhắn
   Shift+E          Tìm kiếm phiên
+  Ctrl+F           Tìm tệp và thao tác
+  Ctrl+Y           Tạo nhánh Agent bên cạnh khung
+  Ctrl+Shift+Y     Tạo nhánh Agent vào không gian làm việc mới
+  {                Không gian làm việc trước
+  }                Không gian làm việc tiếp theo
+  Shift+↑          Tác nhân trước
+  Shift+↓          Tác nhân tiếp theo
+  Shift+←          Di chuyển tab sang trái
+  Shift+→          Di chuyển tab sang phải
+  Shift+Backspace  Gỡ cây làm việc
+  Ctrl+K           Xóa khung
 
   ── Fresh (phím mặc định riêng) ──
   Ctrl+S           Lưu
