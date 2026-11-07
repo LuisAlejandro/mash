@@ -6,7 +6,7 @@
 
 Current version: 0.3.0
 
-*Mash* is a desktop workspace for AI-assisted coding. It brings a customized Ghostty terminal, Herdr workspaces, the Fresh editor, Pi, and pinned development tools into one app. Your settings and sessions live in `~/.mash`, separate from the tools you use outside Mash.
+*Mash* is a desktop workspace for AI-assisted coding. It brings a customized Ghostty terminal, Herdr workspaces, the Fresh editor, Pi, and pinned development tools into one app. Your settings and sessions live in `~/.mash`, separate from the tools you use outside Mash. Mash runs in 15 languages: the setup wizard asks once, and its own screens, messages, popups and the terminal's menu bar follow that choice.
 
 ## Install
 
