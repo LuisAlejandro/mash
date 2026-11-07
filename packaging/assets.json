@@ -656,11 +656,11 @@
       "commit": "8ed222ab7efe735b3ef5e037e7ee81d6d7650e4e"
     },
     "mash-programming-skills": {
-      "version": "0.6.1",
+      "version": "0.6.2",
       "strategy": "git",
       "install": "bundled",
       "repo": "LuisAlejandro/mash-programming-skills",
-      "ref": "0.6.1"
+      "ref": "0.6.2"
     },
     "sentrux": {
       "version": "0.5.7",

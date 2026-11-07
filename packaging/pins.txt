@@ -42,7 +42,7 @@ persiyanov.reviewr 0.49.1
 herdr-workspace 0.1.2
 telescope 0.1.2
 ray.plugin-manager 0.6.0
-mash-programming-skills 0.6.1
+mash-programming-skills 0.6.2
 sentrux 0.5.7
 hindsight-embed 1.2.0
 hindsight-api 1.2.0
