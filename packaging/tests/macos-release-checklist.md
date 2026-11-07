@@ -33,6 +33,7 @@ reinstall, not an upgrade; note which one was tested.
 | Signature and notarization | `release.sh` verifies every Mach-O and nested bundle is Developer ID signed, hardened, and timestamped, then staples the ticket |
 | Installed bundle matches source | `packaging/tests/verify-installed.sh` after installing: shipped helpers, defaults, code signature, microphone entitlement and purpose string, and the Pi project directory |
 | Gatekeeper | `spctl --assess --type open --context context:primary-signature -v dist/Mash.dmg` |
+| Both architectures | Each release before 1 September 2027 carries `Mash-<version>-mac-arm64.dmg` and `Mash-<version>-mac-amd64.dmg`, each notarized and stapled; the Intel one is checked on Intel hardware |
 
 ## Upgrade over an existing install
 

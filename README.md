@@ -15,11 +15,12 @@ Download the latest [Mash release](https://github.com/LuisAlejandro/mash/release
 | Platform | Release asset | Supported environment |
 | --- | --- | --- |
 | macOS | `Mash-<version>-mac-arm64.dmg` | Apple silicon, macOS 14 or newer |
+| macOS | `Mash-<version>-mac-amd64.dmg` | Intel, macOS 14 through macOS 26. Supported until 1 September 2027 |
 | Linux | `letsmash-<version>-linux-amd64.deb` or `letsmash-<version>-linux-arm64.deb` | Ubuntu 24.04 with GNOME on Wayland or Xorg |
 
-**macOS:** Open the signed, notarized DMG and copy Mash.app to Applications. Launch Mash from there.
+**macOS:** Open the signed, notarized DMG for your Mac's architecture and copy Mash.app to Applications. Launch Mash from there. Apple silicon and Intel builds update themselves.
 
-**macOS on Intel (experimental):** There is no release for Intel (x86_64) Macs. You can build Mash from source on one; see [INTEL-MAC.md](INTEL-MAC.md) for the steps and the known limitations.
+**macOS on Intel:** Intel support ends on 1 September 2027, when the toolchain that builds it retires; the last Intel DMG stays downloadable. Two tools with no Intel build are left out: `sentrux` and `latexindent`. Building from source, before and after that date, is covered in [INTEL-MAC.md](INTEL-MAC.md).
 
 **Linux:** Download the `.deb` for your architecture, then install it with APT:
 

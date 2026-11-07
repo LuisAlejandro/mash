@@ -6,8 +6,8 @@ name: Artifacts
 # this at that tag, and only this workflow touches the release's assets. It is
 # only ever started that way, so it cannot publish on a branch push.
 #
-# Mash ships three downloadable artifacts from one tag: a macOS arm64 DMG and
-# two Debian packages. Linux packages also enter the signed APT repository. The
+# Mash ships four downloadable artifacts from one tag: a DMG per macOS
+# architecture and two Debian packages. Intel leaves that set on 2027-09-01. Linux packages also enter the signed APT repository. The
 # release stays a draft until artifacts and the APT index verify, so a failed
 # platform or publication leaves an unpublished release rather than a partial one.
 
@@ -55,6 +55,8 @@ jobs:
     outputs:
       version: ${{ steps.get-version.outputs.version }}
       tag: ${{ steps.get-version.outputs.tag }}
+      mac_matrix: ${{ steps.get-version.outputs.mac_matrix }}
+      mac_assets: ${{ steps.get-version.outputs.mac_assets }}
     steps:
       - name: Resolve the tag
         id: get-version
@@ -67,21 +69,51 @@ jobs:
           echo "tag=${TAG}" >>"$GITHUB_OUTPUT"
           echo "version=${TAG}" >>"$GITHUB_OUTPUT"
           echo "building version ${TAG}"
+          # Intel is a released architecture until 2027-09-01, then retires by
+          # date. The build matrix and the publish gate both read this one
+          # value, so they cannot disagree about which Macs a release covers.
+          if [ "$(date -u +%Y%m%d)" -ge 20270901 ]; then
+            printf 'mac_matrix=%s\n' '[{"runner":"macos-26","zig_arch":"aarch64","asset_arch":"arm64","xcode":""}]' >>"$GITHUB_OUTPUT"
+            printf 'mac_assets=%s\n' "Mash-${TAG}-mac-arm64.dmg" >>"$GITHUB_OUTPUT"
+            echo "Intel support has ended; building macOS arm64 only"
+          else
+            printf 'mac_matrix=%s\n' '[{"runner":"macos-26","zig_arch":"aarch64","asset_arch":"arm64","xcode":""},{"runner":"macos-15-intel","zig_arch":"x86_64","asset_arch":"amd64","xcode":"26.3"}]' >>"$GITHUB_OUTPUT"
+            printf 'mac_assets=%s\n' "Mash-${TAG}-mac-arm64.dmg Mash-${TAG}-mac-amd64.dmg" >>"$GITHUB_OUTPUT"
+            echo "building macOS arm64 and amd64"
+          fi
 
   build-macos:
-    name: Build Mash.dmg
+    # One job, one entry per macOS architecture: signing, notarization and
+    # verification are the same work on both, so they are written once. The
+    # Intel entry leaves the matrix on 2027-09-01 (see setup).
+    name: Build Mash.dmg (${{ matrix.asset_arch }})
     needs: [setup]
-    runs-on: macos-26
-    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.setup.outputs.mac_matrix) }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
     steps:
       - name: Checkout release tag
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.setup.outputs.tag }}
 
-      # The runner's Xcode is the one input this workflow cannot pin here: the
-      # path and name vary by image, and Ghostty's build is Xcode-sensitive.
-      # Print it so the first failure is diagnosable instead of mysterious.
+      # The Intel image defaults to Xcode 16.4, which cannot install the Metal
+      # Toolchain component Ghostty needs; the arm image already defaults to a
+      # usable one. The matrix names the version, so neither lane depends on an
+      # image default that GitHub may move.
+      - name: Select Xcode
+        if: matrix.xcode != ''
+        run: |
+          set -euo pipefail
+          sudo xcode-select -s "/Applications/Xcode_${{ matrix.xcode }}.app"
+          xcodebuild -version
+
+      # The runner's Xcode is the one input this workflow cannot pin by path:
+      # it varies by image, and Ghostty's build is Xcode-sensitive. Print it so
+      # the first failure is diagnosable instead of mysterious.
       - name: Report the toolchain
         run: |
           sw_vers
@@ -131,7 +163,7 @@ jobs:
           dest="$RUNNER_TEMP/zig-$ZIG_VERSION"
           mkdir -p "$dest"
           curl -fL --retry 3 --max-time 900 -o "$RUNNER_TEMP/zig.tar.xz" \
-            "https://ziglang.org/download/${ZIG_VERSION}/zig-aarch64-macos-${ZIG_VERSION}.tar.xz"
+            "https://ziglang.org/download/${ZIG_VERSION}/zig-${{ matrix.zig_arch }}-macos-${ZIG_VERSION}.tar.xz"
           tar -xJf "$RUNNER_TEMP/zig.tar.xz" -C "$dest" --strip-components=1
           echo "MASH_ZIG=$dest/zig" >>"$GITHUB_ENV"
           "$dest/zig" version
@@ -206,7 +238,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p release-artifacts
-          cp dist/Mash.dmg "release-artifacts/Mash-${VERSION}-mac-arm64.dmg"
+          cp dist/Mash.dmg "release-artifacts/Mash-${VERSION}-mac-${{ matrix.asset_arch }}.dmg"
           cd release-artifacts
           shasum -a 256 ./*.dmg >checksums-sha256.txt
           cat checksums-sha256.txt
@@ -392,12 +424,24 @@ jobs:
         run: |
           set -euo pipefail
           body="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json body -q .body)"
+          # The Mac list follows the assets the release actually carries, so the
+          # notes cannot advertise an Intel DMG after Intel retires.
+          mac_downloads=""
+          mac_verify=""
+          for asset in ${{ needs.setup.outputs.mac_assets }}; do
+            case "$asset" in
+            *-arm64.dmg) label="macOS, Apple silicon" ;;
+            *-amd64.dmg) label="macOS, Intel (supported until 1 September 2027)" ;;
+            *) label="macOS" ;;
+            esac
+            mac_downloads="${mac_downloads}- \`${asset}\` — ${label}. Signed and notarized."$'\n'
+            mac_verify="${mac_verify}spctl --assess --type open --context context:primary-signature -v ${asset}"$'\n'
+          done
           note="
 
           ## Download
 
-          - \`Mash-${VERSION}-mac-arm64.dmg\` — macOS, Apple silicon. Signed and notarized.
-          - \`letsmash-${VERSION}-linux-amd64.deb\` — Ubuntu 24.04, x86_64
+          ${mac_downloads}          - \`letsmash-${VERSION}-linux-amd64.deb\` — Ubuntu 24.04, x86_64
           - \`letsmash-${VERSION}-linux-arm64.deb\` — Ubuntu 24.04, arm64
           - \`checksums-sha256.txt\` — SHA-256 checksums for every file above
 
@@ -437,7 +481,7 @@ jobs:
 
           \`\`\`sh
           shasum -a 256 -c checksums-sha256.txt
-          spctl --assess --type open --context context:primary-signature -v Mash-${VERSION}-mac-arm64.dmg
+          ${mac_verify}
           \`\`\`"
           if printf '%s' "$body" | grep -q '## Download'; then
             echo "download section already present, leaving the notes alone"
@@ -505,7 +549,7 @@ jobs:
           set -euo pipefail
           assets="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name')"
           printf '%s\n' "$assets"
-          for expected in checksums-sha256.txt "Mash-${VERSION}-mac-arm64.dmg" \
+          for expected in checksums-sha256.txt ${{ needs.setup.outputs.mac_assets }} \
             "letsmash-${VERSION}-linux-amd64.deb" "letsmash-${VERSION}-linux-arm64.deb"; do
             printf '%s\n' "$assets" | grep -qxF "$expected" || {
               echo "refusing to publish: $expected is not attached" >&2
