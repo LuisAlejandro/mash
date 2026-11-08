@@ -137,8 +137,24 @@ case "$1" in
 esac''')
         self.stub("spctl", 'echo "spctl $*" >>"$CALLS"; exit "${FAKE_SPCTL_RC:-0}"')
         self.stub("curl", '''echo "curl $*" >>"$CALLS"
+for arg in "$@"; do
+  if [ "$arg" = -fsIL ]; then
+    if [ -n "${FAKE_LENGTH:-}" ]; then printf "content-length: %s\\n" "$FAKE_LENGTH"; fi
+    exit 0
+  fi
+done
 [ "${FAKE_DOWNLOAD_RC:-0}" = 0 ] || exit "$FAKE_DOWNLOAD_RC"
-while [ "$#" -gt 1 ]; do if [ "$1" = -o ]; then printf dmg >"$2"; break; fi; shift; done''')
+while [ "$#" -gt 1 ]; do
+  if [ "$1" = -o ]; then
+    if [ -n "${FAKE_LENGTH:-}" ]; then
+      dd if=/dev/zero of="$2" bs="$FAKE_LENGTH" count=1 >/dev/null 2>&1 || exit 1
+    else
+      printf dmg >"$2"
+    fi
+    break
+  fi
+  shift
+done''')
         self.stub("hdiutil", '''echo "hdiutil $*" >>"$CALLS"
 case "$1" in
 attach)

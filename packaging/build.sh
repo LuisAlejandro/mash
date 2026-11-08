@@ -377,6 +377,12 @@ xcrun --sdk macosx clang -Wall -Wextra -Werror -O2 -mmacosx-version-min=14.0 \
 xcrun --sdk macosx clang -Wall -Wextra -Werror -O2 -mmacosx-version-min=14.0 \
   -o "$app/Contents/Resources/bin/mash-update-processes" \
   "$root/packaging/helpers/mash-update-processes.c"
+# Executed only from a copy outside the bundle. An image under Mash.app is
+# counted as a running Mash and blocks the swap.
+xcrun --sdk macosx clang -Wall -Wextra -Werror -O2 -mmacosx-version-min=14.0 \
+  -fobjc-arc -framework AppKit \
+  -o "$app/Contents/Resources/bin/mash-update-progress" \
+  "$root/packaging/helpers/mash-update-progress.m"
 cp "$root/packaging/lib.sh" "$app/Contents/Resources/bin/lib.sh"
 cp "$root/packaging/launch-common.sh" "$app/Contents/Resources/bin/launch-common.sh"
 cp "$root/packaging/herdr-pane" "$app/Contents/Resources/bin/herdr-pane"

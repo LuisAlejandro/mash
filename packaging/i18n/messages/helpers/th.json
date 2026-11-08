@@ -79,6 +79,10 @@
     "text": "ยังไม่ได้ติดตั้ง viu ติดตั้งด้วย: brew install viu",
     "source_hash": "51d203b460ac"
   },
+  "plugin.mash-update-notice.dialog.offer": {
+    "text": "มี Mash {candidate} ให้ใช้ (คุณมี {installed}) การอัปเดตจะปิด Mash แล้วเปิดใหม่ด้วยเวอร์ชันใหม่",
+    "source_hash": "31c9183bb4be"
+  },
   "plugin.mash-update-notice.notice.apt-failed": {
     "text": "ตรวจสอบที่เก็บ APT แล้วเรียกใช้ sudo apt update",
     "source_hash": "6e5d462c3fb3"
@@ -102,6 +106,10 @@
   "plugin.mash-update-notice.notice.current-macos": {
     "text": "ทุกอย่างเป็นปัจจุบัน Mash {version} เป็นเวอร์ชันล่าสุด",
     "source_hash": "541489679898"
+  },
+  "plugin.mash-update-notice.notice.did-not-start": {
+    "text": "เปิด Mash แล้วลองอัปเดตอีกครั้ง",
+    "source_hash": "2d7e7b4a3157"
   },
   "plugin.mash-update-notice.notice.previous-restored": {
     "text": "Mash {installed} กลับมาทำงานแล้ว การอัปเดตเป็น {candidate} ไม่สำเร็จ",
@@ -135,6 +143,10 @@
     "text": "\n  Mash {installed} กำลังทำงาน และติดตั้ง Mash {candidate} แล้ว\n\n  บันทึกงานแล้วเริ่ม Mash ใหม่เพื่อใช้เวอร์ชันที่ติดตั้ง\n  ไม่ต้องดาวน์โหลด\n  (กดปุ่มใดก็ได้เพื่อปิด)",
     "source_hash": "8cfff1a68c6e"
   },
+  "plugin.mash-update-notice.pane.update-accepted": {
+    "text": "  กำลังอัปเดตเป็น Mash {candidate} การอัปเดตจะปิด Mash แล้วเปิดใหม่เมื่อเสร็จ",
+    "source_hash": "8950c6705227"
+  },
   "plugin.mash-update-notice.pane.update-prompt": {
     "text": "\n  มี Mash {candidate} ให้ใช้ (คุณมี {installed})\n\n  กด u เพื่ออัปเดตทันที หรือกดปุ่มอื่นเพื่อปิด\n  การอัปเดตจะปิด Mash แล้วเปิดใหม่ด้วยเวอร์ชันใหม่\n\n  > ",
     "source_hash": "e72a656d118c"
@@ -162,6 +174,10 @@
   "plugin.mash-update-notice.title.check-failed": {
     "text": "ตรวจสอบการอัปเดต Mash ไม่สำเร็จ",
     "source_hash": "43d510221839"
+  },
+  "plugin.mash-update-notice.title.did-not-start": {
+    "text": "การอัปเดต Mash ไม่เริ่มทำงาน",
+    "source_hash": "ba0d18142f6b"
   },
   "plugin.mash-update-notice.title.previous-restored": {
     "text": "กู้คืน Mash เวอร์ชันก่อนหน้าแล้ว",

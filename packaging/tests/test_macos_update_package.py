@@ -187,6 +187,9 @@ class MacOSUpdatePackageTest(unittest.TestCase):
         for source in ("mash-update-swap", "mash-update-processes"):
             self.assertIn(f"packaging/helpers/{source}.c", build)
             self.assertIn(f'"$app/Contents/Resources/bin/{source}"', build)
+        self.assertIn("packaging/helpers/mash-update-progress.m", build)
+        self.assertIn('"$app/Contents/Resources/bin/mash-update-progress"', build)
+        self.assertIn("-framework AppKit", build)
         self.assertIn("-mmacosx-version-min=14.0", build)
 
     def test_both_adapters_verify_the_payload_after_staging_helpers(self):
@@ -226,7 +229,7 @@ class MacOSUpdatePackageTest(unittest.TestCase):
         verify = (ROOT / "packaging/helpers/mash-update-verify").read_text()
         copied = verify.split("for helper in", 2)[2].split(";", 1)[0].split()
         for helper in ("mash-update-common", "mash-update-processes", "mash-update-gate",
-                       "mash-update-apply", "mash-update-swap"):
+                       "mash-update-apply", "mash-update-swap", "mash-update-progress"):
             self.assertIn(helper, copied)
 
     def test_native_lifecycle_lives_in_the_pinned_fork(self):
@@ -243,7 +246,8 @@ class MacOSUpdatePackageTest(unittest.TestCase):
     def test_linux_payload_keeps_apt_and_excludes_macos_helpers(self):
         build = (ROOT / "packaging/build-common.sh").read_text()
         for name in ("mash-update-verify", "mash-update-apply", "mash-update-common",
-                     "mash-update-gate", "mash-update-processes.c", "mash-update-swap.c"):
+                     "mash-update-gate", "mash-update-processes.c", "mash-update-swap.c",
+                     "mash-update-progress.m"):
             self.assertIn(name, build)
         launcher = (ROOT / "packaging/herdr-pane").read_text()
         self.assertIn('"$bin_dir/mash-update-notice" "$res" "$home/.mash"', launcher)

@@ -24,9 +24,9 @@ width = 56
 height = 11
 command = ["bash", "notice.sh"]
 
-# Taller than the notice: this one shows download progress, verification and a
-# confirmation in the same box. The prompt translations fit in 61x14, so the
-# box stays 64x16.
+# Taller than the notice: this pane narrates the download and verification.
+# The determinate progress window is a separate process outside the pane.
+# The prompt translations fit in 61x14, so the box stays 64x16.
 [[panes]]
 id = "update"
 title = "Mash update"

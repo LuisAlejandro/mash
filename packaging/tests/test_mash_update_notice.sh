@@ -77,6 +77,11 @@ stub notify-send 'echo "notify $*" >>"$CALLS"'
 stub clear ':'
 stub gdbus 'echo "gdbus $*" >>"$CALLS"; exit "${FAKE_GDBUS_RC:-0}"'
 stub codesign 'echo "TeamIdentifier=${FAKE_TEAM:-4SCJW6LZ6T}" >&2'
+# A dialog exists only when a case asks for one. Everything else keeps the pane
+# fallback that a host without a usable GUI session gets.
+stub osascript '[ -n "${FAKE_DIALOG:-}" ] || exit 1
+echo "dialog $*" >>"$CALLS"
+printf "%s\n" "$FAKE_DIALOG"'
 stub herdr 'case "$1 $2" in
 "status server") echo "status: running" ;;
 "plugin pane") echo "popup $*" >>"$CALLS" ;;
@@ -247,6 +252,33 @@ check "the pane receives both versions" \
   grep -q 'MASH_UPDATE_INSTALLED=0.1.1 .*MASH_UPDATE_CANDIDATE=0.2.0' "$calls"
 check "macOS popup is given the bundle catalogs" \
   grep -q "MASH_I18N_DIR=$appres/i18n" "$calls"
+check "a host without a dialog leaves the answer to the pane" \
+  grep -q 'MASH_UPDATE_CONFIRMED=0' "$calls"
+
+# --- the offer is a system dialog when macOS can show one ----------------------
+fresh mac-dialog-accept
+setversion 0.1.1
+mac FAKE_RELEASE=0.2.0 FAKE_DIALOG='Update now'
+check "an accepted offer is the dialog's own answer" test "$(count dialog)" = 1
+check "the dialog names both versions" \
+  grep -q 'dialog .*0\.2\.0.*0\.1\.1' "$calls"
+check "the dialog offers a real cancel beside the update" \
+  grep -q 'buttons {"Later", "Update now"}' "$calls"
+check "an accepted offer never asks a second time" \
+  grep -q 'MASH_UPDATE_CONFIRMED=1' "$calls"
+
+fresh mac-dialog-later
+setversion 0.1.1
+mac FAKE_RELEASE=0.2.0 FAKE_DIALOG=Later
+check "declining the dialog opens no pane" test "$(count popup)" = 0
+check "a declined offer is logged" \
+  grep -q 'macos: 0\.2\.0 declined in the update dialog' "$data/local/state/update-notice.log"
+check "a declined release is not offered again" grep -qx 0.2.0 "$data/local/state/update-notice"
+
+# A timeout must land on the safe button: AppleScript still reports the default
+# button when the dialog gives up, so the helper has to say so explicitly.
+check "a dialog that times out declines instead of accepting" \
+  grep -q 'if gave up of answer then return "Later"' "$helper"
 
 # --- the rate limit ------------------------------------------------------------
 : >"$calls"

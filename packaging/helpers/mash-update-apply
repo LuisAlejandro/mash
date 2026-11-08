@@ -83,6 +83,7 @@ if [ "$phase" = handoff ]; then
 fi
 mash_update_phase quiescing || exit 1
 printf '%s\n' "$version" >"$MU_STATE/update-pending"
+mash_update_progress_set fraction "Closing Mash" 0 0 930 || true
 mash_update_progress || true
 old="$work/old-processes"
 stopped=1
@@ -90,6 +91,7 @@ mash_update_quiesce "$dest" "$old" || failure 'Mash did not completely quit; the
 mash_update_change shutdown_snapshot "$old" || failure 'Could not record shutdown.'
 # No large copy or assessment follows this final admission/ownership check.
 mash_update_phase swap-intent || failure 'Could not record the exchange intent.'
+mash_update_progress_set fraction "Replacing Mash" 0 0 960 || true
 "$self/mash-update-processes" list "$dest" "$data" >"$work/final-processes" || failure 'Could not perform the final shutdown check.'
 [ ! -s "$work/final-processes" ] || failure 'Mash reopened before replacement; the previous installation was not replaced.'
 "$work/mash-update-swap" "$staged" "$dest" >>"$MU_STATE/mash-update.log" 2>&1 ||
@@ -97,9 +99,14 @@ mash_update_phase swap-intent || failure 'Could not record the exchange intent.'
 swapped=1
 mash_update_launch_state "$old" || failure 'The target was installed but readiness state could not be recorded.'
 rm -f "$MU_STATE/update-pending" "$MU_STATE/update-retry"
+mash_update_progress_set fraction "Opening Mash" 0 0 980 || true
 mash_update_run 15 launch open "$dest" || failure 'The target is installed but could not be launched. Its recovery copy was retained.'
 while :; do
-  if mash_update_confirm; then mash_update_log "ready_version=$version"; exit 0; fi
+  if mash_update_confirm; then
+    mash_update_progress_set fraction "Mash is ready" 0 0 1000 || true
+    mash_update_log "ready_version=$version"
+    exit 0
+  fi
   [ "$(mash_update_read phase)" != confirmed ] || exit 0
   remaining="$(mash_update_remaining)" || failure 'Could not read the target readiness deadline.'
   [ "$remaining" -gt 0 ] || failure 'The target did not confirm a usable window and server. Recovery controls are available; both app copies were retained.'

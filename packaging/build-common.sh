@@ -542,7 +542,7 @@ mash_stage_portable_payload() {
     # macOS-only: these use the native desktop update path or notifier app.
     # Linux keeps APT and the read-only notice; no swap or download helper.
     case "$(basename "$helper")" in
-      mash-notify|mash-update-verify|mash-update-apply|mash-update-common|mash-update-gate|mash-update-processes.c|mash-update-swap.c) continue ;;
+      mash-notify|mash-update-verify|mash-update-apply|mash-update-common|mash-update-gate|mash-update-processes.c|mash-update-swap.c|mash-update-progress.m) continue ;;
     esac
     [ -f "$helper" ] || continue
     case "$helper" in
