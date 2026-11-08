@@ -26,6 +26,9 @@ mnt="" sibling="" handed_off=0
 cleanup() {
   local rc=$?
   [ "$handed_off" = 0 ] || return 0
+  # The install worker adopts the window. A cancelled or failed preparation
+  # does not, so this pane is the one that has to close it.
+  mash_update_hide_progress
   mash_update_abandon_preparation "$work" "$sibling" "$mnt"
   return "$rc"
 }
@@ -61,8 +64,10 @@ x86_64) asset_arch=amd64 ;;
 esac
 asset="Mash-$candidate-mac-$asset_arch.dmg"
 printf '  Downloading Mash %s...\n' "$candidate"
-curl -fL --retry 2 --max-time 1800 --progress-bar -o "$work/$asset" \
-  "https://github.com/LuisAlejandro/mash/releases/download/$candidate/$asset" || fail 'Download failed.'
+mash_update_fetch \
+  "https://github.com/LuisAlejandro/mash/releases/download/$candidate/$asset" \
+  "$work/$asset" "Downloading Mash $candidate" || fail 'Download failed.'
+mash_update_progress_set fraction "Verifying the download" 0 0 760 || true
 printf '  Verifying the download...\n'
 mnt="$work/mount"
 mkdir -p "$mnt" || fail 'Could not prepare the image.'
@@ -75,6 +80,7 @@ mash_update_run 600 gatekeeper spctl --assess --type execute "$mnt/Mash.app" || 
 want="$(team_of "$app")" got="$(team_of "$mnt/Mash.app")"
 [ -n "$want" ] && [ "$want" != 'not set' ] && [ "$want" = "$got" ] || fail 'The download has a different signing Team ID.'
 mash_update_change expected_team "$want" || fail 'Could not record the signing identity.'
+mash_update_progress_set fraction "Preparing the update" 0 0 840 || true
 printf '  Preparing the final copy. Mash stays open during verification...\n'
 sibling="$(mktemp -d "$parent/.mash-update-XXXXXX")" || fail 'Could not prepare the update beside Mash.'
 printf '%s\n' "$MU_ID" >"$sibling/.mash-update-owner" || fail 'Could not record preparation ownership.'
@@ -95,18 +101,37 @@ mash_update_run 60 detach hdiutil detach "$mnt" -quiet || fail 'Could not close 
 mnt=""
 # Quarantine is removed only after signature and Gatekeeper acceptance.
 xattr -dr com.apple.quarantine "$staged" >>"$MU_STATE/mash-update.log" 2>&1 || true
-for helper in mash-update-common mash-update-processes mash-update-gate mash-update-apply mash-update-swap; do
+for helper in mash-update-common mash-update-processes mash-update-gate mash-update-apply mash-update-swap mash-update-progress; do
+  # Already executing from this path. Copying over it truncates the running
+  # image, and a link would make cp or chmod change a file inside Mash.app.
+  if [ "$helper" = mash-update-progress ] && [ -L "$work/$helper" ]; then
+    rm -f "$work/$helper" || fail 'A detached helper could not be prepared.'
+  fi
+  if [ "$helper" = mash-update-progress ] && [ -x "$work/$helper" ]; then continue; fi
+  if [ ! -e "$bin/$helper" ]; then
+    [ "$helper" = mash-update-progress ] && continue
+    fail 'A detached helper could not be prepared.'
+  fi
   cp "$bin/$helper" "$work/$helper" || fail 'A detached helper could not be prepared.'
 done
-chmod 700 "$work"/mash-update-*
+for helper in "$work"/mash-update-*; do
+  [ -e "$helper" ] && [ ! -L "$helper" ] && chmod 700 "$helper"
+done
 "$work/mash-update-processes" now >/dev/null || fail 'The detached worker cannot start.'
 mash_update_change expected_uuid "$uuid" || fail 'Could not record the target build.'
 mash_update_phase ready || fail 'Could not record preparation.'
+mash_update_progress_set fraction "Ready to install Mash $candidate" 0 0 900 || true
 printf '\n  Ready to install Mash %s (you have %s).\n' "$candidate" "$installed"
 printf '  This closes Mash now and reopens it when done.\n'
-printf '  Type y to install, anything else to cancel: '
-IFS= read -r answer || answer=n
-case "$answer" in y | Y | yes | YES) ;; *) printf '  Cancelled. Mash was not changed.\n'; exit 0 ;; esac
+# The offer dialog already asked. A second prompt here would be the same
+# question, and there is nobody to answer it once the dialog is gone.
+if [ "${MASH_UPDATE_CONFIRMED:-0}" = 1 ]; then
+  printf '  Installing.\n'
+else
+  printf '  Type y to install, anything else to cancel: '
+  IFS= read -r answer || answer=n
+  case "$answer" in y | Y | yes | YES) ;; *) printf '  Cancelled. Mash was not changed.\n'; exit 0 ;; esac
+fi
 # Transfer cleanup ownership BEFORE bootstrap: the worker may stop this pane
 # immediately. A parent killed after launching it must not delete its inputs.
 deadline="$(( $("$bin/mash-update-processes" now) + 60 ))"

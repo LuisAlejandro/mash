@@ -79,6 +79,10 @@
     "text": "viu не встановлено. Установіть його командою: brew install viu",
     "source_hash": "51d203b460ac"
   },
+  "plugin.mash-update-notice.dialog.offer": {
+    "text": "Доступний Mash {candidate} (у вас {installed}). Під час оновлення Mash закриється та знову відкриється з новою версією.",
+    "source_hash": "31c9183bb4be"
+  },
   "plugin.mash-update-notice.notice.apt-failed": {
     "text": "Перевірте репозиторій APT і виконайте sudo apt update.",
     "source_hash": "6e5d462c3fb3"
@@ -102,6 +106,10 @@
   "plugin.mash-update-notice.notice.current-macos": {
     "text": "Усе оновлено. Mash {version} — поточна версія.",
     "source_hash": "541489679898"
+  },
+  "plugin.mash-update-notice.notice.did-not-start": {
+    "text": "Відкрийте Mash і спробуйте оновити ще раз.",
+    "source_hash": "2d7e7b4a3157"
   },
   "plugin.mash-update-notice.notice.previous-restored": {
     "text": "Mash {installed} знову працює. Оновлення до {candidate} не завершилося.",
@@ -135,6 +143,10 @@
     "text": "\n  Працює Mash {installed}; Mash {candidate} вже встановлено.\n\n  Збережіть роботу та перезапустіть Mash, щоб користуватися встановленою версією.\n  Завантаження не потрібне.   (натисніть будь-яку клавішу, щоб закрити)",
     "source_hash": "8cfff1a68c6e"
   },
+  "plugin.mash-update-notice.pane.update-accepted": {
+    "text": "  Оновлення до Mash {candidate}. Mash закриється й знову відкриється після завершення.",
+    "source_hash": "8950c6705227"
+  },
   "plugin.mash-update-notice.pane.update-prompt": {
     "text": "\n  Доступний Mash {candidate} (у вас {installed}).\n\n  Натисніть u, щоб оновити зараз, або будь-яку іншу клавішу, щоб закрити.\n  Під час оновлення Mash закриється та знову відкриється з новою версією.\n\n  > ",
     "source_hash": "e72a656d118c"
@@ -162,6 +174,10 @@
   "plugin.mash-update-notice.title.check-failed": {
     "text": "Не вдалося перевірити оновлення Mash",
     "source_hash": "43d510221839"
+  },
+  "plugin.mash-update-notice.title.did-not-start": {
+    "text": "Оновлення Mash не запустилося",
+    "source_hash": "ba0d18142f6b"
   },
   "plugin.mash-update-notice.title.previous-restored": {
     "text": "Попередню версію Mash відновлено",

@@ -79,6 +79,10 @@
     "text": "viu がインストールされていません。次のコマンドでインストールしてください: brew install viu",
     "source_hash": "51d203b460ac"
   },
+  "plugin.mash-update-notice.dialog.offer": {
+    "text": "Mash {candidate} を利用できます (現在 {installed})。更新中に Mash を終了し、新しいバージョンで再起動します。",
+    "source_hash": "31c9183bb4be"
+  },
   "plugin.mash-update-notice.notice.apt-failed": {
     "text": "APT リポジトリを確認し、sudo apt update を実行してください。",
     "source_hash": "6e5d462c3fb3"
@@ -102,6 +106,10 @@
   "plugin.mash-update-notice.notice.current-macos": {
     "text": "すべて最新です。Mash {version} は最新バージョンです。",
     "source_hash": "541489679898"
+  },
+  "plugin.mash-update-notice.notice.did-not-start": {
+    "text": "Mash を開いて、更新をもう一度試してください。",
+    "source_hash": "2d7e7b4a3157"
   },
   "plugin.mash-update-notice.notice.previous-restored": {
     "text": "Mash {installed} が再び実行されています。{candidate} への更新は完了しませんでした。",
@@ -135,6 +143,10 @@
     "text": "\n  Mash {installed} を実行中です。Mash {candidate} はインストール済みです。\n\n  作業を保存し、インストール済みのバージョンを使うため Mash を再起動してください。\n  ダウンロードは不要です。   (任意のキーで閉じます)",
     "source_hash": "8cfff1a68c6e"
   },
+  "plugin.mash-update-notice.pane.update-accepted": {
+    "text": "  Mash {candidate} に更新しています。完了すると Mash を終了して開き直します。",
+    "source_hash": "8950c6705227"
+  },
   "plugin.mash-update-notice.pane.update-prompt": {
     "text": "\n  Mash {candidate} を利用できます (現在 {installed})。\n\n  今すぐ更新するには u を押してください。ほかのキーで閉じます。\n  更新中に Mash を終了し、新しいバージョンで再起動します。\n\n  > ",
     "source_hash": "e72a656d118c"
@@ -162,6 +174,10 @@
   "plugin.mash-update-notice.title.check-failed": {
     "text": "Mash の更新を確認できませんでした",
     "source_hash": "43d510221839"
+  },
+  "plugin.mash-update-notice.title.did-not-start": {
+    "text": "Mash の更新を開始できませんでした",
+    "source_hash": "ba0d18142f6b"
   },
   "plugin.mash-update-notice.title.previous-restored": {
     "text": "以前の Mash を復元しました",

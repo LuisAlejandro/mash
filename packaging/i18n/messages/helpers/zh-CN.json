@@ -79,6 +79,10 @@
     "text": "尚未安装 viu。使用以下命令安装：brew install viu",
     "source_hash": "51d203b460ac"
   },
+  "plugin.mash-update-notice.dialog.offer": {
+    "text": "Mash {candidate} 已可用（当前为 {installed}）。更新会退出 Mash，并以新版本重新打开。",
+    "source_hash": "31c9183bb4be"
+  },
   "plugin.mash-update-notice.notice.apt-failed": {
     "text": "请检查 APT 仓库并运行 sudo apt update。",
     "source_hash": "6e5d462c3fb3"
@@ -102,6 +106,10 @@
   "plugin.mash-update-notice.notice.current-macos": {
     "text": "一切均为最新。Mash {version} 是当前版本。",
     "source_hash": "541489679898"
+  },
+  "plugin.mash-update-notice.notice.did-not-start": {
+    "text": "打开 Mash，然后再次尝试更新。",
+    "source_hash": "2d7e7b4a3157"
   },
   "plugin.mash-update-notice.notice.previous-restored": {
     "text": "Mash {installed} 已恢复运行。更新到 {candidate} 未能完成。",
@@ -135,6 +143,10 @@
     "text": "\n  Mash {installed} 正在运行；Mash {candidate} 已安装。\n\n  请保存工作并重启 Mash，以使用已安装的版本。\n  无需下载。   （按任意键关闭）",
     "source_hash": "8cfff1a68c6e"
   },
+  "plugin.mash-update-notice.pane.update-accepted": {
+    "text": "  正在更新到 Mash {candidate}。完成后会关闭 Mash 并重新打开。",
+    "source_hash": "8950c6705227"
+  },
   "plugin.mash-update-notice.pane.update-prompt": {
     "text": "\n  Mash {candidate} 已可用（当前为 {installed}）。\n\n  按 u 立即更新，或按其他任意键取消。\n  更新会退出 Mash，并以新版本重新打开。\n\n  > ",
     "source_hash": "e72a656d118c"
@@ -162,6 +174,10 @@
   "plugin.mash-update-notice.title.check-failed": {
     "text": "无法检查 Mash 更新",
     "source_hash": "43d510221839"
+  },
+  "plugin.mash-update-notice.title.did-not-start": {
+    "text": "Mash 更新没有开始",
+    "source_hash": "ba0d18142f6b"
   },
   "plugin.mash-update-notice.title.previous-restored": {
     "text": "已恢复到先前的 Mash 版本",

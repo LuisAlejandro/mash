@@ -79,6 +79,10 @@
     "text": "viu não está instalado. Instale com: brew install viu",
     "source_hash": "51d203b460ac"
   },
+  "plugin.mash-update-notice.dialog.offer": {
+    "text": "Mash {candidate} está disponível (você tem {installed}). A atualização fecha o Mash e o reabre na nova versão.",
+    "source_hash": "31c9183bb4be"
+  },
   "plugin.mash-update-notice.notice.apt-failed": {
     "text": "Verifique o repositório APT e execute sudo apt update.",
     "source_hash": "6e5d462c3fb3"
@@ -102,6 +106,10 @@
   "plugin.mash-update-notice.notice.current-macos": {
     "text": "Tudo atualizado. Mash {version} é a versão atual.",
     "source_hash": "541489679898"
+  },
+  "plugin.mash-update-notice.notice.did-not-start": {
+    "text": "Abra o Mash e tente a atualização de novo.",
+    "source_hash": "2d7e7b4a3157"
   },
   "plugin.mash-update-notice.notice.previous-restored": {
     "text": "Mash {installed} está em execução novamente. A atualização para {candidate} não foi concluída.",
@@ -135,6 +143,10 @@
     "text": "\n  Mash {installed} está em execução; Mash {candidate} já está instalado.\n\n  Salve seu trabalho e reinicie o Mash para usar a versão instalada.\n  Não é necessário baixar nada.   (pressione qualquer tecla para fechar)",
     "source_hash": "8cfff1a68c6e"
   },
+  "plugin.mash-update-notice.pane.update-accepted": {
+    "text": "  Atualizando para o Mash {candidate}. Isso fecha o Mash e o reabre ao terminar.",
+    "source_hash": "8950c6705227"
+  },
   "plugin.mash-update-notice.pane.update-prompt": {
     "text": "\n  Mash {candidate} está disponível (você tem {installed}).\n\n  Pressione u para atualizar agora ou qualquer outra tecla para dispensar.\n  A atualização fecha o Mash e o reabre na nova versão.\n\n  > ",
     "source_hash": "e72a656d118c"
@@ -162,6 +174,10 @@
   "plugin.mash-update-notice.title.check-failed": {
     "text": "Não foi possível verificar atualizações do Mash",
     "source_hash": "43d510221839"
+  },
+  "plugin.mash-update-notice.title.did-not-start": {
+    "text": "A atualização do Mash não foi iniciada",
+    "source_hash": "ba0d18142f6b"
   },
   "plugin.mash-update-notice.title.previous-restored": {
     "text": "Versão anterior do Mash restaurada",

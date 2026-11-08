@@ -79,6 +79,10 @@
     "text": "Chưa cài viu. Cài đặt bằng: brew install viu",
     "source_hash": "51d203b460ac"
   },
+  "plugin.mash-update-notice.dialog.offer": {
+    "text": "Đã có Mash {candidate} (bạn đang có {installed}). Quá trình cập nhật sẽ thoát Mash rồi mở lại bằng phiên bản mới.",
+    "source_hash": "31c9183bb4be"
+  },
   "plugin.mash-update-notice.notice.apt-failed": {
     "text": "Kiểm tra kho APT và chạy sudo apt update.",
     "source_hash": "6e5d462c3fb3"
@@ -102,6 +106,10 @@
   "plugin.mash-update-notice.notice.current-macos": {
     "text": "Mọi thứ đã được cập nhật. Mash {version} là phiên bản hiện tại.",
     "source_hash": "541489679898"
+  },
+  "plugin.mash-update-notice.notice.did-not-start": {
+    "text": "Mở Mash và thử cập nhật lại.",
+    "source_hash": "2d7e7b4a3157"
   },
   "plugin.mash-update-notice.notice.previous-restored": {
     "text": "Mash {installed} đã chạy lại. Việc cập nhật lên {candidate} chưa hoàn tất.",
@@ -135,6 +143,10 @@
     "text": "\n  Mash {installed} đang chạy; Mash {candidate} đã được cài đặt.\n\n  Lưu công việc rồi khởi động lại Mash để dùng phiên bản đã cài đặt.\n  Không cần tải xuống.   (nhấn phím bất kỳ để đóng)",
     "source_hash": "8cfff1a68c6e"
   },
+  "plugin.mash-update-notice.pane.update-accepted": {
+    "text": "  Đang cập nhật lên Mash {candidate}. Mash sẽ đóng rồi mở lại khi xong.",
+    "source_hash": "8950c6705227"
+  },
   "plugin.mash-update-notice.pane.update-prompt": {
     "text": "\n  Đã có Mash {candidate} (bạn đang có {installed}).\n\n  Nhấn u để cập nhật ngay hoặc nhấn phím khác để bỏ qua.\n  Quá trình cập nhật sẽ thoát Mash rồi mở lại bằng phiên bản mới.\n\n  > ",
     "source_hash": "e72a656d118c"
@@ -162,6 +174,10 @@
   "plugin.mash-update-notice.title.check-failed": {
     "text": "Không thể kiểm tra cập nhật Mash",
     "source_hash": "43d510221839"
+  },
+  "plugin.mash-update-notice.title.did-not-start": {
+    "text": "Bản cập nhật Mash không được bắt đầu",
+    "source_hash": "ba0d18142f6b"
   },
   "plugin.mash-update-notice.title.previous-restored": {
     "text": "Đã khôi phục phiên bản Mash trước đó",
