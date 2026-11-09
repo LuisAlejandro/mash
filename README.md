@@ -4,7 +4,7 @@
 
 [![](https://img.shields.io/github/release/LuisAlejandro/mash.svg)](https://github.com/LuisAlejandro/mash/releases) [![](https://img.shields.io/github/actions/workflow/status/LuisAlejandro/mash/push.yml)](https://github.com/LuisAlejandro/mash/actions/workflows/push.yml) [![](https://img.shields.io/discord/1556678684063301682.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/Wk95fG7w2C) [![](https://cla-assistant.io/readme/badge/LuisAlejandro/mash)](https://cla-assistant.io/LuisAlejandro/mash)
 
-Current version: 0.3.0
+Current version: 0.4.0
 
 *Mash* is a desktop workspace for AI-assisted coding. It brings a customized Ghostty terminal, Herdr workspaces, the Fresh editor, Pi, and pinned development tools into one app. Your settings and sessions live in `~/.mash`, separate from the tools you use outside Mash. Mash runs in 15 languages: the setup wizard asks once, and its own screens, messages, popups and the terminal's menu bar follow that choice.
 
