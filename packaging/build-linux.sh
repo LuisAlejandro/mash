@@ -133,6 +133,13 @@ if [ "${MASH_SKIP_GHOSTTY:-0}" = "1" ] && [ -d "$ghostty_out_cache" ]; then
   cp -a "$ghostty_out_cache/." "$product/"
   echo "reused the cached Ghostty frontend"
 else
+  # Same reason as the macOS path: seed the git+https pins from tarballs so the
+  # build never reaches Zig's git client, which fails intermittently on CI.
+  python3 "$root/packaging/zig-prefetch.py" --zig "$zig" --src "$ghostty_src" \
+    --global-cache-dir "$cache/zig/$target/global" || {
+    echo "could not seed the Ghostty dependency cache." >&2
+    exit 1
+  }
   (
     cd "$ghostty_src"
     PATH="$(dirname "$zig"):$PATH" \
