@@ -243,6 +243,26 @@ class MacOSUpdatePackageTest(unittest.TestCase):
         self.assertIn("mashUpdateEntry()\nmashHandOffToSetup()", main)
         self.assertFalse((ROOT / "packaging/patches/ghostty-update-lifecycle.patch").exists())
 
+    def test_updater_quit_skips_the_confirmation_dialog(self):
+        # An unanswered "Quit Mash Terminal?" stalled the 0.3.0 -> 0.4.0 update
+        # past its 60s shutdown budget. The updater asks with `saving no`, and the
+        # pinned fork answers that with terminateNow instead of the dialog.
+        common = (ROOT / "packaging/helpers/mash-update-common").read_text()
+        quiesce = common.split("mash_update_quiesce() {", 1)[1].split("\n}\n", 1)[0]
+        self.assertIn("«event aevtquit» given «class savo»:«constant ****no  »", quiesce)
+        self.assertNotIn("to quit'", quiesce)
+
+        from macos_update_fixture import pinned_fork_text
+
+        app_delegate = pinned_fork_text("macos/Sources/App/AppDelegate.swift")
+        sdef = pinned_fork_text("macos/Ghostty.sdef")
+        if app_delegate is None or sdef is None:
+            self.skipTest("needs pinned Ghostty source for the quit bypass")
+        should_terminate = app_delegate.split("func applicationShouldTerminate(", 1)[1].split("\n    }\n", 1)[0]
+        self.assertLess(should_terminate.index("isQuitWithoutSaving("), should_terminate.index("return terminate()"))
+        self.assertIn('"savo".fourCharCode', app_delegate)
+        self.assertIn('code="savo"', sdef)
+
     def test_linux_payload_keeps_apt_and_excludes_macos_helpers(self):
         build = (ROOT / "packaging/build-common.sh").read_text()
         for name in ("mash-update-verify", "mash-update-apply", "mash-update-common",

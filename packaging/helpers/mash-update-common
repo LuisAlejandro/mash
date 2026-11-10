@@ -9,6 +9,13 @@ mash_update_init() {
   MU_STATE="$MU_DATA/local/state"
   MU_TX="$MU_STATE/update-transaction.plist"
   MU_LOCK="$MU_STATE/update-install.lock"
+  # Seconds quiesce waits for a Herdr server that did not confirm its own stop,
+  # out of the same 60s shutdown budget. Tests shorten it; nothing else sets it.
+  MU_HERDR_GRACE="${MASH_UPDATE_HERDR_GRACE:-20}"
+  # Whole shutdown budget, shared by the quit, that grace, and the wait loop.
+  MU_QUIESCE_BUDGET="${MASH_UPDATE_QUIESCE_BUDGET:-60}"
+  case "$MU_HERDR_GRACE$MU_QUIESCE_BUDGET" in '' | *[!0-9]*) return 1 ;; esac
+  [ "$MU_HERDR_GRACE" -lt "$MU_QUIESCE_BUDGET" ] || return 1
   [ ! -L "$MU_DATA" ] && [ ! -L "$MU_DATA/local" ] && [ ! -L "$MU_STATE" ] || return 1
   (umask 077; mkdir -p "$MU_STATE") || return 1
   [ "$(/usr/bin/stat -f %u "$MU_STATE")" = "$(id -u)" ] || return 1
@@ -554,7 +561,7 @@ mash_update_hide_progress() {
   unset MU_PROGRESS_PID MU_PROGRESS_START MU_PROGRESS_MODE MU_PROGRESS_LABEL MU_PROGRESS_FRACTION
 }
 mash_update_quiesce() {
-  local app="$1" inventory="$2" proc="$MU_BIN/mash-update-processes" canonical start now remaining gui pid stamp image alive
+  local app="$1" inventory="$2" proc="$MU_BIN/mash-update-processes" canonical start now remaining grace gui pid stamp image alive
   canonical="$(cd "$app" && pwd -P)" || return 1
   "$proc" register "$MU_DATA" "$app" "$$" waiter || return 1
   "$proc" list "$app" "$MU_DATA" >"$inventory" || return 1
@@ -567,7 +574,11 @@ mash_update_quiesce() {
   done <"$inventory"
   if [ "$gui" = 1 ]; then
     now="$("$proc" now)" || return 1
-    if ! mash_update_run "$((60 - (now - start)))" quit osascript -e 'on run argv' -e 'tell application (item 1 of argv) to quit' -e 'end run' "$app"; then
+    # `saving no` tells the app not to ask "Quit Mash Terminal?": the user
+    # already agreed to update, and an unanswered dialog stalls the update. The
+    # raw form compiles without the app's dictionary; a build without the
+    # bypass ignores the flag and still asks.
+    if ! mash_update_run "$((MU_QUIESCE_BUDGET - (now - start)))" quit osascript -e 'on run argv' -e 'tell application (item 1 of argv) to «event aevtquit» given «class savo»:«constant ****no  »' -e 'end run' "$app"; then
       # The user may have finished quitting between inventory and the event.
       # Cancellation with a live GUI still fails closed; a stale event error
       # must not misreport a completely stopped app as an update failure.
@@ -582,7 +593,23 @@ mash_update_quiesce() {
   fi
   if [ -x "$app/Contents/Resources/bin/herdr" ] && [ -S "$MU_DATA/run/herdr.sock" ]; then
     now="$("$proc" now)" || return 1
-    mash_update_run "$((60 - (now - start)))" herdr-stop env HERDR_SOCKET_PATH="$MU_DATA/run/herdr.sock" "$app/Contents/Resources/bin/herdr" server stop || return 1
+    if ! mash_update_run "$((MU_QUIESCE_BUDGET - (now - start)))" herdr-stop env HERDR_SOCKET_PATH="$MU_DATA/run/herdr.sock" "$app/Contents/Resources/bin/herdr" server stop; then
+      # Herdr's own stop deadline is shorter than this budget, so reporting
+      # "did not stop" does not mean it stopped failing -- it is usually still
+      # saving its session. Give it that time to finish by itself before the
+      # loop below signals it; the loop, the final process check and the socket
+      # check still decide whether the exchange may happen at all.
+      mash_update_log 'herdr-stop did not confirm; waiting for the server to exit'
+      now="$("$proc" now)" || return 1
+      remaining="$((MU_QUIESCE_BUDGET - (now - start)))"
+      [ "$remaining" -le "$MU_HERDR_GRACE" ] || remaining="$MU_HERDR_GRACE"
+      grace="$((now + remaining))"
+      while [ "$("$proc" now)" -lt "$grace" ]; do
+        /usr/sbin/lsof -t "$MU_DATA/run/herdr.sock" >/dev/null 2>&1 || break
+        sleep 0.2
+      done
+      mash_update_log "herdr-stop grace ended after $(( $("$proc" now) - now ))s"
+    fi
   fi
   while :; do
     "$proc" list "$app" "$MU_DATA" >"$inventory.current" || return 1
@@ -604,7 +631,7 @@ mash_update_quiesce() {
     done <"$inventory.all"
     [ "$alive" = 1 ] || break
     now="$("$proc" now)" || return 1
-    [ "$((now - start))" -lt 60 ] || return 1
+    [ "$((now - start))" -lt "$MU_QUIESCE_BUDGET" ] || return 1
     sleep 0.2
   done
   rm -f "$inventory.current" "$inventory.all"

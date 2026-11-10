@@ -15,8 +15,8 @@ class ReviewRegressions(unittest.TestCase):
         self.f = UpdateFixture()
         self.addCleanup(self.f.close)
 
-    def common(self, code):
-        return self.f.shell(f'source "{self.f.bin}/mash-update-common"; mash_update_init "{self.f.data}"; MU_ID="{self.f.state()["id"]}"; {code}')
+    def common(self, code, **extra):
+        return self.f.shell(f'source "{self.f.bin}/mash-update-common"; mash_update_init "{self.f.data}"; MU_ID="{self.f.state()["id"]}"; {code}', **extra)
 
     def test_malformed_apply_arguments_exit_without_looping(self):
         result = subprocess.run(
@@ -113,6 +113,49 @@ esac''')
         result = self.common(f'mash_update_quiesce "{self.f.app}" "{self.f.work}/failed-runtime"')
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIsNotNone(process.poll())
+        self.assertNotIn("KILL", self.f.calls.read_text())
+
+    def _failing_herdr_stop(self, **server_env):
+        """A bundle whose `server stop` reports failure, plus a server holding the socket.
+
+        This is the 0.3.0 -> 0.4.0 shutdown: Herdr answered "did not stop within
+        15000ms" while its server was still running.
+        """
+        self.f.begin()
+        bin_dir = self.f.app / "Contents/Resources/bin"
+        bin_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy(self.f.app / "Contents/MacOS/mash-terminal", bin_dir / "herdr-server")
+        herdr = bin_dir / "herdr"
+        herdr.write_text('#!/bin/bash\necho "herdr $*" >>"$CALLS"\nexit 1\n')
+        herdr.chmod(0o700)
+        socket = self.f.data / "run/herdr.sock"
+        server = self.f.start(bin_dir / "herdr-server", "server", FIXTURE_SOCKET=str(socket), **server_env)
+        for _ in range(100):
+            if socket.exists():
+                break
+            time.sleep(0.02)
+        self.assertTrue(socket.exists())
+        return server
+
+    def test_9_failed_herdr_stop_waits_then_stops_the_server_itself(self):
+        server = self._failing_herdr_stop()
+        result = self.common(f'mash_update_quiesce "{self.f.app}" "{self.f.work}/runtime"',
+                             MASH_UPDATE_HERDR_GRACE="1")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIsNotNone(server.poll(), "the leftover server must not survive shutdown")
+        log = (self.f.data / "local/state/mash-update.log").read_text()
+        self.assertIn("herdr-stop did not confirm", log)
+        self.assertIn("herdr-stop grace ended", log)
+        # Shutdown ends processes with TERM; a force-kill is never allowed.
+        self.assertNotIn("KILL", self.f.calls.read_text())
+
+    def test_9_a_server_that_ignores_term_still_blocks_the_exchange(self):
+        server = self._failing_herdr_stop(FIXTURE_IGNORE_TERM="1")
+        self.addCleanup(server.kill)
+        result = self.common(f'mash_update_quiesce "{self.f.app}" "{self.f.work}/runtime"',
+                             MASH_UPDATE_HERDR_GRACE="1", MASH_UPDATE_QUIESCE_BUDGET="4")
+        self.assertNotEqual(result.returncode, 0, "a surviving server must fail shutdown")
+        self.assertIsNone(server.poll())
         self.assertNotIn("KILL", self.f.calls.read_text())
 
     def test_6_all_readiness_participants_use_the_attempt_deadline(self):
