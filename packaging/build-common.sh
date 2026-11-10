@@ -144,7 +144,9 @@ mash_stage_runtimes() {
     return 1
   }
   rm -rf "$pi_ai_nested"
-  cp -R "$pi_ai_root" "$pi_ai_nested" || {
+  # A symlink, not a copy: the hoisted package is the pinned one, and copying
+  # it shipped a second 96 MB copy of the same runtime inside the bundle.
+  ln -s "$pi_ai_root" "$pi_ai_nested" || {
     echo "could not place the pinned pi-ai under the Pi package" >&2
     return 1
   }
