@@ -76,13 +76,35 @@ ln -s /Applications "$download/Applications"
 # Contents/Resources - the bundled tools, node_modules, the notifier - keeps
 # whatever ad-hoc signature build.sh left on it and the notary rejects the
 # whole archive. Walk the tree explicitly instead.
+# Every signature here is timestamped, which means every one depends on Apple's
+# timestamp authority answering. It intermittently does not:
+#
+#     dist/Mash.dmg: The timestamp service is not available.
+#
+# That is not a signing error and the artifact is fine, so a few spaced retries
+# recover it. Without them one unlucky response throws away a 45-minute build
+# and blocks the release.
+mash_codesign() {
+    local attempt=1 limit=4 delay=15
+    while :; do
+        if codesign "$@"; then
+            return 0
+        fi
+        [ "$attempt" -lt "$limit" ] || return 1
+        echo "codesign failed (attempt $attempt of $limit); retrying in ${delay}s" >&2
+        sleep "$delay"
+        attempt=$((attempt + 1))
+        delay=$((delay * 2))
+    done
+}
+
 sign_item() {
     local path="$1" ent="${2:-}"
     if [ -n "$ent" ]; then
-        codesign --force --options runtime --timestamp \
+        mash_codesign --force --options runtime --timestamp \
             --entitlements "$ent" --sign "$identity" "$path"
     else
-        codesign --force --options runtime --timestamp --sign "$identity" "$path"
+        mash_codesign --force --options runtime --timestamp --sign "$identity" "$path"
     fi
 }
 
@@ -215,7 +237,7 @@ rm -f "$scratch"
 scratch=""
 
 # 5. Sign the disk image itself.
-codesign --force --timestamp --sign "$identity" "$dist/Mash.dmg"
+mash_codesign --force --timestamp --sign "$identity" "$dist/Mash.dmg"
 
 # 6. Notarize the DMG and wait for Apple. `notarytool submit --wait` dies
 # with SIGBUS while printing its progress on this archive, so submit without

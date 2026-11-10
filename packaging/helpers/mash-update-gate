@@ -25,6 +25,9 @@ if [ "$action" != server-ready ]; then
     for helper in mash-update-common mash-update-processes mash-update-gate mash-update-swap; do
       cp "$bin/$helper" "$rescue/$helper" || exit 1
     done
+    if [ -f "$bin/mash-update-progress" ]; then
+      cp "$bin/mash-update-progress" "$rescue/mash-update-progress" || exit 1
+    fi
     printf '%s\n' "$MU_ID" >"$rescue/.mash-update-owner"
     printf '%s\n' "$MU_ID" >"$rescue/.mash-update-rescue"
     chmod 700 "$rescue"/mash-update-*
@@ -134,6 +137,7 @@ Update log: $MU_STATE/mash-update.log")"
       fi
       restoring=1
     fi
+    mash_update_progress_set fraction "Closing Mash" 0 0 930 || true
     mash_update_progress || true
     mash_update_phase quiescing || exit 1
     snapshot="$MU_STATE/update-recovery-$MU_ID.processes"

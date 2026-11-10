@@ -4,11 +4,18 @@
 mash_update_init() {
   MU_DATA="$1"
   case "$MU_DATA" in /*) ;; *) return 1 ;; esac
-  case "$MU_DATA" in *$'\n'* | *$'\t'*) return 1 ;; esac
+  case "$MU_DATA" in *$'\n'* | *$'	'*) return 1 ;; esac
   MU_BIN="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" || return 1
   MU_STATE="$MU_DATA/local/state"
   MU_TX="$MU_STATE/update-transaction.plist"
   MU_LOCK="$MU_STATE/update-install.lock"
+  # Seconds quiesce waits for a Herdr server that did not confirm its own stop,
+  # out of the same 60s shutdown budget. Tests shorten it; nothing else sets it.
+  MU_HERDR_GRACE="${MASH_UPDATE_HERDR_GRACE:-20}"
+  # Whole shutdown budget, shared by the quit, that grace, and the wait loop.
+  MU_QUIESCE_BUDGET="${MASH_UPDATE_QUIESCE_BUDGET:-60}"
+  case "$MU_HERDR_GRACE$MU_QUIESCE_BUDGET" in '' | *[!0-9]*) return 1 ;; esac
+  [ "$MU_HERDR_GRACE" -lt "$MU_QUIESCE_BUDGET" ] || return 1
   [ ! -L "$MU_DATA" ] && [ ! -L "$MU_DATA/local" ] && [ ! -L "$MU_STATE" ] || return 1
   (umask 077; mkdir -p "$MU_STATE") || return 1
   [ "$(/usr/bin/stat -f %u "$MU_STATE")" = "$(id -u)" ] || return 1
@@ -131,7 +138,7 @@ mash_update_begin() {
   local app="$1" candidate="$2" old="$3" work="$4" tmp owner
   [[ "$candidate" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || return 1
   case "$app" in /*.app) ;; *) return 1 ;; esac
-  case "$app$work" in *$'\n'* | *$'\t'*) return 1 ;; esac
+  case "$app$work" in *$'\n'* | *$'	'*) return 1 ;; esac
   case "$work" in /*/mash-update-??????) ;; *) return 1 ;; esac
   case "$work/" in
   "$MU_STATE"/update-attempts/mash-update-??????/) ;;
@@ -307,29 +314,254 @@ mash_update_abandon_preparation() {
   [ -z "$sibling" ] || rm -rf "$sibling"
   rm -rf "$work"
 }
+# The progress window is a detached process, not a child of Mash and not an
+# image inside the bundle. It polls a status file, so whichever worker is
+# alive updates the same window by rewriting that file. Download fills the
+# first 70%; the install phases continue from there. Hiding releases the
+# window's own lock and does not cancel the update.
+mash_update_progress_set() { # mode label done total fraction
+  local mode="$1" label="$2" done="$3" total="$4" fraction="$5" tmp
+  [ -n "${MU_ID:-}" ] || return 1
+  case "$mode" in bytes | fraction | indeterminate | close) ;; *) return 2 ;; esac
+  case "$done$total$fraction" in *[!0-9]*) return 2 ;; esac
+  tmp="$(mktemp "$MU_STATE/.update-progress-XXXXXX")" || return 1
+  printf 'mode %s\nlabel %s\ndone %s\ntotal %s\nfraction %s\n' \
+    "$mode" "$label" "$done" "$total" "$fraction" >"$tmp" || { rm -f "$tmp"; return 1; }
+  chmod 600 "$tmp" || true
+  mv -f "$tmp" "$MU_STATE/update-progress-${MU_ID}.status" || { rm -f "$tmp"; return 1; }
+  if [ "$mode" != "${MU_PROGRESS_MODE:-}" ] || [ "$label" != "${MU_PROGRESS_LABEL:-}" ] || [ "$fraction" != "${MU_PROGRESS_FRACTION:-}" ]; then
+    mash_update_log "progress mode=$mode fraction=$fraction done=$done total=$total" || true
+    MU_PROGRESS_MODE="$mode"
+    MU_PROGRESS_LABEL="$label"
+    MU_PROGRESS_FRACTION="$fraction"
+  fi
+}
+mash_update_progress_owner_alive() {
+  local owner pid stamp
+  [ -n "${MU_ID:-}" ] || return 1
+  owner="$MU_STATE/update-progress-${MU_ID}.owner"
+  [ -f "$owner" ] && [ ! -L "$owner" ] || return 1
+  read -r pid stamp <"$owner" || return 1
+  case "$pid" in '' | *[!0-9]*) return 1 ;; esac
+  [ -n "$stamp" ] || return 1
+  "$MU_BIN/mash-update-processes" alive "$pid" "$stamp"
+}
+mash_update_stage_progress() {
+  local work src
+  work="$(mash_update_read work 2>/dev/null || true)"
+  case "$work" in /*/mash-update-??????) ;; *) return 1 ;; esac
+  # cp follows a link and would overwrite whatever it names, including a file in the bundle.
+  if [ -L "$work/mash-update-progress" ]; then rm -f "$work/mash-update-progress" || return 1; fi
+  [ -x "$work/mash-update-progress" ] && return 0
+  src="$MU_BIN/mash-update-progress"
+  [ -f "$src" ] || return 1
+  cp "$src" "$work/mash-update-progress" || return 1
+  chmod 700 "$work/mash-update-progress"
+}
+mash_update_app_real() {
+  local app
+  app="$(mash_update_read app 2>/dev/null || true)"
+  case "$app" in /*.app) ;; *) return 1 ;; esac
+  (cd "$app" && pwd -P)
+}
+mash_update_resolve_file() { # path -> physical file, so a symlink cannot point back into the bundle
+  local path="$1" i=0 target dir
+  [ -n "$path" ] || return 1
+  while [ -L "$path" ] && [ "$i" -lt 16 ]; do
+    target="$(readlink "$path")" || return 1
+    case "$target" in
+    /*) path="$target" ;;
+    *) dir="$(cd "$(dirname "$path")" && pwd -P)" || return 1
+       path="$dir/$target" ;;
+    esac
+    i=$((i + 1))
+  done
+  [ -e "$path" ] || return 1
+  dir="$(cd "$(dirname "$path")" && pwd -P)" || return 1
+  printf '%s\n' "$dir/$(basename "$path")"
+}
+mash_update_progress_executable() {
+  local work app_real exe resolved
+  work="$(mash_update_read work 2>/dev/null || true)"
+  app_real="$(mash_update_app_real)" || return 1
+  if [ -n "$work" ] && [ -x "$work/mash-update-progress" ]; then
+    exe="$work/mash-update-progress"
+  elif [ -x "$MU_BIN/mash-update-progress" ]; then
+    exe="$MU_BIN/mash-update-progress"
+  else
+    return 1
+  fi
+  # Quiesce owns every image under the destination bundle, including one that
+  # has already been reparented to launchd. Resolve links before trusting it.
+  resolved="$(mash_update_resolve_file "$exe")" || return 1
+  case "$resolved" in "$app_real"/*) return 1 ;; esac
+  printf '%s\n' "$resolved"
+}
+# Hide may stop the dialog and the fallback prompt. It must never signal the
+# running app: a bad owner pid would otherwise quit Mash and its panes.
+mash_update_progress_signalable() { # pid
+  local image base app_real
+  image="$("$MU_BIN/mash-update-processes" image "$1" 2>/dev/null)" || return 1
+  base="$(basename "$image")"
+  case "$base" in mash-terminal | herdr) return 1 ;; esac
+  app_real="$(mash_update_app_real 2>/dev/null || true)"
+  if [ -n "$app_real" ]; then
+    case "$image" in
+    "$app_real"/*)
+      case "$base" in mash-update-progress | mash-update-processes) return 0 ;; esac
+      return 1
+      ;;
+    esac
+  fi
+  return 0
+}
+mash_update_progress_remember() { # pid stamp
+  local tmp
+  [ -n "${MU_ID:-}" ] || return 1
+  tmp="$(mktemp "$MU_STATE/.update-progress-owner-XXXXXX")" || return 1
+  printf '%s %s\n' "$1" "$2" >"$tmp" || { rm -f "$tmp"; return 1; }
+  chmod 600 "$tmp" || true
+  mv -f "$tmp" "$MU_STATE/update-progress-${MU_ID}.owner" || { rm -f "$tmp"; return 1; }
+  MU_PROGRESS_PID="$1"
+  MU_PROGRESS_START="$2"
+}
+mash_update_progress_stop_if_inside_app() { # pid stamp
+  local image app_real
+  image="$("$MU_BIN/mash-update-processes" image "$1" 2>/dev/null)" || return 1
+  app_real="$(mash_update_app_real 2>/dev/null || true)"
+  [ -n "$app_real" ] || return 1
+  case "$image" in "$app_real"/*) ;; *) return 1 ;; esac
+  mash_update_progress_signalable "$1" || return 0
+  "$MU_BIN/mash-update-processes" term "$1" "$2" >/dev/null 2>&1 || true
+  mash_update_log "progress stopped in-bundle image=$image" || true
+  return 0
+}
+mash_update_progress_show() {
+  local exe pid stamp rc=0 holder
+  mash_update_progress_owner_alive && return 0
+  mash_update_stage_progress || true
+  exe="$(mash_update_progress_executable 2>/dev/null)" || return 1
+  pid="$("$exe" serve "$MU_STATE/update-progress-${MU_ID}.status" "$MU_STATE/update-progress-${MU_ID}.mutex" 2>>"$MU_STATE/mash-update.log")" && rc=0 || rc=$?
+  # 2: this attempt's window already holds the lock. Remember that holder so
+  # hide can close it; an image inside the bundle is stopped instead.
+  if [ "$rc" = 2 ]; then
+    holder="$(/usr/sbin/lsof -t -- "$MU_STATE/update-progress-${MU_ID}.mutex" 2>/dev/null | awk 'NR == 1 { print; exit }')" || true
+    case "$holder" in '' | *[!0-9]*) return 0 ;; esac
+    stamp="$("$MU_BIN/mash-update-processes" stamp "$holder" 2>/dev/null)" || return 0
+    if mash_update_progress_stop_if_inside_app "$holder" "$stamp"; then return 1; fi
+    mash_update_progress_signalable "$holder" || return 0
+    mash_update_progress_remember "$holder" "$stamp"
+    return 0
+  fi
+  [ "$rc" = 0 ] || return 1
+  case "$pid" in '' | *[!0-9]*) return 1 ;; esac
+  stamp="$("$MU_BIN/mash-update-processes" stamp "$pid" 2>/dev/null)" || return 1
+  if mash_update_progress_stop_if_inside_app "$pid" "$stamp"; then return 1; fi
+  mash_update_progress_signalable "$pid" || {
+    mash_update_log "progress refused unsafe pid=$pid" || true
+    return 1
+  }
+  mash_update_progress_remember "$pid" "$stamp"
+}
+mash_update_fetch() { # url dest label -- byte progress when the window is up
+  local url="$1" dest="$2" label="$3" total=0 bytes=0 frac=0 child start now rc child_stamp owned_pid owned_stamp
+  if ! mash_update_progress_show; then
+    curl -fL --retry 2 --max-time 1800 --progress-bar -o "$dest" "$url"
+    return $?
+  fi
+  total="$(curl -fsIL --retry 2 --max-time 30 "$url" | awk 'BEGIN { n = 0 } tolower($1) == "content-length:" { gsub(/\r/, "", $2); n = $2 + 0 } END { print n + 0 }' || true)"
+  case "$total" in '' | *[!0-9]*) total=0 ;; esac
+  if [ "$total" -gt 0 ]; then
+    mash_update_progress_set bytes "$label" 0 "$total" 0 || true
+  else
+    mash_update_progress_set indeterminate "$label" 0 0 0 || true
+  fi
+  curl -fL --retry 2 --max-time 1800 -o "$dest" "$url" >>"$MU_STATE/mash-update.log" 2>&1 &
+  child=$!
+  MU_COMMAND_BUSY="$child"
+  start="$("$MU_BIN/mash-update-processes" now)" || return 1
+  while kill -0 "$child" 2>/dev/null; do
+    bytes="$(/usr/bin/stat -f %z "$dest" 2>/dev/null || echo 0)"
+    case "$bytes" in '' | *[!0-9]*) bytes=0 ;; esac
+    if [ "$total" -gt 0 ]; then
+      frac=$((bytes * 700 / total))
+      [ "$frac" -gt 700 ] && frac=700
+      mash_update_progress_set bytes "$label" "$bytes" "$total" "$frac" || true
+    fi
+    now="$("$MU_BIN/mash-update-processes" now)" || return 1
+    if [ "$((now - start))" -ge 1800 ]; then
+      child_stamp="$(mash_update_stamp "$child" 2>/dev/null || true)"
+      if [ -n "$child_stamp" ]; then
+        while read -r owned_pid owned_stamp; do
+          [ -n "$owned_pid" ] || continue
+          "$MU_BIN/mash-update-processes" term "$owned_pid" "$owned_stamp" >/dev/null 2>&1 || true
+        done < <("$MU_BIN/mash-update-processes" tree "$child" "$child_stamp")
+      fi
+      mash_update_log "end=download exit=124 timeout=1800s pid=$child; retain preparation until child exits"
+      return 124
+    fi
+    sleep 0.2
+  done
+  rc=0
+  wait "$child" || rc=$?
+  unset MU_COMMAND_BUSY
+  mash_update_log "end=download exit=$rc"
+  if [ "$rc" = 0 ] && [ "$total" -gt 0 ]; then
+    bytes="$(/usr/bin/stat -f %z "$dest" 2>/dev/null || echo 0)"
+    case "$bytes" in '' | *[!0-9]*) bytes=0 ;; esac
+    mash_update_progress_set bytes "$label" "$bytes" "$total" 700 || true
+  fi
+  return "$rc"
+}
 mash_update_progress() {
-  local tool ui
+  local tool ui tmp
+  if mash_update_progress_show; then return 0; fi
+  # No detached window (the helper was not built, or this host has no GUI).
+  # The install dialog is the same one-button status as before.
   tool="$(command -v osascript)" || return 1
-  # The UI owns a separate nonblocking kernel lock, not the transaction mutex.
-  # Hiding it releases the lock so a later Dock launch can show status again.
   "$MU_BIN/mash-update-processes" try-locked "$MU_STATE/update-progress-${MU_ID:-none}.mutex" "$tool" \
     -e 'on run argv' -e 'display dialog (item 1 of argv) with title "Updating Mash" buttons {"Hide"} default button 1 giving up after 300' -e 'end run' \
     'Mash is updating. It will reopen when the verified application is ready. Hiding this message does not cancel the update.' >/dev/null 2>&1 &
   ui=$!
   MU_PROGRESS_PID="$ui"
   MU_PROGRESS_START="$(mash_update_stamp "$ui" 2>/dev/null || true)"
+  if [ -n "${MU_ID:-}" ] && [ -n "$MU_PROGRESS_PID" ] && [ -n "$MU_PROGRESS_START" ]; then
+    tmp="$(mktemp "$MU_STATE/.update-progress-owner-XXXXXX")" || return 0
+    printf '%s %s\n' "$MU_PROGRESS_PID" "$MU_PROGRESS_START" >"$tmp" && chmod 600 "$tmp" &&
+      mv -f "$tmp" "$MU_STATE/update-progress-${MU_ID}.owner" || rm -f "$tmp"
+  fi
 }
 mash_update_hide_progress() {
-  [ -n "${MU_PROGRESS_PID:-}" ] && [ -n "${MU_PROGRESS_START:-}" ] || return 0
-  local pid stamp
-  while read -r pid stamp; do
-    [ -n "$pid" ] || continue
-    "$MU_BIN/mash-update-processes" term "$pid" "$stamp" >/dev/null 2>&1 || true
-  done < <("$MU_BIN/mash-update-processes" tree "$MU_PROGRESS_PID" "$MU_PROGRESS_START" 2>/dev/null)
-  unset MU_PROGRESS_PID MU_PROGRESS_START
+  local pid="" stamp="" root_pid root_stamp owner
+  if [ -n "${MU_ID:-}" ]; then
+    mash_update_progress_set close "Closing" 0 0 1000 || true
+    owner="$MU_STATE/update-progress-${MU_ID}.owner"
+    if [ -f "$owner" ] && [ ! -L "$owner" ]; then
+      read -r pid stamp <"$owner" || true
+    fi
+  fi
+  [ -n "$pid" ] || pid="${MU_PROGRESS_PID:-}"
+  [ -n "$stamp" ] || stamp="${MU_PROGRESS_START:-}"
+  if [ -n "$pid" ] && [ -n "$stamp" ]; then
+    root_pid="$pid"
+    root_stamp="$stamp"
+    if mash_update_progress_signalable "$root_pid"; then
+      while read -r pid stamp; do
+        [ -n "$pid" ] || continue
+        mash_update_progress_signalable "$pid" || continue
+        "$MU_BIN/mash-update-processes" term "$pid" "$stamp" >/dev/null 2>&1 || true
+      done < <("$MU_BIN/mash-update-processes" tree "$root_pid" "$root_stamp" 2>/dev/null)
+    else
+      mash_update_log "progress hide left pid=$root_pid running" || true
+    fi
+  fi
+  if [ -n "${MU_ID:-}" ]; then
+    rm -f "$MU_STATE/update-progress-${MU_ID}.owner" "$MU_STATE/update-progress-${MU_ID}.status"
+  fi
+  unset MU_PROGRESS_PID MU_PROGRESS_START MU_PROGRESS_MODE MU_PROGRESS_LABEL MU_PROGRESS_FRACTION
 }
 mash_update_quiesce() {
-  local app="$1" inventory="$2" proc="$MU_BIN/mash-update-processes" canonical start now remaining gui pid stamp image alive
+  local app="$1" inventory="$2" proc="$MU_BIN/mash-update-processes" canonical start now remaining grace gui pid stamp image alive
   canonical="$(cd "$app" && pwd -P)" || return 1
   "$proc" register "$MU_DATA" "$app" "$$" waiter || return 1
   "$proc" list "$app" "$MU_DATA" >"$inventory" || return 1
@@ -342,7 +574,11 @@ mash_update_quiesce() {
   done <"$inventory"
   if [ "$gui" = 1 ]; then
     now="$("$proc" now)" || return 1
-    if ! mash_update_run "$((60 - (now - start)))" quit osascript -e 'on run argv' -e 'tell application (item 1 of argv) to quit' -e 'end run' "$app"; then
+    # `saving no` tells the app not to ask "Quit Mash Terminal?": the user
+    # already agreed to update, and an unanswered dialog stalls the update. The
+    # raw form compiles without the app's dictionary; a build without the
+    # bypass ignores the flag and still asks.
+    if ! mash_update_run "$((MU_QUIESCE_BUDGET - (now - start)))" quit osascript -e 'on run argv' -e 'tell application (item 1 of argv) to «event aevtquit» given «class savo»:«constant ****no  »' -e 'end run' "$app"; then
       # The user may have finished quitting between inventory and the event.
       # Cancellation with a live GUI still fails closed; a stale event error
       # must not misreport a completely stopped app as an update failure.
@@ -357,7 +593,23 @@ mash_update_quiesce() {
   fi
   if [ -x "$app/Contents/Resources/bin/herdr" ] && [ -S "$MU_DATA/run/herdr.sock" ]; then
     now="$("$proc" now)" || return 1
-    mash_update_run "$((60 - (now - start)))" herdr-stop env HERDR_SOCKET_PATH="$MU_DATA/run/herdr.sock" "$app/Contents/Resources/bin/herdr" server stop || return 1
+    if ! mash_update_run "$((MU_QUIESCE_BUDGET - (now - start)))" herdr-stop env HERDR_SOCKET_PATH="$MU_DATA/run/herdr.sock" "$app/Contents/Resources/bin/herdr" server stop; then
+      # Herdr's own stop deadline is shorter than this budget, so reporting
+      # "did not stop" does not mean it stopped failing -- it is usually still
+      # saving its session. Give it that time to finish by itself before the
+      # loop below signals it; the loop, the final process check and the socket
+      # check still decide whether the exchange may happen at all.
+      mash_update_log 'herdr-stop did not confirm; waiting for the server to exit'
+      now="$("$proc" now)" || return 1
+      remaining="$((MU_QUIESCE_BUDGET - (now - start)))"
+      [ "$remaining" -le "$MU_HERDR_GRACE" ] || remaining="$MU_HERDR_GRACE"
+      grace="$((now + remaining))"
+      while [ "$("$proc" now)" -lt "$grace" ]; do
+        /usr/sbin/lsof -t "$MU_DATA/run/herdr.sock" >/dev/null 2>&1 || break
+        sleep 0.2
+      done
+      mash_update_log "herdr-stop grace ended after $(( $("$proc" now) - now ))s"
+    fi
   fi
   while :; do
     "$proc" list "$app" "$MU_DATA" >"$inventory.current" || return 1
@@ -379,7 +631,7 @@ mash_update_quiesce() {
     done <"$inventory.all"
     [ "$alive" = 1 ] || break
     now="$("$proc" now)" || return 1
-    [ "$((now - start))" -lt 60 ] || return 1
+    [ "$((now - start))" -lt "$MU_QUIESCE_BUDGET" ] || return 1
     sleep 0.2
   done
   rm -f "$inventory.current" "$inventory.all"

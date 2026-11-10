@@ -221,8 +221,29 @@ mash_bind_messages() {
   }
 }
 
+# The offer and the install confirmation are the same decision, so macOS asks it
+# once in a real system dialog instead of a pane the user has to be looking at.
+# It prints yes, no, or unavailable -- a machine with no usable GUI session (or
+# a test harness) keeps the pane's keypress path. The buttons stay the English
+# labels this script matches; the sentence is the translated catalog text.
+mash_update_offer() {
+  local reply tool body
+  tool="$(command -v osascript)" || { printf 'unavailable'; return 0; }
+  body="$(mash_say plugin.mash-update-notice.dialog.offer 'Mash {candidate} is available (you have {installed}). Updating quits Mash and reopens it on the new version.' "candidate=$candidate" "installed=$installed")"
+  reply="$("$tool" -e 'on run argv' \
+    -e 'set answer to display dialog (item 1 of argv) with title "Mash Update" buttons {"Later", "Update now"} default button "Later" giving up after 300' \
+    -e 'if gave up of answer then return "Later"' \
+    -e 'return button returned of answer' -e 'end run' \
+    "$body" \
+    2>>"$log")" || { printf 'unavailable'; return 0; }
+  case "$reply" in
+  'Update now') printf yes ;;
+  *) printf no ;;
+  esac
+}
+
 mash_show_notice() {
-  local title body command herdr
+  local title body command herdr confirmed=0 offer
   mash_bind_messages
   if [ "$manual_status" = up-to-date ]; then
     title="$(mash_say plugin.mash-update-notice.title.up-to-date 'Mash is up to date')"
@@ -272,6 +293,19 @@ mash_show_notice() {
       Mash 0 '' "$title" "$body" '[]' '{}' 5000 >/dev/null 2>&1
   fi
 
+  # A bundle we can replace is offered in the system dialog first: it is the
+  # one decision in this flow, and unlike a pane it reaches the user when Mash
+  # is not the frontmost window. Read-only results stay in the pane, and so
+  # does a host where no dialog can be shown.
+  if [ "$system" = Darwin ] && [ "$entrypoint" = update ] && [ "$can_apply" = 1 ]; then
+    offer="$(mash_update_offer)"
+    if [ "$offer" = no ]; then
+      mash_log "macos: $candidate declined in the update dialog"
+      return 0
+    fi
+    [ "$offer" = yes ] && confirmed=1
+  fi
+
   # The popup is client-side: wait for the server and a brief attach grace.
   herdr="$res/bin/herdr"
   [ -x "$herdr" ] || return 0
@@ -295,17 +329,26 @@ mash_show_notice() {
     height=9
     ;;
   esac
-  "$herdr" plugin pane open --plugin mash-update-notice --entrypoint "$entrypoint" \
+  if "$herdr" plugin pane open --plugin mash-update-notice --entrypoint "$entrypoint" \
     --placement popup --width "$width" --height "$height" --focus \
     --env "MASH_UPDATE_INSTALLED=$installed" \
     --env "MASH_UPDATE_CANDIDATE=$candidate" \
     --env "MASH_UPDATE_CAN_APPLY=$can_apply" \
+    --env "MASH_UPDATE_CONFIRMED=$confirmed" \
     --env "MASH_UPDATE_APP=$app" \
     --env "MASH_UPDATE_DATA=$d" \
     --env "MASH_UPDATE_STATUS=$manual_status" \
     --env "MASH_UPDATE_SYSTEM=$system" \
     --env "MASH_LANGUAGE=${MASH_LANGUAGE:-}" \
-    --env "MASH_I18N_DIR=${MASH_I18N_DIR:-}" >/dev/null 2>&1 || true
+    --env "MASH_I18N_DIR=${MASH_I18N_DIR:-}" >/dev/null 2>&1; then
+    return 0
+  fi
+  mash_log "$entrypoint pane could not be opened"
+  # The user already answered, and a pane that never opened must not swallow it.
+  [ "$confirmed" = 0 ] || "$res/bin/mash-notify" \
+    -title "$(mash_say plugin.mash-update-notice.title.did-not-start 'Mash update did not start')" \
+    -message "$(mash_say plugin.mash-update-notice.notice.did-not-start 'Open Mash and try the update again.')" \
+    >/dev/null 2>&1 || true
 }
 
 # --- decide --------------------------------------------------------------------

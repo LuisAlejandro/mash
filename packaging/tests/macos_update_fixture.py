@@ -37,7 +37,11 @@ _PROCESS_C = '''#include <unistd.h>
 #include <sys/un.h>
 #include <string.h>
 #include <stdio.h>
+#include <signal.h>
 int main(int argc, char **argv) {
+ // Stands in for a runtime that does not stop when asked: a stopped process
+ // would not do, because a default-action SIGTERM ends one anyway.
+ if (getenv("FIXTURE_IGNORE_TERM")) signal(SIGTERM, SIG_IGN);
  const char *marker = getenv("FIXTURE_LAUNCH_MARKER");
  if (marker) { FILE *f = fopen(marker, "w"); if (!f) return 4; fputs("target", f); fclose(f); return 0; }
  if (argc > 1 && !strcmp(argv[1], "child")) { if (!fork()) { execl("/bin/sleep", "sleep", "60", NULL); return 1; } }
@@ -59,13 +63,20 @@ def _helper_sources_mtime() -> float:
     return max((ROOT / "packaging/helpers" / name).stat().st_mtime for name in names)
 
 
+def _fixture_cache_key() -> str:
+    """Rebuild the cached binaries when a helper source or this fixture's own C changes."""
+    import hashlib
+
+    return f"{_helper_sources_mtime()} {hashlib.sha256(_PROCESS_C.encode()).hexdigest()}"
+
+
 def _fixture_bin_cache() -> pathlib.Path:
     """Reuse compiled helpers across tests; each case still gets its own temp tree."""
     cache = pathlib.Path(tempfile.gettempdir()) / "mash-update-fixture-bin"
     cache.mkdir(exist_ok=True)
     stamp = cache / "stamp"
-    current = _helper_sources_mtime()
-    ready = stamp.exists() and float(stamp.read_text()) >= current
+    current = _fixture_cache_key()
+    ready = stamp.exists() and stamp.read_text() == current
     if ready:
         ready = all((cache / name).is_file() for name in ("mash-update-processes", "mash-update-swap", "terminal-old", "terminal-new"))
     if not ready:
@@ -91,7 +102,7 @@ def _fixture_bin_cache() -> pathlib.Path:
         process_c.write_text(_PROCESS_C)
         for label in ("terminal-old", "terminal-new"):
             subprocess.run(["xcrun", "clang", str(process_c), "-Wl,-random_uuid", "-o", str(cache / label)], check=True)
-        stamp.write_text(str(current))
+        stamp.write_text(current)
     return cache
 
 
@@ -137,8 +148,24 @@ case "$1" in
 esac''')
         self.stub("spctl", 'echo "spctl $*" >>"$CALLS"; exit "${FAKE_SPCTL_RC:-0}"')
         self.stub("curl", '''echo "curl $*" >>"$CALLS"
+for arg in "$@"; do
+  if [ "$arg" = -fsIL ]; then
+    if [ -n "${FAKE_LENGTH:-}" ]; then printf "content-length: %s\\n" "$FAKE_LENGTH"; fi
+    exit 0
+  fi
+done
 [ "${FAKE_DOWNLOAD_RC:-0}" = 0 ] || exit "$FAKE_DOWNLOAD_RC"
-while [ "$#" -gt 1 ]; do if [ "$1" = -o ]; then printf dmg >"$2"; break; fi; shift; done''')
+while [ "$#" -gt 1 ]; do
+  if [ "$1" = -o ]; then
+    if [ -n "${FAKE_LENGTH:-}" ]; then
+      dd if=/dev/zero of="$2" bs="$FAKE_LENGTH" count=1 >/dev/null 2>&1 || exit 1
+    else
+      printf dmg >"$2"
+    fi
+    break
+  fi
+  shift
+done''')
         self.stub("hdiutil", '''echo "hdiutil $*" >>"$CALLS"
 case "$1" in
 attach)

@@ -654,6 +654,13 @@ mash_build_ghostty() {
     xcode_args=(ARCHS=x86_64 ONLY_ACTIVE_ARCH=YES)
   fi
 
+  # Ghostty reaches four git+https dependencies, and Zig's own git client fails
+  # intermittently on CI with "unable to discover remote git server
+  # capabilities". Seed those pins from tarballs first; the build then finds
+  # every hash in its cache and never opens a git connection.
+  python3 "$root/packaging/zig-prefetch.py" --zig "$zig" --src "$src" ||
+    { echo "could not seed the Ghostty dependency cache." >&2; exit 1; }
+
   # GhosttyKit is the Zig core the Swift app links against. Built release,
   # without the app: xcodebuild produces that part.
   (

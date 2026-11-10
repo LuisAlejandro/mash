@@ -79,6 +79,10 @@
     "text": "viu non è installato. Installalo con: brew install viu",
     "source_hash": "51d203b460ac"
   },
+  "plugin.mash-update-notice.dialog.offer": {
+    "text": "Mash {candidate} è disponibile (hai {installed}). L’aggiornamento chiude Mash e lo riapre con la nuova versione.",
+    "source_hash": "31c9183bb4be"
+  },
   "plugin.mash-update-notice.notice.apt-failed": {
     "text": "Verifica il repository APT ed esegui sudo apt update.",
     "source_hash": "6e5d462c3fb3"
@@ -102,6 +106,10 @@
   "plugin.mash-update-notice.notice.current-macos": {
     "text": "Tutto aggiornato. Mash {version} è la versione corrente.",
     "source_hash": "541489679898"
+  },
+  "plugin.mash-update-notice.notice.did-not-start": {
+    "text": "Apri Mash e riprova l’aggiornamento.",
+    "source_hash": "2d7e7b4a3157"
   },
   "plugin.mash-update-notice.notice.previous-restored": {
     "text": "Mash {installed} è di nuovo in esecuzione. L’aggiornamento a {candidate} non è riuscito.",
@@ -135,6 +143,10 @@
     "text": "\n  Mash {installed} è in esecuzione; Mash {candidate} è già installato.\n\n  Salva il lavoro e riavvia Mash per usare la versione installata.\n  Non è necessario scaricare nulla.   (premi un tasto qualsiasi per chiudere)",
     "source_hash": "8cfff1a68c6e"
   },
+  "plugin.mash-update-notice.pane.update-accepted": {
+    "text": "  Aggiornamento a Mash {candidate}. Mash si chiude e si riapre al termine.",
+    "source_hash": "8950c6705227"
+  },
   "plugin.mash-update-notice.pane.update-prompt": {
     "text": "\n  Mash {candidate} è disponibile (hai {installed}).\n\n  Premi u per aggiornare ora o un altro tasto per ignorare.\n  L’aggiornamento chiude Mash e lo riapre con la nuova versione.\n\n  > ",
     "source_hash": "e72a656d118c"
@@ -162,6 +174,10 @@
   "plugin.mash-update-notice.title.check-failed": {
     "text": "Impossibile controllare gli aggiornamenti di Mash",
     "source_hash": "43d510221839"
+  },
+  "plugin.mash-update-notice.title.did-not-start": {
+    "text": "L’aggiornamento di Mash non è partito",
+    "source_hash": "ba0d18142f6b"
   },
   "plugin.mash-update-notice.title.previous-restored": {
     "text": "Ripristinata la versione precedente di Mash",

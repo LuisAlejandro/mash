@@ -79,6 +79,10 @@
     "text": "viu není nainstalováno. Nainstalujte ho pomocí: brew install viu",
     "source_hash": "51d203b460ac"
   },
+  "plugin.mash-update-notice.dialog.offer": {
+    "text": "Je dostupný Mash {candidate} (máte {installed}). Aktualizace ukončí Mash a znovu ho otevře v nové verzi.",
+    "source_hash": "31c9183bb4be"
+  },
   "plugin.mash-update-notice.notice.apt-failed": {
     "text": "Ověřte repozitář APT a spusťte sudo apt update.",
     "source_hash": "6e5d462c3fb3"
@@ -102,6 +106,10 @@
   "plugin.mash-update-notice.notice.current-macos": {
     "text": "Vše je aktuální. Mash {version} je současná verze.",
     "source_hash": "541489679898"
+  },
+  "plugin.mash-update-notice.notice.did-not-start": {
+    "text": "Otevřete Mash a zkuste aktualizaci znovu.",
+    "source_hash": "2d7e7b4a3157"
   },
   "plugin.mash-update-notice.notice.previous-restored": {
     "text": "Mash {installed} znovu běží. Aktualizace na {candidate} nebyla dokončena.",
@@ -135,6 +143,10 @@
     "text": "\n  Běží Mash {installed}; Mash {candidate} je již nainstalován.\n\n  Uložte práci a restartujte Mash, abyste mohli používat nainstalovanou verzi.\n  Není nutné nic stahovat.   (zavřete libovolnou klávesou)",
     "source_hash": "8cfff1a68c6e"
   },
+  "plugin.mash-update-notice.pane.update-accepted": {
+    "text": "  Aktualizace na Mash {candidate}. Mash se zavře a po dokončení se znovu otevře.",
+    "source_hash": "8950c6705227"
+  },
   "plugin.mash-update-notice.pane.update-prompt": {
     "text": "\n  Je dostupný Mash {candidate} (máte {installed}).\n\n  Stisknutím u aktualizujete nyní, jinou klávesou zavřete.\n  Aktualizace ukončí Mash a znovu ho otevře v nové verzi.\n\n  > ",
     "source_hash": "e72a656d118c"
@@ -162,6 +174,10 @@
   "plugin.mash-update-notice.title.check-failed": {
     "text": "Kontrola aktualizací Mash se nezdařila",
     "source_hash": "43d510221839"
+  },
+  "plugin.mash-update-notice.title.did-not-start": {
+    "text": "Aktualizace Mash se nespustila",
+    "source_hash": "ba0d18142f6b"
   },
   "plugin.mash-update-notice.title.previous-restored": {
     "text": "Předchozí verze Mash byla obnovena",

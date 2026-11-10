@@ -35,6 +35,7 @@ fi
 installed="${MASH_UPDATE_INSTALLED:-}"
 candidate="${MASH_UPDATE_CANDIDATE:-}"
 can_apply="${MASH_UPDATE_CAN_APPLY:-0}"
+confirmed="${MASH_UPDATE_CONFIRMED:-0}"
 app="${MASH_UPDATE_APP:-}"
 data="${MASH_UPDATE_DATA:-${HOME:-}/.mash}"
 
@@ -61,19 +62,25 @@ if [ "$can_apply" != 1 ] || [ ! -x "$verify" ]; then
   close
 fi
 
-printf '%s' "$(mash_say plugin.mash-update-notice.pane.update-prompt \
-  $'\n  Mash {candidate} is available (you have {installed}).\n\n  Press u to update now, or any other key to dismiss.\n  Updating quits Mash and reopens it on the new version.\n\n  > ' \
-  "candidate=$candidate" "installed=${installed:-an older version}")"
-IFS= read -rsn1 key </dev/tty || close
-case "$key" in
-u | U) ;;
-*) close ;;
-esac
+# The dialog in the notice helper may already have the answer. Then this pane is
+# only the place the download and verification are narrated, and it must not ask
+# the same question a second time.
+if [ "$confirmed" = 1 ]; then
+  printf '%s\n' "$(mash_say plugin.mash-update-notice.pane.update-accepted '  Updating to Mash {candidate}. This closes Mash and reopens it when done.' "candidate=$candidate")"
+else
+  printf '%s' "$(mash_say plugin.mash-update-notice.pane.update-prompt \
+    $'\n  Mash {candidate} is available (you have {installed}).\n\n  Press u to update now, or any other key to dismiss.\n  Updating quits Mash and reopens it on the new version.\n\n  > ' \
+    "candidate=$candidate" "installed=${installed:-an older version}")"
+  IFS= read -rsn1 key </dev/tty || close
+  case "$key" in
+  u | U) ;;
+  *) close ;;
+  esac
+fi
 
 # From here the helper narrates: it downloads, verifies, counts the windows
-# that will close, asks for the confirmation and starts the swap. It owns those
-# steps because every one of them has cleanup this pane cannot do after it
-# closes.
+# that will close and starts the swap. It owns those steps because every one of
+# them has cleanup this pane cannot do after it closes.
 printf '\n\n'
 "$verify" "$app" "$candidate" "$installed" "$data" </dev/tty
 

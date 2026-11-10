@@ -38,7 +38,7 @@ env:
   # Full SHA, compared exactly: a short prefix could collide, and this pin is
   # what makes a released DMG traceable to a specific terminal build. Move it
   # whenever the fork gains a commit.
-  GHOSTTY_FORK_COMMIT: "5b53478aa719d7bcf536fe1d3591868f1a5f648e"
+  GHOSTTY_FORK_COMMIT: "d6c68ae83efe7517003a3025cd446a3be87f9c89"
   # Mash Programming Skills, whose skills and agents are copied into the app.
   # The build refuses any other version. Both skills repos now cut releases and
   # tag them, so the pin is the tag rather than a commit SHA: a tag names a
@@ -248,7 +248,9 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: macos-release-artifacts
+          # One artifact per architecture: two matrix legs uploading the same
+          # name is a conflict the upload action refuses outright.
+          name: macos-${{ matrix.asset_arch }}-release-artifacts
           path: release-artifacts/
           retention-days: 7
 

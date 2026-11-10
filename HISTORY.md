@@ -1,6 +1,58 @@
 # Changelog
 
 
+## 0.4.1 (2026-11-10)
+
+### Fixed
+
+* Finish a macOS update when shutdown is slow. [Luis Alejandro Martínez Faneyth]
+
+
+## 0.4.0 (2026-11-09)
+
+### Added
+
+* Show macOS update progress in a window outside the app. [Luis Alejandro Martínez Faneyth]
+
+* Build and publish a DMG for each Mac architecture. [Luis Alejandro Martínez Faneyth]
+
+* Pick the update asset for the Mac's own architecture. [Luis Alejandro Martínez Faneyth]
+
+* Document building Mash on Intel Macs. [Francisco Zapata]
+
+* Disable updates in builds that have no release channel. [Francisco Zapata]
+
+* Build Mash for Intel Macs (macos-amd64). [Francisco Zapata]
+
+* Mash runs in 15 languages. [Luis Alejandro Martínez Faneyth]
+
+* Menu items and keys for every Mash action. [Luis Alejandro Martínez Faneyth]
+
+
+### Fixed
+
+* Retry signing when Apple's timestamp service is unavailable. [Luis Alejandro Martínez Faneyth]
+
+* Build Ghostty without Zig's unreliable git client. [Luis Alejandro Martínez Faneyth]
+
+* Give each macOS artifact upload its own name. [Luis Alejandro Martínez Faneyth]
+
+* Correct the Intel build notes for the current fork. [Luis Alejandro Martínez Faneyth]
+
+* Keep the setup summary's counts translated after the rebase. [Luis Alejandro Martínez Faneyth]
+
+* Skip tools that do not exist for the platform instead of failing setup. [Francisco Zapata]
+
+* Pin the Ghostty fork with complete menus. [Luis Alejandro Martínez Faneyth]
+
+
+### Other
+
+* Fix(wizard): drain gh output before reporting sign-in failure. [Cursor Agent]
+
+* Fix: language isolation and locale-robustness tests for CI. [Cursor Agent]
+
+
 ## 0.3.0 (2026-11-04)
 
 ### Added

@@ -4,6 +4,7 @@ herdr 0.9.5
 fresh 0.5.7
 pi 1.5.0
 pi-codemode 1.5.0
+pi-ai 1.5.0
 pi-voice 0.2.0
 node 24.16.0
 python 3.13.16

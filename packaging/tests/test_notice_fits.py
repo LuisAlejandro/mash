@@ -66,6 +66,7 @@ UPDATE = {
         "installed": OLDER,
         "url": URL,
     },
+    "plugin.mash-update-notice.pane.update-accepted": {"candidate": VERSION},
     "plugin.mash-update-notice.pane.update-prompt": {
         "candidate": VERSION,
         "installed": OLDER,
