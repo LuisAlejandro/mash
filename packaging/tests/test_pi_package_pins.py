@@ -72,9 +72,9 @@ class PiPackagePinsTest(unittest.TestCase):
         names = package_names()
         seeded = {split_specifier(specifier)[0] for specifier in json.loads(SETTINGS.read_text())["packages"]}
         for component in installed:
-            # pi and pi-codemode are the agent itself and its runtime dependency,
-            # not extensions a settings.json lists.
-            if component in {"pi", "pi-codemode"}:
+            # pi, pi-codemode and pi-ai are the agent itself and its runtime
+            # dependencies, not extensions a settings.json lists.
+            if component in {"pi", "pi-codemode", "pi-ai"}:
                 continue
             with self.subTest(component=component):
                 package = names.get(component, component)

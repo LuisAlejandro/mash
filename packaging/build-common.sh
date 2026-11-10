@@ -31,7 +31,7 @@
 # the macOS adapter and the Linux adapter ship the same list.
 mash_pi_packages() {
   local component spec
-  for component in pi pi-codemode pi-voice pi-subagents pi-ask-user pi-monokai-pro pi-web-search; do
+  for component in pi pi-codemode pi-ai pi-voice pi-subagents pi-ask-user pi-monokai-pro pi-web-search; do
     spec="$(mash_package_spec "$component")" || return 1
     printf '%s\n' "$spec"
   done
@@ -112,6 +112,42 @@ mash_stage_runtimes() {
     return 1
   }
   rm -rf "$npm_env_home"
+
+  # Pi's own manifest asks for "@earendil-works/pi-ai" as an open range, so the
+  # install above resolves it to whatever is newest and nests that copy under
+  # the Pi package, which is the copy the catalog loads (packaging/helpers/
+  # mash-pi-runtime.mjs). Provider metadata travels with pi-ai, so an unpinned
+  # copy makes the payload unreproducible: pi-ai 1.5.1 renamed a provider and
+  # every artifact job of the 0.4.1 release failed on the wizard snapshot. Put
+  # the pinned pi-ai in that slot and fail rather than ship a version the pin
+  # does not name.
+  local pi_ai_spec pi_ai_version pi_ai_root pi_ai_nested pi_ai_shipped
+  pi_ai_spec="$(mash_package_spec pi-ai)" || {
+    echo "could not resolve the pinned pi-ai for $target" >&2
+    return 1
+  }
+  pi_ai_version="${pi_ai_spec##*@}"
+  pi_ai_root="$res/node/lib/node_modules/@earendil-works/pi-ai"
+  pi_ai_nested="$res/node/lib/node_modules/@earendil-works/pi-coding-agent/node_modules/@earendil-works/pi-ai"
+  grep -q '"@earendil-works/pi-ai"' \
+    "$res/node/lib/node_modules/@earendil-works/pi-coding-agent/package.json" || {
+    echo "the Pi package no longer declares pi-ai; revisit the nested pin" >&2
+    return 1
+  }
+  [ -d "$pi_ai_root" ] || {
+    echo "the pinned pi-ai is missing from the runtime" >&2
+    return 1
+  }
+  pi_ai_shipped="$("$res/node/bin/node" -p "require('$pi_ai_root/package.json').version")" || return 1
+  [ "$pi_ai_shipped" = "$pi_ai_version" ] || {
+    echo "pi-ai is $pi_ai_shipped, not the pinned $pi_ai_version" >&2
+    return 1
+  }
+  rm -rf "$pi_ai_nested"
+  cp -R "$pi_ai_root" "$pi_ai_nested" || {
+    echo "could not place the pinned pi-ai under the Pi package" >&2
+    return 1
+  }
 
   # The agent directory needs its own node_modules for exactly one thing: the
   # mash-orchestration extension imports `typebox` at runtime, and Node
