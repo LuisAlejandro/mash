@@ -33,10 +33,18 @@ APPLE_APP_PASSWORD="${APPLE_APP_PASSWORD:-${APPLE_APP_SPECIFIC_PASSWORD:-}}"
 
 # In CI the identity is imported into a throwaway keychain that may not be in
 # the default search list, so make sure it is searched before looking for it.
-if [ -n "${MASH_KEYCHAIN:-}" ]; then
+# The workflow locks that keychain 3600s after import. The Intel build now
+# takes longer than that, so Developer ID signing began against a locked
+# keychain and codesign waited on a dialog nobody can answer. Unlock again
+# immediately before signing, and keep it unlocked for the rest of the job.
+mash_unlock_signing_keychain() {
+    [ -n "${MASH_KEYCHAIN:-}" ] || return 0
     security list-keychains -d user -s "$MASH_KEYCHAIN" $(security list-keychains -d user | tr -d '"') 2>/dev/null || true
-    security unlock-keychain -p "${MASH_KEYCHAIN_PASSWORD:-}" "$MASH_KEYCHAIN" 2>/dev/null || true
-fi
+    security set-keychain-settings -lut 21600 "$MASH_KEYCHAIN"
+    security unlock-keychain -p "${MASH_KEYCHAIN_PASSWORD:-}" "$MASH_KEYCHAIN"
+    echo "signing keychain unlocked"
+}
+mash_unlock_signing_keychain
 
 if ! security find-identity -v -p codesigning | grep -q "Developer ID Application"; then
     echo "No Developer ID Application identity. Refusing to assemble a stranger download." >&2
@@ -73,6 +81,7 @@ ln -s /Applications "$download/Applications"
 # is indistinguishable from a stall, which is exactly how a wedged signing run
 # went unnoticed until the job's timeout killed it.
 echo "staged the bundle for signing"
+mash_unlock_signing_keychain
 
 # 3. Developer ID sign every piece of code in the bundle, innermost first.
 # codesign --deep only reaches nested code in the standard locations
