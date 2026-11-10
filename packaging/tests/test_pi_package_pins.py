@@ -9,6 +9,7 @@ contain. Caught when pi-ask-user moved to 0.17.0 and settings.json still said
 """
 
 import json
+import os
 import pathlib
 import re
 import unittest
@@ -89,8 +90,15 @@ class PiPackagePinsTest(unittest.TestCase):
         artifact job of the 0.4.1 release failed on stale wizard metadata.
         """
         build = BUILD_COMMON.read_text()
-        self.assertIn('ln -s "$pi_ai_root" "$pi_ai_nested"', build)
+        nested = "node/lib/node_modules/@earendil-works/pi-coding-agent/node_modules/@earendil-works/pi-ai"
+        root = "node/lib/node_modules/@earendil-works/pi-ai"
+        link = os.path.relpath(root, os.path.dirname(nested))
+        self.assertEqual(link, "../../../pi-ai")
+        self.assertFalse(os.path.isabs(link))
+        self.assertIn("os.path.relpath", build)
+        self.assertNotIn('ln -s "$pi_ai_root" "$pi_ai_nested"', build)
         self.assertNotIn('cp -R "$pi_ai_root" "$pi_ai_nested"', build)
+        self.assertIn("the pinned pi-ai link escaped the bundle", build)
         loop = re.search(r"for component in ([^;]+); do", build)
         self.assertIsNotNone(loop)
         self.assertIn("pi-ai", loop.group(1).split())

@@ -121,7 +121,7 @@ mash_stage_runtimes() {
   # every artifact job of the 0.4.1 release failed on the wizard snapshot. Put
   # the pinned pi-ai in that slot and fail rather than ship a version the pin
   # does not name.
-  local pi_ai_spec pi_ai_version pi_ai_root pi_ai_nested pi_ai_shipped
+  local pi_ai_spec pi_ai_version pi_ai_root pi_ai_nested pi_ai_shipped pi_ai_link
   pi_ai_spec="$(mash_package_spec pi-ai)" || {
     echo "could not resolve the pinned pi-ai for $target" >&2
     return 1
@@ -146,7 +146,18 @@ mash_stage_runtimes() {
   rm -rf "$pi_ai_nested"
   # A symlink, not a copy: the hoisted package is the pinned one, and copying
   # it shipped a second 96 MB copy of the same runtime inside the bundle.
-  ln -s "$pi_ai_root" "$pi_ai_nested" || {
+  # The link has to stay inside the bundle. An absolute one still points at
+  # dist/Mash.app after ditto stages dist/download/Mash.app, and codesign then
+  # seals a bundle that points outside itself. Verification of that bundle
+  # failed with "mash-terminal: No such file or directory".
+  pi_ai_link="$(python3 -c 'import os,sys; print(os.path.relpath(sys.argv[1], os.path.dirname(sys.argv[2])))' "$pi_ai_root" "$pi_ai_nested")" || return 1
+  case "$pi_ai_link" in
+  /*)
+    echo "the pinned pi-ai link escaped the bundle: $pi_ai_link" >&2
+    return 1
+    ;;
+  esac
+  ln -s "$pi_ai_link" "$pi_ai_nested" || {
     echo "could not place the pinned pi-ai under the Pi package" >&2
     return 1
   }
