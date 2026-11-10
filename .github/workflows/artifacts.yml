@@ -93,7 +93,10 @@ jobs:
       matrix:
         include: ${{ fromJSON(needs.setup.outputs.mac_matrix) }}
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 120
+    # The Intel runner needs about 73 minutes for the build alone and about 15
+    # more to sign, notarize and verify, so 120 left little room and a single
+    # stalled timestamp call consumed the margin and killed the leg mid-work.
+    timeout-minutes: 200
     steps:
       - name: Checkout release tag
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
