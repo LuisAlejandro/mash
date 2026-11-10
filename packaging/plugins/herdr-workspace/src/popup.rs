@@ -89,6 +89,19 @@ fn zoxide_add(dir: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::{Mutex, MutexGuard, OnceLock};
+
+    /// Serialize the tests that drive process-global environment variables.
+    /// Rust runs tests on parallel threads, so without this one test's override
+    /// can be in force while another test's command runs: CI failed
+    /// nondeterministically with "args.txt: No such file or directory" because
+    /// the missing-binary test had replaced the stub path.
+    fn env_lock() -> MutexGuard<'static, ()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(()))
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+    }
 
     /// `notify_failure` must call `herdr notification show` with the message
     /// intact. This is what makes a pre-TUI failure (the worktree popup
@@ -96,6 +109,7 @@ mod tests {
     /// flashes past when the pane closes right after.
     #[test]
     fn notify_failure_invokes_herdr_with_the_message() {
+        let _env = env_lock();
         let tmp = std::env::temp_dir().join(format!("hw-notify-{}", std::process::id()));
         std::fs::create_dir_all(&tmp).unwrap();
         let stub = tmp.join("stub.sh");
@@ -133,6 +147,7 @@ mod tests {
     /// error has already occurred, and must not mask it with a crash.
     #[test]
     fn notify_failure_tolerates_a_missing_binary() {
+        let _env = env_lock();
         std::env::set_var(
             "HERDR_WORKSPACE_HERDR_BIN",
             "/nonexistent/herdr-does-not-exist",
@@ -144,6 +159,7 @@ mod tests {
     /// The directory must reach `zoxide add` verbatim, including spaces.
     #[test]
     fn zoxide_add_invokes_the_binary_with_the_dir() {
+        let _env = env_lock();
         let tmp = std::env::temp_dir().join(format!("hw-zx-{}", std::process::id()));
         std::fs::create_dir_all(&tmp).unwrap();
         let stub = tmp.join("stub.sh");
@@ -173,6 +189,7 @@ printf '%s\n' \"$@\" > {}
     /// A missing zoxide must not panic: it is an optional dependency.
     #[test]
     fn zoxide_add_tolerates_a_missing_binary() {
+        let _env = env_lock();
         std::env::set_var(
             "HERDR_WORKSPACE_ZOXIDE_BIN",
             "/nonexistent/zoxide-does-not-exist",
