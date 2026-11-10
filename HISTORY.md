@@ -1,6 +1,13 @@
 # Changelog
 
 
+## 0.4.1 (2026-11-10)
+
+### Fixed
+
+* Finish a macOS update when shutdown is slow. [Luis Alejandro Martínez Faneyth]
+
+
 ## 0.4.0 (2026-11-09)
 
 ### Added
