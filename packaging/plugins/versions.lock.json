@@ -1,0 +1,42 @@
+{
+  "cache-hit": {
+    "digest": "a922d6bf0fbf6e74995f89c10812baec1f645cc9c72663754e0a54cac0b6f287",
+    "version": "0.1.7"
+  },
+  "dev-tab": {
+    "digest": "ec72ece6b35b50492e71e75fd82afdf81cde5fc4e71d49a66114b6d71987fb21",
+    "version": "0.1.0"
+  },
+  "fork-from-message": {
+    "digest": "9d72bf1f8505da6b331b7b41b583d6f326dcba527e7258c5dca7e487146e0163",
+    "version": "0.1.0"
+  },
+  "herdr-fingers": {
+    "digest": "8bfd7f519d4421568777bcca0e5d6470c5e6b16d7caa2a8dda4211c760dce4f9",
+    "version": "0.1.0"
+  },
+  "herdr-workspace": {
+    "digest": "8f86fe38e3f9adac7409a621e29acf177fa51e4b60e7103c673a7e226fde53d9",
+    "version": "0.1.2"
+  },
+  "image-popup": {
+    "digest": "fb9dc1170d95033c34ad806a4a052f3299b4b0fa8a39c0fa28cfaa4abd1e1417",
+    "version": "0.1.0"
+  },
+  "mash-orchestration": {
+    "digest": "9cfefbe549dd60a7d8b9cab699a8daed1b37c022e48950b0189a55dea0de6757",
+    "version": "0.1.0"
+  },
+  "mash-update-notice": {
+    "digest": "06105d6d90b65b2b42dcc9b036148bca3c84b548fe4a725b179876c3428b01a1",
+    "version": "0.2.0"
+  },
+  "pr-watch-focus": {
+    "digest": "e4c5d90b469f2da59b30b99d37be61aa51f26a16976137447f05518369eb11a7",
+    "version": "0.2.0"
+  },
+  "telescope": {
+    "digest": "7d21b77be0263a29b06d0ada9199efbf56440c1a1338bf4c57ffdb91279f1cdd",
+    "version": "0.1.2"
+  }
+}
