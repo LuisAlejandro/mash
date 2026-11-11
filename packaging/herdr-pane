@@ -67,6 +67,26 @@ if [ -x "$bin_dir/mash-tool-refresh" ]; then
   nohup "$bin_dir/mash-tool-refresh" "$home/.mash" </dev/null >/dev/null 2>&1 &
 fi
 
+# Dev tabs share one Fresh daemon per directory, and a daemon draws one grid for
+# every terminal attached to it. This keeps the dev tabs of a workspace at one
+# split ratio so that grid fits them all. It acts only on panes tagged
+# mash-fresh-daemon, which is what herdr-fresh-pane --daemon writes, so a
+# session with no dev tab yet costs one idle process. Backgrounded, and it takes
+# a lock so a second window does not start a second copy.
+if [ -x "$bin_dir/mash-fresh-split-sync" ] && [ -n "${HERDR_SOCKET_PATH:-}" ]; then
+  nohup "$res/python/bin/python3" "$bin_dir/mash-fresh-split-sync" </dev/null >/dev/null 2>&1 &
+fi
+
+# A dev tab's agent is the expensive half of the tab -- about 260 MB with its MCP
+# children, against 50 MB for Pi alone -- and a restored workspace holds one per
+# tab. This stops an agent once its tab has been unseen for ten minutes and
+# resumes it the moment the tab is shown again. Agents that are working or
+# waiting on a person are never touched. Backgrounded and locked, like the sync
+# above: a window must never wait on it.
+if [ -x "$bin_dir/mash-dev-tab-park" ] && [ -n "${HERDR_SOCKET_PATH:-}" ]; then
+  nohup "$res/python/bin/python3" "$bin_dir/mash-dev-tab-park" </dev/null >/dev/null 2>&1 &
+fi
+
 # First handoff after setup only: the wizard leaves a one-shot marker, and the
 # new-workspace popup opens as soon as the server answers. The marker is taken
 # (renamed) before waiting, so the popup opens once.

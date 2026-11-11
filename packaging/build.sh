@@ -54,6 +54,13 @@ ship_helpers=(
   herdr-new-pi-tab
   herdr-new-reviewr-tab
   herdr-fresh-pane
+  mash-fresh-split-sync
+  mash-dev-tab-park
+  mash-pane-starting
+  mash-startup-shell
+  mash-startup-role
+  mash-pane-spin
+  pi
   herdr-agent-name
   telescope-files
   telescope-sessions
@@ -68,6 +75,7 @@ ship_helpers=(
   mash-hindsight-install
   mash-tool-install
   mash-tool-refresh
+  mash-chrome-devtools
   hindsight-embed
   mash-voice-model
   mash-pi-models.mjs
@@ -138,6 +146,16 @@ wizard_bin="$root/dist/.cargo-target/wizard/release/mash-wizard"
 mash_cargo "$root/packaging/wizard/Cargo.toml" wizard
 [ -x "$wizard_bin" ] || {
   echo "wizard binary was not produced." >&2
+  exit 1
+}
+
+# The start-up spinner. A pane shows nothing between the command that opens an
+# editor and its first frame; this runs the program on a pty it owns and
+# animates on the real terminal until the program draws.
+runner_bin="$root/dist/.cargo-target/pane-runner/release/mash-pane-runner"
+mash_cargo "$root/packaging/pane-runner/Cargo.toml" pane-runner
+[ -x "$runner_bin" ] || {
+  echo "pane runner was not produced." >&2
   exit 1
 }
 
@@ -388,13 +406,15 @@ cp "$root/packaging/launch-common.sh" "$app/Contents/Resources/bin/launch-common
 cp "$root/packaging/herdr-pane" "$app/Contents/Resources/bin/herdr-pane"
 cp "$root/packaging/mash-shell" "$app/Contents/Resources/bin/mash-shell"
 cp "$wizard_bin" "$app/Contents/Resources/bin/mash-wizard"
+cp "$runner_bin" "$app/Contents/Resources/bin/mash-pane-runner"
 # The terminal execs this before it initializes; see packaging/mash.
 cp "$root/packaging/mash" "$app/Contents/Resources/bin/mash-launch"
 chmod 755 "$app/Contents/Resources/bin/mash-launch" \
   "$app/Contents/Resources/bin/launch-common.sh" \
   "$app/Contents/Resources/bin/herdr-pane" \
   "$app/Contents/Resources/bin/mash-shell" \
-  "$app/Contents/Resources/bin/mash-wizard"
+  "$app/Contents/Resources/bin/mash-wizard" \
+  "$app/Contents/Resources/bin/mash-pane-runner"
 cp "$root/packaging/Mash.icns" "$app/Contents/Resources/Mash.icns"
 # Shared runtime staging already created defaults/pi; merge without nesting.
 cp -R "$root/packaging/defaults/." "$app/Contents/Resources/defaults/"

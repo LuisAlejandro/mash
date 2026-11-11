@@ -1,0 +1,67 @@
+#!/bin/bash
+# Say that a pane is starting, instead of showing the shell that ran the command.
+#
+#   mash-pane-starting <editor|agent> [pane-id]
+#
+# Two things, because the wait has two halves and only one of them is ours:
+#
+#   - the pane content. Before `exec`, the screen still shows the prompt and the
+#     command that was typed into it, which reads as "a terminal ran something"
+#     rather than "Mash is opening your editor". Clearing it and printing one
+#     line replaces that with something intentional. Once the program execs it
+#     owns the terminal, so nothing after this point can be drawn from here.
+#
+#   - the chrome. Herdr keeps a pane's state label while the program it started
+#     is coming up, which is the half we cannot draw on: a Fresh daemon and its
+#     language servers, or a Pi session being restored. The label carries a TTL
+#     so a start that hangs or crashes cannot leave a stale "starting" forever.
+#
+# Best-effort throughout: a pane must never fail to open because a label or a
+# line did not print. Every path exits 0.
+set -u
+
+# Run from a pane, so MASH_BIN's first entry is the bundle's own bin directory --
+# this script is symlinked into ~/.local/bin, where lib.sh does not exist.
+bin="${MASH_BIN%%:*}"
+[ -n "$bin" ] && [ -f "$bin/lib.sh" ] || exit 0
+# shellcheck source=lib.sh
+. "$bin/lib.sh"
+
+home="$(mash_real_home 2>/dev/null)" || exit 0
+[ -n "$home" ] || exit 0
+mash_messages_bind "$home/.mash" 2>/dev/null || true
+
+# `--print` returns just the localised wording, for the runner to animate. It
+# sets no label and clears nothing: the caller is only asking what to say.
+print_only=0
+if [ "${1:-}" = --print ]; then
+	print_only=1
+	shift
+fi
+
+role="${1:-editor}"
+case "$role" in
+agent) key="helper.starting.agent" fallback="Starting the agent..." ;;
+*) key="helper.starting.editor" fallback="Starting the editor..." ;;
+esac
+line="$(mash_say "$key" "$fallback" 2>/dev/null)"
+[ -n "$line" ] || line="$fallback"
+
+if [ "$print_only" = 1 ]; then
+	printf '%s\n' "$line"
+	exit 0
+fi
+
+pane="${2:-${HERDR_PANE_ID:-}}"
+if [ -n "$pane" ]; then
+	"${HERDR_BIN_PATH:-herdr}" pane report-metadata "$pane" --source mash-starting \
+		--state-label "starting=$line" --ttl-ms 15000 >/dev/null 2>&1 || true
+fi
+
+# Only a terminal can be cleared, and only a terminal shows the prompt this is
+# replacing. A pipe or a script run keeps its output untouched.
+if [ -t 1 ]; then
+	printf '\033[2J\033[H  %s\n' "$line"
+fi
+
+exit 0

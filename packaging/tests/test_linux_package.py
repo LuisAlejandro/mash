@@ -143,6 +143,13 @@ class FreshPatchParityTest(unittest.TestCase):
         self.assertLess(patches.index("fresh-reveal-in-finder"), patches.index("fresh-explorer-clipboard"))
         for patch in patches:
             self.assertTrue((PACKAGING / "patches" / f"{patch}.patch").is_file())
+        # GPL-2.0 section 2(a) is discharged through the shipped source archive,
+        # and that notice is the only place a user learns what was changed. A
+        # patch added to the list but not to the notice is a silent disclosure
+        # gap -- which is how fresh-explorer-clipboard went unlisted for weeks.
+        notice = (PACKAGING / "fresh-gpl-notice.txt").read_text()
+        for patch in patches:
+            self.assertIn(f"{patch}.patch", notice)
         # Source presence check and the macOS apply loop both use the helper.
         self.assertEqual(2, carry.count("for name in $(mash_fresh_patches); do"))
         self.assertIn('patches="$(mash_fresh_patches)"', common)

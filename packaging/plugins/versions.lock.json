@@ -8,16 +8,16 @@
     "version": "0.1.0"
   },
   "fork-from-message": {
-    "digest": "9d72bf1f8505da6b331b7b41b583d6f326dcba527e7258c5dca7e487146e0163",
-    "version": "0.1.0"
+    "digest": "69a5be54841d9c00c83d4bfc65d0be30f7b727e84003d92fea54b68b60c3d135",
+    "version": "0.1.1"
   },
   "herdr-fingers": {
     "digest": "8bfd7f519d4421568777bcca0e5d6470c5e6b16d7caa2a8dda4211c760dce4f9",
     "version": "0.1.0"
   },
   "herdr-workspace": {
-    "digest": "ed09e74bc213f586b8c5b58a5b1cf26c86c62ea04dc658f06a0d4a53c606c4b2",
-    "version": "0.1.3"
+    "digest": "64b1173a4a638630ecf6b8f10eaad26b128a573eaaf109232daad0b43a9058e6",
+    "version": "0.1.4"
   },
   "image-popup": {
     "digest": "fb9dc1170d95033c34ad806a4a052f3299b4b0fa8a39c0fa28cfaa4abd1e1417",

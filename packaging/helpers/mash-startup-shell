@@ -1,0 +1,57 @@
+#!/bin/bash
+# A quiet interactive shell for panes waiting for an automatic launch.
+#
+# Herdr sends agent/restore commands to an interactive shell. Clearing inside
+# pi or herdr-fresh-pane is too late: the prompt and command have already been
+# rendered. This is that shell, but with no prompt, terminal echo, readline,
+# history or user rc. It is still the pane's original shell process, so Herdr
+# can start/name/wait for agents normally; Pi itself remains foreground.
+#
+# Ordinary shell tabs never use this. A normal program exit opens the user's
+# normal Mash shell. Parking writes a recovery record before terminating the
+# program, so a parked pane stays quiet for its next wake command.
+
+if [[ ${MASH_STARTUP_SHELL_RC:-} != 1 || $- != *i* ]]; then
+    export MASH_STARTUP_SHELL_RC=1 BASH_SILENCE_DEPRECATION_WARNING=1
+    exec /bin/bash --noprofile --rcfile "$0" --noediting -i
+fi
+
+HISTFILE=/dev/null
+HISTSIZE=0
+PS1=''
+PS2=''
+PS4=''
+unset ENV BASH_ENV
+set +o history
+_mash_startup_tty="$(stty -g 2>/dev/null)"
+_mash_startup_seen=0
+_mash_startup_record="${MASH_DATA_DIR:-$HOME/.mash}/local/state/dev-tab-park/${HERDR_PANE_ID/:/_}"
+
+_mash_normal_shell() {
+    trap - INT
+    [[ -z $_mash_startup_tty ]] || stty "$_mash_startup_tty" 2>/dev/null
+    unset MASH_STARTUP_SHELL_RC MASH_PANE_STARTUP MASH_DEV_TAB_FRESH
+    export MASH_STARTUP_GATE_DONE=1
+    exec mash-shell
+}
+trap '_mash_normal_shell' INT
+
+_mash_startup_prompt() {
+    local record="$_mash_startup_record"
+    # After an explicit quit, return a real prompt. A parked process instead
+    # leaves a record and must not expose/echo the command that wakes it.
+    if [[ $_mash_startup_seen == 1 && ! -f $record ]]; then
+        _mash_normal_shell
+    fi
+    _mash_startup_seen=1
+    stty -echo 2>/dev/null
+    # Preserve shell-integration readiness without a visible prompt. Herdr's
+    # agent.start validates this shell and still waits for the real agent.
+    printf '\033]133;A\007\033]133;B\007'
+}
+PROMPT_COMMAND=_mash_startup_prompt
+# A launch that fails returns to this prompt, and the next cycle hands the pane
+# back as an ordinary shell (see _mash_startup_prompt). While a park record
+# exists the pane stays quiet instead: its wake arrives on focus.
+stty -echo 2>/dev/null
+mash-pane-starting "${MASH_PANE_STARTUP:-agent}" "${HERDR_PANE_ID:-}" 2>/dev/null || true

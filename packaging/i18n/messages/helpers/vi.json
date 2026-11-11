@@ -194,5 +194,13 @@
   "plugin.mash-update-notice.title.updated": {
     "text": "Mash đã cập nhật lên {version}",
     "source_hash": "855f75f65bcb"
+  },
+  "helper.starting.agent": {
+    "text": "Đang khởi động tác nhân…",
+    "source_hash": "e0957020a860"
+  },
+  "helper.starting.editor": {
+    "text": "Đang khởi động trình soạn thảo…",
+    "source_hash": "c4e0e7e9b83c"
   }
 }

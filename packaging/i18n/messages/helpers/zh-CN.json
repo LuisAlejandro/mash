@@ -194,5 +194,13 @@
   "plugin.mash-update-notice.title.updated": {
     "text": "Mash 已更新到 {version}",
     "source_hash": "855f75f65bcb"
+  },
+  "helper.starting.agent": {
+    "text": "正在启动智能体…",
+    "source_hash": "e0957020a860"
+  },
+  "helper.starting.editor": {
+    "text": "正在启动编辑器…",
+    "source_hash": "c4e0e7e9b83c"
   }
 }

@@ -1,0 +1,87 @@
+#!/usr/bin/env python3
+"""Select the quiet startup shell only for an automatically launched pane."""
+import json
+import os
+import socket
+
+
+def role(call):
+    explicit = os.environ.get("MASH_PANE_STARTUP")
+    if explicit in ("agent", "editor"):
+        return explicit
+    pane_id = os.environ.get("HERDR_PANE_ID")
+    if not pane_id:
+        return ""
+    try:
+        pane = call("pane.get", {"pane_id": pane_id})["pane"]
+        # Parking removes the live-agent claim. A restored parked pane still
+        # needs a quiet shell for its eventual wake command, not a user prompt.
+        from pathlib import Path
+        data = Path(os.environ.get("MASH_DATA_DIR", str(Path.home() / ".mash")))
+        record_path = data / "local/state/dev-tab-park" / pane_id.replace(":", "_")
+        try:
+            record = json.loads(record_path.read_text())
+            if record.get("pane") == pane_id and record.get("tab") == pane.get("tab_id"):
+                if record.get("kind") in ("agent", "editor"):
+                    return record["kind"]
+        except (OSError, ValueError, TypeError, AttributeError):
+            pass
+        # A restored pane is claimed before Herdr types its resume command.
+        if pane.get("agent") in ("pi", "fresh"):
+            return "agent" if pane["agent"] == "pi" else "editor"
+        tab = call("tab.get", {"tab_id": pane["tab_id"]})["tab"]
+        # Mirror the dev-tab hook's own filter exactly: it enriches a tab that
+        # is numbered 2 or higher, still single-pane, and not one of our
+        # launchers. Reading `number` rather than `label` matters because the
+        # shell starts before Herdr assigns a label, and a reserved pane that
+        # guesses wrong shows the prompt this exists to hide.
+        label = str(tab.get("label") or "")
+        if label.startswith("herdr-tab-launcher-"):
+            return ""
+        number = tab.get("number")
+        if isinstance(number, int) and number >= 2 and tab.get("pane_count") == 1:
+            return "editor"
+        if isinstance(number, int):
+            return ""
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    return ""
+
+
+def call(method, params):
+    with socket.socket(socket.AF_UNIX) as sock:
+        sock.settimeout(1)
+        sock.connect(os.environ["HERDR_SOCKET_PATH"])
+        sock.sendall((json.dumps({"id": method, "method": method, "params": params}) + "\n").encode())
+        data = b""
+        while not data.endswith(b"\n"):
+            chunk = sock.recv(65536)
+            if not chunk:
+                raise OSError("Herdr disconnected")
+            data += chunk
+        return json.loads(data)["result"]
+
+
+if __name__ == "__main__":
+    import time
+    # The pane process can start a moment before its server-side record is
+    # registered. Do not race that record and expose a prompt on restore/+.
+    available = [False]
+    settled = [False]
+    def lookup(method, params):
+        result = call(method, params)
+        if method == "pane.get" and isinstance(result.get("pane"), dict):
+            available[0] = True
+        if method == "tab.get" and isinstance(result.get("tab"), dict):
+            settled[0] = isinstance(result["tab"].get("number"), int)
+        return result
+    selected = ""
+    for _ in range(30):
+        selected = role(lookup)
+        # Stop as soon as the answer is known: a role, a pane that has no tab
+        # yet, or a tab whose number Herdr has not assigned. Waiting on every
+        # ordinary shell tab would delay the user's prompt for nothing.
+        if selected or settled[0] or not os.environ.get("HERDR_PANE_ID"):
+            break
+        time.sleep(0.05)
+    print(selected)

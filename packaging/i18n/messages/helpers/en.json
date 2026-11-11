@@ -13,6 +13,8 @@
   "helper.launch.update_waiter_failed": "Mash could not register its update waiter.",
   "helper.launch.updater_incomplete": "Mash's updater is incomplete.",
   "helper.popup.dismiss": "(any key closes)",
+  "helper.starting.agent": "Starting the agent…",
+  "helper.starting.editor": "Starting the editor…",
   "helper.setup.not_finished": "Mash setup is not finished, so Mash did not open.",
   "helper.setup.open_again": "Open Mash again to start setup from the beginning.",
   "helper.setup.press_enter": "Press Enter to close this window.",

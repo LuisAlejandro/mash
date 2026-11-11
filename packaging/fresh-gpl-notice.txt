@@ -4,7 +4,7 @@ This download includes fresh-0.5.1-patched.tar.gz: the complete corresponding
 source of the Fresh 0.5.1 binary shipped in Mash.app, under the GNU General
 Public License, version 2.
 
-Mash changes three things in that source, and all patches are in the archive
+Mash changes six things in that source, and all patches are in the archive
 and in Mash's public repository (packaging/patches/):
 
   - fresh-config-dir.patch     take the config and data directories from
@@ -15,6 +15,18 @@ and in Mash's public repository (packaging/patches/):
                                context menu
   - fresh-warn-logs.patch      default diagnostics to WARN while honoring
                                RUST_LOG for opt-in debugging
+  - fresh-explorer-clipboard.patch
+                               mirror the file explorer's clipboard into the
+                               editor so copy, cut and paste work across them
+                               (patched crates/fresh-editor-core/locales/en.json
+                               as well as Rust sources)
+  - fresh-daemon-explorer.patch
+                               open the file explorer when a `fresh -a` daemon
+                               creates its editor, as `fresh .` already does
+  - fresh-daemon-idle-timeout.patch
+                               let a session reap itself sooner than an hour
+                               once its last terminal detaches, through
+                               FRESH_DAEMON_IDLE_TIMEOUT
 
 GPL-2.0 section 2(a) asks that modified files state that they were changed.
 The patched Rust files carry dated "Modified by Mash" comments for that

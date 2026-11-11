@@ -279,6 +279,10 @@ mash_stage_wizard "$product" "$cache/cargo" || {
   echo "could not stage the wizard" >&2
   exit 1
 }
+mash_stage_pane_runner "$product" "$cache/cargo" || {
+  echo "could not stage the pane runner" >&2
+  exit 1
+}
 mash_stage_linux_runtime "$product" "$target" || {
   echo "could not stage the Linux runtime" >&2
   exit 1

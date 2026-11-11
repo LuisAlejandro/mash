@@ -26,6 +26,16 @@
  * lists the tab's panes, and the first whose foreground process is `fresh` is
  * the editor. That is the same resolution telescope-files uses for cmd+p.
  *
+ * Which daemon to open the file in depends on how that editor was started. A
+ * private one -- a bare `fresh`, a telescope or sesh pane -- runs as a daemon
+ * named after its own pid, so that pid names the editor exactly and keeps the
+ * file out of a neighbour's. A dev tab instead attaches to the directory's
+ * shared editor, created by a tab that is usually not this one, so its pid
+ * matches nothing here and the pane's directory is the handle that reaches it.
+ * Either way the file lands in the editor beside this pane; with a shared editor
+ * it also appears in every other dev tab on that directory, which is the point
+ * of sharing one.
+ *
  * If an internal viewer is unavailable, report that nothing was shown;
  * do not open an external application or describe the file instead.
  */
@@ -171,6 +181,40 @@ async function freshSessionFor(paneId: string): Promise<string | undefined> {
 	return match ? match[0] : undefined;
 }
 
+/** The directory a pane's Fresh was opened in, or undefined when unreadable. */
+async function paneCwd(paneId: string): Promise<string | undefined> {
+	const got = await run(herdrBin(), ["pane", "get", paneId], { timeoutMs: 5000 });
+	if (got.code !== 0) return undefined;
+	try {
+		const cwd = JSON.parse(got.stdout)?.result?.pane?.cwd;
+		return typeof cwd === "string" && cwd.trim() ? cwd.trim() : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+/**
+ * Open a text file in the directory's shared editor.
+ *
+ * A dev tab's Fresh attaches to one daemon per directory rather than running its
+ * own, and that daemon is named after whichever client happened to create it --
+ * a tab that is usually not this one. So no `local-<pid>` name derived from this
+ * pane exists to find, which is the case this fallback covers. An empty session
+ * name means "the daemon for this directory", which is the shared one.
+ *
+ * Undefined when the pane's directory cannot be read, so the caller reports
+ * "not shown" instead of guessing at an editor.
+ */
+async function openInSharedEditor(paneId: string, location: string) {
+	const cwd = await paneCwd(paneId);
+	if (!cwd) return undefined;
+	return run(freshBin(), ["--cmd", "daemon", "open-file", "", location], {
+		cwd,
+		env: process.env,
+		timeoutMs: 10_000,
+	});
+}
+
 function classify(path: string): "image" | "text" | "other" {
 	const ext = extname(path).slice(1).toLowerCase();
 	if (IMAGE_EXTENSIONS.has(ext)) return "image";
@@ -251,14 +295,19 @@ export default function (pi: ExtensionAPI) {
 			if (kind === "text") {
 				const pane = await freshPaneBeside();
 				if (!pane) return textResult(t("pi.show-file.not-shown-no-editor", { name }), true);
+				const location = freshLocation(path, params.note, params.line);
+				// The pid-named session first: it pins the file to THIS pane's
+				// editor, and only a private editor has one. A dev tab shares the
+				// directory's daemon instead, so nothing matches its pid and the
+				// directory is the only handle left.
 				const session = await freshSessionFor(pane);
-				if (!session) return textResult(t("pi.show-file.not-shown-daemon", { name }), true);
-				const opened = await run(freshBin(), [
-					"--cmd", "daemon", "open-file", session, freshLocation(path, params.note, params.line),
-				], {
-					env: process.env,
-					timeoutMs: 10_000,
-				});
+				const opened = session
+					? await run(freshBin(), ["--cmd", "daemon", "open-file", session, location], {
+							env: process.env,
+							timeoutMs: 10_000,
+						})
+					: await openInSharedEditor(pane, location);
+				if (!opened) return textResult(t("pi.show-file.not-shown-daemon", { name }), true);
 				if (opened.code !== 0) {
 					const detail = opened.stderr.trim() || t("pi.show-file.no-reason");
 					return textResult(t("pi.show-file.not-shown-fresh", { name, detail }), true);

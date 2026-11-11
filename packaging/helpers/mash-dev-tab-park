@@ -1,0 +1,638 @@
+#!/usr/bin/env python3
+"""Park an idle dev tab -- agent and editor -- and wake it when it is shown.
+
+A dev tab is two expensive things side by side. Measured on this machine: a Pi
+session with its MCP children costs about 260 MB, of which only 50 MB is Pi
+itself; the editor beside it costs another ~25 MB and, more importantly, holds a
+shared daemon open, which is what keeps a project's language servers resident.
+A workspace with a dozen tabs left open therefore holds gigabytes for
+conversations and projects nobody is looking at.
+
+Both halves are parked on the same rule and woken by the same event. Stopping
+the editor is safe because a dev tab's editor attaches to the directory's daemon
+rather than owning its buffers: the daemon keeps them, and the daemon reaps --
+releasing its language servers -- only once no terminal is attached to it, which
+is precisely what this makes possible.
+
+Herdr has no notion of parking (its API can only close), so this does it from
+the outside, using what Herdr already tracks:
+
+  - every agent reports `agent_session` as a path, which is exactly the
+    `pi --session` argument needed to bring it back;
+  - `tab.focused` fires on every tab switch, so waking needs no polling;
+  - `agent_status` says whether the agent is safe to stop.
+
+Parking is deliberately conservative. An agent is stopped only when it is idle
+or done AND its tab has been unfocused for `PARK_AFTER` seconds. A working agent
+is never touched, and neither is one blocked on an approval: those are the two
+states where a kill loses work or strands the person waiting on it.
+
+Tabs that were already unfocused when this started -- a restored session, or a
+launch with yesterday's workspace -- are treated as stale from the first tick,
+so a launch does not pay for tabs nobody opens.
+
+Started in the background by the launcher. It must never block a window and
+never fail a startup, so every path exits 0.
+"""
+
+import fcntl
+import hashlib
+import json
+import os
+import signal
+import socket
+import subprocess
+import sys
+import time
+
+PARK_AFTER = 600.0
+TICK = 30.0
+# How many agents one tick may stop. A restored launch treats every unvisited
+# tab as stale at once, and that is dozens of Pi processes flushing their
+# sessions in the same second: cheap per process, unpleasant as a burst. The
+# rest go on the following ticks, so the steady state is reached within a
+# couple of minutes instead of all at once.
+PARK_BURST = 5
+RECONNECT_DELAY = 1.0
+PARKABLE = {"idle", "done"}
+# herdr-fresh-pane --daemon tags the editor pane it starts. Only a tagged pane
+# may be stopped: its buffers live in the directory's daemon, so the editor can
+# be detached without losing anything. An untagged Fresh (telescope, sesh, a bare
+# `fresh`) keeps its own editor and is never touched.
+EDITOR_TOKEN = "mash-fresh-daemon"
+KIND_AGENT = "agent"
+KIND_EDITOR = "editor"
+
+
+class Unavailable(Exception):
+    """The session is gone or not answering yet."""
+
+
+def socket_path():
+    return os.environ.get("HERDR_SOCKET_PATH", "")
+
+
+def data_dir():
+    return os.environ.get("MASH_DATA_DIR") or os.path.join(os.environ.get("HOME", ""), ".mash")
+
+
+def park_dir():
+    return os.path.join(data_dir(), "local", "state", "dev-tab-park")
+
+
+def single_instance():
+    """Take the one slot this session has for the parker, or return None.
+
+    A second copy would park and wake the same panes against each other, so the
+    lock is taken before any work. Failing to take it is not worth reporting.
+    """
+    run = os.path.join(data_dir(), "run")
+    try:
+        os.makedirs(run, exist_ok=True)
+        handle = open(os.path.join(run, "dev-tab-park.lock"), "w")
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except (OSError, ImportError):
+        return None
+    return handle
+
+
+def call(method, params=None, timeout=5.0):
+    """One request, one reply, on a connection of its own.
+
+    Event lines arrive on the subscription connection, so calls cannot share it.
+    """
+    path = socket_path()
+    if not path:
+        raise Unavailable("HERDR_SOCKET_PATH is unset")
+    sock = socket.socket(socket.AF_UNIX)
+    sock.settimeout(timeout)
+    try:
+        sock.connect(path)
+        sock.sendall((json.dumps({"id": method, "method": method, "params": params or {}}) + "\n").encode())
+        buf = b""
+        while not buf.endswith(b"\n"):
+            chunk = sock.recv(65536)
+            if not chunk:
+                raise Unavailable("connection closed")
+            buf += chunk
+        reply = json.loads(buf.decode("utf-8", "replace"))
+    except (OSError, ValueError) as error:
+        raise Unavailable(type(error).__name__) from error
+    finally:
+        sock.close()
+    if "error" in reply:
+        raise Unavailable(str(reply["error"].get("code", "error")))
+    return reply.get("result")
+
+
+def session_path(agent):
+    """The `pi --session` argument for an agent, or None when it has none.
+
+    Reported by the Pi extension for every session it starts. Without one there
+    is nothing to resume with, so such an agent is never parked: an agent that
+    cannot come back is not idle, it is lost.
+    """
+    session = agent.get("agent_session") or {}
+    if session.get("kind") != "path":
+        return None
+    value = session.get("value")
+    return value if isinstance(value, str) and value else None
+
+
+def parkable(agent, last_focus, now, threshold=PARK_AFTER):
+    """Whether this agent may be stopped right now.
+
+    Three separate refusals, each for its own reason:
+      - a status that is not idle/done means work in progress or a person waiting
+      - a focused tab means the person is looking at it
+      - no session path means it could not be brought back
+    """
+    if agent.get("agent") != "pi":
+        return False
+    if agent.get("agent_status") not in PARKABLE:
+        return False
+    tab = agent.get("tab_id")
+    if not tab:
+        return False
+    if now - last_focus.get(tab, now) < threshold:
+        return False
+    session = session_path(agent)
+    # Pi may advertise a future filename before its first persisted message.
+    # Such a session cannot yet be resumed from disk.
+    return session is not None and os.path.isfile(session)
+
+
+def save_record(pane, record):
+    """Remember what is needed to wake this pane, before anything is stopped.
+
+    Written first on purpose: a record left behind by a kill that failed is
+    harmless (the wake finds the pane already running and does nothing), while a
+    kill with no record is work that cannot be resumed.
+    """
+    directory = park_dir()
+    try:
+        os.makedirs(directory, exist_ok=True)
+        path = os.path.join(directory, pane.replace(":", "_"))
+        with open(path + ".tmp", "w") as handle:
+            json.dump(dict(record, pane=pane), handle)
+        os.replace(path + ".tmp", path)
+    except OSError:
+        return False
+    return True
+
+
+def write_record(agent):
+    pane = agent.get("pane_id")
+    if not pane:
+        return False
+    return save_record(
+        pane,
+        {
+            "kind": KIND_AGENT,
+            "tab": agent.get("tab_id"),
+            "name": agent.get("name"),
+            "session": session_path(agent),
+        },
+    )
+
+
+def read_record(pane):
+    path = os.path.join(park_dir(), pane.replace(":", "_"))
+    try:
+        with open(path) as handle:
+            return json.load(handle)
+    except (OSError, ValueError):
+        return None
+
+
+def drop_record(pane):
+    try:
+        os.unlink(os.path.join(park_dir(), pane.replace(":", "_")))
+    except OSError:
+        pass
+
+
+def parked_panes():
+    try:
+        names = os.listdir(park_dir())
+    except OSError:
+        return []
+    return [name.replace("_", ":", 1) for name in names if not name.endswith(".tmp")]
+
+
+def pi_pid(pane_id):
+    """The pane's Pi process id, or None.
+
+    Matched on `argv0` rather than the process name: Pi runs as `node`, so the
+    name would be "node" for every JavaScript process in the pane, language
+    servers included.
+    """
+    try:
+        info = call("pane.process_info", {"pane_id": pane_id}).get("process_info") or {}
+    except (Unavailable, AttributeError):
+        return None
+    for entry in info.get("foreground_processes") or []:
+        if entry.get("argv0") == "pi" and isinstance(entry.get("pid"), int):
+            return entry["pid"]
+    return None
+
+
+def park(agent):
+    """Revalidate immediately before stopping; persist recovery first."""
+    pane = agent.get("pane_id")
+    try:
+        visible = visible_tabs()
+        if visible is None or agent.get("tab_id") in visible:
+            return False
+        current = next((a for a in call("agent.list", {}).get("agents", [])
+                        if a.get("pane_id") == pane), None)
+        if not current or current.get("tab_id") != agent.get("tab_id"):
+            return False
+        if current.get("agent_status") not in PARKABLE or current.get("agent") != "pi":
+            return False
+        session = session_path(current)
+        if not session or session != session_path(agent) or not os.path.isfile(session):
+            return False
+        pid = pi_pid(pane)
+        if not write_record(current):
+            return False
+        if pid is None:
+            return False
+        # The focus query itself is cheap; fail closed if focus is unknown.
+        visible = visible_tabs()
+        if visible is None or current.get("tab_id") in visible:
+            return False
+        os.kill(pid, signal.SIGTERM)
+    except (Unavailable, OSError) as error:
+        diagnostic("park-refused", pane, str(error))
+        return False
+    diagnostic("agent-parked", pane)
+    return True
+
+
+def announce(role, pane_id):
+    """Run mash-pane-starting for this pane, best-effort.
+
+    A subprocess rather than a socket call because the label text is localised,
+    and the catalog machinery lives in the shell helpers (lib.sh), not here.
+    """
+    try:
+        subprocess.run(
+            ["mash-pane-starting", role, pane_id],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=10,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        pass
+
+
+def diagnostic(action, pane_id, detail=""):
+    """Keep failure breadcrumbs without session contents or credentials."""
+    try:
+        directory = os.path.join(data_dir(), "run")
+        os.makedirs(directory, exist_ok=True)
+        path = os.path.join(directory, "dev-tab-park.log")
+        if os.path.exists(path) and os.path.getsize(path) > 1_048_576:
+            os.replace(path, path + ".1")
+        with open(path, "a") as output:
+            output.write(json.dumps({"time": time.time(), "action": action,
+                                     "pane": pane_id, "detail": detail}) + "\n")
+    except OSError:
+        pass
+
+
+def wake(pane_id):
+    """Resume only into the recorded pane while it is an available shell.
+
+    A stale record never authorizes typing into an existing editor, agent, or
+    command. Keep records on all failures so recovery remains possible.
+    """
+    record = read_record(pane_id)
+    if not record:
+        return False
+    try:
+        pane = call("pane.get", {"pane_id": pane_id})["pane"]
+        if pane.get("tab_id") != record.get("tab"):
+            diagnostic("wake-refused", pane_id, "pane moved or identity changed")
+            return False
+        agents = call("agent.list", {}).get("agents") or []
+        existing = next((a for a in agents if a.get("pane_id") == pane_id), None)
+        if existing and existing.get("agent") == "pi":
+            if session_path(existing) == record.get("session"):
+                if existing.get("interactive_ready"):
+                    drop_record(pane_id)
+                    return True
+                return False
+            diagnostic("wake-refused", pane_id, "another session already occupies pane")
+            return False
+        info = call("pane.process_info", {"pane_id": pane_id})["process_info"]
+        processes = info.get("foreground_processes") or []
+        shell = info.get("shell_pid")
+        if not processes or any(p.get("pid") != shell for p in processes):
+            diagnostic("wake-deferred", pane_id, "pane is not an available shell")
+            return False
+        if record.get("kind") == KIND_EDITOR:
+            call("pane.send_text", {"pane_id": pane_id, "text": "herdr-fresh-pane --daemon ."})
+            call("pane.send_keys", {"pane_id": pane_id, "keys": ["Enter"]})
+            drop_record(pane_id)
+            diagnostic("editor-wake-submitted", pane_id)
+            return True
+        session = record.get("session")
+        if not isinstance(session, str) or not os.path.isfile(session):
+            diagnostic("wake-refused", pane_id, "session file unavailable; record preserved")
+            return False
+        fallback = "park-" + hashlib.sha256(pane_id.encode()).hexdigest()[:16]
+        occupied = {a.get("name") for a in agents if a.get("pane_id") != pane_id}
+        name = record.get("name") or fallback
+        if name in occupied:
+            name = fallback
+        # A deterministic fallback can itself be occupied after moving panes.
+        suffix = 1
+        while name in occupied:
+            name = fallback + "-" + str(suffix)
+            suffix += 1
+        announce("agent", pane_id)
+        call(
+            "agent.start",
+            {"name": name, "kind": "pi", "pane_id": pane_id,
+             "args": ["--session", session], "timeout_ms": 60000},
+            timeout=65.0,
+        )
+        # Verify using the live agent record, not a presumed agent.start
+        # response shape. A timed-out start may still complete shortly after;
+        # retaining the record lets the next retry acknowledge it without
+        # launching a second agent.
+        started = next((a for a in call("agent.list", {}).get("agents", [])
+                        if a.get("pane_id") == pane_id), {})
+        if session_path(started) != session or not started.get("interactive_ready"):
+            diagnostic("wake-deferred", pane_id, "session readiness not confirmed")
+            return False
+    except (Unavailable, OSError, ValueError, KeyError, TypeError) as error:
+        diagnostic("wake-failed", pane_id, str(error))
+        return False
+    drop_record(pane_id)
+    diagnostic("agent-woke", pane_id)
+    return True
+
+
+def editor_panes():
+    """Daemon-backed editor panes, with the tab and directory they belong to."""
+    panes = []
+    try:
+        listing = call("pane.list", {}).get("panes") or []
+    except (Unavailable, AttributeError):
+        return panes
+    for pane in listing:
+        tokens = pane.get("tokens") or {}
+        if tokens.get(EDITOR_TOKEN) != "1":
+            continue
+        if not pane.get("pane_id") or not pane.get("tab_id"):
+            continue
+        panes.append(pane)
+    return panes
+
+
+def fresh_pid(pane_id):
+    """The pane's Fresh process id, or None when the pane is not running one."""
+    try:
+        info = call("pane.process_info", {"pane_id": pane_id}).get("process_info") or {}
+    except (Unavailable, AttributeError):
+        return None
+    for entry in info.get("foreground_processes") or []:
+        if entry.get("argv0") == "fresh" and isinstance(entry.get("pid"), int):
+            return entry["pid"]
+    return None
+
+
+def park_editor(pane):
+    """Detach one dev tab's editor, so its daemon can reap.
+
+    The daemon holds the buffers, so nothing is lost: the tab comes back through
+    `herdr-fresh-pane --daemon`, and the daemon reaps only once no terminal is
+    attached to it -- which is what releases the language servers it started.
+    """
+    pane_id = pane.get("pane_id")
+    pid = fresh_pid(pane_id)
+    if pid is None:
+        # Already a shell: nothing to stop, and a record would make the wake
+        # start an editor in a pane somebody is using for something else.
+        return False
+    if not save_record(pane_id, {"kind": KIND_EDITOR, "tab": pane.get("tab_id"), "cwd": pane.get("cwd")}):
+        return False
+    try:
+        os.kill(pid, signal.SIGTERM)
+    except OSError:
+        drop_record(pane_id)
+        return False
+    return True
+
+
+def busy_tabs(agents):
+    """Tabs holding an agent that must not be disturbed.
+
+    An agent that is working, or waiting on a person, pins the whole tab: its
+    editor staying open costs a few tens of megabytes, and taking a person's
+    approval dialog away costs them their turn.
+    """
+    return {
+        agent.get("tab_id")
+        for agent in agents
+        if agent.get("tab_id") and agent.get("agent_status") not in PARKABLE
+    }
+
+
+def visible_tabs():
+    """Read visibility from Herdr, never infer it from time since a focus event.
+
+    A tab can stay visible for hours without another focus event. If the query
+    fails (or no workspace has a known focus), no termination is safe.
+    """
+    try:
+        listing = call("workspace.list", {})
+        workspaces = listing["workspaces"]
+        tabs = {w["active_tab_id"] for w in workspaces
+                if w.get("focused") and w.get("active_tab_id")}
+        return tabs or None
+    except (Unavailable, OSError, ValueError, TypeError, KeyError):
+        return None
+
+
+def wake_visible(visible, last_focus, now):
+    """Retry recorded wakes while visible, including after helper restart.
+
+    Failed wakes keep their records. Visibility is re-read before each launch:
+    a previous slow start must not wake tabs the user has already left.
+    """
+    for tab in visible:
+        last_focus[tab] = now
+    for pane in parked_panes():
+        record = read_record(pane) or {}
+        if record.get("tab") not in visible:
+            continue
+        current = visible_tabs()
+        if current is None:
+            return
+        if record.get("tab") in current:
+            wake(pane)
+            last_focus[record["tab"]] = time.monotonic()
+
+
+def tick(last_focus, now=None, wake_only=False):
+    """Park hidden tabs only; refresh visible protection and retry wakes."""
+    now = now if now is not None else time.monotonic()
+    visible = visible_tabs()
+    if visible is None:
+        return 0
+    wake_visible(visible, last_focus, now)
+    if wake_only:
+        return 0
+    try:
+        agents = call("agent.list", {}).get("agents") or []
+    except (Unavailable, AttributeError, OSError):
+        return 0
+    busy = busy_tabs(agents)
+    parked = 0
+    for agent in agents:
+        tab = agent.get("tab_id")
+        if tab:
+            last_focus.setdefault(tab, now)
+        if parked >= PARK_BURST:
+            break
+        if tab in busy or tab in visible:
+            continue
+        if parkable(agent, last_focus, now):
+            # Recheck after the listing: focus may change while an API call is
+            # in flight. Unknown state always means do nothing.
+            current = visible_tabs()
+            if current is None:
+                return parked
+            if tab not in current and park(agent):
+                parked += 1
+    for pane in editor_panes():
+        tab = pane.get("tab_id")
+        if tab:
+            last_focus.setdefault(tab, now)
+        if parked >= PARK_BURST:
+            break
+        if tab in busy or tab in visible:
+            continue
+        if now - last_focus.get(tab, now) < PARK_AFTER:
+            continue
+        current = visible_tabs()
+        if current is None:
+            return parked
+        if tab not in current and park_editor(pane):
+            parked += 1
+    return parked
+
+
+def seed_launch_staleness(last_focus, now=None):
+    """Treat every tab that is not the focused one as already stale.
+
+    A launch restores yesterday's workspace, and Herdr starts every restored
+    pane before this helper exists. Parking them on the first tick is what makes
+    a launch cost nothing for the tabs nobody opens; the focused tab is exempt,
+    because that is the one being looked at.
+    """
+    now = now if now is not None else time.monotonic()
+    stale = now - PARK_AFTER
+    try:
+        workspaces = call("workspace.list", {}).get("workspaces") or []
+        tabs = []
+        for workspace in workspaces:
+            listing = call("tab.list", {"workspace_id": workspace.get("workspace_id")}) or {}
+            tabs.extend(listing.get("tabs") or [])
+    except (Unavailable, AttributeError):
+        return
+    for tab in tabs:
+        tab_id = tab.get("tab_id")
+        if not tab_id:
+            continue
+        last_focus.setdefault(tab_id, now if tab.get("focused") else stale)
+
+
+def follow(sock_path, last_focus, wake_only=False):
+    """Subscribe and keep `last_focus` current until the session goes away."""
+    sock = socket.socket(socket.AF_UNIX)
+    sock.connect(sock_path)
+    sock.sendall(
+        (
+            json.dumps(
+                {
+                    "id": "subscribe",
+                    "method": "events.subscribe",
+                    "params": {"subscriptions": [{"type": "tab.focused"}]},
+                }
+            )
+            + "\n"
+        ).encode()
+    )
+    buf = b""
+    next_tick = time.monotonic() + TICK
+    while True:
+        sock.settimeout(max(0.2, next_tick - time.monotonic()))
+        try:
+            chunk = sock.recv(65536)
+        except socket.timeout:
+            chunk = b""
+            if time.monotonic() >= next_tick:
+                tick(last_focus, wake_only=wake_only)
+                next_tick = time.monotonic() + TICK
+            continue
+        if not chunk:
+            raise Unavailable("session closed")
+        buf += chunk
+        while b"\n" in buf:
+            line, buf = buf.split(b"\n", 1)
+            if not line.strip():
+                continue
+            try:
+                message = json.loads(line.decode("utf-8", "replace"))
+            except ValueError:
+                continue
+            event = message.get("event")
+            data = message.get("data") or {}
+            if event == "tab_focused":
+                visible = visible_tabs()
+                if visible is not None:
+                    wake_visible(visible, last_focus, time.monotonic())
+        # A stream of events must not postpone maintenance indefinitely.
+        if time.monotonic() >= next_tick:
+            tick(last_focus, wake_only=wake_only)
+            next_tick = time.monotonic() + TICK
+
+
+def main():
+    # Keep the handle alive. Discarding it immediately releases flock and
+    # allows multiple parkers to terminate each other's newly resumed agents.
+    held = single_instance()
+    if held is None:
+        return 0
+    last_focus = {}
+    first = True
+    wake_only = "--wake-only" in sys.argv[1:]
+    while True:
+        path = socket_path()
+        if not path or not os.path.exists(path):
+            time.sleep(RECONNECT_DELAY)
+            continue
+        try:
+            if first:
+                seed_launch_staleness(last_focus)
+                first = False
+            visible = visible_tabs()
+            if visible is not None:
+                wake_visible(visible, last_focus, time.monotonic())
+            follow(path, last_focus, wake_only=wake_only)
+        except (Unavailable, ConnectionError, OSError):
+            time.sleep(RECONNECT_DELAY)
+        except KeyboardInterrupt:
+            held.close()
+            return 0
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

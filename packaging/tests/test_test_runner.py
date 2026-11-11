@@ -67,7 +67,7 @@ class TestRunnerContract(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("SKIP  packaging/tests/test_skip.sh", result.stdout)
         self.assertNotIn("PASS  packaging/tests/test_skip.sh", result.stdout)
-        self.assertIn("7 suite(s) ran", result.stdout)  # Six baseline suites plus pass.
+        self.assertIn("8 suite(s) ran", result.stdout)  # Seven baseline suites plus pass.
         self.assertIn("1 skipped", result.stdout)
 
     def test_failures_survive_later_passes_and_skips(self):
@@ -79,14 +79,14 @@ class TestRunnerContract(unittest.TestCase):
         self.assertIn("FAIL  packaging/tests/test_00_fail.sh", result.stdout)
         self.assertIn("PASS  packaging/tests/test_10_pass.sh", result.stdout)
         self.assertIn("SKIP  packaging/tests/test_20_skip.sh", result.stdout)
-        self.assertIn("test: FAILED (8 suite(s) ran", result.stdout)
+        self.assertIn("test: FAILED (9 suite(s) ran", result.stdout)
 
     def test_partial_skip_output_is_not_a_whole_suite_skip(self):
         self.suite("test_partial.sh", "echo 'SKIP: one optional check'; exit 0\n")
         result = self.run_runner()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("PASS  packaging/tests/test_partial.sh", result.stdout)
-        self.assertIn("7 suite(s) ran", result.stdout)
+        self.assertIn("8 suite(s) ran", result.stdout)
 
 
     def test_missing_optional_runtimes_are_named_skips(self):
@@ -96,7 +96,7 @@ class TestRunnerContract(unittest.TestCase):
         result = self.run_runner()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("2 suite(s) ran", result.stdout)
-        self.assertIn("5 skipped", result.stdout)
+        self.assertIn("6 skipped", result.stdout)
         self.assertIn("SKIP  packaging/tests/test_extension.mjs", result.stdout)
         self.assertIn("cargo not installed", result.stdout)
 

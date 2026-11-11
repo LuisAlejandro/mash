@@ -34,9 +34,11 @@ if grep -Fq '<pane><run><w1:p2>' "$HERDR_STUB_LOG"; then
   fail 'scripted tab typed Fresh into its shell'
 fi
 grep -Fq '<agent><start><demo-pi><--kind><pi><--pane><w1:p3>' "$HERDR_STUB_LOG" || fail 'scripted tab lost tracked pi'
+grep -Fq '<--env><MASH_PANE_STARTUP=agent>' "$HERDR_STUB_LOG" || fail 'agent pane did not reserve a quiet shell before launching'
+
 
 : >"$HERDR_STUB_LOG"
 "$root/helpers/herdr-dev-tab-fill" w1:p2
-grep -Fqx '<pane><run><w1:p2><herdr-fresh-pane .>' "$HERDR_STUB_LOG" || fail 'native + hook no longer starts Fresh'
+grep -Fqx '<pane><run><w1:p2><herdr-fresh-pane --daemon .>' "$HERDR_STUB_LOG" || fail 'native + hook no longer starts Fresh'
 grep -Fq '<agent><start><demo-pi><--kind><pi><--pane><w1:p3>' "$HERDR_STUB_LOG" || fail 'native + hook lost tracked pi'
 printf 'dev tab early Fresh: ok\n'
