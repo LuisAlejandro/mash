@@ -113,7 +113,11 @@ class PiAgent(Agent):
         found = [shutil.which(self.executable)]
         found.extend(
             str(Path(directory) / self.executable)
-            for directory in os.environ.get("MASH_BIN", "").split(":") if directory
+            for directory in os.environ.get("MASH_BIN", "").split(os.pathsep) if directory
+        )
+        found.extend(
+            str(Path(directory) / self.executable)
+            for directory in os.environ.get("PATH", "").split(os.pathsep) if directory
         )
         seen, candidates = set(), []
         for candidate in found:
@@ -124,6 +128,12 @@ class PiAgent(Agent):
         return candidates
 
     def _runtime(self) -> tuple[Path, Path]:
+        """The bundled Node runtime and Pi's module entry point.
+
+        Every `pi` on PATH and MASH_BIN is tried, not just the first. In Mash
+        the first one is often the launcher shim, which execs the real agent and
+        sits nowhere near the package.
+        """
         executables = self._candidates()
         if not executables:
             raise AgentError("Pi executable not found in PATH.")
