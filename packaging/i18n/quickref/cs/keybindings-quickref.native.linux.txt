@@ -37,6 +37,7 @@ nabídku ve Fresh a levou šipku v Pi.
   t                nová karta vývoje (editor + agent)
   a                nová karta agenta
   Shift+C          nová karta jednoduchého shellu
+  Ctrl+T           znovu otevřít zavřenou kartu
   Shift+V          nová karta revize (diff + agent)
   `                nový panel shellu pod Fresh
   f                Hledání souborů
@@ -66,6 +67,7 @@ nabídku ve Fresh a levou šipku v Pi.
   Shift+→          Přesunout kartu doprava
   Shift+Backspace  Odebrat pracovní strom
   Ctrl+K           Vymazat panel
+  Shift+Q          Ukončit a zastavit relace
 
   ── Fresh (vlastní výchozí klávesy) ──
   Ctrl+S           Uložit

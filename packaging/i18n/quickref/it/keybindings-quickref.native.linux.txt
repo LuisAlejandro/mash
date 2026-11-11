@@ -37,6 +37,7 @@ usa Ctrl+E di Fresh o il suo menu, e la freccia sinistra di Pi.
   t                nuova scheda di sviluppo (editor + agente)
   a                nuova scheda agente
   Shift+C          nuova scheda terminale semplice
+  Ctrl+T           riapri scheda chiusa
   Shift+V          nuova scheda di revisione (diff + agente)
   `                nuovo pannello terminale sotto Fresh
   f                Ricerca file
@@ -66,6 +67,7 @@ usa Ctrl+E di Fresh o il suo menu, e la freccia sinistra di Pi.
   Shift+→          Sposta scheda a destra
   Shift+Backspace  Rimuovi worktree
   Ctrl+K           Pulisci riquadro
+  Shift+Q          Esci e interrompi le sessioni
 
   ── Fresh (i suoi tasti predefiniti) ──
   Ctrl+S           Salva

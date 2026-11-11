@@ -210,10 +210,16 @@ NOT_IN_MENU = {
         normalise("cmd+alt+n"): "synonym of New Agent Tab (cmd+alt+t)",
         normalise("ctrl+shift+n"): "synonym of New Dev Tab (ctrl+alt+t)",
         normalise("ctrl+alt+n"): "synonym of New Agent Tab (ctrl+alt+shift+t)",
+        # Reopen has no menu item of its own: the fork's menus carry the launchers
+        # and the close actions, and a new item means new localization keys there.
+        # The chord works either way, so it stays chord-only until one is added.
+        normalise("cmd+shift+t"): "reopen closed tab; chord-only, no menu item yet",
+        normalise("ctrl+shift+t"): "reopen closed tab; chord-only, no menu item yet",
     },
     "native": {
         normalise("ctrl+b>c"): "stock new tab; the dev-tab plugin shapes it into New Dev Tab",
         normalise("ctrl+b>w"): "Herdr's own picker; the menu's Workspace Picker is the sesh plugin",
+        normalise("ctrl+b>ctrl+t"): "reopen closed tab; chord-only, no menu item yet",
     },
 }
 

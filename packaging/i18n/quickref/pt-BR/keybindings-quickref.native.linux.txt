@@ -37,6 +37,7 @@ disponíveis; use Ctrl+E do Fresh ou o menu dele, e a seta esquerda do Pi.
   t                nova aba de desenvolvimento (editor + agente)
   a                nova aba de agente
   Shift+C          nova aba de shell simples
+  Ctrl+T           reabrir aba fechada
   Shift+V          nova aba de revisão (diff + agente)
   `                novo painel de shell sob o Fresh
   f                Localizador de arquivos
@@ -66,6 +67,7 @@ disponíveis; use Ctrl+E do Fresh ou o menu dele, e a seta esquerda do Pi.
   Shift+→          Mover aba para a direita
   Shift+Backspace  Remover árvore de trabalho
   Ctrl+K           Limpar painel
+  Shift+Q          Sair e encerrar as sessões
 
   ── Fresh (as teclas padrão dele) ──
   Ctrl+S           Salvar

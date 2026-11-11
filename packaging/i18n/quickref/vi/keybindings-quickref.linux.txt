@@ -11,6 +11,7 @@ gian làm việc tránh Ctrl+Alt+Shift+R. Trong ô, shell giữ mỗi tổ hợp
   Ctrl+Shift+W         Đóng thẻ
   Ctrl+Alt+Shift+W     Đóng không gian làm việc
   Ctrl+Alt+U           Tách
+  Ctrl+Alt+Q           Thoát và dừng các phiên
   Ctrl+Super+Down      Tới ô bên dưới
   Ctrl+Super+Left      Tới ô bên trái
   Ctrl+Super+Right     Tới ô bên phải
@@ -43,7 +44,8 @@ gian làm việc tránh Ctrl+Alt+Shift+R. Trong ô, shell giữ mỗi tổ hợp
   Ctrl+Alt+Z           Phóng ô
 
   ── Khởi chạy ──
-  Ctrl+Shift+T         tab shell đơn giản mới
+  Ctrl+Shift+T         mở lại tab đã đóng
+  Ctrl+Shift+B         tab shell đơn giản mới
   Ctrl+Alt+T           tab phát triển mới (trình soạn thảo + tác tử)
   Ctrl+Alt+Shift+T     tab tác tử mới
   Ctrl+Alt+P           Tìm tệp

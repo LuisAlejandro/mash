@@ -247,7 +247,13 @@ class ForkWorkflow:
         self._verify_fork_session(target.pane_id, fork_session, agent)
         self.client.json(["agent", "focus", target.pane_id])
         if target.destination == "tab":
-            self.client.json(["tab", "rename", target.tab_id, _fork_label(self.context)])
+            # Clear the launch label instead of naming the tab. Tab names belong to
+            # herdr.auto-title, which names an unnamed tab after the work inside it
+            # -- and claims any label another process writes as the user's own
+            # rename, locked for good. The "Fork · <source>" name set here froze
+            # both the title and the position number, so it was retired in favour
+            # of the same clear the launcher scripts do (herdr-new-pi-tab).
+            self.client.json(["tab", "rename", target.tab_id, ""])
 
         # From here the fork is usable. A paste failure must never tear it down.
         self.created_resource = None

@@ -37,6 +37,7 @@ tên trái trong Pi.
   t                tab phát triển mới (trình soạn thảo + tác tử)
   a                tab tác tử mới
   Shift+C          tab shell đơn giản mới
+  Ctrl+T           mở lại tab đã đóng
   Shift+V          tab đánh giá mới (diff + tác tử)
   `                khung shell mới dưới Fresh
   f                Tìm tệp
@@ -66,6 +67,7 @@ tên trái trong Pi.
   Shift+→          Di chuyển tab sang phải
   Shift+Backspace  Gỡ cây làm việc
   Ctrl+K           Xóa khung
+  Shift+Q          Thoát và dừng các phiên
 
   ── Fresh (phím mặc định riêng) ──
   Ctrl+S           Lưu

@@ -210,7 +210,7 @@ mash_fresh_patches() {
 
 mash_require_sources() {
   local name font plugins="$root/packaging/plugins"
-  for name in cache-hit dev-tab fingers fork-from-message mash-orchestration pr-watch-focus herdr-workspace telescope mash-update-notice; do
+  for name in cache-hit dev-tab reopen-tab fingers fork-from-message mash-orchestration pr-watch-focus herdr-workspace telescope mash-update-notice; do
     [ -f "$plugins/$name/herdr-plugin.toml" ] || {
       echo "missing plugin source $plugins/$name" >&2
       exit 1
@@ -238,6 +238,10 @@ mash_require_sources() {
   done
   [ -f "$root/packaging/patches/herdr-workspace-absolute-path.patch" ] || {
     echo "missing workspace patch" >&2
+    exit 1
+  }
+  [ -f "$root/packaging/patches/herdr-auto-title-attention.patch" ] || {
+    echo "missing attention patch" >&2
     exit 1
   }
   [ -f "$root/packaging/uninstall" ] || {
@@ -779,7 +783,7 @@ mash_build_plugins() {
   # defaults/fresh/plugins/packages/mash-image-popup opens a Herdr pane with
   # `--plugin image-popup`, so leaving the Herdr half out registered that pane
   # from the build machine's source checkout and broke show_file anywhere else.
-  for name in cache-hit dev-tab fingers fork-from-message mash-orchestration \
+  for name in cache-hit dev-tab reopen-tab fingers fork-from-message mash-orchestration \
     image-popup pr-watch-focus; do
     mash_copy_tree "$src/$name" "$plugins/$name"
   done
@@ -819,6 +823,23 @@ mash_build_plugins() {
   mash_clone_pinned herdr.auto-title \
     https://github.com/kryptamine/herdr-auto-title.git "$work/src/auto-title"
   mash_copy_tree "$work/src/auto-title" "$plugins/herdr.auto-title"
+  # Mash: a tab whose agent needs the user reads "● 8 · <title>" -- waiting on an
+  # answer, or finished a turn nobody has looked at yet. Auto Title has no badge
+  # of its own, and a label written by anything but the plugin is claimed as the
+  # user's own rename and locked for good, so the mark has to be part of the
+  # label it writes. The patch carries its own Go test, run here: a pin that
+  # moves lands on a build that fails, not on a quiet no-op.
+  if ! patch -p1 -d "$plugins/herdr.auto-title" \
+    <"$root/packaging/patches/herdr-auto-title-attention.patch"; then
+    echo "attention patch did not apply. Leaving dist/Mash.app in place." >&2
+    exit 1
+  fi
+  if ! (cd "$plugins/herdr.auto-title" &&
+    env GOCACHE="$work/gocache" GOMODCACHE="$work/gomod" GOPATH="$work/gopath" \
+      go test ./internal/resolver/); then
+    echo "attention patch did not pass its test. Leaving dist/Mash.app in place." >&2
+    exit 1
+  fi
   (cd "$plugins/herdr.auto-title" && mash_go "$plugins/herdr.auto-title" \
     -o herdr-auto-title ./cmd/herdr-auto-title)
 

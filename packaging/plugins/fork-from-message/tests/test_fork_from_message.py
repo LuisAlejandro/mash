@@ -165,7 +165,9 @@ def assert_fork_tab_layout(client: FakeClient, session: str) -> None:
     assert len([c for c in calls if c[:2] == ["agent", "start"]]) == 1, calls
     assert calls.index(run) < calls.index(start) < calls.index(["agent", "get", FORK_PANE]), calls
     assert calls.index(["tab", "focus", "w1:t2"]) < calls.index(start), calls
-    assert calls.index(["tab", "rename", "w1:t2", "Fork · agent - work"]) > calls.index(start), calls
+    # The fork tab is left unnamed on purpose: its label is herdr.auto-title's to
+    # write, and a name this plugin wrote would be locked as the user's forever.
+    assert calls.index(["tab", "rename", "w1:t2", ""]) > calls.index(start), calls
     send = next(c for c in calls if c[:2] == ["pane", "send-text"])
     assert calls.index(["agent", "get", FORK_PANE]) < calls.index(send), calls
     assert send[2] == FORK_PANE, calls

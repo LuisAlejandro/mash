@@ -12,7 +12,8 @@
   ⌘T / ⌘⇧N   New dev tab (editor + agent)               ⌃⌥Z        Dictation (Pi Voice)
   ⌘⌥T / ⌘⌥N  New agent tab
   ⌘⇧R        New review tab (diff + agent)              ── Addons ──
-  ⌘⇧T        New plain shell tab                        ⌃⇧G        Source control
+  ⌘⇧T        Reopen closed tab
+  ⌘⇧`        New plain shell tab                        ⌃⇧G        Source control
   ⌘⇧[ / ⌘⇧]  Previous / next tab                        ⌘⇧O        Container status
   ⌘⇧1-9      Switch to tab N                            ⌘⌥P        Snippets (snippet executor)
   ⌘⇧M        Rename tab                                 ⌘P         File finder
@@ -31,6 +32,7 @@
 ── Editor ──                                            ⌘⇧I        Help
   ⌘O         Open file                                  ⌘I         Settings
   ⌘S         Save                                       ⌘U         Detach
+                                                        ⌘⌥Q        Quit and stop sessions
   ⌘F         Find / replace in buffer                   ⌘R         Reload config
   ⌘⇧F        Find / replace in files                    ⌘Y         Open notification target
   ⌘⇧E        Toggle file explorer                       ⌘B         Toggle sidebar

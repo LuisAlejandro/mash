@@ -1,0 +1,125 @@
+--- a/internal/resolver/position.go
++++ b/internal/resolver/position.go
+@@ -5,6 +5,7 @@
+ 
+ 	"github.com/rivo/uniseg"
+ 
++	"github.com/kryptamine/herdr-auto-title/internal/herdr"
+ 	"github.com/kryptamine/herdr-auto-title/internal/state"
+ )
+ 
+@@ -13,6 +14,16 @@
+ // says about a tab, and the parts separator would read as if it were.
+ const positionMark = " · "
+ 
++// attentionMark stands in front of a tab whose agent asked the user for
++// something. Herdr reports that state and draws no badge of its own, and a label
++// written by anything but this plugin is claimed as the user's and locked, so
++// the mark has to be part of the name this writes.
++const attentionMark = "● "
++
++// agentStatusDone is Herdr's state for an agent that finished a turn while its
++// tab was not being looked at.
++const agentStatusDone = "done"
++
+ // Numbered prefixes every title with its tab's position, which is the key that
+ // switches to that tab. It wraps a resolver rather than being part of one: the
+ // position says nothing about what a tab holds, so no source can supply it.
+@@ -44,6 +55,9 @@
+ 	// The prefix goes in front because truncation cuts the tail: a position at
+ 	// the end is the first thing a title too wide for the tab bar would lose.
+ 	prefix := strconv.Itoa(tab.Position) + positionMark
++	if attention(tab) {
++		prefix = attentionMark + prefix
++	}
+ 	room := n.maxLength - uniseg.StringWidth(prefix)
+ 	// truncate takes a width of zero as "no bound at all", and a title reduced
+ 	// to nothing has lost more than the position is worth.
+@@ -61,3 +75,18 @@
+ 
+ 	return decision
+ }
++
++// attention reports whether any pane of the tab holds an agent that needs the
++// user: one waiting on an answer, a confirmation or an approval, and one that
++// finished a turn nobody has looked at yet. Herdr names no constant for the
++// finished state, because none of the states it names changes a title.
++func attention(tab state.TabState) bool {
++	for _, pane := range tab.Panes {
++		switch pane.AgentStatus {
++		case herdr.AgentStatusBlocked, agentStatusDone:
++			return true
++		}
++	}
++
++	return false
++}
+--- /dev/null
++++ b/internal/resolver/attention_test.go
+@@ -0,0 +1,66 @@
++package resolver
++
++import (
++	"strings"
++	"testing"
++
++	"github.com/rivo/uniseg"
++
++	"github.com/kryptamine/herdr-auto-title/internal/herdr"
++	"github.com/kryptamine/herdr-auto-title/internal/state"
++)
++
++// fixed names every tab the same way, so these cases are about the marks the
++// numbered resolver puts around a name and nothing else.
++type fixed struct{ name string }
++
++func (f fixed) Resolve(state.TabState) Decision { return Decision{Name: f.name} }
++
++// tab is position eight holding one pane whose agent is in status.
++func tab(status string) state.TabState {
++	return state.TabState{
++		Position: 8,
++		Panes:    []*state.PaneState{{ID: "w1:p1", AgentStatus: status}},
++	}
++}
++
++func TestAnAgentThatNeedsTheUserMarksItsTab(t *testing.T) {
++	numbered := NewNumbered(fixed{"mash"}, 50)
++
++	for _, tc := range []struct {
++		status string
++		want   string
++	}{
++		{herdr.AgentStatusBlocked, "● 8 · mash"},
++		{"done", "● 8 · mash"},
++		// Nothing is waiting on the user in these, so the tab stays unmarked.
++		{herdr.AgentStatusWorking, "8 · mash"},
++		{"idle", "8 · mash"},
++		{"unknown", "8 · mash"},
++		{"", "8 · mash"},
++	} {
++		if got := numbered.Resolve(tab(tc.status)).Name; got != tc.want {
++			t.Errorf("status %q: got %q, want %q", tc.status, got, tc.want)
++		}
++	}
++}
++
++// The mark is a prefix, not something added on top: a marked tab is as wide as
++// an unmarked one and the mark costs the name its own width.
++func TestTheMarkCostsTheNameItsWidth(t *testing.T) {
++	numbered := NewNumbered(fixed{strings.Repeat("x", 60)}, 50)
++
++	plain := numbered.Resolve(tab("idle")).Name
++	marked := numbered.Resolve(tab(herdr.AgentStatusBlocked)).Name
++
++	if width := uniseg.StringWidth(marked); width != 50 {
++		t.Fatalf("marked title is %d columns, want the bound of 50: %q", width, marked)
++	}
++
++	plainName := strings.TrimPrefix(plain, "8 · ")
++	markedName := strings.TrimPrefix(marked, attentionMark+"8 · ")
++	if lost := len(plainName) - len(markedName); lost != len([]rune(attentionMark)) {
++		t.Fatalf("mark cost %d columns of name, want %d: %q vs %q",
++			lost, len([]rune(attentionMark)), marked, plain)
++	}
++}

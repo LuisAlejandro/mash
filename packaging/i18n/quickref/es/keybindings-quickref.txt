@@ -12,7 +12,8 @@
   ⌘T / ⌘⇧N   nueva pestaña de desarrollo (editor + agente)         ⌃⌥Z        Dictado (Pi Voice)
   ⌘⌥T / ⌘⌥N  nueva pestaña de agente
   ⌘⇧R        nueva pestaña de revisión (diff + agente)           ── Complementos ──
-  ⌘⇧T        nueva pestaña de terminal simple                      ⌃⇧G        Control de versiones
+  ⌘⇧T        reabrir pestaña cerrada
+  ⌘⇧`        nueva pestaña de terminal simple                      ⌃⇧G        Control de versiones
   ⌘⇧[ / ⌘⇧]  Pestaña anterior / siguiente                          ⌘⇧O        Estado de contenedores
   ⌘⇧1-9      Cambiar a la pestaña N                                ⌘⌥P        Fragmentos (ejecutor de fragmentos)
   ⌘⇧M        Renombrar pestaña                                     ⌘P         Buscador de archivos
@@ -31,6 +32,7 @@
 ── Editor ──                                                       ⌘⇧I        Ayuda
   ⌘O         Abrir archivo                                         ⌘I         Ajustes
   ⌘S         Guardar                                               ⌘U         Desconectar
+                                                                   ⌘⌥Q        Salir y detener las sesiones
   ⌘F         Buscar / reemplazar en el búfer                       ⌘R         Recargar configuración
   ⌘⇧F        Buscar / reemplazar en archivos                       ⌘Y         Abrir destino de notificación
   ⌘⇧E        Alternar explorador de archivos                       ⌘B         Alternar barra lateral
