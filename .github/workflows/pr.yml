@@ -39,10 +39,21 @@ jobs:
     # on develop -- where the break is public and no longer attached to the
     # change that caused it. A gate that runs fewer platforms than the branch
     # it protects is not a gate.
+    #
+    # A pinned image, not macos-latest: the label moves under the repository
+    # without a commit, so a suite that passes today can fail tomorrow with no
+    # change to blame. macos-26 is the image macos-latest provisioned on
+    # 2026-11-10 (macos-26-arm64, 20261102.0473), so this pin changes nothing
+    # now and makes the next move a deliberate edit.
+    #
+    # fail-fast: the legs answer one question -- does this change pass? -- and
+    # the answer is already no when one leg goes red. Letting the other run to
+    # the end spends 45 minutes of a runner to learn nothing, and this gate sits
+    # in front of every merge.
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
-        os: [macos-latest, ubuntu-24.04]
+        os: [macos-26, ubuntu-24.04]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     steps:
@@ -81,7 +92,7 @@ jobs:
         run: ./scripts/test.sh
 
   # The develop ruleset requires a check named exactly "Tests". The matrix
-  # above reports "Tests (macos-latest)" and "Tests (ubuntu-24.04)" instead,
+  # above reports "Tests (macos-26)" and "Tests (ubuntu-24.04)" instead,
   # so without this job the required check never appears and every PR stays
   # blocked. It passes only when every platform passed: a failed, cancelled or
   # skipped leg fails it, which `always()` makes it report rather than skip.
