@@ -15,7 +15,7 @@ Pi stores sessions as JSONL paths; a storage-only Node helper uses its SDK.
 from __future__ import annotations
 
 import json
-import shutil
+import os
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -102,22 +102,36 @@ class PiAgent(Agent):
         return ["--session", fork_session]
 
     def _runtime(self) -> tuple[Path, Path]:
-        executable = shutil.which(self.executable)
-        if not executable:
+        """The bundled Node runtime and Pi's module entry point.
+
+        Every `pi` on PATH is tried, not just the first. In Mash the first one
+        is the launcher in the bundle's bin directory, which execs the real
+        agent and sits nowhere near the package; the module and Node are found
+        through the other candidate, the `node/bin/pi` symlink into
+        node_modules, whose resolved parents hold both. Resolving the symlink
+        first is what makes that walk land on the package.
+        """
+        candidates: list[Path] = []
+        for directory in os.environ.get("PATH", "").split(os.pathsep):
+            candidate = Path(directory) / self.executable
+            if candidate.exists():
+                candidates.append(candidate)
+        if not candidates:
             raise AgentError("Pi executable not found in PATH.")
         package = node = None
-        for parent in Path(executable).resolve().parents:
-            manifest = parent / "package.json"
-            if package is None and manifest.is_file() and (parent / "dist/index.js").is_file():
-                try:
-                    if json.loads(manifest.read_text())["name"] == "@earendil-works/pi-coding-agent":
-                        package = parent / "dist/index.js"
-                except (OSError, ValueError, KeyError):
-                    pass
-            if node is None and (parent / "bin/node").is_file():
-                node = parent / "bin/node"
-            if package and node:
-                return node, package
+        for candidate in candidates:
+            for parent in candidate.resolve().parents:
+                manifest = parent / "package.json"
+                if package is None and manifest.is_file() and (parent / "dist/index.js").is_file():
+                    try:
+                        if json.loads(manifest.read_text())["name"] == "@earendil-works/pi-coding-agent":
+                            package = parent / "dist/index.js"
+                    except (OSError, ValueError, KeyError):
+                        pass
+                if node is None and (parent / "bin/node").is_file():
+                    node = parent / "bin/node"
+                if package and node:
+                    return node, package
         raise AgentError("Cannot resolve bundled Pi SessionManager and Node from the Pi executable.")
 
     def _call(self, command: str, session: str, *args: str) -> Mapping[str, Any]:
