@@ -12,6 +12,7 @@ Ctrl+U) a Fresh si nechává editační akordy.
   Ctrl+Shift+W         Zavřít kartu
   Ctrl+Alt+Shift+W     Zavřít pracovní prostor
   Ctrl+Alt+U           Odpojit
+  Ctrl+Alt+Q           Ukončit a zastavit relace
   Ctrl+Super+Down      Zaměřit panel dolů
   Ctrl+Super+Left      Zaměřit panel vlevo
   Ctrl+Super+Right     Zaměřit panel vpravo
@@ -44,7 +45,8 @@ Ctrl+U) a Fresh si nechává editační akordy.
   Ctrl+Alt+Z           Zvětšit panel
 
   ── Spuštění ──
-  Ctrl+Shift+T         nová karta jednoduchého shellu
+  Ctrl+Shift+T         znovu otevřít zavřenou kartu
+  Ctrl+Shift+B         nová karta jednoduchého shellu
   Ctrl+Alt+T           nová karta vývoje (editor + agent)
   Ctrl+Alt+Shift+T     nová karta agenta
   Ctrl+Alt+P           Hledání souborů

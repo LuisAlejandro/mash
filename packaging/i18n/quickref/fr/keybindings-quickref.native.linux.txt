@@ -37,6 +37,7 @@ gauche) et Ctrl+B d'OpenCode (session en arrière-plan) ne sont pas disponibles
   t                nouvel onglet de développement (éditeur + agent)
   a                nouvel onglet d'agent
   Shift+C          nouvel onglet de terminal simple
+  Ctrl+T           rouvrir l'onglet fermé
   Shift+V          nouvel onglet de revue (diff + agent)
   `                nouveau volet de terminal sous Fresh
   f                Recherche de fichiers
@@ -66,6 +67,7 @@ gauche) et Ctrl+B d'OpenCode (session en arrière-plan) ne sont pas disponibles
   Shift+→          Déplacer l'onglet à droite
   Shift+Backspace  Retirer l'arbre de travail
   Ctrl+K           Effacer le volet
+  Shift+Q          Quitter et arrêter les sessions
 
   ── Fresh (ses touches par défaut) ──
   Ctrl+S           Enregistrer

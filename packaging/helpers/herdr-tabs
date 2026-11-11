@@ -1,0 +1,19 @@
+#!/bin/sh
+# Snapshot, bury and reopen Herdr tabs. See herdr_tabs.py for the whole story.
+#
+#   herdr-tabs capture   refresh the cache of every open tab's layout
+#   herdr-tabs closed    move a tab that has just vanished onto the undo stack
+#   herdr-tabs reopen    rebuild the most recently closed tab
+#
+# Three callers, one script: the reopen-tab plugin's startup and event hooks
+# (capture/closed) and the cmd+shift+t chord (reopen). Keeping the dispatch here
+# rather than in three near-identical wrappers is what lets the plugin's
+# hook.sh stay a two-line forwarder.
+set -eu
+
+here="$(cd "$(dirname "$0")" && pwd)"
+# The bundle's own python3, not whatever PATH resolves -- same rule as
+# herdr-json: Mash pins and tests the interpreter it ships. See mash-bin.
+py="$("$here/mash-bin" python3 2>/dev/null || printf '%s' python3)"
+
+exec "$py" "$here/herdr_tabs.py" "${1:?usage: herdr-tabs capture|closed|reopen}"

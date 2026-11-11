@@ -13,6 +13,7 @@ Bearbeitungstasten.
   Ctrl+Shift+W         Tab schließen
   Ctrl+Alt+Shift+W     Arbeitsbereich schließen
   Ctrl+Alt+U           Trennen
+  Ctrl+Alt+Q           Beenden und Sitzungen stoppen
   Ctrl+Super+Down      Bereich nach unten fokussieren
   Ctrl+Super+Left      Bereich nach links fokussieren
   Ctrl+Super+Right     Bereich nach rechts fokussieren
@@ -45,7 +46,8 @@ Bearbeitungstasten.
   Ctrl+Alt+Z           Bereich zoomen
 
   ── Starter ──
-  Ctrl+Shift+T         neuer einfacher Terminal-Tab
+  Ctrl+Shift+T         geschlossenen Tab wieder öffnen
+  Ctrl+Shift+B         neuer einfacher Terminal-Tab
   Ctrl+Alt+T           neuer Entwicklungs-Tab (Editor + Agent)
   Ctrl+Alt+Shift+T     neuer Agent-Tab
   Ctrl+Alt+P           Dateisuche

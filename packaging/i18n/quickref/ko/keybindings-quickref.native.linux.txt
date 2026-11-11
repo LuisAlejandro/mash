@@ -36,6 +36,7 @@ Ctrl+B(파일 탐색기), Pi의 Ctrl+B(커서 왼쪽), OpenCode의 Ctrl+B(백그
   t                새 개발 탭 (편집기 + 에이전트)
   a                새 에이전트 탭
   Shift+C          새 셸 탭
+  Ctrl+T           닫은 탭 다시 열기
   Shift+V          새 리뷰 탭 (diff + 에이전트)
   `                Fresh 아래 새 셸 창
   f                파일 찾기
@@ -65,6 +66,7 @@ Ctrl+B(파일 탐색기), Pi의 Ctrl+B(커서 왼쪽), OpenCode의 Ctrl+B(백그
   Shift+→          탭을 오른쪽으로 이동
   Shift+Backspace  워크트리 제거
   Ctrl+K           창 지우기
+  Shift+Q          종료하고 세션 중지
 
   ── Fresh (기본 단축키) ──
   Ctrl+S           저장

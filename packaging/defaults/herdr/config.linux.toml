@@ -238,8 +238,11 @@ switch_tab = "alt+1..9"
 
 # back up. Requires `keybind = super+shift+w=unbind` in Ghostty, releasing
 # its own close_window -- Ghostty's windows are unused here.
-# NOTE: there is no undo -- closing a tab kills its PTYs, and Herdr has no
-# reopen-closed-tab action.
+# NOTE: Herdr itself has no undo -- closing a tab kills its PTYs, and nothing
+# can bring a process back. ctrl+shift+t below rebuilds the tab from the layout
+# the reopen-tab plugin cached while it was open (cwd per pane, split geometry,
+# Fresh and pi restarted, pi on its own session file); scrollback and unsaved
+# editor buffers are gone for good.
 close_tab = "ctrl+shift+w"
 
 # Move the active tab one place left or right. Alt is the Linux tab-index
@@ -253,11 +256,27 @@ move_tab_next = "alt+shift+]"
 # defaults, Fresh and GNOME.
 clear_pane = "ctrl+alt+shift+k"
 
-# serve this (see above), so the script creates the tab carrying a label the
-# dev-tab hook skips. Requires `keybind = super+shift+t=unbind` in
-# the Ghostty config, which stays for this chord.
+# Reopen the tab closed last, from the snapshot the reopen-tab plugin keeps.
+# Rebuilds the tab, not the processes: cwd per pane, split geometry, Fresh and
+# pi relaunched (pi on the session file it was in), any other program back as a
+# plain shell. The stack holds the last ten closes and covers every close path
+# -- the chord, the tab bar's button, the last pane exiting. ctrl+shift+t is the
+# Linux terminals' new-tab chord, which this keymap reached for plain shell tab
+# before the swap below; it is free in Ghostty's Linux defaults, Fresh and GNOME.
 [[keys.command]]
 key = "ctrl+shift+t"
+type = "shell"
+command = "PATH=\"${HERDR_BIN_PATH%/*}:$PATH\"; herdr-reopen-tab"
+description = "reopen closed tab"
+
+# ctrl+shift+b: new tab running a plain shell. The native new_tab action cannot
+# serve this (see above), so the script creates the tab carrying a label the
+# dev-tab hook skips. Ctrl+Shift+T went to reopen above and Ctrl+Shift+` is
+# already the shell pane under Fresh, so the plain shell tab takes b for bash --
+# free in Ghostty's Linux defaults, Fresh and GNOME. Requires
+# `keybind = ctrl+shift+b=unbind` in the Ghostty config.
+[[keys.command]]
+key = "ctrl+shift+b"
 type = "shell"
 command = "PATH=\"${HERDR_BIN_PATH%/*}:$PATH\"; herdr-new-plain-tab"
 description = "new plain shell tab"
@@ -664,3 +683,18 @@ key = "ctrl+super+shift+y"
 type = "plugin_action"
 command = "fork-from-message.fork-workspace"
 description = "Fork agent into new workspace"
+
+# Quit Mash and stop the Herdr server, ending every pane's process. Ctrl+Shift+Q
+# is Ghostty's own quit and the close button is the safe exit -- the client dies,
+# the server outlives the window and the next launch reattaches -- so ending the
+# agents someone is running needs a chord the keyboard does not reach by reflex.
+# ctrl+alt+q is free in Ghostty's Linux defaults, Herdr, Fresh and GNOME.
+# MashMenus (macOS) and window.blp (Linux) carry the matching menu item; the
+# item replays this chord, so renaming it here means renaming it there.
+# The PATH prefix is required: Herdr runs shell commands through `/bin/sh -lc`
+# and Ubuntu's /etc/profile drops Mash's bin directory (see [keys] above).
+[[keys.command]]
+key = "ctrl+alt+q"
+type = "shell"
+command = 'PATH="${HERDR_BIN_PATH%/*}:$PATH"; mash-stop-sessions'
+description = "Quit and stop sessions"

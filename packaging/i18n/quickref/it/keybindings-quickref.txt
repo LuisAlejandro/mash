@@ -12,7 +12,8 @@
   ⌘T / ⌘⇧N   nuova scheda di sviluppo (editor + agente)     ⌃⌥Z        Dettatura (Pi Voice)
   ⌘⌥T / ⌘⌥N  nuova scheda agente
   ⌘⇧R        nuova scheda di revisione (diff + agente)    ── Componenti ──
-  ⌘⇧T        nuova scheda terminale semplice                ⌃⇧G        Controllo di versione
+  ⌘⇧T        riapri scheda chiusa
+  ⌘⇧`        nuova scheda terminale semplice                ⌃⇧G        Controllo di versione
   ⌘⇧[ / ⌘⇧]  Scheda precedente / successiva                 ⌘⇧O        Stato dei container
   ⌘⇧1-9      Passa alla scheda N                            ⌘⌥P        Snippet (esecutore di snippet)
   ⌘⇧M        Rinomina scheda                                ⌘P         Ricerca file
@@ -31,6 +32,7 @@
 ── Editor ──                                                ⌘⇧I        Aiuto
   ⌘O         Apri file                                      ⌘I         Impostazioni
   ⌘S         Salva                                          ⌘U         Scollega
+                                                            ⌘⌥Q        Esci e interrompi le sessioni
   ⌘F         Trova / sostituisci nel buffer                 ⌘R         Ricarica configurazione
   ⌘⇧F        Trova / sostituisci nei file                   ⌘Y         Apri destinazione notifica
   ⌘⇧E        Attiva/disattiva esploratore file              ⌘B         Attiva/disattiva barra laterale

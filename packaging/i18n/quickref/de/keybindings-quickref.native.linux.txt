@@ -37,6 +37,7 @@ Ctrl+E oder sein Menü verwenden, und bei Pi die Pfeiltaste links.
   t                neuer Entwicklungs-Tab (Editor + Agent)
   a                neuer Agent-Tab
   Shift+C          neuer einfacher Terminal-Tab
+  Ctrl+T           geschlossenen Tab wieder öffnen
   Shift+V          neuer Review-Tab (Diff + Agent)
   `                neuer Terminal-Bereich unter Fresh
   f                Dateisuche
@@ -66,6 +67,7 @@ Ctrl+E oder sein Menü verwenden, und bei Pi die Pfeiltaste links.
   Shift+→          Tab nach rechts verschieben
   Shift+Backspace  Worktree entfernen
   Ctrl+K           Bereich leeren
+  Shift+Q          Beenden und Sitzungen stoppen
 
   ── Fresh (eigene Standardtasten) ──
   Ctrl+S           Speichern

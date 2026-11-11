@@ -12,7 +12,8 @@
   ⌘T / ⌘⇧N   nova aba de desenvolvimento (editor + agente)     ⌃⌥Z        Ditado (Pi Voice)
   ⌘⌥T / ⌘⌥N  nova aba de agente
   ⌘⇧R        nova aba de revisão (diff + agente)             ── Complementos ──
-  ⌘⇧T        nova aba de shell simples                         ⌃⇧G        Controle de versão
+  ⌘⇧T        reabrir aba fechada
+  ⌘⇧`        nova aba de shell simples                         ⌃⇧G        Controle de versão
   ⌘⇧[ / ⌘⇧]  Aba anterior / próxima                            ⌘⇧O        Status dos contêineres
   ⌘⇧1-9      Ir para a aba N                                   ⌘⌥P        Trechos (executor de trechos)
   ⌘⇧M        Renomear aba                                      ⌘P         Localizador de arquivos
@@ -31,6 +32,7 @@
 ── Editor ──                                                   ⌘⇧I        Ajuda
   ⌘O         Abrir arquivo                                     ⌘I         Configurações
   ⌘S         Salvar                                            ⌘U         Desanexar
+                                                               ⌘⌥Q        Sair e encerrar as sessões
   ⌘F         Localizar / substituir no buffer                  ⌘R         Recarregar configuração
   ⌘⇧F        Localizar / substituir em arquivos                ⌘Y         Abrir destino da notificação
   ⌘⇧E        Alternar explorador de arquivos                   ⌘B         Alternar barra lateral

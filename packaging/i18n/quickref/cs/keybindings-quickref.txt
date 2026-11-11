@@ -12,7 +12,8 @@
   ⌘T / ⌘⇧N   nová karta vývoje (editor + agent)               ⌃⌥Z        Diktování (Pi Voice)
   ⌘⌥T / ⌘⌥N  nová karta agenta
   ⌘⇧R        nová karta revize (diff + agent)               ── Doplňky ──
-  ⌘⇧T        nová karta jednoduchého shellu                   ⌃⇧G        Správa verzí
+  ⌘⇧T        znovu otevřít zavřenou kartu
+  ⌘⇧`        nová karta jednoduchého shellu                   ⌃⇧G        Správa verzí
   ⌘⇧[ / ⌘⇧]  Předchozí / další karta                          ⌘⇧O        Stav kontejnerů
   ⌘⇧1-9      Přepnout na kartu N                              ⌘⌥P        Úryvky (spuštění)
   ⌘⇧M        Přejmenovat kartu                                ⌘P         Hledání souborů
@@ -31,6 +32,7 @@
 ── Editor ──                                                  ⌘⇧I        Nápověda
   ⌘O         Otevřít soubor                                   ⌘I         Nastavení
   ⌘S         Uložit                                           ⌘U         Odpojit
+                                                              ⌘⌥Q        Ukončit a zastavit relace
   ⌘F         Najít / nahradit ve vyrovnávací paměti           ⌘R         Znovu načíst nastavení
   ⌘⇧F        Najít / nahradit v souborech                     ⌘Y         Otevřít cíl oznámení
   ⌘⇧E        Přepnout průzkumník souborů                      ⌘B         Přepnout postranní panel
