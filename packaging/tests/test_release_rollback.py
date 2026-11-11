@@ -57,9 +57,23 @@ elif active:
 
 class ReleaseRollbackTest(unittest.TestCase):
     def test_release_stages_only_its_version_and_changelog_files(self):
-        script = (ROOT / "scripts/release.sh").read_text()
-        staged = [line for line in script.splitlines() if line.startswith("git add ")]
-        self.assertEqual(staged, ["git add -- .bumpversion.cfg VERSION README.md HISTORY.md"])
+        lines = (ROOT / "scripts/release.sh").read_text().splitlines()
+        start = next(i for i, line in enumerate(lines) if line.strip().startswith("git add "))
+        end = next(i for i in range(start, len(lines)) if lines[i].strip().startswith("git commit "))
+        with tempfile.TemporaryDirectory(prefix="mash-release-staging-") as tmp:
+            home = Path(tmp)
+            subprocess.run(["git", "init", "-q", tmp], check=True)
+            (home / ".bumpversion.cfg").write_text(
+                "[bumpversion]\ncurrent_version = 1.1.0\n"
+                "[bumpversion:file:VERSION]\n[bumpversion:file:README.md]\n"
+            )
+            for name in ("VERSION", "README.md", "HISTORY.md", "unrelated.txt"):
+                (home / name).write_text("fixture\n")
+            subprocess.run(["/bin/bash", "-eu", "-c", "\n".join(lines[start:end])], cwd=home, check=True)
+            staged = subprocess.check_output(
+                ["git", "diff", "--cached", "--name-only"], cwd=home, text=True,
+            ).splitlines()
+            self.assertEqual(set(staged), {".bumpversion.cfg", "VERSION", "README.md", "HISTORY.md"})
 
     def test_dirty_rollback_stops_without_stashing_or_remote_actions(self):
         with tempfile.TemporaryDirectory(prefix="mash-dirty-rollback-") as tmp:
