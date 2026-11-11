@@ -162,43 +162,15 @@ mash_stage_runtimes() {
     return 1
   }
 
-  # The agent directory needs its own node_modules for exactly one thing: the
-  # mash-orchestration extension imports `typebox` at runtime, and Node
-  # resolves that from the extension's directory upward. It cannot reach pi's
-  # own nested copy under node/lib/node_modules/@earendil-works/pi-coding-agent.
+  # The agent directory carries no node_modules of its own. Extensions that
+  # import `typebox` (mash-orchestration, show-file) get pi's bundled copy
+  # through pi's extension loader aliases, so a second pinned copy here was
+  # never loaded.
   #
-  # The pi packages themselves do NOT belong here. `pi list` resolves every
+  # The pi packages do NOT belong there either. `pi list` resolves every
   # `npm:` specifier in settings.json to node/lib/node_modules, the global
   # prefix, and nothing in pi joins the agent directory with node_modules.
-  # Installing them here as well cost 449 MB of duplicated provider SDKs
-  # (@mariozechner, koffi, openai, @mistralai) to deliver a 5.9 MB module.
-  local typebox_spec typebox_home
-  typebox_spec="$(mash_package_spec typebox)" || {
-    echo "could not resolve the pinned typebox" >&2
-    return 1
-  }
-  typebox_home="$(mktemp -d)"
-  env HOME="$typebox_home" \
-    PATH="$res/node/bin:$PATH" \
-    npm_config_cache="${MASH_CACHE:-$typebox_home}/npm" \
-    npm_config_update_notifier=false \
-    "$res/node/bin/npm" install --prefix "$res/defaults/pi" \
-    "$typebox_spec" >/dev/null 2>&1 || {
-    echo "could not install $typebox_spec into the agent directory" >&2
-    rm -rf "$typebox_home"
-    return 1
-  }
-  rm -rf "$typebox_home"
-  # mash-orchestration loads only if Node resolves typebox from extensions/.
-  [ -f "$res/defaults/pi/node_modules/typebox/build/index.mjs" ] || {
-    echo "typebox is missing from the agent directory" >&2
-    return 1
-  }
-  env PATH="$res/node/bin:/usr/bin:/bin" "$res/node/bin/node" -e \
-    "require.resolve('typebox',{paths:['$res/defaults/pi/extensions']})" >/dev/null 2>&1 || {
-    echo "the agent directory cannot resolve typebox from extensions/" >&2
-    return 1
-  }
+  # Installing them there as well cost 449 MB of duplicated provider SDKs.
 
   mash_set_pi_project_dir "$res" || return 1
 

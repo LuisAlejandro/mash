@@ -29,7 +29,7 @@ if [ -z "$data" ] && [ -n "${PI_CODING_AGENT_DIR:-}" ]; then
 fi
 [ -n "$data" ] || data="$HOME/.mash"
 
-pin="0.8.3"
+pin="1.2.0"
 [ -f "$data/config/mash/hindsight-pin" ] &&
   pin="$(tr -d '[:space:]' <"$data/config/mash/hindsight-pin")"
 
@@ -110,10 +110,16 @@ fi
 # torch, mlx and mlx-lm: 1.8 GB instead of 0.9 GB. Mash installs the slim core
 # with only the two extras the embedded daemon needs. flashrank is in neither
 # of them (only in `all` and `local-ml`), so it is named explicitly.
+#
+# dateparser 1.5.0 (2026-11-04) returns search results Hindsight 1.2.0 cannot
+# unpack, so every recall silently loses its date filter ("last week" matches
+# everything). Hindsight only asks for dateparser>=1.4.2.
+# ponytail: drop this cap once a Hindsight release supports dateparser 1.5.
 pkgs=(
   "hindsight-embed==$pin"
   "hindsight-api-slim[embedded-db,local-onnx]==$pin"
   "flashrank"
+  "dateparser>=1.4.2,<1.5"
 )
 if ! env HOME="$data" PYTHONNOUSERSITE=1 PIP_DISABLE_PIP_VERSION_CHECK=1 \
   "$venv/bin/python" -m pip install --upgrade "${pkgs[@]}" >>"$log" 2>&1; then
@@ -132,7 +138,9 @@ mkdir -p "$bindir"
 ln -sfn "$venv/bin/hindsight-embed" "$bindir/hindsight-embed"
 
 # The optional client CLI. Best effort only: retain and recall work without it.
-if [ ! -x "$bindir/hindsight" ]; then
+# It is versioned with the embed, so a CLI left from an older pin is replaced.
+cli_version="$("$bindir/hindsight" --version 2>/dev/null | awk '{print $NF}')" || cli_version=""
+if [ "$cli_version" != "$pin" ]; then
   if env HOME="$data" HINDSIGHT_CLI_VERSION="$pin" \
     bash -c "curl -fsSL https://hindsight.vectorize.io/get-cli | bash" >>"$log" 2>&1 &&
     [ -x "$bindir/hindsight" ]; then

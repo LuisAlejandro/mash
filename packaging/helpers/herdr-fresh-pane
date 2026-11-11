@@ -50,4 +50,8 @@ if pane="$("$herdr" pane current 2>/dev/null |
 		--state idle --seq "$(date +%s)" -- herdr-fresh-pane . >/dev/null 2>&1 || true
 fi
 
+# One editor per pane: show_file and the image popup find this pane's editor
+# as daemon session local-<pid of this fresh>. Fresh 0.5.2+ sends a bare
+# `fresh` to one shared background daemon instead, unless `auto_attach` is off,
+# which Mash's seeded Fresh config sets. Mash itself always passes a path.
 exec fresh "$@"

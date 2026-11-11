@@ -1,12 +1,12 @@
 {
   "packages": [
-    "npm:pi-subagents@0.76.0",
-    "npm:pi-ask-user@0.17.0",
+    "npm:pi-subagents@0.85.0",
+    "npm:pi-ask-user@0.17.2",
     "npm:@krfantasy/pi-monokai-pro@0.2.0",
-    "npm:pi-web-search@1.6.0",
+    "npm:pi-web-search@1.7.0",
     "npm:@earendil-works/pi-voice@0.2.0"
   ],
-  "lastChangelogVersion": "1.1.0",
+  "lastChangelogVersion": "1.5.0",
   "defaultThinkingLevel": "medium",
   "shellCommandPrefix": "if [ -n \"${MASH_BIN:-}\" ]; then PATH=\"$MASH_BIN:$PATH\"; export PATH; fi",
   "theme": "Monokai Pro (CE)",

@@ -1,66 +1,62 @@
---- a/internal/resolver/position.go
-+++ b/internal/resolver/position.go
-@@ -5,6 +5,7 @@
+diff --git a/internal/app/app.go b/internal/app/app.go
+index 2935756..d4a5f54 100644
+--- a/internal/app/app.go
++++ b/internal/app/app.go
+@@ -122,14 +122,17 @@ func resolvers(
+ 		titles = resolver.NewIconedTitles(titles, cfg.MaxLength)
+ 	}
  
- 	"github.com/rivo/uniseg"
+-	if cfg.ShowAgentStatus {
+-		titles = resolver.NewStatusTitles(titles, cfg.MaxLength)
+-	}
+-
++	// Mash: the status mark goes on last, so it stands in front of the position
++	// ("● 8 · mash") rather than inside it ("8 · ● mash"). A mark is what the eye
++	// is meant to catch first, and the number is there to be typed, not read.
+ 	if cfg.ShowPosition {
+ 		titles = resolver.NewNumbered(titles, cfg.MaxLength)
+ 	}
  
-+	"github.com/kryptamine/herdr-auto-title/internal/herdr"
- 	"github.com/kryptamine/herdr-auto-title/internal/state"
- )
- 
-@@ -13,6 +14,16 @@
- // says about a tab, and the parts separator would read as if it were.
- const positionMark = " · "
- 
-+// attentionMark stands in front of a tab whose agent asked the user for
-+// something. Herdr reports that state and draws no badge of its own, and a label
-+// written by anything but this plugin is claimed as the user's and locked, so
-+// the mark has to be part of the name this writes.
-+const attentionMark = "● "
-+
-+// agentStatusDone is Herdr's state for an agent that finished a turn while its
-+// tab was not being looked at.
-+const agentStatusDone = "done"
-+
- // Numbered prefixes every title with its tab's position, which is the key that
- // switches to that tab. It wraps a resolver rather than being part of one: the
- // position says nothing about what a tab holds, so no source can supply it.
-@@ -44,6 +55,9 @@
- 	// The prefix goes in front because truncation cuts the tail: a position at
- 	// the end is the first thing a title too wide for the tab bar would lose.
- 	prefix := strconv.Itoa(tab.Position) + positionMark
-+	if attention(tab) {
-+		prefix = attentionMark + prefix
++	if cfg.ShowAgentStatus {
++		titles = resolver.NewStatusTitles(titles, cfg.MaxLength)
 +	}
- 	room := n.maxLength - uniseg.StringWidth(prefix)
- 	// truncate takes a width of zero as "no bound at all", and a title reduced
- 	// to nothing has lost more than the position is worth.
-@@ -61,3 +75,18 @@
++
+ 	topics := topicsFor(cfg)
  
- 	return decision
+ 	if !cfg.RenamePanes {
+diff --git a/internal/app/app_test.go b/internal/app/app_test.go
+index 1976d3e..800a56e 100644
+--- a/internal/app/app_test.go
++++ b/internal/app/app_test.go
+@@ -1782,7 +1782,7 @@ func TestTheAgentStatusFollowsTheTabWithoutLockingIt(t *testing.T) {
+ 	app.poll(t.Context(), client)
+ 
+ 	client.SetTab(herdr.TabInfo{
+-		TabID: "wE:t1", Label: "◐ dashboard", AgentStatus: herdr.AgentStatusDone,
++		TabID: "wE:t1", Label: "dashboard", AgentStatus: herdr.AgentStatusDone,
+ 	})
+ 	app.poll(t.Context(), client)
+ 
+@@ -1793,7 +1793,9 @@ func TestTheAgentStatusFollowsTheTabWithoutLockingIt(t *testing.T) {
+ 		got = append(got, call.Label)
+ 	}
+ 
+-	if want := []string{"◐ dashboard", "✓ dashboard"}; !slices.Equal(got, want) {
++	// Mash: a working agent carries no mark, so the tab is named plainly first;
++	// the finished one carries the same mark a blocked one does.
++	if want := []string{"dashboard", "● dashboard"}; !slices.Equal(got, want) {
+ 		t.Errorf("renames = %q, want %q", got, want)
+ 	}
  }
-+
-+// attention reports whether any pane of the tab holds an agent that needs the
-+// user: one waiting on an answer, a confirmation or an approval, and one that
-+// finished a turn nobody has looked at yet. Herdr names no constant for the
-+// finished state, because none of the states it names changes a title.
-+func attention(tab state.TabState) bool {
-+	for _, pane := range tab.Panes {
-+		switch pane.AgentStatus {
-+		case herdr.AgentStatusBlocked, agentStatusDone:
-+			return true
-+		}
-+	}
-+
-+	return false
-+}
+diff --git a/internal/app/attention_test.go b/internal/app/attention_test.go
+new file mode 100644
+index 0000000..e69c08f
 --- /dev/null
-+++ b/internal/resolver/attention_test.go
-@@ -0,0 +1,66 @@
-+package resolver
++++ b/internal/app/attention_test.go
+@@ -0,0 +1,78 @@
++package app
 +
 +import (
-+	"strings"
 +	"testing"
 +
 +	"github.com/rivo/uniseg"
@@ -69,57 +65,160 @@
 +	"github.com/kryptamine/herdr-auto-title/internal/state"
 +)
 +
-+// fixed names every tab the same way, so these cases are about the marks the
-+// numbered resolver puts around a name and nothing else.
-+type fixed struct{ name string }
++// titled is one tab of a session under the settings Mash ships, named by the
++// resolvers the app actually uses.
++func titled(t *testing.T, status, name string) string {
++	t.Helper()
 +
-+func (f fixed) Resolve(state.TabState) Decision { return Decision{Name: f.name} }
++	titles, _, _ := resolvers(Config{
++		MaxLength:       50,
++		ShowPosition:    true,
++		ShowAgentStatus: true,
++	})
 +
-+// tab is position eight holding one pane whose agent is in status.
-+func tab(status string) state.TabState {
-+	return state.TabState{
-+		Position: 8,
-+		Panes:    []*state.PaneState{{ID: "w1:p1", AgentStatus: status}},
++	pane := &state.PaneState{ID: "w5:p1", Dir: "/w/" + name}
++	tab := state.TabState{
++		ID:          "w5:t8",
++		Position:    8,
++		Panes:       []*state.PaneState{pane},
++		Context:     pane,
++		AgentStatus: status,
 +	}
++
++	return titles.Resolve(tab).Name
 +}
 +
-+func TestAnAgentThatNeedsTheUserMarksItsTab(t *testing.T) {
-+	numbered := NewNumbered(fixed{"mash"}, 50)
-+
++func TestATabThatNeedsTheUserIsMarkedInFrontOfItsPosition(t *testing.T) {
 +	for _, tc := range []struct {
 +		status string
 +		want   string
 +	}{
 +		{herdr.AgentStatusBlocked, "● 8 · mash"},
-+		{"done", "● 8 · mash"},
-+		// Nothing is waiting on the user in these, so the tab stays unmarked.
++		{herdr.AgentStatusDone, "● 8 · mash"},
++		// Nothing is waiting on the user in these, so the tab reads as it did:
++		// the position, then the name.
++		{herdr.AgentStatusIdle, "8 · mash"},
 +		{herdr.AgentStatusWorking, "8 · mash"},
-+		{"idle", "8 · mash"},
 +		{"unknown", "8 · mash"},
 +		{"", "8 · mash"},
 +	} {
-+		if got := numbered.Resolve(tab(tc.status)).Name; got != tc.want {
++		if got := titled(t, tc.status, "mash"); got != tc.want {
 +			t.Errorf("status %q: got %q, want %q", tc.status, got, tc.want)
 +		}
 +	}
 +}
 +
-+// The mark is a prefix, not something added on top: a marked tab is as wide as
-+// an unmarked one and the mark costs the name its own width.
++// The mark is counted against the same bound as everything else, so a marked
++// tab is never wider than an unmarked one, and the mark costs the name exactly
++// its own columns.
 +func TestTheMarkCostsTheNameItsWidth(t *testing.T) {
-+	numbered := NewNumbered(fixed{strings.Repeat("x", 60)}, 50)
++	long := "0123456789012345678901234567890123456789012345678901234567890"
++	const mark = "● "
 +
-+	plain := numbered.Resolve(tab("idle")).Name
-+	marked := numbered.Resolve(tab(herdr.AgentStatusBlocked)).Name
++	plain := titled(t, herdr.AgentStatusIdle, long)
++	marked := titled(t, herdr.AgentStatusBlocked, long)
 +
-+	if width := uniseg.StringWidth(marked); width != 50 {
-+		t.Fatalf("marked title is %d columns, want the bound of 50: %q", width, marked)
++	for _, name := range []string{plain, marked} {
++		if width := uniseg.StringWidth(name); width != 50 {
++			t.Fatalf("%q is %d columns, want the bound of 50", name, width)
++		}
 +	}
 +
-+	plainName := strings.TrimPrefix(plain, "8 · ")
-+	markedName := strings.TrimPrefix(marked, attentionMark+"8 · ")
-+	if lost := len(plainName) - len(markedName); lost != len([]rune(attentionMark)) {
-+		t.Fatalf("mark cost %d columns of name, want %d: %q vs %q",
-+			lost, len([]rune(attentionMark)), marked, plain)
++	plainName := plain[len("8 · "):]
++	markedName := marked[len("● 8 · "):]
++
++	if lost := uniseg.StringWidth(plainName) - uniseg.StringWidth(markedName); lost != uniseg.StringWidth(mark) {
++		t.Fatalf("the mark took %d columns of name, want %d: %q vs %q",
++			lost, uniseg.StringWidth(mark), marked, plain)
 +	}
 +}
+diff --git a/internal/app/panes_test.go b/internal/app/panes_test.go
+index 4a00600..53be48b 100644
+--- a/internal/app/panes_test.go
++++ b/internal/app/panes_test.go
+@@ -291,10 +291,12 @@ func TestTheSettingsThatShapeATitleShapeAPaneLabel(t *testing.T) {
+ 			"1 · dashboard",
+ 		},
+ 		{
+-			"the status follows the position on the tab and not the pane",
++			"the status leads the position on the tab and not the pane",
+ 			func(c *Config) { c.ShowPosition, c.ShowAgentStatus = true, true },
+ 			"billing › claude",
+-			"1 · ◐ dashboard",
++			// Mash: a working agent is not marked, so this tab carries only its
++			// position; the mark itself is pinned in attention_test.go.
++			"1 · dashboard",
+ 		},
+ 		{
+ 			"the pane ID leads the pane and not the tab",
+diff --git a/internal/resolver/status.go b/internal/resolver/status.go
+index 6c04095..7b20a2b 100644
+--- a/internal/resolver/status.go
++++ b/internal/resolver/status.go
+@@ -7,11 +7,14 @@ import (
+ 
+ // statusMarks maps a tab's agent status to the mark in front of its title. A
+ // tab without an agent reports unknown, which has none.
++//
++// Mash: only a tab that wants the user carries a mark -- an agent waiting on an
++// answer, or one that finished a turn nobody has looked at. Idle and working
++// are the states most tabs are in most of the time, and a mark that is always on
++// is a mark that says nothing.
+ var statusMarks = map[string]string{
+-	herdr.AgentStatusIdle:    "◉",
+-	herdr.AgentStatusWorking: "◐",
+ 	herdr.AgentStatusBlocked: "●",
+-	herdr.AgentStatusDone:    "✓",
++	herdr.AgentStatusDone:    "●",
+ }
+ 
+ // StatusTitles puts a mark for what a tab's agents are doing in front of its
+diff --git a/internal/resolver/status_test.go b/internal/resolver/status_test.go
+index 5f09f7b..b184d84 100644
+--- a/internal/resolver/status_test.go
++++ b/internal/resolver/status_test.go
+@@ -15,11 +15,14 @@ func TestStatusMarksTheTitle(t *testing.T) {
+ 		status string
+ 		want   string
+ 	}{
+-		{herdr.AgentStatusIdle, "◉ dashboard"},
+-		{herdr.AgentStatusWorking, "◐ dashboard"},
++		// Mash: only a tab that wants the user is marked, and the same mark
++		// says both "waiting on you" and "finished while you were away".
+ 		{herdr.AgentStatusBlocked, "● dashboard"},
+-		{herdr.AgentStatusDone, "✓ dashboard"},
+-		// A tab without an agent must not carry a mark that means nothing.
++		{herdr.AgentStatusDone, "● dashboard"},
++		// An agent that is merely busy, or nothing at all, keeps the tab quiet:
++		// a mark on most tabs most of the time says nothing.
++		{herdr.AgentStatusIdle, "dashboard"},
++		{herdr.AgentStatusWorking, "dashboard"},
+ 		{"unknown", "dashboard"},
+ 		{"", "dashboard"},
+ 	}
+@@ -38,17 +41,18 @@ func TestStatusMarksTheTitle(t *testing.T) {
+ 	}
+ }
+ 
+-func TestStatusSitsBetweenThePositionAndTheIcon(t *testing.T) {
+-	// The position is a key and keeps the lead; the status changes while the
+-	// icon holds still, so it reads first after the key.
++func TestStatusSitsInFrontOfThePosition(t *testing.T) {
++	// Mash: the mark is what the eye is meant to catch first, so it stands in
++	// front of the position the user types -- see app.resolvers, which is what
++	// puts the two wrappers in this order.
+ 	t.Parallel()
+ 
+-	inner := NewStatusTitles(NewIconedTitles(New(Options{}, NewCWD("")), 0), 0)
++	inner := NewIconedTitles(New(Options{}, NewCWD("")), 0)
+ 	tab := atPosition(2, dashboard)
+-	tab.AgentStatus = herdr.AgentStatusWorking
++	tab.AgentStatus = herdr.AgentStatusBlocked
+ 
+-	want := "2 · ◐ " + iconShell + " dashboard"
+-	if got := NewNumbered(inner, 0).Resolve(tab); got.Name != want {
++	want := "● 2 · " + iconShell + " dashboard"
++	if got := NewStatusTitles(NewNumbered(inner, 0), 0).Resolve(tab); got.Name != want {
+ 		t.Errorf("name = %q, want %q", got.Name, want)
+ 	}
+ }

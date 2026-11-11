@@ -131,15 +131,16 @@ for out in "$pane" "$launch"; do
 	assert_value "$out" npm_config_cache "$home/.mash/cache/npm"
 done
 
-# herdr.auto-title names a tab after its focused pane, so a dev tab's label
-# flipped to "fresh" as soon as the editor took focus. The agent pane wins
-# instead, the agent's own name is left out of the title, and so is the branch
-# (BRANCH_MAX=0): every tab would otherwise carry the same "develop › " in front
-# of a name that already says what the work is.
+# Auto Title's settings are seeded in config/herdr-auto-title/config.env, not
+# exported here. An environment variable wins over that file, so exporting them
+# would leave a user no way to change how their tabs are named. mash_isolate
+# must therefore leave every HERDR_AUTO_TITLE_* unset, which is also why the
+# loop above clears inherited ones.
 for out in "$pane" "$launch"; do
-	assert_value "$out" HERDR_AUTO_TITLE_PREFER_AGENT true
-	assert_value "$out" HERDR_AUTO_TITLE_AGENT_NAME false
-	assert_value "$out" HERDR_AUTO_TITLE_BRANCH_MAX 0
+	assert_unset "$out" HERDR_AUTO_TITLE_PREFER_AGENT
+	assert_unset "$out" HERDR_AUTO_TITLE_AGENT_NAME
+	assert_unset "$out" HERDR_AUTO_TITLE_BRANCH_MAX
+	assert_unset "$out" HERDR_AUTO_TITLE_AGENT_STATUS
 done
 
 # The host directories the wizard's Homebrew tools live in must be on the

@@ -44,9 +44,9 @@ env:
   # tag them, so the pin is the tag rather than a commit SHA: a tag names a
   # released, tested state, and a commit only names where a branch happened to
   # be. The repo is public, so this clones anonymously.
-  SKILLS_VERSION: "0.6.0"
+  SKILLS_VERSION: "0.6.2"
   SKILLS_REPO: "LuisAlejandro/mash-programming-skills"
-  SKILLS_REF: "0.6.0"
+  SKILLS_REF: "0.6.2"
 
 jobs:
   setup:

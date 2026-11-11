@@ -46,10 +46,18 @@ jobs:
     # Every platform the product ships on runs the same entry point. A suite
     # that only passes on the build machine is not verified, and the previous
     # macOS-only lane could not have caught a Linux-only helper regression.
+    #
+    # A pinned image, not macos-latest: the label moves under the repository
+    # without a commit. macos-26 is the image macos-latest provisioned on
+    # 2026-11-10, so this pin changes nothing now and makes the next move a
+    # deliberate edit -- the same rule the Ghostty fork commit follows below.
+    #
+    # fail-fast: one red leg answers this gate's only question. Waiting for the
+    # other platform spends a runner on a result that cannot change the outcome.
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
-        os: [macos-latest, ubuntu-24.04]
+        os: [macos-26, ubuntu-24.04]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout

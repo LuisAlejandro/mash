@@ -6,7 +6,8 @@
  //! Tracing subscriber setup
  //!
  //! This module provides shared tracing configuration used by both
-@@ -22,6 +24,6 @@
+@@ -22,7 +24,7 @@ pub struct TracingHandles {
+ ///
  /// This sets up:
  /// - File-based logging with the given log file
 -/// - Environment-based filtering (RUST_LOG) with DEBUG default
@@ -14,7 +15,7 @@
  /// - Warning log layer that captures WARN+ to a separate file
  /// - Status log layer that captures status messages to a separate file
  ///
-@@ -49,10 +51,10 @@
+@@ -52,11 +54,11 @@ pub fn build_subscriber(
      warning_layer: Option<WarningLogLayer>,
      status_layer: Option<StatusLogLayer>,
  ) -> impl tracing::Subscriber + Send + Sync {
@@ -30,3 +31,4 @@
 +        .add_directive("swc_common=warn".parse().unwrap());
  
      let span_events = if std::env::var("FRESH_LOG_SPANS").is_ok() {
+         fmt::format::FmtSpan::CLOSE
