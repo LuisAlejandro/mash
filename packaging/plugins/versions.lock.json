@@ -35,6 +35,10 @@
     "digest": "e4c5d90b469f2da59b30b99d37be61aa51f26a16976137447f05518369eb11a7",
     "version": "0.2.0"
   },
+  "reopen-tab": {
+    "digest": "5297f774bd3d3cd7b5a87d526fde2b464b237e095251738abb8e664cc7a9c9b7",
+    "version": "0.1.0"
+  },
   "telescope": {
     "digest": "7d21b77be0263a29b06d0ada9199efbf56440c1a1338bf4c57ffdb91279f1cdd",
     "version": "0.1.2"

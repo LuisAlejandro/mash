@@ -1,0 +1,48 @@
+# Reopen Tab: keep a snapshot of every tab so a closed one can be rebuilt.
+#
+# Herdr has no reopen action and a closed tab takes its PTYs with it, so the
+# snapshot has to exist before the close. The events below are every way a
+# tab's shape or contents can change without a close: a new tab, a tab gaining
+# focus (where a `cd` in another tab becomes visible), a rename, and panes
+# appearing or going away. `tab.closed` fires too late to read the tab, so that
+# hook compares the cache against the live tab list instead -- see
+# helpers/herdr_tabs.py.
+#
+# The chord that reopens (cmd+shift+t on macOS, ctrl+shift+t on Linux) is a
+# `[[keys.command]]` in Mash's Herdr config, not a plugin action: it has to work
+# from the keyboard, and the plugin only runs in the background.
+id = "reopen-tab"
+name = "Reopen Tab"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+description = "Snapshot every tab so an accidentally closed one can be reopened"
+platforms = ["macos", "linux"]
+
+# A session that is already running when this plugin links has tabs no event
+# will announce, so the cache starts from whatever is open at boot.
+[[startup]]
+command = ["bash", "hook.sh", "capture"]
+
+[[events]]
+on = "tab.created"
+command = ["bash", "hook.sh", "capture"]
+
+[[events]]
+on = "tab.focused"
+command = ["bash", "hook.sh", "capture"]
+
+[[events]]
+on = "tab.renamed"
+command = ["bash", "hook.sh", "capture"]
+
+[[events]]
+on = "pane.created"
+command = ["bash", "hook.sh", "capture"]
+
+[[events]]
+on = "pane.closed"
+command = ["bash", "hook.sh", "capture"]
+
+[[events]]
+on = "tab.closed"
+command = ["bash", "hook.sh", "closed"]

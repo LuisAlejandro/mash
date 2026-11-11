@@ -11,6 +11,7 @@ Ctrl+Alt+Shift+R。在窗格内，外壳保留每个单独的 Ctrl
   Ctrl+Shift+W         关闭标签页
   Ctrl+Alt+Shift+W     关闭工作区
   Ctrl+Alt+U           分离
+  Ctrl+Alt+Q           退出并停止会话
   Ctrl+Super+Down      聚焦下方窗格
   Ctrl+Super+Left      聚焦左侧窗格
   Ctrl+Super+Right     聚焦右侧窗格
@@ -43,7 +44,8 @@ Ctrl+Alt+Shift+R。在窗格内，外壳保留每个单独的 Ctrl
   Ctrl+Alt+Z           放大窗格
 
   ── 启动 ──
-  Ctrl+Shift+T         新建终端标签页
+  Ctrl+Shift+T         重新打开已关闭的标签页
+  Ctrl+Shift+B         新建终端标签页
   Ctrl+Alt+T           新建开发标签页（编辑器 + 代理）
   Ctrl+Alt+Shift+T     新建代理标签页
   Ctrl+Alt+P           文件查找

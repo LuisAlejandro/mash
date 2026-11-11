@@ -12,6 +12,7 @@ sozinho (Ctrl+C, Ctrl+R, Ctrl+U) e o Fresh mantém os de edição.
   Ctrl+Shift+W         Fechar aba
   Ctrl+Alt+Shift+W     Fechar espaço de trabalho
   Ctrl+Alt+U           Desanexar
+  Ctrl+Alt+Q           Sair e encerrar as sessões
   Ctrl+Super+Down      Focar painel de baixo
   Ctrl+Super+Left      Focar painel da esquerda
   Ctrl+Super+Right     Focar painel da direita
@@ -44,7 +45,8 @@ sozinho (Ctrl+C, Ctrl+R, Ctrl+U) e o Fresh mantém os de edição.
   Ctrl+Alt+Z           Ampliar painel
 
   ── Inicializadores ──
-  Ctrl+Shift+T         nova aba de shell simples
+  Ctrl+Shift+T         reabrir aba fechada
+  Ctrl+Shift+B         nova aba de shell simples
   Ctrl+Alt+T           nova aba de desenvolvimento (editor + agente)
   Ctrl+Alt+Shift+T     nova aba de agente
   Ctrl+Alt+P           Localizador de arquivos

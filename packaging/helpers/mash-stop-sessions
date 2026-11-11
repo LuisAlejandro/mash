@@ -1,0 +1,37 @@
+#!/bin/sh
+# Quit Mash and end every pane's process, agents included.
+#
+# This is the deliberate exit, and it has a chord of its own (cmd+alt+q on
+# macOS, ctrl+alt+q on Linux, Ctrl+B Shift+Q in the Native keymap) reached from
+# the menu's "Quit and Stop Sessions" item. It is deliberately not what Cmd+Q
+# or the window's close button do: those end only this window's Herdr client
+# and leave the server, its panes and their agents running, so the next launch
+# reattaches to work in progress. Ending that work needs a second, explicit
+# decision, which is what this helper is.
+#
+# Herdr saves its session before it stops, so panes come back on the next
+# launch with their resume commands replayed; what is running at this moment
+# does not. Herdr runs a `shell` command as a detached process, so this survives
+# the panes it stops: the client then exits by itself, the window closes, and
+# Mash quits with it (quit-after-last-window-closed). Nothing here has to quit
+# the app, and nothing here may stop a server that is not Mash's own.
+set -eu
+
+herdr="${HERDR_BIN_PATH:-herdr}"
+home="${HOME:?Mash needs HOME to locate its data folder}"
+socket="${HERDR_SOCKET_PATH:-}"
+expected="$home/.mash/run/herdr.sock"
+
+# The same refusal herdr-pane makes before it starts a pane. A command that
+# could reach another Herdr server -- a personal one, another Mash instance, a
+# probe -- is a bug in the caller, and stopping it would end work that has
+# nothing to do with this window.
+case "$socket" in
+"$expected") ;;
+*)
+	printf '%s\n' "refusing to stop a Herdr server that is not Mash's: ${socket:-<HERDR_SOCKET_PATH unset>}" >&2
+	exit 1
+	;;
+esac
+
+exec "$herdr" server stop

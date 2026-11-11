@@ -12,6 +12,7 @@ Ctrl+Super を使い、ワークスペースの名前変更は Ctrl+Alt+Shift+R
   Ctrl+Shift+W         タブを閉じる
   Ctrl+Alt+Shift+W     ワークスペースを閉じる
   Ctrl+Alt+U           切り離す
+  Ctrl+Alt+Q           終了してセッションを停止
   Ctrl+Super+Down      下のペインへ
   Ctrl+Super+Left      左のペインへ
   Ctrl+Super+Right     右のペインへ
@@ -44,7 +45,8 @@ Ctrl+Super を使い、ワークスペースの名前変更は Ctrl+Alt+Shift+R
   Ctrl+Alt+Z           ペインをズーム
 
   ── 起動 ──
-  Ctrl+Shift+T         新しいシェルタブ
+  Ctrl+Shift+T         閉じたタブを再度開く
+  Ctrl+Shift+B         新しいシェルタブ
   Ctrl+Alt+T           新しい開発タブ（エディター＋エージェント）
   Ctrl+Alt+Shift+T     新しいエージェントタブ
   Ctrl+Alt+P           ファイル検索

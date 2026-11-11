@@ -233,9 +233,9 @@ goto = "cmd+ctrl+g"
 # -- the button needs no chord -- and everything that action creates is enriched
 # into a fresh+pi split by the dev-tab plugin's tab.created hook
 # (the dev-tab plugin). An empty string replaces the default
-# rather than falling back to it, so ctrl+b c stays gone. cmd+shift+t is handled
-# by a custom command below instead, which opens a plain shell tab and marks it
-# for the hook to skip.
+# rather than falling back to it, so ctrl+b c stays gone. cmd+shift+t and
+# cmd+shift+backtick are handled by custom commands below instead: reopen, and
+# a plain shell tab that marks itself for the hook to skip.
 new_tab = ""
 
 # Jump to tab by index, now on the tab family's cmd+shift modifier alongside
@@ -252,8 +252,11 @@ switch_tab = "cmd+shift+1..9"
 # (part of the pane family's single cmd+alt modifier), freeing cmd+shift+w
 # back up. Requires `keybind = super+shift+w=unbind` in Ghostty, releasing
 # its own close_window -- Ghostty's windows are unused here.
-# NOTE: there is no undo -- closing a tab kills its PTYs, and Herdr has no
-# reopen-closed-tab action.
+# NOTE: Herdr itself has no undo -- closing a tab kills its PTYs, and nothing
+# can bring a process back. cmd+shift+t below rebuilds the tab from the layout
+# the reopen-tab plugin cached while it was open (cwd per pane, split geometry,
+# Fresh and pi restarted, pi on its own session file); scrollback and unsaved
+# editor buffers are gone for good.
 # cmd+shift+x is where the plugin manager is bound, below.
 close_tab = "cmd+shift+w"
 
@@ -268,12 +271,31 @@ move_tab_next = "cmd+alt+shift+]"
 # annotate. Free in Ghostty (live and default) and Fresh.
 clear_pane = "cmd+alt+k"
 
-# cmd+shift+t: new tab running a plain shell. The native new_tab action cannot
-# serve this (see above), so the script creates the tab carrying a label the
-# dev-tab hook skips. Requires `keybind = super+shift+t=unbind` in
-# the Ghostty config, which stays for this chord.
+# cmd+shift+t: reopen the tab closed last, from the snapshot the reopen-tab
+# plugin keeps. Rebuilds the tab, not the processes: cwd per pane, split
+# geometry, Fresh and pi relaunched (pi on the session file it was in), any
+# other program back as a plain shell. The stack holds the last ten closes and
+# covers every close path -- the chord, the tab bar's button, the last pane
+# exiting.
+#
+# The macOS convention for this chord (reopen closed tab), one Mash can now
+# honour because the plain shell tab moved off it to cmd+shift+backtick below.
+# Requires `keybind = super+shift+t=unbind` in the Ghostty config, which was
+# there for the plain shell tab and stays for this one.
 [[keys.command]]
 key = "cmd+shift+t"
+type = "shell"
+command = "herdr-reopen-tab"
+description = "reopen closed tab"
+
+# cmd+shift+backtick: new tab running a plain shell. The native new_tab action
+# cannot serve this (see above), so the script creates the tab carrying a label
+# the dev-tab hook skips. Backtick because that key already means "shell" in
+# this keymap -- ctrl+shift+backtick is the shell pane under a dev tab's Fresh
+# pane -- and because cmd+shift+t now belongs to reopen, above. Requires
+# `keybind = super+shift+backtick=unbind` in the Ghostty config.
+[[keys.command]]
+key = "cmd+shift+backtick"
 type = "shell"
 command = "herdr-new-plain-tab"
 description = "new plain shell tab"
@@ -575,7 +597,7 @@ description = "Plugin manager"
 # workspace -- or a linked git worktree -- and applies a layout profile picked
 # from cards. Profiles live in config.yaml under
 # `herdr plugin config-dir herdr-workspace`; three are defined (shell, pi,
-# fresh+pi) mirroring the cmd+shift+t / cmd+alt+t / cmd+t tab launchers.
+# fresh+pi) mirroring the cmd+shift+backtick / cmd+alt+t / cmd+t tab launchers.
 #
 # These two chords are the ones Herdr's native new_workspace and new_worktree
 # used to hold; both native actions are now unbound (see the [keys] block at the
@@ -702,3 +724,17 @@ key = "cmd+ctrl+y"
 type = "plugin_action"
 command = "fork-from-message.fork-workspace"
 description = "Fork agent into new workspace"
+
+# Quit Mash and stop the Herdr server, ending every pane's process. Cmd+Q and
+# the close button stay the safe exits -- the client dies, the server outlives
+# the window and the next launch reattaches -- so ending the agents someone is
+# running needs a chord the keyboard does not reach by reflex. cmd+alt+q is
+# quit's own modifier plus alt, is not Cmd+Shift+Q (macOS logs the user out on
+# that, before any app sees it), and is free in Ghostty, Herdr and Fresh.
+# MashMenus (macOS) and window.blp (Linux) carry the matching menu item; the
+# item replays this chord, so renaming it here means renaming it there.
+[[keys.command]]
+key = "cmd+alt+q"
+type = "shell"
+command = "mash-stop-sessions"
+description = "Quit and stop sessions"

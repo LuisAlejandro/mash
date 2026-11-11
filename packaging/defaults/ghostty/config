@@ -86,9 +86,15 @@ keybind = super+digit_7=unbind
 keybind = super+digit_8=unbind
 
 # Release cmd+shift+t (Ghostty `undo`, i.e. undo-close-tab/split) so Herdr
-# uses it for new_tab. Ghostty's tabs are unused here, so undo has nothing
-# meaningful to restore. cmd+alt+t needs no unbind: Ghostty never bound it.
+# uses it to reopen the tab it closed last. Ghostty's tabs are unused here, so
+# its own undo has nothing to restore and Herdr's reopen is the one that works.
+# cmd+alt+t needs no unbind: Ghostty never bound it.
 keybind = super+shift+t=unbind
+
+# Release cmd+shift+backtick for Herdr's new plain shell tab, which moved onto
+# it when cmd+shift+t became reopen. Ghostty binds no action there, so the
+# unbind only guarantees the chord reaches Herdr.
+keybind = super+shift+backtick=unbind
 
 # Release cmd+w so Fresh can own it as Close tab. Herdr claims nothing on
 # this chord any more -- close_tab moved to cmd+shift+w, released below -- but

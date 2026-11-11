@@ -12,6 +12,7 @@ accordo Ctrl nudo (Ctrl+C, Ctrl+R, Ctrl+U) e Fresh tiene quelli di modifica.
   Ctrl+Shift+W         Chiudi scheda
   Ctrl+Alt+Shift+W     Chiudi spazio di lavoro
   Ctrl+Alt+U           Scollega
+  Ctrl+Alt+Q           Esci e interrompi le sessioni
   Ctrl+Super+Down      Fuoco riquadro in basso
   Ctrl+Super+Left      Fuoco riquadro a sinistra
   Ctrl+Super+Right     Fuoco riquadro a destra
@@ -44,7 +45,8 @@ accordo Ctrl nudo (Ctrl+C, Ctrl+R, Ctrl+U) e Fresh tiene quelli di modifica.
   Ctrl+Alt+Z           Zoom riquadro
 
   ── Avvii ──
-  Ctrl+Shift+T         nuova scheda terminale semplice
+  Ctrl+Shift+T         riapri scheda chiusa
+  Ctrl+Shift+B         nuova scheda terminale semplice
   Ctrl+Alt+T           nuova scheda di sviluppo (editor + agente)
   Ctrl+Alt+Shift+T     nuova scheda agente
   Ctrl+Alt+P           Ricerca file

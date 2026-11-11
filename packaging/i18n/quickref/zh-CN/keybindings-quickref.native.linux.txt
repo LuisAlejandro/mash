@@ -36,6 +36,7 @@ Ctrl+B（后台会话）都不可用；请用 Fresh 的 Ctrl+E 或菜单，以�
   t                新建开发标签页（编辑器 + 代理）
   a                新建代理标签页
   Shift+C          新建终端标签页
+  Ctrl+T           重新打开已关闭的标签页
   Shift+V          新建审查标签页（diff + 代理）
   `                在 Fresh 下方新建终端窗格
   f                文件查找
@@ -65,6 +66,7 @@ Ctrl+B（后台会话）都不可用；请用 Fresh 的 Ctrl+E 或菜单，以�
   Shift+→          向右移动标签页
   Shift+Backspace  移除工作树
   Ctrl+K           清空窗格
+  Shift+Q          退出并停止会话
 
   ── Fresh（自带默认键） ──
   Ctrl+S           保存

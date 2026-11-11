@@ -11,6 +11,7 @@ Ctrl เดี่ยวๆ (Ctrl+C, Ctrl+R, Ctrl+U) ไว้ และ Fresh �
   Ctrl+Shift+W         ปิดแท็บ
   Ctrl+Alt+Shift+W     ปิดพื้นที่ทำงาน
   Ctrl+Alt+U           แยกออก
+  Ctrl+Alt+Q           ออกและหยุดเซสชัน
   Ctrl+Super+Down      ไปที่บานด้านล่าง
   Ctrl+Super+Left      ไปที่บานด้านซ้าย
   Ctrl+Super+Right     ไปที่บานด้านขวา
@@ -43,7 +44,8 @@ Ctrl เดี่ยวๆ (Ctrl+C, Ctrl+R, Ctrl+U) ไว้ และ Fresh �
   Ctrl+Alt+Z           ขยายบาน
 
   ── การเปิด ──
-  Ctrl+Shift+T         แท็บเชลล์ใหม่
+  Ctrl+Shift+T         เปิดแท็บที่ปิดไปอีกครั้ง
+  Ctrl+Shift+B         แท็บเชลล์ใหม่
   Ctrl+Alt+T           แท็บพัฒนาใหม่ (เอดิเตอร์ + เอเจนต์)
   Ctrl+Alt+Shift+T     แท็บเอเจนต์ใหม่
   Ctrl+Alt+P           ค้นหาไฟล์

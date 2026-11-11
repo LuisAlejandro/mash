@@ -12,7 +12,8 @@
   ⌘T / ⌘⇧N   tab phát triển mới (trình soạn thảo + tác tử)    ⌃⌥Z        Đọc chính tả (Pi Voice)
   ⌘⌥T / ⌘⌥N  tab tác tử mới
   ⌘⇧R        tab đánh giá mới (diff + tác tử)               ── Phần bổ sung ──
-  ⌘⇧T        tab shell đơn giản mới                           ⌃⇧G        Quản lý phiên bản
+  ⌘⇧T        mở lại tab đã đóng
+  ⌘⇧`        tab shell đơn giản mới                           ⌃⇧G        Quản lý phiên bản
   ⌘⇧[ / ⌘⇧]  Thẻ trước / sau                                  ⌘⇧O        Trạng thái container
   ⌘⇧1-9      Chuyển tới thẻ N                                 ⌘⌥P        Đoạn mã (trình thực thi)
   ⌘⇧M        Đổi tên thẻ                                      ⌘P         Tìm tệp
@@ -31,6 +32,7 @@
 ── Trình soạn thảo ──                                         ⌘⇧I        Trợ giúp
   ⌘O         Mở tệp                                           ⌘I         Cài đặt
   ⌘S         Lưu                                              ⌘U         Tách
+                                                              ⌘⌥Q        Thoát và dừng các phiên
   ⌘F         Tìm / thay trong bộ đệm                          ⌘R         Tải lại cấu hình
   ⌘⇧F        Tìm / thay trong tệp                             ⌘Y         Mở đích thông báo
   ⌘⇧E        Bật tắt trình duyệt tệp                          ⌘B         Bật tắt thanh bên

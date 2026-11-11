@@ -12,7 +12,8 @@
   ⌘T / ⌘⇧N   neuer Entwicklungs-Tab (Editor + Agent)              ⌃⌥Z        Diktat (Pi Voice)
   ⌘⌥T / ⌘⌥N  neuer Agent-Tab
   ⌘⇧R        neuer Review-Tab (Diff + Agent)                    ── Erweiterungen ──
-  ⌘⇧T        neuer einfacher Terminal-Tab                         ⌃⇧G        Versionskontrolle
+  ⌘⇧T        geschlossenen Tab wieder öffnen
+  ⌘⇧`        neuer einfacher Terminal-Tab                         ⌃⇧G        Versionskontrolle
   ⌘⇧[ / ⌘⇧]  Vorheriger / nächster Tab                            ⌘⇧O        Container-Status
   ⌘⇧1-9      Zu Tab N wechseln                                    ⌘⌥P        Snippets (Snippet-Ausführer)
   ⌘⇧M        Tab umbenennen                                       ⌘P         Dateisuche
@@ -31,6 +32,7 @@
 ── Editor ──                                                      ⌘⇧I        Hilfe
   ⌘O         Datei öffnen                                         ⌘I         Einstellungen
   ⌘S         Speichern                                            ⌘U         Trennen
+                                                                  ⌘⌥Q        Beenden und Sitzungen stoppen
   ⌘F         Suchen / ersetzen im Puffer                          ⌘R         Konfiguration neu laden
   ⌘⇧F        Suchen / ersetzen in Dateien                         ⌘Y         Benachrichtigungsziel öffnen
   ⌘⇧E        Dateiexplorer umschalten                             ⌘B         Seitenleiste umschalten

@@ -37,6 +37,7 @@ Ctrl+E de Fresh o su menú, y la flecha izquierda de Pi.
   t                nueva pestaña de desarrollo (editor + agente)
   a                nueva pestaña de agente
   Shift+C          nueva pestaña de terminal simple
+  Ctrl+T           reabrir pestaña cerrada
   Shift+V          nueva pestaña de revisión (diff + agente)
   `                nuevo panel de terminal bajo Fresh
   f                Buscador de archivos
@@ -66,6 +67,7 @@ Ctrl+E de Fresh o su menú, y la flecha izquierda de Pi.
   Shift+→          Mover pestaña a la derecha
   Shift+Backspace  Quitar árbol de trabajo
   Ctrl+K           Limpiar panel
+  Shift+Q          Salir y detener las sesiones
 
   ── Fresh (sus teclas predeterminadas) ──
   Ctrl+S           Guardar
