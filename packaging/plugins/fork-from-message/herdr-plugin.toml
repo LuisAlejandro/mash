@@ -1,6 +1,6 @@
 id = "fork-from-message"
 name = "Fork from Message"
-version = "0.1.2"
+version = "0.2.1"
 min_herdr_version = "0.8.0"
 description = "Fork a focused agent session from a chosen earlier user message"
 platforms = ["macos", "linux"]

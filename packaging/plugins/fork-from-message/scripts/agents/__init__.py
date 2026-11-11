@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import json
 import os
-import shutil
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -102,52 +101,37 @@ class PiAgent(Agent):
     def launch_args(self, fork_session: str) -> list[str]:
         return ["--session", fork_session]
 
-    def _candidates(self) -> list[str]:
-        """Every `pi` worth inspecting, best first.
-
-        Mash ships a `pi` shim on MASH_BIN ahead of the bundled binary so it can
-        animate the wait before the agent starts. That shim is a shell script
-        with no package beside it, so resolving only the first PATH hit found no
-        runtime at all. Keep looking along MASH_BIN for the copy that does.
-        """
-        found = [shutil.which(self.executable)]
-        found.extend(
-            str(Path(directory) / self.executable)
-            for directory in os.environ.get("MASH_BIN", "").split(":") if directory
-        )
-        seen, candidates = set(), []
-        for candidate in found:
-            if not candidate or candidate in seen or not os.path.isfile(candidate):
-                continue
-            seen.add(candidate)
-            candidates.append(candidate)
-        return candidates
-
     def _runtime(self) -> tuple[Path, Path]:
-        executables = self._candidates()
-        if not executables:
-            raise AgentError("Pi executable not found in PATH.")
-        for executable in executables:
-            try:
-                return self._runtime_for(executable)
-            except AgentError:
-                continue
-        raise AgentError("Cannot resolve bundled Pi SessionManager and Node from the Pi executable.")
+        """The bundled Node runtime and Pi's module entry point.
 
-    def _runtime_for(self, executable: str) -> tuple[Path, Path]:
+        Every `pi` on PATH is tried, not just the first. In Mash the first one
+        is the launcher in the bundle's bin directory, which execs the real
+        agent and sits nowhere near the package; the module and Node are found
+        through the other candidate, the `node/bin/pi` symlink into
+        node_modules, whose resolved parents hold both. Resolving the symlink
+        first is what makes that walk land on the package.
+        """
+        candidates: list[Path] = []
+        for directory in os.environ.get("PATH", "").split(os.pathsep):
+            candidate = Path(directory) / self.executable
+            if candidate.exists():
+                candidates.append(candidate)
+        if not candidates:
+            raise AgentError("Pi executable not found in PATH.")
         package = node = None
-        for parent in Path(executable).resolve().parents:
-            manifest = parent / "package.json"
-            if package is None and manifest.is_file() and (parent / "dist/index.js").is_file():
-                try:
-                    if json.loads(manifest.read_text())["name"] == "@earendil-works/pi-coding-agent":
-                        package = parent / "dist/index.js"
-                except (OSError, ValueError, KeyError):
-                    pass
-            if node is None and (parent / "bin/node").is_file():
-                node = parent / "bin/node"
-            if package and node:
-                return node, package
+        for candidate in candidates:
+            for parent in candidate.resolve().parents:
+                manifest = parent / "package.json"
+                if package is None and manifest.is_file() and (parent / "dist/index.js").is_file():
+                    try:
+                        if json.loads(manifest.read_text())["name"] == "@earendil-works/pi-coding-agent":
+                            package = parent / "dist/index.js"
+                    except (OSError, ValueError, KeyError):
+                        pass
+                if node is None and (parent / "bin/node").is_file():
+                    node = parent / "bin/node"
+                if package and node:
+                    return node, package
         raise AgentError("Cannot resolve bundled Pi SessionManager and Node from the Pi executable.")
 
     def _call(self, command: str, session: str, *args: str) -> Mapping[str, Any]:
