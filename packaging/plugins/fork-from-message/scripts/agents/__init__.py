@@ -15,6 +15,7 @@ Pi stores sessions as JSONL paths; a storage-only Node helper uses its SDK.
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 from dataclasses import dataclass
@@ -101,10 +102,39 @@ class PiAgent(Agent):
     def launch_args(self, fork_session: str) -> list[str]:
         return ["--session", fork_session]
 
+    def _candidates(self) -> list[str]:
+        """Every `pi` worth inspecting, best first.
+
+        Mash ships a `pi` shim on MASH_BIN ahead of the bundled binary so it can
+        animate the wait before the agent starts. That shim is a shell script
+        with no package beside it, so resolving only the first PATH hit found no
+        runtime at all. Keep looking along MASH_BIN for the copy that does.
+        """
+        found = [shutil.which(self.executable)]
+        found.extend(
+            str(Path(directory) / self.executable)
+            for directory in os.environ.get("MASH_BIN", "").split(":") if directory
+        )
+        seen, candidates = set(), []
+        for candidate in found:
+            if not candidate or candidate in seen or not os.path.isfile(candidate):
+                continue
+            seen.add(candidate)
+            candidates.append(candidate)
+        return candidates
+
     def _runtime(self) -> tuple[Path, Path]:
-        executable = shutil.which(self.executable)
-        if not executable:
+        executables = self._candidates()
+        if not executables:
             raise AgentError("Pi executable not found in PATH.")
+        for executable in executables:
+            try:
+                return self._runtime_for(executable)
+            except AgentError:
+                continue
+        raise AgentError("Cannot resolve bundled Pi SessionManager and Node from the Pi executable.")
+
+    def _runtime_for(self, executable: str) -> tuple[Path, Path]:
         package = node = None
         for parent in Path(executable).resolve().parents:
             manifest = parent / "package.json"
