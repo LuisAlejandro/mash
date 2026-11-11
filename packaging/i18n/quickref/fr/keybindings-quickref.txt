@@ -12,7 +12,8 @@
   ⌘T / ⌘⇧N   nouvel onglet de développement (éditeur + agent)    ⌃⌥Z        Dictée (Pi Voice)
   ⌘⌥T / ⌘⌥N  nouvel onglet d'agent
   ⌘⇧R        nouvel onglet de revue (diff + agent)             ── Modules ──
-  ⌘⇧T        nouvel onglet de terminal simple                    ⌃⇧G        Gestion de versions
+  ⌘⇧T        rouvrir l'onglet fermé
+  ⌘⇧`        nouvel onglet de terminal simple                    ⌃⇧G        Gestion de versions
   ⌘⇧[ / ⌘⇧]  Onglet précédent / suivant                          ⌘⇧O        État des conteneurs
   ⌘⇧1-9      Aller à l'onglet N                                  ⌘⌥P        Extraits (exécuteur d'extraits)
   ⌘⇧M        Renommer l'onglet                                   ⌘P         Recherche de fichiers
@@ -31,6 +32,7 @@
 ── Éditeur ──                                                    ⌘⇧I        Aide
   ⌘O         Ouvrir un fichier                                   ⌘I         Réglages
   ⌘S         Enregistrer                                         ⌘U         Détacher
+                                                                 ⌘⌥Q        Quitter et arrêter les sessions
   ⌘F         Chercher / remplacer dans le tampon                 ⌘R         Recharger la configuration
   ⌘⇧F        Chercher / remplacer dans les fichiers              ⌘Y         Ouvrir la cible de notification
   ⌘⇧E        Basculer l'explorateur de fichiers                  ⌘B         Basculer la barre latérale

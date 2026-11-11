@@ -33,10 +33,18 @@ APPLE_APP_PASSWORD="${APPLE_APP_PASSWORD:-${APPLE_APP_SPECIFIC_PASSWORD:-}}"
 
 # In CI the identity is imported into a throwaway keychain that may not be in
 # the default search list, so make sure it is searched before looking for it.
-if [ -n "${MASH_KEYCHAIN:-}" ]; then
+# The workflow locks that keychain 3600s after import. The Intel build now
+# takes longer than that, so Developer ID signing began against a locked
+# keychain and codesign waited on a dialog nobody can answer. Unlock again
+# immediately before signing, and keep it unlocked for the rest of the job.
+mash_unlock_signing_keychain() {
+    [ -n "${MASH_KEYCHAIN:-}" ] || return 0
     security list-keychains -d user -s "$MASH_KEYCHAIN" $(security list-keychains -d user | tr -d '"') 2>/dev/null || true
-    security unlock-keychain -p "${MASH_KEYCHAIN_PASSWORD:-}" "$MASH_KEYCHAIN" 2>/dev/null || true
-fi
+    security set-keychain-settings -lut 21600 "$MASH_KEYCHAIN"
+    security unlock-keychain -p "${MASH_KEYCHAIN_PASSWORD:-}" "$MASH_KEYCHAIN"
+    echo "signing keychain unlocked"
+}
+mash_unlock_signing_keychain
 
 if ! security find-identity -v -p codesigning | grep -q "Developer ID Application"; then
     echo "No Developer ID Application identity. Refusing to assemble a stranger download." >&2
@@ -69,6 +77,11 @@ ditto "$dist/Mash.app" "$download/Mash.app"
 cp "$dist/fresh-0.5.1-patched.tar.gz" "$download/fresh-0.5.1-patched.tar.gz"
 cp "$root/packaging/fresh-gpl-notice.txt" "$download/FRESH-LICENSE.txt"
 ln -s /Applications "$download/Applications"
+# Printed because this stage has no other output: a silent gap after the build
+# is indistinguishable from a stall, which is exactly how a wedged signing run
+# went unnoticed until the job's timeout killed it.
+echo "staged the bundle for signing"
+mash_unlock_signing_keychain
 
 # 3. Developer ID sign every piece of code in the bundle, innermost first.
 # codesign --deep only reaches nested code in the standard locations
@@ -84,14 +97,25 @@ ln -s /Applications "$download/Applications"
 # That is not a signing error and the artifact is fine, so a few spaced retries
 # recover it. Without them one unlucky response throws away a 45-minute build
 # and blocks the release.
+#
+# The failure is not always an error, though: the same service sometimes hangs
+# instead of answering, and then codesign waits without printing a line and
+# never returns, so the retry below never runs and the job burns its whole
+# timeout on one signature. alarm() survives exec, so the timer still fires
+# inside codesign and turns a hang into a retryable failure.
+codesign_deadline="${MASH_CODESIGN_TIMEOUT:-300}"
+mash_codesign_bounded() {
+    perl -e 'alarm shift @ARGV; exec @ARGV' "$codesign_deadline" codesign "$@"
+}
+
 mash_codesign() {
     local attempt=1 limit=4 delay=15
     while :; do
-        if codesign "$@"; then
+        if mash_codesign_bounded "$@"; then
             return 0
         fi
         [ "$attempt" -lt "$limit" ] || return 1
-        echo "codesign failed (attempt $attempt of $limit); retrying in ${delay}s" >&2
+        echo "codesign failed or timed out after ${codesign_deadline}s (attempt $attempt of $limit); retrying in ${delay}s" >&2
         sleep "$delay"
         attempt=$((attempt + 1))
         delay=$((delay * 2))
@@ -135,6 +159,7 @@ find "$download/Mash.app" -type f \
 file -F '|@|' -f "$candidates" | grep 'Mach-O' |
     sed -e 's/|@|.*//' -e 's/ (for architecture [^)]*):.*//' |
     sort -u | awk -F/ '{print NF"\t"$0}' | sort -rn | cut -f2- >"$machos"
+echo "signing $(wc -l <"$machos" | tr -d ' ') binaries"
 
 while IFS= read -r path; do
     case "$path" in
@@ -151,12 +176,14 @@ done <"$machos"
 find "$download/Mash.app" -depth -type d \
     \( -name '*.app' -o -name '*.framework' -o -name '*.xpc' \
     -o -name '*.plugin' -o -name '*.bundle' \) >"$bundles"
+echo "signing $(wc -l <"$bundles" | tr -d ' ') bundles"
 while IFS= read -r path; do
     [ "$path" = "$download/Mash.app" ] || sign_item "$path"
 done <"$bundles"
 # The app last, over everything above. Its executable is the terminal, so this
 # signature carries every TCC entitlement Mash and its panes need.
 sign_item "$download/Mash.app" "$root/packaging/entitlements.plist"
+echo "every binary and bundle is Developer ID signed"
 
 # Verify. codesign --verify --deep stops at the same locations --deep signs,
 # so each item is checked on its own. This is the check that would have caught
@@ -213,6 +240,7 @@ rm -f "$dist/Mash.dmg"
 cp "$root/packaging/Mash.icns" "$download/.VolumeIcon.icns"
 scratch="$dist/.mash-dmg.rw.dmg"
 rm -f "$scratch"
+echo "building the disk image"
 hdiutil create -volname "Mash" -srcfolder "$download" -ov -format UDRW "$scratch" >/dev/null
 # hdiutil prints tab-separated columns, and the mount point is the last one.
 # Splitting on whitespace loses it the moment the volume is named "/Volumes/Mash
@@ -235,6 +263,7 @@ dmg_mnt=""
 hdiutil convert "$scratch" -format UDZO -o "$dist/Mash.dmg" >/dev/null
 rm -f "$scratch"
 scratch=""
+echo "disk image built"
 
 # 5. Sign the disk image itself.
 mash_codesign --force --timestamp --sign "$identity" "$dist/Mash.dmg"
@@ -257,12 +286,15 @@ submission="$(xcrun notarytool submit "$dist/Mash.dmg" "${notary_auth[@]}" \
 echo "notarization submission $submission"
 
 state="In Progress"
-for _ in $(seq 1 160); do
+for poll in $(seq 1 160); do
     state="$(xcrun notarytool info "$submission" "${notary_auth[@]}" \
         --output-format json | plutil -extract status raw -o - -)"
     [ "$state" = "In Progress" ] || break
+    # One line per minute or so: silence here is indistinguishable from a stall.
+    [ "$poll" -gt 1 ] && [ "$((poll % 4))" -ne 1 ] || echo "notarization $state (poll $poll)"
     sleep 15
 done
+echo "notarization ended as $state"
 if [ "$state" != "Accepted" ]; then
     echo "notarization ended as $state" >&2
     xcrun notarytool log "$submission" "${notary_auth[@]}" || true

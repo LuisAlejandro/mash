@@ -9,6 +9,7 @@ contain. Caught when pi-ask-user moved to 0.17.0 and settings.json still said
 """
 
 import json
+import os
 import pathlib
 import re
 import unittest
@@ -79,6 +80,29 @@ class PiPackagePinsTest(unittest.TestCase):
             with self.subTest(component=component):
                 package = names.get(component, component)
                 self.assertIn(package, seeded, f"{package} is installed but not seeded in settings.json")
+
+    def test_the_nested_pi_ai_is_the_pinned_copy_and_not_a_second_one(self):
+        """The model catalog loads the copy nested under the Pi package.
+
+        Copied, that shipped a second 96 MB runtime inside the app; symlinked,
+        the pinned hoisted package stays the only copy. Pinned at all because
+        Pi declares pi-ai as an open range: 1.5.1 renamed a provider and every
+        artifact job of the 0.4.1 release failed on stale wizard metadata.
+        """
+        build = BUILD_COMMON.read_text()
+        nested = "node/lib/node_modules/@earendil-works/pi-coding-agent/node_modules/@earendil-works/pi-ai"
+        root = "node/lib/node_modules/@earendil-works/pi-ai"
+        link = os.path.relpath(root, os.path.dirname(nested))
+        self.assertEqual(link, "../../../pi-ai")
+        self.assertFalse(os.path.isabs(link))
+        self.assertIn("os.path.relpath", build)
+        self.assertNotIn('ln -s "$pi_ai_root" "$pi_ai_nested"', build)
+        self.assertNotIn('cp -R "$pi_ai_root" "$pi_ai_nested"', build)
+        self.assertIn("the pinned pi-ai link escaped the bundle", build)
+        loop = re.search(r"for component in ([^;]+); do", build)
+        self.assertIsNotNone(loop)
+        self.assertIn("pi-ai", loop.group(1).split())
+        self.assertIn("@earendil-works/pi-ai", pinned_versions())
 
 
 if __name__ == "__main__":

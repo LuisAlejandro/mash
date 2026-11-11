@@ -54,7 +54,10 @@ quit-after-last-window-closed = true
 
 # Ctrl+Shift chords are the closest Linux equivalent of the macOS Command
 # families Herdr uses, and GNOME leaves them alone.
+# ctrl+shift+t reopens the last closed tab; ctrl+shift+b (below) is the plain
+# shell tab that used to sit on it.
 keybind = ctrl+shift+t=unbind
+keybind = ctrl+shift+b=unbind
 keybind = ctrl+shift+w=unbind
 keybind = ctrl+shift+n=unbind
 keybind = ctrl+shift+p=unbind

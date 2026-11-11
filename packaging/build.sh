@@ -62,6 +62,8 @@ ship_helpers=(
   herdr_state.py
   herdr-shell-greeting
   herdr-dev-tab-fill
+  herdr-tabs
+  herdr_tabs.py
   herdr-fresh-shell-pane
   herdr-annotate-paste
   mash-orchestration
@@ -80,6 +82,7 @@ ship_helpers=(
   mash-t
   mash-update-notice
   mash-pane-resume
+  mash-stop-sessions
   mash-update-verify
   mash-update-apply
   mash-update-common

@@ -11,6 +11,7 @@ Ctrl은 편집 수식키이므로 Mash 자체의 키 가족은 Ctrl+Alt와 Ctrl+
   Ctrl+Shift+W         탭 닫기
   Ctrl+Alt+Shift+W     워크스페이스 닫기
   Ctrl+Alt+U           분리
+  Ctrl+Alt+Q           종료하고 세션 중지
   Ctrl+Super+Down      아래 창으로
   Ctrl+Super+Left      왼쪽 창으로
   Ctrl+Super+Right     오른쪽 창으로
@@ -43,7 +44,8 @@ Ctrl은 편집 수식키이므로 Mash 자체의 키 가족은 Ctrl+Alt와 Ctrl+
   Ctrl+Alt+Z           창 확대
 
   ── 실행 ──
-  Ctrl+Shift+T         새 셸 탭
+  Ctrl+Shift+T         닫은 탭 다시 열기
+  Ctrl+Shift+B         새 셸 탭
   Ctrl+Alt+T           새 개발 탭 (편집기 + 에이전트)
   Ctrl+Alt+Shift+T     새 에이전트 탭
   Ctrl+Alt+P           파일 찾기

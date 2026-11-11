@@ -12,6 +12,7 @@ Ctrl+Alt и Ctrl+Shift. Два захвата GNOME сидят в этом пр�
   Ctrl+Shift+W         Закрыть вкладку
   Ctrl+Alt+Shift+W     Закрыть пространство
   Ctrl+Alt+U           Отсоединить
+  Ctrl+Alt+Q           Выйти и остановить сеансы
   Ctrl+Super+Down      Фокус на панель снизу
   Ctrl+Super+Left      Фокус на панель слева
   Ctrl+Super+Right     Фокус на панель справа
@@ -44,7 +45,8 @@ Ctrl+Alt и Ctrl+Shift. Два захвата GNOME сидят в этом пр�
   Ctrl+Alt+Z           Увеличить панель
 
   ── Запуск ──
-  Ctrl+Shift+T         новая вкладка простой оболочки
+  Ctrl+Shift+T         снова открыть закрытую вкладку
+  Ctrl+Shift+B         новая вкладка простой оболочки
   Ctrl+Alt+T           новая вкладка разработки (редактор + агент)
   Ctrl+Alt+Shift+T     новая вкладка агента
   Ctrl+Alt+P           Поиск файлов

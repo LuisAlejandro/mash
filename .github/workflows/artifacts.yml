@@ -38,7 +38,7 @@ env:
   # Full SHA, compared exactly: a short prefix could collide, and this pin is
   # what makes a released DMG traceable to a specific terminal build. Move it
   # whenever the fork gains a commit.
-  GHOSTTY_FORK_COMMIT: "d6c68ae83efe7517003a3025cd446a3be87f9c89"
+  GHOSTTY_FORK_COMMIT: "3235c5054d167d840607f3d54f78163901d899c5"
   # Mash Programming Skills, whose skills and agents are copied into the app.
   # The build refuses any other version. Both skills repos now cut releases and
   # tag them, so the pin is the tag rather than a commit SHA: a tag names a
@@ -93,7 +93,10 @@ jobs:
       matrix:
         include: ${{ fromJSON(needs.setup.outputs.mac_matrix) }}
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 120
+    # The Intel runner needs about 73 minutes for the build alone and about 15
+    # more to sign, notarize and verify, so 120 left little room and a single
+    # stalled timestamp call consumed the margin and killed the leg mid-work.
+    timeout-minutes: 200
     steps:
       - name: Checkout release tag
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

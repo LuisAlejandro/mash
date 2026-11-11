@@ -12,6 +12,7 @@ acorde Ctrl solo (Ctrl+C, Ctrl+R, Ctrl+U) y Fresh conserva los de edición.
   Ctrl+Shift+W         Cerrar pestaña
   Ctrl+Alt+Shift+W     Cerrar espacio de trabajo
   Ctrl+Alt+U           Desconectar
+  Ctrl+Alt+Q           Salir y detener las sesiones
   Ctrl+Super+Down      Enfocar panel de abajo
   Ctrl+Super+Left      Enfocar panel de la izquierda
   Ctrl+Super+Right     Enfocar panel de la derecha
@@ -44,7 +45,8 @@ acorde Ctrl solo (Ctrl+C, Ctrl+R, Ctrl+U) y Fresh conserva los de edición.
   Ctrl+Alt+Z           Ampliar panel
 
   ── Lanzadores ──
-  Ctrl+Shift+T         nueva pestaña de terminal simple
+  Ctrl+Shift+T         reabrir pestaña cerrada
+  Ctrl+Shift+B         nueva pestaña de terminal simple
   Ctrl+Alt+T           nueva pestaña de desarrollo (editor + agente)
   Ctrl+Alt+Shift+T     nueva pestaña de agente
   Ctrl+Alt+P           Buscador de archivos

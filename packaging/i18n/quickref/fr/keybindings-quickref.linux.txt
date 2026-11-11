@@ -13,6 +13,7 @@ l'édition.
   Ctrl+Shift+W         Fermer l'onglet
   Ctrl+Alt+Shift+W     Fermer l'espace de travail
   Ctrl+Alt+U           Détacher
+  Ctrl+Alt+Q           Quitter et arrêter les sessions
   Ctrl+Super+Down      Focus volet du bas
   Ctrl+Super+Left      Focus volet de gauche
   Ctrl+Super+Right     Focus volet de droite
@@ -45,7 +46,8 @@ l'édition.
   Ctrl+Alt+Z           Zoomer le volet
 
   ── Lanceurs ──
-  Ctrl+Shift+T         nouvel onglet de terminal simple
+  Ctrl+Shift+T         rouvrir l'onglet fermé
+  Ctrl+Shift+B         nouvel onglet de terminal simple
   Ctrl+Alt+T           nouvel onglet de développement (éditeur + agent)
   Ctrl+Alt+Shift+T     nouvel onglet d'agent
   Ctrl+Alt+P           Recherche de fichiers

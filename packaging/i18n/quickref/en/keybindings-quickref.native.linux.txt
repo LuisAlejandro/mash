@@ -37,6 +37,7 @@ menu, and Pi's Left arrow.
   t                New dev tab (editor + agent)
   a                New agent tab
   Shift+C          New plain shell tab
+  Ctrl+T           Reopen closed tab
   Shift+V          New review tab (diff + agent)
   `                Shell pane under Fresh
   f                File finder
@@ -66,6 +67,7 @@ menu, and Pi's Left arrow.
   Shift+→          Move tab right
   Shift+Backspace  Remove worktree
   Ctrl+K           Clear pane
+  Shift+Q          Quit and stop sessions
 
   ── Fresh (its own default keys) ──
   Ctrl+S           Save

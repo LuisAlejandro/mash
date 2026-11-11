@@ -297,6 +297,18 @@ mash_isolate() {
   export HERDR_SOCKET_PATH="$d/run/herdr.sock"
   export HERDR_CLIENT_SOCKET_PATH="$d/run/herdr-client.sock"
   unset HERDR_SESSION
+  # herdr.auto-title names each tab after its focused pane, so in a dev tab the
+  # label flips to "fresh" the moment the editor takes focus. Making an agent
+  # pane win keeps the tab named after the work instead; hiding the agent's own
+  # name drops the "pi › " prefix every tab would otherwise carry, which says
+  # nothing when every tab in Mash holds an agent. A branch name is the same
+  # kind of noise -- it names where the work sits, not what it is, and four tabs
+  # of one repository would carry the same one -- so the branch is left out
+  # (BRANCH_MAX=0 is the plugin's own way of saying so). All three are read from
+  # its environment when the Herdr server starts.
+  export HERDR_AUTO_TITLE_PREFER_AGENT="true"
+  export HERDR_AUTO_TITLE_AGENT_NAME="false"
+  export HERDR_AUTO_TITLE_BRANCH_MAX="0"
   export PI_CODING_AGENT_DIR="$d/pi/agent"
   # pi packages the user installs, like pi's own agent directory. pi resolves
   # them from `<agentDir>/npm/node_modules` (getManagedNpmInstallPath), so
