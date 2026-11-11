@@ -131,6 +131,17 @@ for out in "$pane" "$launch"; do
 	assert_value "$out" npm_config_cache "$home/.mash/cache/npm"
 done
 
+# herdr.auto-title names a tab after its focused pane, so a dev tab's label
+# flipped to "fresh" as soon as the editor took focus. The agent pane wins
+# instead, the agent's own name is left out of the title, and so is the branch
+# (BRANCH_MAX=0): every tab would otherwise carry the same "develop › " in front
+# of a name that already says what the work is.
+for out in "$pane" "$launch"; do
+	assert_value "$out" HERDR_AUTO_TITLE_PREFER_AGENT true
+	assert_value "$out" HERDR_AUTO_TITLE_AGENT_NAME false
+	assert_value "$out" HERDR_AUTO_TITLE_BRANCH_MAX 0
+done
+
 # The host directories the wizard's Homebrew tools live in must be on the
 # session PATH even when the app was started with a GUI's minimal PATH; the
 # sesh preview runs `sh -lc` on that path and fails with exit status 127

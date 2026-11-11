@@ -35,10 +35,23 @@
  *
  * Format: the agent's own answer becomes the title verbatim, with no product
  * prefix, truncating the body to 37 chars + "…" once it exceeds 40.
+ *
+ * The title is what herdr.auto-title names the tab after — Mash pins the agent
+ * pane to win that pick, see HERDR_AUTO_TITLE_PREFER_AGENT in lib.sh — so the
+ * tab bar reads "3 · <topic>" and holds still while focus moves between the
+ * agent and the editor beside it. Two details stand behind that:
+ *
+ *   - Before a topic exists, the title is the working directory's name, so the
+ *     tab reads "3 · mash" instead of pi's own placeholder ("π - mash"), which
+ *     is noise repeated on every tab of the workspace.
+ *   - pi rewrites the terminal title itself at startup and whenever the session
+ *     is renamed (updateTerminalTitle in interactive-mode), which lands after
+ *     session_start and would undo the topic. Re-asserting the title on each
+ *     agent_start is what keeps the tab on the topic afterwards.
  */
 
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { getAgentDir, type ExtensionAPI, type SessionEntry } from "@earendil-works/pi-coding-agent";
 
 const MAX_LABEL_WORDS = 5;
@@ -131,19 +144,39 @@ function formatTitle(text: string): string {
 }
 
 export default function (pi: ExtensionAPI) {
-	let titled = false;
+	// The session's topic once the first answer has produced one. Held for the
+	// life of the session so the tab stops moving after it has a name; a resumed
+	// session starts over, because the conversation is new to the pane.
+	let topic = "";
+	// Claimed before the compression call rather than after, so two settled
+	// turns cannot both title the session.
+	let claiming = false;
 
-	pi.on("session_start", async () => {
-		titled = false;
+	// What stands in until there is a topic: the directory the agent works in,
+	// which tells one workspace from another without pi's own placeholder title.
+	// Empty for a filesystem root, which gives no name.
+	const fallback = (cwd: string): string => basename(cwd);
+
+	pi.on("session_start", async (_event, ctx) => {
+		topic = "";
+		claiming = false;
+		const title = fallback(ctx.sessionManager.getCwd());
+		if (title) ctx.ui.setTitle(title);
+	});
+
+	pi.on("agent_start", async (_event, ctx) => {
+		const title = topic || fallback(ctx.sessionManager.getCwd());
+		if (title) ctx.ui.setTitle(title);
 	});
 
 	pi.on("agent_settled", async (_event, ctx) => {
-		if (titled) return;
+		if (topic || claiming) return;
 		const text = lastAssistantText(ctx.sessionManager.getEntries());
 		if (!text) return; // no assistant text yet (e.g. a tool-only turn) — retry next agent_settled
-		titled = true; // claim the one-shot slot before the network call, not after
+		claiming = true;
 		const creds = loadOmniRouteCreds();
 		const label = creds ? await compress(text, creds) : undefined;
-		ctx.ui.setTitle(formatTitle(label ?? text));
+		topic = formatTitle(label ?? text);
+		ctx.ui.setTitle(topic);
 	});
 }
