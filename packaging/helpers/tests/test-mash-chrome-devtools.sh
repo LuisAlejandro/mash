@@ -73,6 +73,10 @@ lock)
     (sleep 1; rmdir "$MASH_DATA_DIR/setup/tool-install.lock"; : >"$MASH_DATA_DIR/lock-released") &
     exit 1
   fi
+  # The real installer does not win while another hold owns the lock. Wait until
+  # the background releaser finishes so this path cannot race ahead of
+  # lock-released under a non-C locale reruns.
+  while [ -d "$MASH_DATA_DIR/setup/tool-install.lock" ]; do sleep 0.1; done
   install_tool
   ;;
 fail) exit 1 ;;
