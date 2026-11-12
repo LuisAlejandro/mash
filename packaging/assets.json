@@ -771,11 +771,11 @@
       "commit": "8ed222ab7efe735b3ef5e037e7ee81d6d7650e4e"
     },
     "mash-programming-skills": {
-      "version": "0.6.2",
+      "version": "0.6.3",
       "strategy": "git",
       "install": "bundled",
       "repo": "LuisAlejandro/mash-programming-skills",
-      "ref": "0.6.2"
+      "ref": "0.6.3"
     },
     "sentrux": {
       "version": "0.5.7",
@@ -837,10 +837,10 @@
           "member": "cua-driver-rs-0.38.0-darwin-arm64"
         },
         "macos-amd64": {
-          "url": "https://github.com/trycua/cua/releases/download/cua-driver-rs-v0.33.3/cua-driver-rs-0.33.3-darwin-x86_64.tar.gz",
-          "sha256": "c1ca411206ba703137d4a3cf4b6f7e1f62511e1e12e7de238a36b40cfcc484f3",
+          "url": "https://github.com/trycua/cua/releases/download/cua-driver-rs-v0.38.0/cua-driver-rs-0.38.0-darwin-x86_64.tar.gz",
+          "sha256": "68721a916f2d9b20233a14623e0f663caf6130ba9018465a57a178120d96bc4e",
           "archive": "tar.gz",
-          "member": "cua-driver-rs-0.33.3-darwin-x86_64"
+          "member": "cua-driver-rs-0.38.0-darwin-x86_64"
         },
         "linux-amd64": {
           "url": "https://github.com/trycua/cua/releases/download/cua-driver-rs-v0.38.0/cua-driver-rs-0.38.0-linux-x86_64.tar.gz",

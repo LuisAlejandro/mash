@@ -1,0 +1,23 @@
+--- a/crates/fresh-editor/src/main.rs
++++ b/crates/fresh-editor/src/main.rs
+@@ -3085,7 +3085,19 @@
+     let config = EditorServerConfig {
+         working_dir: working_dir.clone(),
+         session_name: args.session_name.clone(),
+-        idle_timeout: Some(std::time::Duration::from_secs(3600)), // 1 hour default
++        // Modified by Mash on 2026-11-09: allow an override so a session can
++        // reap itself sooner than an hour once its last terminal detaches. An
++        // hour is the right default for detach-and-come-back-later; it is not
++        // right for a shared editor whose panes are ordinary tabs the user
++        // closes when done. Anything unset or unparsable keeps the default, so
++        // this changes nothing for anyone who does not set it.
++        // Mash source: packaging/patches/fresh-daemon-idle-timeout.patch
++        idle_timeout: Some(std::time::Duration::from_secs(
++            std::env::var("FRESH_DAEMON_IDLE_TIMEOUT")
++                .ok()
++                .and_then(|seconds| seconds.trim().parse().ok())
++                .unwrap_or(3600),
++        )),
+         editor_config,
+         dir_context,
+         plugins_enabled: !args.no_plugins,

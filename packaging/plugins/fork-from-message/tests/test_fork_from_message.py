@@ -156,7 +156,9 @@ def assert_fork_tab_layout(client: FakeClient, session: str) -> None:
     assert split[split.index("--ratio") + 1] == "0.6", split
     assert split[-1] == "--no-focus", split
     run = next(c for c in calls if c[:2] == ["pane", "run"])
-    assert run == ["pane", "run", FRESH_PANE, "herdr-fresh-pane ."], run
+    # The fork tab reuses the shared Fresh daemon, like the dev tabs do; running
+    # a bare `herdr-fresh-pane .` here would start a second, competing editor.
+    assert run == ["pane", "run", FRESH_PANE, "herdr-fresh-pane --daemon ."], run
     start = next(c for c in calls if c[:2] == ["agent", "start"])
     assert start[start.index("--pane") + 1] == FORK_PANE, start
     assert start[-2:] == ["--session", session], start

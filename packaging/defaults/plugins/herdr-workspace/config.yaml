@@ -89,7 +89,7 @@ profiles:
             # reachable from both `sh -lc` and `zsh -lic`), and the wrapper's own
             # resume command requires a plain command name rather than a path
             # for the same reason.
-            command: herdr-fresh-pane .
+            command: herdr-fresh-pane --daemon .
           - id: pi
             name: pi
             split_from: fresh

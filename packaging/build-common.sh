@@ -456,6 +456,29 @@ EOF
 
 # The first-run wizard, built from this repository. Shared so both adapters
 # ship the same binary rather than each compiling its own copy.
+mash_stage_pane_runner() {
+  local res="$1" cargo_home="${2:-}" target_dir
+  target_dir="$(mktemp -d)"
+  if ! env CARGO_HOME="$cargo_home" CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$target_dir}" \
+    "${MASH_CARGO:-cargo}" build --release --locked \
+    --manifest-path "$root/packaging/pane-runner/Cargo.toml" >/dev/null 2>&1; then
+    echo "the pane runner failed to build" >&2
+    rm -rf "$target_dir"
+    return 1
+  fi
+  local built="${CARGO_TARGET_DIR:-$target_dir}/release/mash-pane-runner"
+  [ -x "$built" ] || {
+    echo "the pane runner binary was not produced" >&2
+    rm -rf "$target_dir"
+    return 1
+  }
+  mkdir -p "$res/bin"
+  cp "$built" "$res/bin/mash-pane-runner"
+  chmod 755 "$res/bin/mash-pane-runner"
+  rm -rf "$target_dir"
+  echo "staged mash-pane-runner"
+}
+
 mash_stage_wizard() {
   local res="$1" cargo_home="${2:-}" target_dir
   target_dir="$(mktemp -d)"

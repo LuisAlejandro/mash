@@ -388,6 +388,7 @@ class ForkWorkflow:
                 cwd,
                 "--label",
                 FORK_TAB_SENTINEL,
+                "--env", "MASH_PANE_STARTUP=editor",
                 "--no-focus",
             ]
         )
@@ -407,7 +408,8 @@ class ForkWorkflow:
         response = self.client.json(
             [
                 "pane", "split", left_pane_id, "--direction", "right",
-                "--ratio", "0.6", "--cwd", cwd, "--no-focus",
+                "--ratio", "0.6", "--cwd", cwd,
+                "--env", "MASH_PANE_STARTUP=agent", "--no-focus",
             ]
         )
         right_pane = _object(
@@ -417,7 +419,7 @@ class ForkWorkflow:
         if right_pane_id is None or right_pane_id == left_pane_id:
             raise ForkError("Herdr split the fork tab but did not return a distinct right pane.")
         # The trailing '.' makes Fresh show the directory's file explorer.
-        self.client.ok(["pane", "run", left_pane_id, "herdr-fresh-pane ."])
+        self.client.ok(["pane", "run", left_pane_id, "herdr-fresh-pane --daemon ."])
         return ForkTarget("tab", workspace_id, tab_id, right_pane_id)
 
     def _split_direction(self, source_pane_id: str) -> str:

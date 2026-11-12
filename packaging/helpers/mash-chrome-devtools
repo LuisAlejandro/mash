@@ -1,0 +1,69 @@
+#!/bin/bash
+# Mash's `chrome-devtools`: the command line tool the chrome-devtools skill runs
+# one Lighthouse audit or one heap analysis through.
+#
+# Not an MCP server. Pi keeps a stdio MCP server alive for the whole session, so
+# configuring this one cost every session a Node runtime, a telemetry watchdog
+# and eventually a browser -- about 105 MB each -- for a diagnostic that runs a
+# few times a month. The same package ships this tool over the same engine, with
+# its own start/stop, so the skill starts a server for one diagnostic and stops
+# it afterwards. Nothing is resident in between.
+#
+# The package is fetched lazily, on the first diagnostic that needs it, from the
+# pin in packaging/assets.json -- through mash-tool-install, which is the one
+# place that knows the pin. After that the marker makes that call a no-op.
+# Nothing here names the version, so a raised pin reaches this wrapper with no
+# change to it.
+set -eu
+
+res="$(cd "$(dirname "$0")/.." && pwd)"
+
+data="${MASH_DATA_DIR:-}"
+if [ -z "$data" ] && [ -n "${PI_CODING_AGENT_DIR:-}" ]; then
+	data="$(cd "$PI_CODING_AGENT_DIR/../.." 2>/dev/null && pwd)" || data=""
+fi
+if [ -z "$data" ] || [ ! -d "$data" ]; then
+	echo "mash-chrome-devtools: not in a Mash session (MASH_DATA_DIR is unset)" >&2
+	exit 1
+fi
+
+shim="$data/local/npm/bin/chrome-devtools"
+
+if [ ! -x "$shim" ]; then
+	# mash-tool-install refuses to queue behind another run -- "waiting is the
+	# caller's job" -- so a second session that asked at the same moment retries
+	# while the first session's lock is still held, rather than reporting a
+	# missing tool over contention. A failure with no lock is a real one, and
+	# retrying it would only delay the same error.
+	tries=0
+	while [ ! -x "$shim" ] && [ "$tries" -lt 60 ]; do
+		MASH_DATA_DIR="$data" "$res/bin/mash-tool-install" chrome-devtools-mcp >/dev/null 2>&1 || true
+		[ -x "$shim" ] && break
+		tries=$((tries + 1))
+		[ -d "$data/setup/tool-install.lock" ] || break
+		sleep 1
+	done
+fi
+
+if [ ! -x "$shim" ]; then
+	echo "mash-chrome-devtools: chrome-devtools-mcp is not installed in $data/local/npm" >&2
+	exit 1
+fi
+
+# One background server per Pi session. The tool keys its socket and pid file on
+# this value and otherwise shares one server for the whole machine, where a
+# second `start` restarts it -- so one agent's audit would discard the pages
+# another agent was still reading. Only hex digits and dashes are accepted here,
+# so the session id is reduced to a checksum of itself rather than passed
+# through.
+if [ -z "${CD4A_INTERNAL_DAEMON_SESSION_ID:-}" ] && [ -n "${PI_SESSION_ID:-}" ]; then
+	CD4A_INTERNAL_DAEMON_SESSION_ID="$(printf %s "$PI_SESSION_ID" | cksum | awk '{print $1}')"
+	export CD4A_INTERNAL_DAEMON_SESSION_ID
+fi
+
+# npm links the bin with `#!/usr/bin/env node`, and the inherited PATH holds
+# whatever node the owner's machine carries. Mash's own node goes first so the
+# tool never runs on a version Mash did not ship.
+PATH="$res/node/bin:$PATH"
+export PATH
+exec "$shim" "$@"

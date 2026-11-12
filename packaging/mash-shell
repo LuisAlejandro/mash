@@ -22,8 +22,20 @@ export MASH_PANE=1
 # shell; unset the one-shot flag so it cannot leak into that shell.
 if [ "${MASH_DEV_TAB_FRESH:-}" = 1 ]; then
   unset MASH_DEV_TAB_FRESH
-  herdr-fresh-pane . || true
+  mash-pane-starting editor "${HERDR_PANE_ID:-}" 2>/dev/null || true
+  herdr-fresh-pane --daemon . || true
 fi
+# Commands replayed by Herdr must enter a quiet shell, not a rendered Starship
+# prompt. Detect/enter it BEFORE any user shell startup. Ordinary shell tabs
+# retain their normal prompt, completion and history unchanged.
+if [ "${MASH_STARTUP_GATE_DONE:-}" != 1 ] && command -v mash-startup-role >/dev/null 2>&1; then
+  startup_role="$(mash-startup-role 2>/dev/null || true)"
+  if [ -n "$startup_role" ]; then
+    export MASH_PANE_STARTUP="$startup_role"
+    exec mash-startup-shell
+  fi
+fi
+unset MASH_STARTUP_GATE_DONE MASH_PANE_STARTUP
 # MASH_USER_SHELL stands in for the account's shell in tests, so the branch
 # below can be exercised without a pty or a second account.
 user_shell="${MASH_USER_SHELL:-$(mash_real_shell)}"

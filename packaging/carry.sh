@@ -199,10 +199,13 @@ mash_pins_check() {
 }
 
 # Ordered once for source checks, the macOS build and Linux's source-cache key.
-# The clipboard patch shares file_explorer.rs with reveal-in-finder, so it goes last.
+# The clipboard patch shares file_explorer.rs with reveal-in-finder, so it goes
+# last. fresh-daemon-explorer touches only editor_server.rs, which no other
+# patch names, so its position relative to the rest does not matter; it sits
+# before the clipboard only to keep that one last.
 mash_fresh_patches() {
   printf '%s\n' fresh-config-dir fresh-reveal-in-finder fresh-warn-logs \
-    fresh-explorer-clipboard
+    fresh-daemon-explorer fresh-daemon-idle-timeout fresh-explorer-clipboard
 }
 
 mash_require_sources() {
@@ -998,7 +1001,7 @@ mash_install_skills() {
     ;;
   esac
   mkdir -p "$pi/skills" "$pi/agents" "$pi/extensions" "$pi/scripts" \
-    "$cfg/references/model-tiers"
+    "$cfg/references"
   for name in "$src/src/skills"/*; do
     [ -d "$name" ] || continue
     destskill="$pi/skills/$(basename "$name")"
@@ -1028,7 +1031,7 @@ mash_install_skills() {
   rm -rf "$pi/agents"
   mkdir -p "$pi/agents"
   tar -C "$src/src/agents" --exclude '.git' -cf - . | tar -C "$pi/agents" -xf -
-  cp "$src/references/model-tiers/model-tiers.md" "$cfg/references/model-tiers/model-tiers.md"
+  cp "$src/references/model-tiers/model-tiers.md" "$cfg/references/model-tiers.md"
   cp "$src/references/markdown-rendering.md" "$cfg/references/markdown-rendering.md"
   mash_write_pi_guidance "$pi/AGENTS.md"
   mash_write_append_system "$src" "$pi/APPEND_SYSTEM.md"
@@ -1121,6 +1124,16 @@ mash_install_skills() {
       exit 1
     }
   done
+  # Chrome DevTools is deliberately not among them. Pi holds a stdio MCP server
+  # for the whole session, which cost every session a Node runtime, a telemetry
+  # watchdog and eventually a browser for a diagnostic that runs a few times a
+  # month. The chrome-devtools skill runs the same engine through
+  # bin/mash-chrome-devtools, starting a server for one diagnostic and stopping
+  # it afterwards.
+  if grep -q '"chrome-devtools"' "$pi/mcp.json"; then
+    echo "mcp.json configures chrome-devtools as a session-long MCP server" >&2
+    exit 1
+  fi
   # GitHub's MCP is added per user by mash-github-mcp after sign-in, never
   # shipped. What must never ship is a credential, so look for the token
   # shapes themselves rather than the word "github".
@@ -1158,6 +1171,15 @@ mash_install_skills() {
       exit 1
     }
   done
+  # The daemon holds about 1.3 GiB while it runs. A zero idle timeout, which is
+  # what Mash shipped first, means it never gives that back: it stays resident
+  # for as long as the app is open, however long ago the last recall ran. Guard
+  # the shipped value, because a silent 0 only ever shows up as memory that
+  # never returns.
+  if ! grep -qE '^HINDSIGHT_EMBED_DAEMON_IDLE_TIMEOUT=[1-9][0-9]*$' "$cfg/hindsight-embed.env"; then
+    echo "the Hindsight config does not let the daemon exit when idle" >&2
+    exit 1
+  fi
   # Every hindsight call must go through Mash's own shim. A bare name at the
   # start of a command would resolve to the owner's install, which sits on the
   # inherited PATH.
@@ -1385,6 +1407,12 @@ repls = (
     (b'"${HOME}/.hindsight/embed"', b'"${MASH_DATA_DIR:-$HOME/.mash}/.hindsight/embed"'),
     (b'port="${port:-8888}"', b'port="${port:-8998}"'),
     (b" (prepend `~/.local/bin` to PATH)", b""),
+    # The chrome-devtools skill names the path install.sh writes for the other
+    # harnesses. Mash puts that wrapper on MASH_BIN instead and leaves
+    # ~/.local/bin to the owner, so name the command rather than a directory
+    # Mash never uses there -- and that the staging gate below rejects for the
+    # same reason as the hindsight paths above.
+    (b"(as `~/.local/bin/mash-chrome-devtools`)", b"(as `mash-chrome-devtools`), on `MASH_BIN`"),
     (b"; PATH includes `${HOME}/.local/bin`", b""),
     # Sentrux's MCP server is one long-lived process with its own working
     # directory, so a relative path is resolved against that, not against the
@@ -1610,34 +1638,10 @@ MASH_HINDSIGHT
         "--tools",
         "core,network,debug"
       ]
-    },
-    "chrome-devtools": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "chrome-devtools-mcp@__MASH_CHROME_DEVTOOLS_MCP__",
-        "--categoryInput=false",
-        "--categoryEmulation=false",
-        "--categoryNetwork=false",
-        "--categoryPerformance=false",
-        "--memoryDebugging=true",
-        "--isolated=true"
-      ]
     }
   }
 }
 EOF
-  # The heredoc is quoted so nothing in it expands by accident; the one pinned
-  # version is substituted afterwards, from the manifest.
-  local chrome_pin
-  chrome_pin="$(mash_version chrome-devtools-mcp)" || exit 1
-  # BSD and GNU sed disagree about -i, so write through a temporary file.
-  sed "s/__MASH_CHROME_DEVTOOLS_MCP__/$chrome_pin/" "$pi/mcp.json" >"$pi/mcp.json.tmp" &&
-    mv "$pi/mcp.json.tmp" "$pi/mcp.json"
-  grep -q "chrome-devtools-mcp@$chrome_pin" "$pi/mcp.json" || {
-    echo "mcp.json does not name the pinned chrome-devtools-mcp" >&2
-    exit 1
-  }
 }
 
 # Seeded to ~/.mash/.hindsight/embed on first launch. Never carries a secret:
@@ -1649,7 +1653,12 @@ mash_write_hindsight_config() {
 # Seeded by Mash. `hindsight-embed configure` rewrites this file in place.
 
 HINDSIGHT_EMBED_BANK_ID=default
-HINDSIGHT_EMBED_DAEMON_IDLE_TIMEOUT=0
+# The daemon holds roughly 1.3 GiB while it runs, and a warm-start brings it
+# back for the next session, so it only needs to survive the gaps inside real
+# work: 15 minutes is longer than a task's thinking pause and shorter than the
+# rest of a day spent outside Mash. Zero, the old value, meant "never exit",
+# which kept that allocation for as long as any window stayed open.
+HINDSIGHT_EMBED_DAEMON_IDLE_TIMEOUT=900
 
 # Retain and recall work with no LLM at all; only `reflect` needs one. Keeping
 # the provider at `none` means no key has to leave this app.

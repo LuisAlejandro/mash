@@ -1,0 +1,303 @@
+#!/usr/bin/env python3
+"""Keep every daemon-backed Fresh pane in a workspace at the same size.
+
+A Fresh daemon draws ONE grid and sends it to every attached terminal, sized by
+the first client that connected. That is fine when every dev tab in a workspace
+has the same layout, because then every Fresh pane comes out the same size. It
+is not fine when they differ: the first pane wins, and a smaller pane gets lines
+its terminal has to wrap (which pushes the menu bar off the top) or a larger one
+gets a small editor in the corner.
+
+So this keeps the dev tabs of a workspace at one split ratio. It is a sync, not
+a lock: drag a divider in any dev tab and the others follow, which is what makes
+the workspace's editor size a single property of the workspace instead of a
+per-tab accident. Dragging in the first client's tab is instant. Dragging in
+another tab is instant too, because copying the ratio to the first client is
+what makes the daemon redraw at the new size.
+
+Only panes herdr-fresh-pane tagged with `mash-fresh-daemon` take part. A private
+editor (telescope, sesh, a bare `fresh`) has its own size to itself and must not
+be touched.
+
+Started in the background by the launcher; it must never block a window and
+never fail a startup. Every path exits 0.
+"""
+
+import json
+import os
+import socket
+import sys
+import time
+
+TOKEN = "mash-fresh-daemon"
+EPSILON = 0.002
+RECONNECT_DELAY = 1.0
+
+
+def single_instance():
+    """Take the one slot this session has for the syncer, or return False.
+
+    Every window launch starts one. Two of them would answer each other's
+    writes forever, so the lock is taken before any work and held for the life
+    of the process. A failure to lock is not an error worth reporting.
+    """
+    data = os.environ.get("MASH_DATA_DIR") or os.environ.get("HOME", "")
+    run = os.path.join(data, "run")
+    try:
+        os.makedirs(run, exist_ok=True)
+        handle = open(os.path.join(run, "fresh-split-sync.lock"), "w")
+    except OSError:
+        return None
+    try:
+        import fcntl
+
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except (ImportError, OSError):
+        return None
+    return handle
+
+
+def socket_path():
+    return os.environ.get("HERDR_SOCKET_PATH", "")
+
+
+class Unavailable(Exception):
+    """The session is gone or not answering yet."""
+
+
+def call(method, params=None, timeout=5.0):
+    """One request, one reply, on a connection of its own.
+
+    Event lines arrive on the subscription connection, so calls cannot share
+    it: a reply would queue behind an unrelated event.
+    """
+    path = socket_path()
+    if not path:
+        raise Unavailable("HERDR_SOCKET_PATH is unset")
+    sock = socket.socket(socket.AF_UNIX)
+    sock.settimeout(timeout)
+    try:
+        sock.connect(path)
+        sock.sendall((json.dumps({"id": method, "method": method, "params": params or {}}) + "\n").encode())
+        buf = b""
+        while not buf.endswith(b"\n"):
+            chunk = sock.recv(65536)
+            if not chunk:
+                raise Unavailable("connection closed")
+            buf += chunk
+        reply = json.loads(buf.decode("utf-8", "replace"))
+    finally:
+        sock.close()
+    if "error" in reply:
+        raise Unavailable(str(reply["error"].get("code", "error")))
+    return reply.get("result")
+
+
+def daemon_tabs(workspace_id):
+    """The tabs in this workspace holding a daemon-backed Fresh pane."""
+    tabs = []
+    try:
+        panes = call("pane.list", {"workspace_id": workspace_id}).get("panes") or []
+    except (Unavailable, AttributeError):
+        return tabs
+    for pane in panes:
+        tokens = pane.get("tokens") or {}
+        if tokens.get(TOKEN) == "1" and pane.get("tab_id") not in tabs:
+            tabs.append(pane.get("tab_id"))
+    return [tab for tab in tabs if tab]
+
+
+def root_ratio(tab_id):
+    """The tab's one root split ratio, or None when its layout is not a dev tab.
+
+    A dev tab is Fresh and the agent side by side: exactly two panes, split once
+    at the root, left to right. Anything else (a tab split again, a single pane)
+    has no ratio that describes where its Fresh pane ends, so it is left alone
+    rather than guessed at -- a wrong guess resizes it into a shape nobody
+    asked for.
+    """
+    try:
+        layout = call("layout.export", {"tab_id": tab_id}).get("layout") or {}
+    except (Unavailable, AttributeError):
+        return None
+    root = layout.get("root") or {}
+    if root.get("type") != "split" or root.get("direction") != "right":
+        return None
+    children = [root.get("first") or {}, root.get("second") or {}]
+    if any(child.get("type") != "pane" for child in children):
+        return None
+    try:
+        return float(root.get("ratio"))
+    except (TypeError, ValueError):
+        return None
+
+
+def unzoom(pane_id):
+    """Undo a zoom, restoring the tab's split.
+
+    Zoom hides the other pane without touching the ratio, so the daemon would be
+    asked for a grid the width of the whole tab. If the zoomed tab happens to be
+    the first client every other tab breaks; if it is not, it letterboxes. The
+    ratio sync cannot express "one tab is wider right now" without breaking the
+    property it exists to keep, so zoom stays available on the agent pane and is
+    undone on a dev tab's Fresh pane.
+    """
+    try:
+        call("pane.zoom", {"pane_id": pane_id, "mode": "off"})
+    except Unavailable:
+        pass
+
+
+def startup_pass(applied):
+    """Converge workspaces whose dev tabs already disagree.
+
+    Nothing guarantees they start equal: tabs get split and dragged while the
+    syncer is not running (app not open, session restarted), and the machine's
+    own dev tabs may predate the tag.
+    """
+    try:
+        workspaces = call("workspace.list", {}).get("workspaces") or []
+    except (Unavailable, AttributeError):
+        return
+    for workspace in workspaces:
+        workspace_id = workspace.get("workspace_id")
+        if workspace_id:
+            sync_workspace(workspace_id, applied)
+
+
+def sync_workspace(workspace_id, applied, source=None):
+    """Bring every dev tab in one workspace to one ratio.
+
+    `source` is the tab that just moved, when an event prompted the pass: its
+    ratio wins, so the tab the user dragged is the one that keeps its size.
+    Without a source (startup) the focused dev tab wins, since that is the one
+    most likely sized deliberately; failing that, the first by id.
+    """
+    tabs = daemon_tabs(workspace_id)
+    if len(tabs) < 2:
+        return
+    chosen = None
+    chosen_from = source if source in tabs else None
+    if chosen_from:
+        chosen = root_ratio(chosen_from)
+    else:
+        focused = focused_daemon_tab(workspace_id)
+        order = ([focused] if focused in tabs else []) + [t for t in tabs if t != focused]
+        for tab in order:
+            chosen = root_ratio(tab)
+            if chosen is not None:
+                chosen_from = tab
+                break
+    if chosen is None:
+        return
+    if chosen_from:
+        # That tab already has this ratio; writing it back would be a no-op that
+        # still makes Herdr emit an event for every client watching.
+        applied[chosen_from] = chosen
+    for tab in tabs:
+        if abs(applied.get(tab, -1.0) - chosen) < EPSILON:
+            continue
+        try:
+            call("layout.set_split_ratio", {"tab_id": tab, "path": [], "ratio": chosen})
+        except Unavailable:
+            return
+        # Remember what we set so the layout.updated it causes is recognised as
+        # our own echo. Without this the two tabs would keep answering each
+        # other.
+        applied[tab] = chosen
+
+
+def focused_daemon_tab(workspace_id):
+    try:
+        panes = call("pane.list", {"workspace_id": workspace_id}).get("panes") or []
+    except (Unavailable, AttributeError):
+        return None
+    for pane in panes:
+        if pane.get("focused"):
+            return pane.get("tab_id")
+    return None
+
+
+def follow(sock_path):
+    """Subscribe and follow layout changes until the session goes away."""
+    sock = socket.socket(socket.AF_UNIX)
+    sock.connect(sock_path)
+    sock.sendall(
+        (
+            json.dumps(
+                {
+                    "id": "subscribe",
+                    "method": "events.subscribe",
+                    "params": {"subscriptions": [{"type": "layout.updated"}]},
+                }
+            )
+            + "\n"
+        ).encode()
+    )
+    applied = {}
+    seen = set()
+    startup_pass(applied)
+    buf = b""
+    while True:
+        chunk = sock.recv(65536)
+        if not chunk:
+            raise Unavailable("session closed")
+        buf += chunk
+        while b"\n" in buf:
+            line, buf = buf.split(b"\n", 1)
+            if not line.strip():
+                continue
+            try:
+                message = json.loads(line.decode("utf-8", "replace"))
+            except ValueError:
+                continue
+            if message.get("event") != "layout_updated":
+                continue
+            data = message.get("data") or {}
+            workspace = data.get("workspace_id")
+            tab = data.get("tab_id")
+            if not workspace or not tab:
+                continue
+            layout = data.get("layout") or {}
+            if layout.get("zoomed"):
+                pane_id = layout.get("focused_pane_id")
+                if pane_id and tab in daemon_tabs(workspace):
+                    unzoom(pane_id)
+                continue
+            # A pass sets ratios, and each of those comes back as another
+            # layout_updated for every tab it touched. Answering those would be
+            # an endless conversation, so each tab is synced once per round.
+            key = (workspace, tab)
+            if key in seen:
+                continue
+            seen = {k for k in seen if k[0] != workspace}
+            seen.add(key)
+            sync_workspace(workspace, applied, source=tab)
+
+
+def main():
+    held = single_instance()
+    if held is None:
+        # Another window already runs the syncer for this session, or the run
+        # directory is not writable. Either way there is nothing to do here and
+        # no reason to disturb a launch.
+        return 0
+    while True:
+        path = socket_path()
+        if not path or not os.path.exists(path):
+            time.sleep(RECONNECT_DELAY)
+            continue
+        try:
+            follow(path)
+        except (Unavailable, ConnectionError, OSError):
+            # The server restarting is normal: a Herdr upgrade, a session
+            # stop, a machine waking up. Wait for the next one rather than
+            # logging noise nobody reads.
+            time.sleep(RECONNECT_DELAY)
+        except KeyboardInterrupt:
+            return 0
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -16,7 +16,7 @@ pi_cmd="$("$here/mash-bin" --bundled pi)" || exit 1
 
 created="$("$herdr" tab create --label "herdr-tab-launcher-pi" \
 	${HERDR_ACTIVE_WORKSPACE_ID:+--workspace "$HERDR_ACTIVE_WORKSPACE_ID"} \
-	--cwd "$cwd" --focus)"
+	--cwd "$cwd" --env MASH_PANE_STARTUP=agent --focus)"
 tab="$(printf '%s' "$created" | "$here/herdr-json" tab_id)"
 pane="$(printf '%s' "$created" | "$here/herdr-json" pane_id)"
 

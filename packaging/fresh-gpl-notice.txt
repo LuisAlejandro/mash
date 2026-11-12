@@ -4,7 +4,7 @@ This download includes fresh-0.5.7-patched.tar.gz: the complete corresponding
 source of the Fresh 0.5.7 binary shipped in Mash.app, under the GNU General
 Public License, version 3 or (at your option) any later version.
 
-Mash changes four things in that source, and all patches are in the archive
+Mash changes six things in that source, and all patches are in the archive
 and in Mash's public repository (packaging/patches/):
 
   - fresh-config-dir.patch     take the config and data directories from
@@ -19,6 +19,12 @@ and in Mash's public repository (packaging/patches/):
                                share the file explorer's copy/cut clipboard
                                between Fresh processes through the data
                                directory
+  - fresh-daemon-explorer.patch
+                               open the file explorer when a `fresh -a` daemon
+                               creates its editor, as `fresh .` already does
+  - fresh-daemon-idle-timeout.patch
+                               let a session reap itself once its last terminal
+                               detaches, through FRESH_DAEMON_IDLE_TIMEOUT
 
 GPL-3.0 section 5(a) asks that a modified work carry prominent notices stating
 that it was changed, and when.

@@ -149,7 +149,8 @@ release_verify_remote_tag() {
         if [[ "$attempt" -lt "$max_retries" ]]; then
             print_warning "Tag not found on remote, retrying in ${retry_delay}s... (attempt $attempt/$max_retries)"
             sleep "$retry_delay"
-            git push origin master develop --tags
+            # Verification is read-only. The finish step already pushed exactly
+            # this release atomically; retrying must not publish unrelated tags.
         fi
     done
 
@@ -214,38 +215,31 @@ release_create_github_release() {
         return 0
     fi
 
-    # Draft: the artifact build attaches files and publishes nothing, and only
-    # artifacts.yml makes it public once every platform's assets are present.
     print_step "Creating draft GitHub release $version"
     if gh release create "$version" \
         --title "$title" \
         --notes "$notes" \
         --draft; then
-        print_step "Draft release created; the build will publish it once assets attach."
+        print_step "Draft release created; the artifact workflow owns publication."
     else
         print_warning "Failed to create GitHub release. You can create it manually later."
     fi
 }
 
 release_cancel_matching_runs() {
-    local branch_name=$1
-    local version=$2
-    local workflow branch run_ids run_id pending
+    local branch_name=$1 version=$2 workflow branch run_ids run_id pending
     local deadline=$((SECONDS + RELEASE_CI_TIMEOUT_SECONDS))
-
     release_require_command gh
     if ! gh auth status >/dev/null 2>&1; then
         print_error "GitHub CLI is not authenticated; rollback stopped"
         return 1
     fi
-
-    # Keep scanning: a cancelling release run may still dispatch an artifact
-    # run. No ref deletion is safe until every matching workflow is terminal.
+    # A cancelling release run can still dispatch an artifact run. Wait for all
+    # matching runs to be terminal before touching any release refs.
     while true; do
         pending=false
         for workflow in push.yml release.yml artifacts.yml; do
             for branch in "$branch_name" "$version"; do
-                [ -n "$branch" ] || continue
                 run_ids=$(gh api --method GET --paginate \
                     "repos/{owner}/{repo}/actions/workflows/$workflow/runs" \
                     -f branch="$branch" -F per_page=100 \
@@ -257,39 +251,215 @@ release_cancel_matching_runs() {
                     pending=true
                     print_step "Cancelling $workflow run $run_id on $branch"
                     gh run cancel "$run_id" >/dev/null 2>&1 ||
-                        print_warning "Could not cancel run $run_id; checking its status again"
+                        print_warning "Could not cancel $run_id; checking again"
                 done
             done
         done
-        [ "$pending" = true ] || return 0
+        [[ "$pending" = true ]] || return 0
         if (( SECONDS >= deadline )); then
-            print_error "Timed out waiting for matching Actions runs to stop; rollback stopped"
+            print_error "Timed out waiting for release runs to stop; rollback stopped"
             return 1
         fi
         sleep "$RELEASE_CI_POLL_SECONDS"
     done
 }
 
-release_finish_release() {
-    local version=$1
-    local app_name=$2
-    local previous_version
+# git-flow-next stores topic parent/startpoint; AVH stores master/develop.
+# Resolve the actual release bases, not a legacy key left behind by migration.
+release_base_branch() {
+    case "$1" in
+        master) git config --get gitflow.branch.release.parent || git config --get gitflow.branch.master || echo master ;;
+        develop) git config --get gitflow.branch.release.startpoint || git config --get gitflow.branch.develop || echo develop ;;
+        *) return 2 ;;
+    esac
+}
 
+# Checkpoints are local Git refs shared by linked worktrees, not guessed merge
+# messages. Missing or moved checkpoints must stop rollback before any deletion.
+release_record_start() {
+    local version=$1 prefix="refs/maintainer-tools/releases/$1"
+    local master_branch develop_branch before_master before_develop
+    master_branch=$(release_base_branch master)
+    develop_branch=$(release_base_branch develop)
+    release_require_available_branches "$master_branch" "$develop_branch" || return 1
+    if [[ -n "$(git for-each-ref --format='%(refname)' "$prefix/")" ]]; then
+        print_error "Release $version already has checkpoints; resume it instead of starting another bump"
+        return 1
+    fi
+    if git show-ref --verify --quiet "refs/tags/$version"; then
+        print_error "Tag $version already exists; refusing to replace an existing release"
+        return 1
+    fi
+    before_master=$(git rev-parse "refs/heads/$master_branch^{commit}") || return 1
+    before_develop=$(git rev-parse "refs/heads/$develop_branch^{commit}") || return 1
+    printf 'create %s %s\ncreate %s %s\n' \
+        "$prefix/before-master" "$before_master" \
+        "$prefix/before-develop" "$before_develop" | git update-ref --stdin
+}
+
+# A failed start must not leave checkpoints behind: they make the next attempt
+# refuse with "already has checkpoints" and there is no release to resume yet.
+release_forget_start() {
+    local prefix="refs/maintainer-tools/releases/$1"
+    git for-each-ref --format='delete %(refname) %(objectname)' "$prefix/" \
+        | git update-ref --stdin
+}
+
+release_record_commit() {
+    local prefix="refs/maintainer-tools/releases/$1" before_develop commit
+    before_develop=$(git rev-parse "$prefix/before-develop^{commit}") || return 1
+    commit=$(git rev-parse HEAD) || return 1
+    if [[ "$(git show -s --format=%P "$commit")" != "$before_develop" ]]; then
+        print_error "Release bump is not directly based on its recorded develop checkpoint"
+        return 1
+    fi
+    printf 'create %s %s\n' "$prefix/release" "$commit" | git update-ref --stdin
+}
+
+release_require_available_branches() {
+    local own worktree="" line branch requested
+    own=$(git rev-parse --show-toplevel) || return 1
+    own=$(cd "$own" && pwd -P)
+    while IFS= read -r line; do
+        case "$line" in
+            worktree\ *) worktree=${line#worktree } ;;
+            branch\ refs/heads/*)
+                branch=${line#branch refs/heads/}
+                for requested in "$@"; do
+                    if [[ "$branch" = "$requested" && "$(cd "$worktree" && pwd -P)" != "$own" ]]; then
+                        print_error "$branch is checked out in $worktree; refusing to change another worktree"
+                        return 1
+                    fi
+                done
+                ;;
+        esac
+    done < <(git worktree list --porcelain)
+}
+
+# A normal release is one bump from pre-release develop, followed by either a
+# fast-forward or one merge into each base. A filename allowlist cannot prove
+# this: a README-only feature commit is still work rollback must not discard.
+release_validate_finish() {
+    local version=$1 prefix="refs/maintainer-tools/releases/$1"
+    local master_branch develop_branch before_master before_develop commit main dev tag parents
+    master_branch=$(release_base_branch master)
+    develop_branch=$(release_base_branch develop)
+    before_master=$(git rev-parse "$prefix/before-master^{commit}" 2>/dev/null) &&
+    before_develop=$(git rev-parse "$prefix/before-develop^{commit}" 2>/dev/null) &&
+    commit=$(git rev-parse "$prefix/release^{commit}" 2>/dev/null) || {
+        print_error "Release $version has no complete local checkpoint; refusing to guess rollback targets"
+        return 1
+    }
+    main=$(git rev-parse "refs/heads/$master_branch^{commit}") || return 1
+    dev=$(git rev-parse "refs/heads/$develop_branch^{commit}") || return 1
+    tag=$(git rev-parse "refs/tags/$version^{commit}" 2>/dev/null) || {
+        print_error "Release $version has no local tag; refusing to infer completed state"
+        return 1
+    }
+    if [[ "$(git show -s --format=%P "$commit")" != "$before_develop" || "$tag" != "$main" ]]; then
+        print_error "Release $version does not match its checkpoints or a base branch has advanced"
+        return 1
+    fi
+    if [[ "$main" != "$commit" ]]; then
+        parents=$(git show -s --format=%P "$main")
+        if [[ "$parents" != "$before_master $commit" || "$(git rev-parse "$main^{tree}")" != "$(git rev-parse "$commit^{tree}")" ]]; then
+            print_error "$master_branch contains work outside release $version; refusing to rewind it"
+            return 1
+        fi
+    fi
+    if [[ "$dev" != "$commit" && "$dev" != "$before_develop" ]]; then
+        parents=$(git show -s --format=%P "$dev")
+        if [[ "$parents" != "$before_develop $main" && "$parents" != "$before_develop $commit" ]] ||
+           [[ "$(git rev-parse "$dev^{tree}")" != "$(git rev-parse "$commit^{tree}")" ]]; then
+            print_error "$develop_branch contains work outside release $version; refusing to rewind it"
+            return 1
+        fi
+    fi
+}
+
+release_record_finish() {
+    local version=$1 prefix="refs/maintainer-tools/releases/$1"
+    local master_branch develop_branch commit main dev tag
+    release_validate_finish "$version" || return 1
+    master_branch=$(release_base_branch master)
+    develop_branch=$(release_base_branch develop)
+    commit=$(git rev-parse "$prefix/release")
+    main=$(git rev-parse "refs/heads/$master_branch")
+    dev=$(git rev-parse "refs/heads/$develop_branch")
+    tag=$(git rev-parse "refs/tags/$version")
+    if ! git merge-base --is-ancestor "$commit" "$dev"; then
+        print_error "$develop_branch has not received release $version; finish the merge-back before publishing"
+        return 1
+    fi
+    printf 'create %s %s\ncreate %s %s\ncreate %s %s\n' \
+        "$prefix/after-master" "$main" "$prefix/after-develop" "$dev" \
+        "$prefix/tag" "$tag" | git update-ref --stdin
+}
+
+release_finish_release() {
+    local version=$1 app_name=$2 previous_version prefix="refs/maintainer-tools/releases/$1"
+    local master_branch develop_branch commit main dev saved
+    master_branch=$(release_base_branch master)
+    develop_branch=$(release_base_branch develop)
+    release_require_clean_worktree
+    release_require_available_branches "$master_branch" "$develop_branch" "release/$version" || return 1
+    commit=$(git rev-parse "$prefix/release^{commit}" 2>/dev/null) || {
+        print_error "No checkpoint for release $version; refusing to finish an unidentified release"
+        return 1
+    }
+    previous_version=${PREVIOUS_VERSION:-$(git describe --tags --abbrev=0 "$prefix/before-master")}
     release_enable_noninteractive_git
     trap release_cleanup_noninteractive_git EXIT
 
-    print_step "Finishing git flow release"
-    git flow release finish -s -p -m "Release version $version" "$version"
+    # A failed checkout can leave a signed tag/master but no develop merge.
+    # Resume that state without another version bump or another git-flow finish.
+    if ! git show-ref --verify --quiet "refs/tags/$version"; then
+        if [[ "$(git rev-parse "refs/heads/release/$version")" != "$commit" ||
+              "$(git rev-parse "refs/heads/$master_branch")" != "$(git rev-parse "$prefix/before-master")" ||
+              "$(git rev-parse "refs/heads/$develop_branch")" != "$(git rev-parse "$prefix/before-develop")" ]]; then
+            print_error "Release or base branches moved after checkpoint; finish stopped before changing them"
+            return 1
+        fi
+        print_step "Finishing git flow release"
+        # -p means push in git-flow AVH but preserve-merges in git-flow-next.
+        # Do not let either implementation publish a half-finished release.
+        if ! git flow release finish -s -m "Release version $version" "$version"; then
+            print_error "Release finish stopped; local state is preserved and no publication follows"
+            print_error "Resolve the reported checkout/merge error, then resume: VERSION=$version ./scripts/release.sh --resume"
+            return 1
+        fi
+    fi
+    release_validate_finish "$version" || return 1
+    if git show-ref --verify --quiet "$prefix/after-master"; then
+        for saved in "$master_branch:after-master" "$develop_branch:after-develop"; do
+            [[ "$(git rev-parse "refs/heads/${saved%:*}")" = "$(git rev-parse "$prefix/${saved#*:}")" ]] || {
+                print_error "Completed release checkpoint differs from the current base branches"
+                return 1
+            }
+        done
+        [[ "$(git rev-parse "refs/tags/$version")" = "$(git rev-parse "$prefix/tag")" ]] || return 1
+    else
+        dev=$(git rev-parse "refs/heads/$develop_branch")
+        if ! git merge-base --is-ancestor "$commit" "$dev"; then
+            main=$(git rev-parse "refs/heads/$master_branch")
+            git checkout "$develop_branch" || return 1
+            git merge --no-ff "$main" -m "Merge branch '$master_branch' into $develop_branch" || return 1
+        fi
+        release_record_finish "$version" || return 1
+    fi
 
-    print_step "Removing remote release branch"
+    print_step "Pushing both base branches and this release tag atomically"
+    if [[ "$master_branch" = "$develop_branch" ]]; then
+        git push --atomic origin "$master_branch" "refs/tags/$version" || return 1
+    else
+        git push --atomic origin "$master_branch" "$develop_branch" "refs/tags/$version" || return 1
+    fi
+    # Cleanup comes after the full publication of refs, never before it.
     git push origin --delete "release/$version" 2>/dev/null || true
-
-    print_step "Pushing master, develop, and tags to origin"
-    git push origin master develop --tags
-
+    if [[ "$(git branch --show-current)" != "release/$version" ]]; then
+        git branch -d "release/$version" 2>/dev/null || true
+    fi
     release_verify_remote_tag "$version"
-
-    previous_version=${PREVIOUS_VERSION:-$(git tag --sort=-v:refname | awk -v version="$version" '$0 != version { print; exit }')}
     release_create_github_release "$version" "$app_name $version" "$(release_build_notes "$previous_version" "$version")"
 }
 

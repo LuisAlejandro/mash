@@ -39,6 +39,9 @@ name="$("$here/herdr-agent-name" "$role" \
 	"$(printf '%s' "$info" | "$here/herdr-json" workspace_id)" \
 	"$(printf '%s' "$info" | "$here/herdr-json" cwd)" 2>/dev/null || true)"
 
+# This helper runs outside the target pane. Its label must not write to the
+# caller's terminal; the target's quiet startup shell owns the loading screen.
+mash-pane-starting agent "$pane" >/dev/null 2>&1 || true
 if [ -n "$name" ] &&
 	"$herdr" agent start "$name" --kind "$kind" --pane "$pane" >/dev/null 2>&1; then
 	printf '%s\n' "$name"

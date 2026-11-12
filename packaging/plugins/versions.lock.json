@@ -8,7 +8,7 @@
     "version": "0.1.0"
   },
   "fork-from-message": {
-    "digest": "78da4173efc1ad33309a305e0f47af940dd9c4fc8f14ae8216214021a2a493e6",
+    "digest": "6db42d9533d4da31883744f0a9644215cf507504196a056d72bed08c816fd79c",
     "version": "0.2.1"
   },
   "herdr-fingers": {
@@ -16,8 +16,8 @@
     "version": "0.1.0"
   },
   "herdr-workspace": {
-    "digest": "ed09e74bc213f586b8c5b58a5b1cf26c86c62ea04dc658f06a0d4a53c606c4b2",
-    "version": "0.1.3"
+    "digest": "64b1173a4a638630ecf6b8f10eaad26b128a573eaaf109232daad0b43a9058e6",
+    "version": "0.1.4"
   },
   "image-popup": {
     "digest": "fb9dc1170d95033c34ad806a4a052f3299b4b0fa8a39c0fa28cfaa4abd1e1417",

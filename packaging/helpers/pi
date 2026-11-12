@@ -1,0 +1,60 @@
+#!/bin/sh
+# Mash's `pi`: animate the wait, then become the real agent.
+#
+# Pi paints nothing until it has loaded its session -- about six seconds on a
+# large one -- so a pane that has just been asked to resume shows a bare prompt
+# and the command that was typed into it. That is the whole of the "clunky"
+# start.
+#
+# The animation cannot come from a wrapper in front of Pi: Herdr only accepts
+# Pi's own state reports while Pi is the pane's foreground process, so a pty
+# proxy in front of it takes that place and Pi disappears from the agent list,
+# taking `herdr agent prompt` and the resume command with it. Instead this
+# starts `mash-pane-spin` as a sibling, which draws on the same terminal from
+# the side, and then execs the real Pi -- so the foreground process is Pi, every
+# report still lands, and the spinner stops when Pi paints over it.
+#
+# This shadows the bundled `pi` because `herdr agent start` types the bare name
+# into the pane's shell. Anything that resolves `pi` through MASH_BIN finds this
+# script first, and it always ends at the real binary.
+set -u
+
+self="$0"
+case "$self" in
+*/*) self="$(cd "$(dirname "$self")" && pwd)/$(basename "$self")" ;;
+*) self="$(command -v -- "$self" 2>/dev/null || printf '%s' "$self")" ;;
+esac
+real=""
+for dir in $(printf '%s\n' "${MASH_BIN:-}" | tr ':' ' '); do
+	[ -x "$dir/pi" ] || continue
+	[ "$dir/pi" = "$self" ] && continue
+	real="$dir/pi"
+	break
+done
+# Nothing to fall back to means Mash's own pi is missing; say so rather than
+# running a host pi whose version Mash never tested.
+if [ -z "$real" ]; then
+	printf 'pi: Mash does not ship pi in MASH_BIN\n' >&2
+	exit 127
+fi
+
+# Already inside the shim (a re-exec, or a second shim on a longer PATH): run
+# the agent and do not wrap it twice.
+[ "${MASH_PI_SHIM_ACTIVE:-}" = 1 ] && exec "$real" "$@"
+export MASH_PI_SHIM_ACTIVE=1
+
+# Only a pane with a terminal can be animated, and only a pane can be read back
+# to know when to stop. Every other invocation -- a script, a pipe, a headless
+# run -- goes straight to the agent.
+if [ -t 1 ] && [ -n "${HERDR_PANE_ID:-}" ] && [ -n "${HERDR_SOCKET_PATH:-}" ]; then
+	label=""
+	for dir in $(printf '%s\n' "${MASH_BIN:-}" | tr ':' ' '); do
+		[ -x "$dir/mash-pane-starting" ] && [ -x "$dir/mash-pane-spin" ] || continue
+		label="$("$dir/mash-pane-starting" --print agent 2>/dev/null)"
+		[ -n "$label" ] || label="Starting the agent..."
+		"$dir/mash-pane-spin" --pane "$HERDR_PANE_ID" --label "$label" >/dev/null 2>&1 &
+		break
+	done
+fi
+
+exec "$real" "$@"

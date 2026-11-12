@@ -194,5 +194,13 @@
   "plugin.mash-update-notice.title.updated": {
     "text": "Mash aggiornato alla versione {version}",
     "source_hash": "855f75f65bcb"
+  },
+  "helper.starting.agent": {
+    "text": "Avvio dell’agente…",
+    "source_hash": "e0957020a860"
+  },
+  "helper.starting.editor": {
+    "text": "Avvio dell’editor…",
+    "source_hash": "c4e0e7e9b83c"
   }
 }

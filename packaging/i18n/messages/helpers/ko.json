@@ -194,5 +194,13 @@
   "plugin.mash-update-notice.title.updated": {
     "text": "Mash가 {version}(으)로 업데이트되었습니다",
     "source_hash": "855f75f65bcb"
+  },
+  "helper.starting.agent": {
+    "text": "에이전트를 시작하는 중…",
+    "source_hash": "e0957020a860"
+  },
+  "helper.starting.editor": {
+    "text": "편집기를 시작하는 중…",
+    "source_hash": "c4e0e7e9b83c"
   }
 }

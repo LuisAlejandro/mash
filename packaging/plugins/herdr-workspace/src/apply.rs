@@ -162,7 +162,7 @@ pub fn apply_with_progress<R: Runner>(
     };
     progress.step(format!("creating workspace `{name}`"));
 
-    let created = runner.json(&vec![
+    let mut create = vec![
         "workspace".into(),
         "create".into(),
         "--cwd".into(),
@@ -170,7 +170,11 @@ pub fn apply_with_progress<R: Runner>(
         "--label".into(),
         name.to_string(),
         "--focus".into(),
-    ])?;
+    ];
+    if let Some(root) = profile.tabs.first().and_then(|tab| tab.panes.first()) {
+        add_startup_env(&mut create, root);
+    }
+    let created = runner.json(&create)?;
     let workspace_id = req(&created, &["result", "workspace", "workspace_id"])?;
     let first_tab = req(&created, &["result", "tab", "tab_id"])?;
     let first_root = req(&created, &["result", "root_pane", "pane_id"])?;
@@ -264,6 +268,9 @@ fn apply_layout_with_progress<R: Runner>(
                 args.push(tab.name.clone());
             }
             args.push("--no-focus".into());
+            if let Some(root) = tab.panes.first() {
+                add_startup_env(&mut args, root);
+            }
             let created_tab = runner.json(&args)?;
             (
                 req(&created_tab, &["result", "tab", "tab_id"])?,
@@ -475,6 +482,21 @@ fn apply_tab<R: Runner>(
     Ok(())
 }
 
+// These are Mash-managed starts: reserve a quiet shell before its first prompt,
+// while keeping Herdr's existing command injection, agent naming and readiness.
+fn add_startup_env(args: &mut Vec<String>, pane: &PaneSpec) {
+    let role = if pane.kind.as_deref() == Some("pi") && pane.agent.is_some() {
+        Some("agent")
+    } else if pane.command.as_deref() == Some("herdr-fresh-pane --daemon .") {
+        Some("editor")
+    } else {
+        None
+    };
+    if let Some(role) = role {
+        args.extend(["--env".into(), format!("MASH_PANE_STARTUP={role}")]);
+    }
+}
+
 fn split_pane<R: Runner>(
     runner: &mut R,
     pane: &PaneSpec,
@@ -500,6 +522,7 @@ fn split_pane<R: Runner>(
         args.push("--ratio".into());
         args.push(format!("{ratio}"));
     }
+    add_startup_env(&mut args, pane);
     let created = runner.json(&args)?;
     req(&created, &["result", "pane", "pane_id"])
 }

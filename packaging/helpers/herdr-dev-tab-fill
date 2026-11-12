@@ -39,7 +39,7 @@ read_cwd="$("$herdr" pane get "$left" 2>/dev/null | "$here/herdr-json" cwd)"
 cwd="${read_cwd:-$HOME}"
 
 right="$("$herdr" pane split "$left" --direction right --ratio "$ratio" \
-	--cwd "$cwd" --no-focus 2>/dev/null | "$here/herdr-json" pane_id)"
+	--cwd "$cwd" --env MASH_PANE_STARTUP=agent --no-focus 2>/dev/null | "$here/herdr-json" pane_id)"
 [ -n "$right" ] || exit 1
 
 # The trailing `.` is load-bearing, NOT redundant with --cwd. Fresh only shows
@@ -58,7 +58,7 @@ right="$("$herdr" pane split "$left" --direction right --ratio "$ratio" \
 # have a persisted workspace still honours its recorded visibility, so a
 # deliberately-closed explorer stays closed.
 if [ "${2:-}" != --fresh-started ]; then
-	"$herdr" pane run "$left" 'herdr-fresh-pane .'
+	"$herdr" pane run "$left" 'herdr-fresh-pane --daemon .'
 fi
 # Start pi as a tracked agent (@see herdr-agent-start: that helper owns the
 # tracked-vs-untracked rationale, including why the command is an absolute

@@ -40,12 +40,14 @@ run() {
 # every gate.
 if command -v cargo >/dev/null 2>&1; then
   run "wizard (cargo test)" cargo test --locked --manifest-path packaging/wizard/Cargo.toml --quiet
+  run "pane runner (cargo test)" cargo test --locked --manifest-path packaging/pane-runner/Cargo.toml --quiet
   for crate in herdr-workspace telescope; do
     run "$crate plugin (cargo test)" \
       cargo test --locked --manifest-path "packaging/plugins/$crate/Cargo.toml" --quiet
   done
 else
   skip "wizard (cargo test): cargo not installed"
+  skip "pane runner (cargo test): cargo not installed"
   for crate in herdr-workspace telescope; do
     skip "$crate plugin (cargo test): cargo not installed"
   done

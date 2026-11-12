@@ -1,0 +1,177 @@
+#!/usr/bin/env python3
+"""Animate a pane while a program loads inside it, without owning the pane.
+
+The pty proxy that animates the editor cannot be used in front of Pi: Herdr only
+accepts Pi's own state reports while Pi is the pane's foreground process, and a
+proxy in front of it takes that place. Pi then vanishes from the agent list, and
+with it the sidebar state, `herdr agent prompt` and the resume command.
+
+So this animates from the side instead. It runs as a sibling in the same pane and
+writes frames straight to the pane's terminal; the program stays the foreground
+process, so every report it makes still lands. The animation stops the moment the
+program paints over it, which is detectable without touching the program: the
+marker this writes is unique, and reading the pane's own screen shows whether it
+is still there.
+
+  mash-pane-spin --pane <id> --label <text> [--max-ms N]
+
+Started in the background by the `pi` shim; exits 0 on every path, because a
+failed animation must never cost the program its pane.
+"""
+
+import json
+import os
+import socket
+import sys
+import time
+
+FRAMES = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+FRAME_MS = 80
+# Check before drawing another batch of frames. Once the program has painted,
+# the loader must relinquish the screen without even a final erase.
+MARKER_SETTLE_FRAMES = 4
+DEFAULT_MAX_MS = 25_000
+
+
+def parse(argv):
+    pane = label = None
+    max_ms = DEFAULT_MAX_MS
+    it = iter(argv)
+    for arg in it:
+        if arg == "--pane":
+            pane = next(it, None)
+        elif arg == "--label":
+            label = next(it, None)
+        elif arg == "--max-ms":
+            try:
+                max_ms = int(next(it, ""))
+            except (TypeError, ValueError):
+                max_ms = DEFAULT_MAX_MS
+    if not pane or not label:
+        return None
+    return pane, label, max_ms
+
+
+class Session:
+    """One connection to Herdr, reused: spawning the CLI per poll is far too
+    slow and stalls the animation it is meant to serve."""
+
+    def __init__(self, path):
+        self.path = path
+
+    def call(self, method, params, timeout=0.25):
+        try:
+            sock = socket.socket(socket.AF_UNIX)
+            sock.settimeout(timeout)
+            sock.connect(self.path)
+        except OSError:
+            return None
+        try:
+            sock.sendall((json.dumps({"id": method, "method": method, "params": params}) + "\n").encode())
+            buf = b""
+            while not buf.endswith(b"\n"):
+                chunk = sock.recv(65536)
+                if not chunk:
+                    return None
+                buf += chunk
+            return json.loads(buf.decode("utf-8", "replace")).get("result")
+        except (OSError, ValueError):
+            return None
+        finally:
+            sock.close()
+
+
+def screen_is_only_ours(session, pane, label):
+    """True while our animation is the only thing on the pane's screen.
+
+    Asking whether the marker is *absent* would never stop: the program paints
+    its own frame, and our line then sits on top of it rather than being erased.
+    The reliable question is the other way round -- is there anything on screen
+    that is not ours? The moment there is, the program has painted and the
+    animation must stop before it writes into that frame.
+
+    An unknown answer counts as "still ours", so a failed read extends the
+    animation instead of ending it early.
+    """
+    if session is None:
+        return True
+    result = session.call("pane.read", {"pane_id": pane, "source": "visible", "format": "text"})
+    # The payload is nested: result["read"]["text"]. Reading the wrong level
+    # returns None for ever, which the "still ours" default turns into an
+    # animation that never stops -- it kept drawing over Pi's screen.
+    read = result.get("read") if isinstance(result, dict) else None
+    text = read.get("text") if isinstance(read, dict) else None
+    if not isinstance(text, str):
+        return True
+    for line in text.splitlines():
+        if label in line:
+            continue
+        if line.strip():
+            return False
+    return True
+
+
+def paint_frame(tty, frame, label):
+    # Draw at a fixed position, saving/restoring the application's cursor in a
+    # single write. A bare carriage return draws wherever Pi last put its cursor.
+    os.write(tty, (f"\x1b7\x1b[1;1H\x1b[2K  {FRAMES[frame % len(FRAMES)]} {label}\x1b8").encode())
+
+
+def main(argv):
+    parsed = parse(argv)
+    if parsed is None:
+        return 0
+    pane, label, max_ms = parsed
+    socket_path = os.environ.get("HERDR_SOCKET_PATH")
+    if not socket_path:
+        return 0
+    try:
+        tty = os.open("/dev/tty", os.O_WRONLY | os.O_NOCTTY)
+    except OSError:
+        return 0
+
+    session = Session(socket_path)
+    # Clear before the first frame, for two reasons that are really one: the
+    # shell has already echoed the command that started the program, and that
+    # echo is a line which is not ours. It would sit above the animation for the
+    # whole load, and -- worse -- it would satisfy the "something else painted"
+    # test on the very first check, freezing the spinner after a few frames.
+    # Clearing leaves only the animation on screen, which is the state the stop
+    # rule is written against.
+    try:
+        os.write(tty, b"\x1b[2J\x1b[H")
+    except OSError:
+        pass
+    deadline = time.monotonic() + max_ms / 1000.0
+    frame = 0
+    handed_over = False
+    try:
+        while time.monotonic() < deadline:
+            # Check before drawing, not after it. Once Pi has painted, even a
+            # final erase would move its input cursor or erase part of its UI.
+            if frame and frame % MARKER_SETTLE_FRAMES == 0:
+                if not screen_is_only_ours(session, pane, label):
+                    handed_over = True
+                    break
+            try:
+                paint_frame(tty, frame, label)
+            except OSError:
+                break
+            frame += 1
+            time.sleep(FRAME_MS / 1000.0)
+    finally:
+        try:
+            if not handed_over:
+                os.write(tty, b"\x1b7\x1b[1;1H\x1b[2K\x1b8")
+        except OSError:
+            pass
+        finally:
+            try:
+                os.close(tty)
+            except OSError:
+                pass
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

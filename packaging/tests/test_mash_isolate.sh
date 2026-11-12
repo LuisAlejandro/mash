@@ -110,6 +110,10 @@ assert_value "$pane" HERDR_TAB_ID w1:t1
 assert_value "$pane" HERDR_SOCKET_PATH "$home/.mash/run/herdr.sock"
 assert_value "$pane" HERDR_CONFIG_PATH "$home/.mash/config/herdr/config.toml"
 assert_value "$pane" XDG_CONFIG_HOME "$home/.mash/config"
+# A dev tab's Fresh attaches to a shared daemon, which reaps itself once its
+# last terminal detaches. Fresh's own default is an hour; this pane environment
+# is what shortens it, and nothing else sets it.
+assert_value "$pane" FRESH_DAEMON_IDLE_TIMEOUT 120
 
 launch="$(run_isolate)"
 assert_unset "$launch" HERDR_ENV
@@ -396,7 +400,7 @@ printf 'FRESH_FLAG=%s\n' "${MASH_DEV_TAB_FRESH:-unset}"
 EOF
 chmod +x "$tmp/app/bin/herdr-fresh-pane"
 early_shell="$(run_pane_shell "$stub_dir/bash" "$tmp/app/bin/mash-shell" 1)"
-[ "$(printf '%s\n' "$early_shell" | head -1)" = 'FRESH_ARGS=.' ] || {
+[ "$(printf '%s\n' "$early_shell" | head -1)" = 'FRESH_ARGS=--daemon .' ] || {
 	printf 'Fresh did not start before the shell: %s\n' "$early_shell" >&2
 	exit 1
 }

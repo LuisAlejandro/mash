@@ -85,6 +85,39 @@ Supported codes and names: `bg` Български, `cs` Čeština, `de` Deutsch
 The setting takes effect on the next launch. Herdr UI, Pi's own interface,
 third-party CLI tools, and language servers stay in English.
 
+## Dev tabs and their shared editor
+
+A dev tab is Fresh on the left and Pi on the right. Its Fresh attaches to **one
+editor per directory** (`fresh -a`) rather than starting its own, so every dev
+tab on the same directory shows the same buffers — that is why a file opened
+from any of them, by hand or by `show_file`, appears in all of them. Different
+directories get different editors, and worktrees are different directories.
+
+The consequences worth knowing before changing anything here:
+
+- **The panes of a workspace's dev tabs must stay the same size.** A Fresh
+  daemon draws one grid for every terminal attached to it, sized by the first
+  client, so a wider tab would letterbox and a narrower one would wrap its lines
+  until the menu bar scrolled away. `bin/mash-fresh-split-sync` subscribes to
+  Herdr's `layout.updated` and copies the ratio of the tab you dragged to the
+  others, which is why resizing one dev tab resizes them all; `zoom` is undone
+  on these panes for the same reason.
+- **Only dev tabs attach.** Telescope and sesh panes run their own Fresh, and a
+  bare `fresh` always does. A pane is marked `mash-fresh-daemon` when it
+  attached, and that tag is the only thing the sync and the parker act on.
+- **An automatically launched pane starts in a quiet shell.** `mash-startup-shell`
+  hides the prompt, echo and the typed launch command, so a new or restored dev
+  tab shows the loader instead of a shell that visibly runs `pi`; `mash-shell`
+  hands an ordinary shell tab straight to the user's normal shell. Removing it
+  brings back the visible prompt and command during startup.
+- **Idle tabs are parked.** `bin/mash-dev-tab-park` stops the agent, and detaches
+  the editor, of any tab unseen for ten minutes — never a working or
+  approval-blocked one — and wakes it on `tab.focused`. Agents resume from their
+  session file; a detached editor re-attaches, and its daemon exits 120 seconds
+  after its last client detaches so its language servers go with it. A restored
+  launch treats unvisited tabs as already stale, so opening Mash costs nothing
+  for the tabs you do not open.
+
 ## Mash Terminal menus
 
 The menu bar (macOS) and the titlebar menu (Linux) carry Mash's own commands,
@@ -252,9 +285,16 @@ Mash ships one: `extensions/mash-hindsight-daemon.ts`, the session warm-start.
 
 ### MCP servers
 
-`~/.mash/pi/agent/mcp.json`. Mash ships `context7`, `sentrux`, `cua-driver`,
-`agent-browser` and `chrome-devtools`. Keep a token out of this file if the bundle
+`~/.mash/pi/agent/mcp.json`. Mash ships `context7`, `sentrux`, `cua-driver` and
+`agent-browser`. Keep a token out of this file if the bundle
 might ever be shared — a build assertion rejects a `github` entry.
+
+Chrome DevTools is deliberately absent. Pi holds a stdio MCP server for the
+whole session, so it cost every session a Node runtime, a telemetry watchdog and
+eventually a browser for a diagnostic that runs a few times a month. The
+`chrome-devtools` skill runs the same engine through `Resources/bin/mash-chrome-devtools`
+instead, starting a server for one audit or heap snapshot and stopping it
+afterwards.
 
 ### Instructions
 
