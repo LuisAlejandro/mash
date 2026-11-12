@@ -77,10 +77,17 @@ if [ -x "$bin_dir/mash-fresh-split-sync" ] && [ -n "${HERDR_SOCKET_PATH:-}" ]; t
   nohup "$res/python/bin/python3" "$bin_dir/mash-fresh-split-sync" </dev/null >/dev/null 2>&1 &
 fi
 
+# Refresh workspace badges on every window launch, including when Herdr's
+# existing server and hourly poller survived closing the previous window.
+# The bounded startup pass waits for restored panes without blocking the UI.
+if [ -f "$res/plugins/pr-watch-focus/poll.sh" ]; then
+  nohup bash "$res/plugins/pr-watch-focus/poll.sh" --startup </dev/null >/dev/null 2>&1 &
+fi
+
 # A dev tab's agent is the expensive half of the tab -- about 260 MB with its MCP
 # children, against 50 MB for Pi alone -- and a restored workspace holds one per
-# tab. This stops an agent once its tab has been unseen for ten minutes and
-# resumes it the moment the tab is shown again. Agents that are working or
+# tab. Both panes park after a full hour of tab inactivity and
+# resume the moment the tab is shown again. Agents that are working or
 # waiting on a person are never touched. Backgrounded and locked, like the sync
 # above: a window must never wait on it.
 if [ -x "$bin_dir/mash-dev-tab-park" ] && [ -n "${HERDR_SOCKET_PATH:-}" ]; then

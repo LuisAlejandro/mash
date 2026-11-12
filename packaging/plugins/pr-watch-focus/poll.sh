@@ -37,6 +37,12 @@ git_status_watch="${GIT_STATUS_WATCH_BIN:-$(command -v git-status-watch || true)
 
 lock_root="${HERDR_PLUGIN_STATE_DIR:-$state/herdr/plugins/pr-watch-focus}"
 lock="$lock_root/poll.lock"
+# Window launches also refresh when the long-lived server is already running.
+startup_only=0
+if [ "${1:-}" = --startup ]; then
+	startup_only=1
+	lock="$lock_root/startup.lock"
+fi
 mkdir -p "$lock_root"
 if ! mkdir "$lock" 2>/dev/null; then
 	owner="$(cat "$lock/pid" 2>/dev/null || true)"
@@ -63,6 +69,7 @@ run_watcher() {
 		log "$name" "poll ok"
 	else
 		log "$name" "poll failed ($?)"
+		return 1
 	fi
 }
 
@@ -70,11 +77,23 @@ run_watcher() {
 # as Mash opens rather than an hour later. The sleep runs in the background and
 # is waited on, so a TERM from a stopping server ends the poller at once
 # instead of after the current sleep step.
+startup_attempts=0
 while :; do
 	mkdir -p "$state/pr-watch-repo" "$state/git-status-watch"
-	run_watcher pr-watch-repo "$pr_watch_repo"
-	run_watcher git-status-watch "$git_status_watch"
-	sleep "$interval" &
+	delay="$interval"
+	failed=0
+	run_watcher pr-watch-repo "$pr_watch_repo" || failed=1
+	run_watcher git-status-watch "$git_status_watch" || failed=1
+	# Plugin startup can precede restored panes and the socket being ready.
+	# Retry startup failures for one minute, then resume the hourly cadence.
+	if [ "$failed" -ne 0 ] && [ "$startup_attempts" -lt 12 ]; then
+		delay=5
+		startup_attempts=$((startup_attempts + 1))
+	else
+		startup_attempts=12
+		[ "$startup_only" -eq 0 ] || exit 0
+	fi
+	sleep "$delay" &
 	sleeper=$!
 	wait "$sleeper" || exit 0
 	sleeper=""

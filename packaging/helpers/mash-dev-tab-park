@@ -27,9 +27,8 @@ or done AND its tab has been unfocused for `PARK_AFTER` seconds. A working agent
 is never touched, and neither is one blocked on an approval: those are the two
 states where a kill loses work or strands the person waiting on it.
 
-Tabs that were already unfocused when this started -- a restored session, or a
-launch with yesterday's workspace -- are treated as stale from the first tick,
-so a launch does not pay for tabs nobody opens.
+Every tab receives a full idle period at startup. Focus protects both panes,
+and time spent working or waiting on a person never counts toward inactivity.
 
 Started in the background by the launcher. It must never block a window and
 never fail a startup, so every path exits 0.
@@ -45,13 +44,9 @@ import subprocess
 import sys
 import time
 
-PARK_AFTER = 600.0
+PARK_AFTER = 3600.0
 TICK = 30.0
-# How many agents one tick may stop. A restored launch treats every unvisited
-# tab as stale at once, and that is dozens of Pi processes flushing their
-# sessions in the same second: cheap per process, unpleasant as a burst. The
-# rest go on the following ticks, so the steady state is reached within a
-# couple of minutes instead of all at once.
+# Limit simultaneous session flushes when several tabs expire together.
 PARK_BURST = 5
 RECONNECT_DELAY = 1.0
 PARKABLE = {"idle", "done"}
@@ -244,8 +239,10 @@ def park(agent):
         visible = visible_tabs()
         if visible is None or agent.get("tab_id") in visible:
             return False
-        current = next((a for a in call("agent.list", {}).get("agents", [])
-                        if a.get("pane_id") == pane), None)
+        agents = call("agent.list", {}).get("agents", [])
+        if agent.get("tab_id") in busy_tabs(agents):
+            return False
+        current = next((a for a in agents if a.get("pane_id") == pane), None)
         if not current or current.get("tab_id") != agent.get("tab_id"):
             return False
         if current.get("agent_status") not in PARKABLE or current.get("agent") != "pi":
@@ -414,6 +411,12 @@ def park_editor(pane):
     attached to it -- which is what releases the language servers it started.
     """
     pane_id = pane.get("pane_id")
+    try:
+        agents = call("agent.list", {}).get("agents", [])
+    except (Unavailable, AttributeError, OSError):
+        return False
+    if pane.get("tab_id") in busy_tabs(agents):
+        return False
     pid = fresh_pid(pane_id)
     if pid is None:
         # Already a shell: nothing to stop, and a record would make the wake
@@ -493,10 +496,13 @@ def tick(last_focus, now=None, wake_only=False):
     except (Unavailable, AttributeError, OSError):
         return 0
     busy = busy_tabs(agents)
+    # Start a fresh idle period only after the whole tab stops being busy.
+    for tab in busy:
+        last_focus.pop(tab, None)
     parked = 0
     for agent in agents:
         tab = agent.get("tab_id")
-        if tab:
+        if tab and tab not in busy:
             last_focus.setdefault(tab, now)
         if parked >= PARK_BURST:
             break
@@ -512,7 +518,7 @@ def tick(last_focus, now=None, wake_only=False):
                 parked += 1
     for pane in editor_panes():
         tab = pane.get("tab_id")
-        if tab:
+        if tab and tab not in busy:
             last_focus.setdefault(tab, now)
         if parked >= PARK_BURST:
             break
@@ -529,15 +535,8 @@ def tick(last_focus, now=None, wake_only=False):
 
 
 def seed_launch_staleness(last_focus, now=None):
-    """Treat every tab that is not the focused one as already stale.
-
-    A launch restores yesterday's workspace, and Herdr starts every restored
-    pane before this helper exists. Parking them on the first tick is what makes
-    a launch cost nothing for the tabs nobody opens; the focused tab is exempt,
-    because that is the one being looked at.
-    """
+    """Give restored tabs the same full idle period as newly observed tabs."""
     now = now if now is not None else time.monotonic()
-    stale = now - PARK_AFTER
     try:
         workspaces = call("workspace.list", {}).get("workspaces") or []
         tabs = []
@@ -550,7 +549,7 @@ def seed_launch_staleness(last_focus, now=None):
         tab_id = tab.get("tab_id")
         if not tab_id:
             continue
-        last_focus.setdefault(tab_id, now if tab.get("focused") else stale)
+        last_focus.setdefault(tab_id, now)
 
 
 def follow(sock_path, last_focus, wake_only=False):
@@ -563,13 +562,14 @@ def follow(sock_path, last_focus, wake_only=False):
                 {
                     "id": "subscribe",
                     "method": "events.subscribe",
-                    "params": {"subscriptions": [{"type": "tab.focused"}]},
+                    "params": {"subscriptions": [{"type": "tab.focused"}, {"type": "workspace.focused"}]},
                 }
             )
             + "\n"
         ).encode()
     )
     buf = b""
+    previous_visible = visible_tabs() or set()
     next_tick = time.monotonic() + TICK
     while True:
         sock.settimeout(max(0.2, next_tick - time.monotonic()))
@@ -593,11 +593,15 @@ def follow(sock_path, last_focus, wake_only=False):
             except ValueError:
                 continue
             event = message.get("event")
-            data = message.get("data") or {}
-            if event == "tab_focused":
+            if event in ("tab_focused", "workspace_focused"):
                 visible = visible_tabs()
                 if visible is not None:
-                    wake_visible(visible, last_focus, time.monotonic())
+                    now = time.monotonic()
+                    # Start the clock at blur, not the previous maintenance tick.
+                    for tab in previous_visible:
+                        last_focus[tab] = now
+                    wake_visible(visible, last_focus, now)
+                    previous_visible = visible
         # A stream of events must not postpone maintenance indefinitely.
         if time.monotonic() >= next_tick:
             tick(last_focus, wake_only=wake_only)

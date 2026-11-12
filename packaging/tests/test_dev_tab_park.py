@@ -21,6 +21,7 @@ import os
 import tempfile
 import time
 import unittest
+from unittest.mock import Mock, patch
 from pathlib import Path
 
 ROOT = Path(__file__).parents[2]
@@ -312,8 +313,7 @@ class ParkTest(unittest.TestCase):
         self.assertIsNone(PARK.read_record("w:p1"))
 
     def test_one_tick_does_not_stop_everything_at_once(self):
-        # A restored launch marks every unvisited tab stale in the same instant.
-        # Parking dozens in one tick means dozens of sessions flushing together.
+        # Several idle tabs can expire together. Keep session flushes bounded.
         agents = [agent(pane=f"w:p{i}", tab=f"t{i}") for i in range(10)]
         fake = FakeHerdr(
             agents=agents,
@@ -363,6 +363,36 @@ class ParkTest(unittest.TestCase):
         finally:
             PARK.call, PARK.park = original_call, original_park
         self.assertEqual(stopped, [], "a visible tab must remain protected indefinitely")
+
+    def test_visible_tab_protects_both_editor_and_agent_for_hours(self):
+        fake = FakeHerdr(
+            agents=[agent(tab="visible:t1")],
+            panes=[{"pane_id": "w:editor", "tab_id": "visible:t1", "tokens": {"mash-fresh-daemon": "1"}}],
+        )
+        original_call, original_park, original_editor = PARK.call, PARK.park, PARK.park_editor
+        stopped = []
+        PARK.call = fake
+        PARK.park = lambda a: stopped.append("agent") or True
+        PARK.park_editor = lambda p: stopped.append("editor") or True
+        try:
+            clock = {"visible:t1": 0}
+            for now in (self.now, self.now + 7200):
+                PARK.tick(clock, now)
+                self.assertEqual(clock["visible:t1"], now)
+            self.assertEqual(stopped, [])
+        finally:
+            PARK.call, PARK.park, PARK.park_editor = original_call, original_park, original_editor
+
+    def test_editor_rechecks_busy_sibling_before_stopping(self):
+        fake = FakeHerdr(agents=[agent(status="working")])
+        original_call, original_kill = PARK.call, PARK.os.kill
+        killed = []
+        PARK.call, PARK.os.kill = fake, lambda *args: killed.append(args)
+        try:
+            self.assertFalse(PARK.park_editor({"pane_id": "w:editor", "tab_id": "t1"}))
+        finally:
+            PARK.call, PARK.os.kill = original_call, original_kill
+        self.assertEqual(killed, [])
 
     def test_unknown_visibility_fails_closed(self):
         fake = FakeHerdr(agents=[agent()])
@@ -528,9 +558,48 @@ class ParkTest(unittest.TestCase):
             PARK.follow, PARK.visible_tabs, PARK.wake_visible = old_follow, old_visible, old_wake
         self.assertEqual(results, ["held"])
 
-    def test_a_launch_treats_every_unfocused_tab_as_stale(self):
-        # Otherwise a restored workspace would hold yesterday's agents for ten
-        # more minutes after every launch.
+    def test_focus_switch_starts_previous_tabs_clock_at_blur(self):
+        for event in ("tab_focused", "workspace_focused"):
+            with self.subTest(event=event):
+                sock = Mock()
+                sock.recv.side_effect = [(json.dumps({"event": event}) + "\n").encode(), KeyboardInterrupt]
+                clock = {"old": 0}
+                with patch.object(PARK.socket, "socket", return_value=sock), \
+                     patch.object(PARK, "visible_tabs", side_effect=[{"old"}, {"new"}]), \
+                     patch.object(PARK.time, "monotonic", return_value=self.now), \
+                     patch.object(PARK, "wake_visible") as wake:
+                    with self.assertRaises(KeyboardInterrupt):
+                        PARK.follow("unused", clock)
+                self.assertEqual(clock["old"], self.now)
+                wake.assert_called_once_with({"new"}, clock, self.now)
+
+    def test_timeout_is_one_hour_for_both_panes(self):
+        self.assertEqual(PARK.PARK_AFTER, 3600.0)
+
+    def test_busy_time_does_not_count_toward_either_panes_idle_period(self):
+        fake = FakeHerdr(
+            agents=[agent(status="working")],
+            panes=[{"pane_id": "w:editor", "tab_id": "t1", "tokens": {"mash-fresh-daemon": "1"}}],
+        )
+        original_call, original_park, original_editor = PARK.call, PARK.park, PARK.park_editor
+        stopped = []
+        PARK.call = fake
+        PARK.park = lambda a: stopped.append("agent") or True
+        PARK.park_editor = lambda p: stopped.append("editor") or True
+        try:
+            clock = self.stale()
+            PARK.tick(clock, self.now)
+            fake.agents[0]["agent_status"] = "idle"
+            idle_start = self.now + PARK.TICK
+            PARK.tick(clock, idle_start)
+            PARK.tick(clock, idle_start + PARK.PARK_AFTER - 1)
+            self.assertEqual(stopped, [])
+            PARK.tick(clock, idle_start + PARK.PARK_AFTER)
+            self.assertEqual(stopped, ["agent", "editor"])
+        finally:
+            PARK.call, PARK.park, PARK.park_editor = original_call, original_park, original_editor
+
+    def test_a_launch_gives_every_tab_a_full_idle_period(self):
         fake = FakeHerdr(
             agents=[],
         )
@@ -555,7 +624,7 @@ class ParkTest(unittest.TestCase):
         finally:
             PARK.call = original
         self.assertEqual(last_focus["t1"], self.now, "focus must receive a full grace period")
-        self.assertLessEqual(last_focus["t2"], self.now - PARK.PARK_AFTER)
+        self.assertEqual(last_focus["t2"], self.now, "hidden tabs must receive a full grace period too")
 
 
 if __name__ == "__main__":

@@ -158,7 +158,7 @@ def ahead_behind(root, branch, upstream):
 
 def main():
     panes = herdr_state.herdr("pane", "list")
-    if not panes:
+    if not panes or not panes.get("panes"):
         return 1
     dirs = {}
     for p in panes["panes"]:
