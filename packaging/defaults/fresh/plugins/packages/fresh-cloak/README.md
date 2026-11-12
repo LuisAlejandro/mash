@@ -205,4 +205,4 @@ it unloads, so the masks disappear with it and your file is left untouched.
 
 ## License
 
-GPL-2.0, matching Fresh itself.
+GPL-3.0-or-later, matching Fresh itself.

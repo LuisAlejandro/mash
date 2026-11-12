@@ -61,9 +61,9 @@ async function findSelfPane(): Promise<string | null> {
 
 	if (match) {
 		try {
-			// spawnProcess resolves to its own result: awaiting twice would read
+			// The handle resolves to its own result: awaiting twice would read
 			// `.result` off a SpawnResult and throw.
-			const listing = await editor.spawnProcess(herdrBin, ["pane", "list"], editor.getCwd());
+			const listing = await editor.spawnHostProcess(herdrBin, ["pane", "list"], editor.getCwd());
 			const text = listing.stdout || "";
 			const wanted = match[1];
 			// Each pane row carries its pane id and its process tree. A pane whose
@@ -88,7 +88,7 @@ async function openInPopup(path: string): Promise<boolean> {
 
 	const herdrBin = editor.getEnv("HERDR_BIN_PATH") || "herdr";
 	try {
-		const result = await editor.spawnProcess(herdrBin, [
+		const result = await editor.spawnHostProcess(herdrBin, [
 			"plugin", "pane", "open",
 			"--plugin", "image-popup",
 			"--entrypoint", "view",

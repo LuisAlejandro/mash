@@ -5,7 +5,7 @@
   "description": "Visually cloak .env values in Fresh so they stay out of screen shares.",
   "type": "plugin",
   "author": "",
-  "license": "GPL-2.0",
+  "license": "GPL-3.0-or-later",
   "engines": {
     "node": ">=22.18.0"
   },

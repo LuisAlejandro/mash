@@ -234,21 +234,23 @@ A package resolves `@earendil-works/pi-coding-agent`, `pi-tui`, `pi-ai` and
 `typebox` to Mash's bundled copies through pi's extension loader, so a package
 that only peer-depends on pi installs small and runs against the pi Mash ships.
 
-**Shipped with Mash for everyone, at build time.** Edit two files in the
-repository and rebuild:
+**Shipped with Mash for everyone, at build time.** Edit these in the repository
+and rebuild:
 
-1. `packaging/build.sh` — the `npm install --global --prefix` list, with an
-   exact version.
-2. `packaging/defaults/pi/settings.json` — add `npm:<name>` to `packages`.
+1. `packaging/assets.json` — an `npm` component with `"install": "bundled"` and
+   an exact version, listed in `pinOrder`; then regenerate
+   `packaging/pins.txt` with `python3 packaging/assets.py pins`.
+2. `mash_pi_packages` in `packaging/build-common.sh` — add the component id.
+3. `packaging/defaults/pi/settings.json` — add `npm:<name>@<version>` to
+   `packages`, matching the manifest pin.
 
 Mash ships `pi-subagents`, `pi-ask-user`, `@krfantasy/pi-monokai-pro`,
 `pi-web-search` and `@earendil-works/pi-voice`. A package may bundle extensions,
 skills, prompts and themes together.
 
-`packaging/defaults/pi/node_modules` deliberately holds **one** package:
-`typebox`, imported at runtime by `extensions/mash-orchestration.ts`. Node
-resolves that import from the extension's directory upward, so it cannot reach
-pi's own nested copy under `node/lib/node_modules/`. Everything else about pi
+The agent directory has no `node_modules` of its own. Extensions such as
+`extensions/mash-orchestration.ts` import `typebox`, and pi's extension loader
+aliases that import to the copy bundled with pi. Everything else about pi
 resolves from the global prefix.
 
 ### Extensions

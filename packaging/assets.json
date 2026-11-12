@@ -117,13 +117,13 @@
       ]
     },
     "herdr": {
-      "version": "0.9.3",
+      "version": "0.9.5",
       "strategy": "binary",
       "install": "bundled",
       "artifacts": {
         "macos-arm64": {
-          "url": "https://ghcr.io/v2/homebrew/core/herdr/blobs/sha256:d381e8af36dc499593101d33b80098dd7316ba9f167b1535e4eeb76b2ac2e58a",
-          "sha256": "d381e8af36dc499593101d33b80098dd7316ba9f167b1535e4eeb76b2ac2e58a",
+          "url": "https://ghcr.io/v2/homebrew/core/herdr/blobs/sha256:f1a0773148e4ad392a75123f6ac6f23031d8957c658bb5525528aab12015bee5",
+          "sha256": "f1a0773148e4ad392a75123f6ac6f23031d8957c658bb5525528aab12015bee5",
           "archive": "tar.gz",
           "member": "bin/herdr"
         },
@@ -134,40 +134,40 @@
           "member": "herdr-macos-x86_64"
         },
         "linux-amd64": {
-          "url": "https://github.com/herdrdev/herdr/releases/download/v0.9.3/herdr-linux-x86_64",
-          "sha256": "18a8dc65f1c2fa485884344356dea1cfd911c6f06cf46fa78e193f4087f4dba7",
+          "url": "https://github.com/herdrdev/herdr/releases/download/v0.9.5/herdr-linux-x86_64",
+          "sha256": "14d9e8bc8b4a9e0118d77c32266f76d461f09b40342eb23752960bd89f59929d",
           "archive": "raw",
           "member": "herdr-linux-x86_64"
         },
         "linux-arm64": {
-          "url": "https://github.com/herdrdev/herdr/releases/download/v0.9.3/herdr-linux-aarch64",
-          "sha256": "4de7aa3e25678812e92960de64f7c2aaa1bca1f0f80a3c5e559837e231e1f5c0",
+          "url": "https://github.com/herdrdev/herdr/releases/download/v0.9.5/herdr-linux-aarch64",
+          "sha256": "17d7536f2da50859523680ef279dffcac8e4a235f4e46fe8da6c2ec44141897c",
           "archive": "raw",
           "member": "herdr-linux-aarch64"
         }
       }
     },
     "fresh": {
-      "version": "0.5.1",
+      "version": "0.5.7",
       "strategy": "source",
       "install": "bundled",
       "artifacts": {
         "*": {
-          "url": "https://github.com/sinelaw/fresh/archive/refs/tags/v0.5.1.tar.gz",
-          "sha256": "3472273fcf77b019922b32ddffad061cc068bfb260344865c239c8eb056d92bf",
+          "url": "https://github.com/sinelaw/fresh/archive/refs/tags/v0.5.7.tar.gz",
+          "sha256": "3ab409970e18e692ed7a046bc0c27f4a68119858928e4b4b499e992dc7a0a118",
           "archive": "tar.gz",
-          "member": "fresh-0.5.1"
+          "member": "fresh-0.5.7"
         }
       }
     },
     "pi": {
-      "version": "1.1.0",
+      "version": "1.5.0",
       "strategy": "npm",
       "install": "bundled",
       "package": "@earendil-works/pi-coding-agent"
     },
     "pi-codemode": {
-      "version": "1.1.0",
+      "version": "1.5.0",
       "strategy": "npm",
       "install": "bundled",
       "package": "@earendil-works/pi-codemode"
@@ -246,13 +246,13 @@
       "install": "host"
     },
     "lazygit": {
-      "version": "0.65.1",
+      "version": "0.66.2",
       "strategy": "binary",
       "install": "bundled",
       "artifacts": {
         "macos-arm64": {
-          "url": "https://github.com/jesseduffield/lazygit/releases/download/v0.65.1/lazygit_0.65.1_darwin_arm64.tar.gz",
-          "sha256": "65a367c6ea9a88efebaaf7998a6835eedb987e04916cef677264ff9b31b1b13e",
+          "url": "https://github.com/jesseduffield/lazygit/releases/download/v0.66.2/lazygit_0.66.2_darwin_arm64.tar.gz",
+          "sha256": "fadda59ae7665ba556fcbaa704c7eade6e40d016d3f3b25d6327dd1f3f906a0c",
           "archive": "tar.gz",
           "member": "lazygit"
         },
@@ -263,14 +263,14 @@
           "member": "lazygit"
         },
         "linux-amd64": {
-          "url": "https://github.com/jesseduffield/lazygit/releases/download/v0.65.1/lazygit_0.65.1_linux_x86_64.tar.gz",
-          "sha256": "02beacbcda0fa342e50ae3480ba8147307353af3fb28e1d5f790e02329c201a6",
+          "url": "https://github.com/jesseduffield/lazygit/releases/download/v0.66.2/lazygit_0.66.2_linux_x86_64.tar.gz",
+          "sha256": "158efc9ddfa1241fab5fb3526bb442c8dc6c4b1904d73213b9e4e93e03c52034",
           "archive": "tar.gz",
           "member": "lazygit"
         },
         "linux-arm64": {
-          "url": "https://github.com/jesseduffield/lazygit/releases/download/v0.65.1/lazygit_0.65.1_linux_arm64.tar.gz",
-          "sha256": "49abecdf6adf4f2dfdb11bf7b9bfada267ea523612ed809d1c6d87f6c04000a7",
+          "url": "https://github.com/jesseduffield/lazygit/releases/download/v0.66.2/lazygit_0.66.2_linux_arm64.tar.gz",
+          "sha256": "79a3161eeb642f0473e23db6341f7baabd4a5933e921a9c1167c5d5c765c41a4",
           "archive": "tar.gz",
           "member": "lazygit"
         }
@@ -370,13 +370,13 @@
       }
     },
     "atuin": {
-      "version": "18.23.0",
+      "version": "18.24.5",
       "strategy": "binary",
       "install": "bundled",
       "artifacts": {
         "macos-arm64": {
-          "url": "https://github.com/atuinsh/atuin/releases/download/v18.23.0/atuin-aarch64-apple-darwin.tar.gz",
-          "sha256": "c988be1cde19cd7295ce64bc8b955d42fb1855e5227cb640c87fc09c8408c3fc",
+          "url": "https://github.com/atuinsh/atuin/releases/download/v18.24.5/atuin-aarch64-apple-darwin.tar.gz",
+          "sha256": "644e92d5667e2ebbc00758c71d5974bc907d238eaa6cdc32b24eb73dce7f9a5a",
           "archive": "tar.gz",
           "member": "atuin-aarch64-apple-darwin/atuin"
         },
@@ -387,14 +387,14 @@
           "member": "atuin-x86_64-apple-darwin/atuin"
         },
         "linux-amd64": {
-          "url": "https://github.com/atuinsh/atuin/releases/download/v18.23.0/atuin-x86_64-unknown-linux-gnu.tar.gz",
-          "sha256": "5cf46e926b696a9b23a3c61ef3cb00f8f7c156d1d7b7967a3b51741653b48ba3",
+          "url": "https://github.com/atuinsh/atuin/releases/download/v18.24.5/atuin-x86_64-unknown-linux-gnu.tar.gz",
+          "sha256": "e16a95f10e9592543d2d578e44c2f1dccf89b57915c2e2c6935b435b3f43cee4",
           "archive": "tar.gz",
           "member": "atuin-x86_64-unknown-linux-gnu/atuin"
         },
         "linux-arm64": {
-          "url": "https://github.com/atuinsh/atuin/releases/download/v18.23.0/atuin-aarch64-unknown-linux-gnu.tar.gz",
-          "sha256": "21869faff1fedb9f8fb27837136567b089bcd588d21252533d5b314605517ae2",
+          "url": "https://github.com/atuinsh/atuin/releases/download/v18.24.5/atuin-aarch64-unknown-linux-gnu.tar.gz",
+          "sha256": "ae4228314f6b33705fe584dce58a2910b8e19fbeb8b652263ee7b66cc7e87a59",
           "archive": "tar.gz",
           "member": "atuin-aarch64-unknown-linux-gnu/atuin"
         }
@@ -477,13 +477,13 @@
       "install": "user"
     },
     "rust-analyzer": {
-      "version": "2026-09-28",
+      "version": "2026-11-02",
       "strategy": "binary",
       "install": "user",
       "artifacts": {
         "macos-arm64": {
-          "url": "https://github.com/rust-lang/rust-analyzer/releases/download/2026-09-28/rust-analyzer-aarch64-apple-darwin.gz",
-          "sha256": "54ec873d8996e2c127d758bf45d4eacb6d3371dae4f6f6d5d3f05cedbae5fd59",
+          "url": "https://github.com/rust-lang/rust-analyzer/releases/download/2026-11-02/rust-analyzer-aarch64-apple-darwin.gz",
+          "sha256": "d10ca0a10e386f74ca36847b3df2ad5ab6f1328feeb1591467b3724f3fd8e8cf",
           "archive": "gz",
           "member": "rust-analyzer"
         },
@@ -494,14 +494,14 @@
           "member": "rust-analyzer"
         },
         "linux-amd64": {
-          "url": "https://github.com/rust-lang/rust-analyzer/releases/download/2026-09-28/rust-analyzer-x86_64-unknown-linux-gnu.gz",
-          "sha256": "23f711d86b5f826e22886f01d7355dc01e0f4c1357dafa29710a95b903b48c85",
+          "url": "https://github.com/rust-lang/rust-analyzer/releases/download/2026-11-02/rust-analyzer-x86_64-unknown-linux-gnu.gz",
+          "sha256": "5249da68c3f36bb77ea7d401824f5e8bd8d0a47a162daf5f72208eb7c1bf1500",
           "archive": "gz",
           "member": "rust-analyzer"
         },
         "linux-arm64": {
-          "url": "https://github.com/rust-lang/rust-analyzer/releases/download/2026-09-28/rust-analyzer-aarch64-unknown-linux-gnu.gz",
-          "sha256": "03bad9c3dabb0f07a2678d5f9f8f1575a3742ea141506e14b3a26b42a1f896f3",
+          "url": "https://github.com/rust-lang/rust-analyzer/releases/download/2026-11-02/rust-analyzer-aarch64-unknown-linux-gnu.gz",
+          "sha256": "4f8699eaee4231df5a5ffd477106ecae3bf6328918a60de742798912ecff6869",
           "archive": "gz",
           "member": "rust-analyzer"
         }
@@ -606,13 +606,13 @@
       "package": "bash-language-server"
     },
     "typescript-language-server": {
-      "version": "6.0.1",
+      "version": "6.0.3",
       "strategy": "npm",
       "install": "user",
       "package": "typescript-language-server"
     },
     "yaml-language-server": {
-      "version": "1.24.0",
+      "version": "2.0.0",
       "strategy": "npm",
       "install": "user",
       "package": "yaml-language-server"
@@ -624,7 +624,7 @@
       "package": "@tailwindcss/language-server"
     },
     "svelte-language-server": {
-      "version": "0.18.4",
+      "version": "0.18.6",
       "strategy": "npm",
       "install": "user",
       "package": "svelte-language-server"
@@ -642,13 +642,13 @@
       "package": "python-lsp-server"
     },
     "pi-subagents": {
-      "version": "0.76.0",
+      "version": "0.85.0",
       "strategy": "npm",
       "install": "bundled",
       "package": "pi-subagents"
     },
     "pi-ask-user": {
-      "version": "0.17.0",
+      "version": "0.17.2",
       "strategy": "npm",
       "install": "bundled",
       "package": "pi-ask-user"
@@ -660,7 +660,7 @@
       "package": "@krfantasy/pi-monokai-pro"
     },
     "pi-web-search": {
-      "version": "1.6.0",
+      "version": "1.7.0",
       "strategy": "npm",
       "install": "bundled",
       "package": "pi-web-search"
@@ -677,7 +677,7 @@
       "install": "user"
     },
     "prettier": {
-      "version": "3.9.9",
+      "version": "3.9.10",
       "strategy": "npm",
       "install": "user",
       "package": "prettier"
@@ -725,28 +725,28 @@
       }
     },
     "fullerzz.sesh": {
-      "version": "0.14.0",
+      "version": "0.16.0",
       "strategy": "git",
       "install": "bundled",
       "repo": "fullerzz/herdr-plugin-sesh",
-      "ref": "v0.14.0",
-      "commit": "ed6d355933923c2c150fc3b466bafb619c0af7ea"
+      "ref": "v0.16.0",
+      "commit": "56ebe016c394eada4acc7f70bcb999b01932daf9"
     },
     "herdr.auto-title": {
-      "version": "0.9.1",
+      "version": "0.20.0",
       "strategy": "git",
       "install": "bundled",
       "repo": "kryptamine/herdr-auto-title",
-      "ref": "v0.9.1",
-      "commit": "bb74c548c3a9f8efb7b898809a29145c2729dac2"
+      "ref": "v0.20.0",
+      "commit": "d8603171bde954fa2db57bf6013c548daa6f58c1"
     },
     "persiyanov.reviewr": {
-      "version": "0.39.0",
+      "version": "0.49.1",
       "strategy": "git",
       "install": "bundled",
       "repo": "persiyanov/herdr-reviewr",
-      "ref": "v0.39.0",
-      "commit": "cd618b48dc1f4d2cc092f3f26827ac72fb44773e"
+      "ref": "v0.49.1",
+      "commit": "92c51e2bd4e2caf42fa00bc193ae2f48955df64f"
     },
     "herdr-workspace": {
       "version": "0.1.2",
@@ -763,19 +763,19 @@
       "ref": "packaging/plugins/telescope"
     },
     "ray.plugin-manager": {
-      "version": "0.5.0",
+      "version": "0.6.0",
       "strategy": "git",
       "install": "bundled",
       "repo": "speardragon/herdr-plugin-manager",
-      "ref": "v0.5.0",
-      "commit": "e4fef2693728a36cbb389af033a389cad2257869"
+      "ref": "v0.6.0",
+      "commit": "8ed222ab7efe735b3ef5e037e7ee81d6d7650e4e"
     },
     "mash-programming-skills": {
-      "version": "0.6.3",
+      "version": "0.6.2",
       "strategy": "git",
       "install": "bundled",
       "repo": "LuisAlejandro/mash-programming-skills",
-      "ref": "0.6.3"
+      "ref": "0.6.2"
     },
     "sentrux": {
       "version": "0.5.7",
@@ -814,13 +814,13 @@
       ]
     },
     "hindsight-embed": {
-      "version": "0.8.3",
+      "version": "1.2.0",
       "strategy": "pip",
       "install": "user",
       "package": "hindsight-embed"
     },
     "hindsight-api": {
-      "version": "0.8.3",
+      "version": "1.2.0",
       "strategy": "pip",
       "install": "user",
       "package": "hindsight-api-slim"

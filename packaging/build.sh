@@ -434,8 +434,8 @@ cp "$root/packaging/assets.json" "$root/packaging/assets.py" \
   "$app/Contents/Resources/assets/"
 chmod 644 "$app/Contents/Resources/assets/assets.json"
 chmod 755 "$app/Contents/Resources/assets/assets.py"
-# The zsh plugin, the Pi Voice catalog and the agent directory's typebox all
-# come from mash_stage_runtimes above, which both adapters call.
+# The zsh plugin and the Pi Voice catalog come from mash_stage_runtimes above,
+# which both adapters call.
 cp "$root/packaging/uninstall" "$app/Contents/Resources/uninstall"
 chmod 755 "$app/Contents/Resources/uninstall"
 mash_install_skills
@@ -515,32 +515,17 @@ mash_verify_portable_payload "$app/Contents/Resources" || {
   exit 1
 }
 
-# Nothing anywhere in the bundle may still reference Homebrew. Scan every
-# Mach-O we ship — tools, dylibs, nested bundles — not just the named few.
-# Deliberately the last thing before signing, and after Fresh and the plugins
-# are built: run any earlier and a dependency introduced by either of them
-# escapes both this check and embed_deps above. That is how libexec/fresh
-# The one agent-directory dependency has to be there, and resolvable from the
-# extension directory rather than from pi's nested copy.
-typebox_js="$app/Contents/Resources/defaults/pi/node_modules/typebox/build/index.mjs"
-[ -f "$typebox_js" ] || {
-  echo "typebox is missing from the agent directory; mash-orchestration cannot load" >&2
-  exit 1
-}
-if ! env PATH="$app/Contents/Resources/node/bin:/usr/bin:/bin" \
-  "$app/Contents/Resources/node/bin/node" -e \
-  "require.resolve('typebox',{paths:['$app/Contents/Resources/defaults/pi/extensions']})" \
-  >/dev/null 2>&1; then
-  echo "the agent directory cannot resolve typebox from extensions/" >&2
-  exit 1
-fi
-
 # Python writes __pycache__ into every installed package as it imports one.
 # A shipped bundle never needs it: the interpreter regenerates the bytecode on
 # the first import into the data folder's copy. Measured at 157 directories and
 # 26 MB, all of it text that compresses badly in the disk image.
 find "$app/Contents" -type d -name __pycache__ -prune -exec rm -rf {} + 2>/dev/null || true
 
+# Nothing anywhere in the bundle may still reference Homebrew. Scan every
+# Mach-O we ship — tools, dylibs, nested bundles — not just the named few.
+# Deliberately the last thing before signing, and after Fresh and the plugins
+# are built: run any earlier and a dependency introduced by either of them
+# escapes both this check and embed_deps above. That is how libexec/fresh
 # shipped depending on /opt/homebrew/opt/xz/lib/liblzma.5.dylib.
 while IFS= read -r -d '' macho; do
   if otool -L "$macho" 2>/dev/null | awk 'NR>1 {print $1}' | grep -q -E '^/opt/homebrew/|^@@HOMEBREW_'; then
