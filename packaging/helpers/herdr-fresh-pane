@@ -102,4 +102,8 @@ fi
 if [ -n "$runner" ]; then
 	exec "$runner" --label "$(mash-pane-starting --print editor 2>/dev/null || printf 'Starting the editor...')" -- fresh "$@"
 fi
+# Fresh 0.5.2+ sends a bare `fresh` to one shared background daemon unless
+# `auto_attach` is off, which Mash's seeded config sets. That default does not
+# apply here: dev tabs ask for the shared editor explicitly with `--daemon`
+# above, and a plain `fresh <path>` pane keeps its own editor.
 exec fresh "$@"

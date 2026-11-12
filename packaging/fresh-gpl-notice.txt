@@ -23,9 +23,8 @@ and in Mash's public repository (packaging/patches/):
                                open the file explorer when a `fresh -a` daemon
                                creates its editor, as `fresh .` already does
   - fresh-daemon-idle-timeout.patch
-                               let a session reap itself sooner than an hour
-                               once its last terminal detaches, through
-                               FRESH_DAEMON_IDLE_TIMEOUT
+                               let a session reap itself once its last terminal
+                               detaches, through FRESH_DAEMON_IDLE_TIMEOUT
 
 GPL-3.0 section 5(a) asks that a modified work carry prominent notices stating
 that it was changed, and when.
