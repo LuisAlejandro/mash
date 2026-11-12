@@ -1,6 +1,6 @@
 id = "pr-watch-focus"
 name = "PR Watch Focus"
-version = "0.2.0"
+version = "0.2.1"
 min_herdr_version = "0.8.2"
 description = "Poll the PR badges and ahead/behind counts every hour while Mash runs, and refresh one workspace the moment it is focused"
 platforms = ["macos", "linux"]
