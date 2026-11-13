@@ -1,6 +1,80 @@
 # Changelog
 
 
+## 0.5.0 (2026-11-13)
+
+### Added
+
+* Name tabs after the work, and mark the ones that need you. [Luis Alejandro Martínez Faneyth]
+
+* Reopen a closed tab and quit-and-stop sessions. [Luis Alejandro Martínez Faneyth]
+
+
+### Changed
+
+* Show each agent the title of its own tab. [Luis Alejandro Martínez Faneyth]
+
+* Reconcile Auto Title 0.20 with Mash's tab naming and attention marks. [Luis Alejandro Martínez Faneyth]
+
+* Ship Mash Programming Skills 0.6.2. [Luis Alejandro Martínez Faneyth]
+
+* Ship Mash Programming Skills 0.6.1 with its new tool pins. [Luis Alejandro Martínez Faneyth]
+
+* Update Hindsight to 1.2.0. [Luis Alejandro Martínez Faneyth]
+
+* Update reviewr to 0.49.1 and auto-title to 0.20.0. [Luis Alejandro Martínez Faneyth]
+
+* Update Fresh to 0.5.7. [Luis Alejandro Martínez Faneyth]
+
+* Update Pi to 1.5.0 and pi-subagents to 0.85.0. [Luis Alejandro Martínez Faneyth]
+
+* Update Herdr, lazygit, atuin and pinned dev tools. [Luis Alejandro Martínez Faneyth]
+
+* Move the Ghostty fork pin to 3235c50. [Luis Alejandro Martínez Faneyth]
+
+* Keep dev tabs cheap, and hide the command that starts them. [Luis Alejandro Martínez Faneyth]
+
+
+### Fixed
+
+* Ship the Fresh source archive the pin names. [Luis Alejandro Martínez Faneyth]
+
+* Never leave a pane waiting for a launch that never comes. [Luis Alejandro Martínez Faneyth]
+
+* Give session exit and update shutdown one lifecycle. [Luis Alejandro Martínez Faneyth]
+
+* Reach a tab's shared editor from show_file and the palette. [Luis Alejandro Martínez Faneyth]
+
+* Launch a dev tab in its own directory's Fresh editor. [Luis Alejandro Martínez Faneyth]
+
+* Park dev panes only after an idle hour. [Luis Alejandro Martínez Faneyth]
+
+* Refresh workspace badges on startup. [Luis Alejandro Martínez Faneyth]
+
+* Keep Pi cache cleanup inside Mash's data folder. [Luis Alejandro Martínez Faneyth]
+
+* Remove the folders a dropped default leaves empty. [Luis Alejandro Martínez Faneyth]
+
+* Refuse a build whose tool pins disagree with the skills. [Luis Alejandro Martínez Faneyth]
+
+* Keep Hindsight recall's date filter working. [Luis Alejandro Martínez Faneyth]
+
+* Move edited Pi settings onto the bundled Pi packages. [Luis Alejandro Martínez Faneyth]
+
+* Relink Fork from Message, and find Pi's module in Mash. [Luis Alejandro Martínez Faneyth]
+
+
+### Other
+
+* Fix(ci): bump pr-watch-focus to 0.2.1 after poll.sh changes. [Cursor Agent]
+
+* Merge origin/develop: Fresh 0.5.7, Herdr 0.9.5, and the pin upgrade. [Luis Alejandro Martínez Faneyth]
+
+* Bump fork-from-message plugin to 0.2.1 after content changes. [Cursor Agent]
+
+* Test(mash-chrome-devtools): wait for install lock in fake contention path. [Cursor Agent]
+
+
 ## 0.4.1 (2026-11-10)
 
 ### Fixed
