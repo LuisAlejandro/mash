@@ -237,7 +237,7 @@ class ParkTest(unittest.TestCase):
 
     def test_only_a_daemon_backed_editor_is_ever_parked(self):
         # A tagged pane's buffers live in the directory's daemon, so detaching it
-        # loses nothing. An untagged Fresh (telescope, sesh, a bare `fresh`) owns
+        # loses nothing. An untagged Fresh (a custom layout, a bare `fresh`) owns
         # its editor outright and keeps it.
         fake = FakeHerdr(
             panes=[

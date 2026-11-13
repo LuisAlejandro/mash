@@ -3,16 +3,16 @@
 
 A dev tab is two expensive things side by side. Measured on this machine: a Pi
 session with its MCP children costs about 260 MB, of which only 50 MB is Pi
-itself; the editor beside it costs another ~25 MB and, more importantly, holds a
-shared daemon open, which is what keeps a project's language servers resident.
+itself; the editor client beside it also consumes memory. Fresh 0.5.7 keeps
+its daemon and language servers alive independently of attached clients.
 A workspace with a dozen tabs left open therefore holds gigabytes for
 conversations and projects nobody is looking at.
 
 Both halves are parked on the same rule and woken by the same event. Stopping
 the editor is safe because a dev tab's editor attaches to the directory's daemon
-rather than owning its buffers: the daemon keeps them, and the daemon reaps --
-releasing its language servers -- only once no terminal is attached to it, which
-is precisely what this makes possible.
+rather than owning its buffers: the daemon keeps them. Detaching does not
+terminate embedded work or reclaim the daemon's language servers. Automatic
+cleanup would need a separate, work-aware lifetime policy.
 
 Herdr has no notion of parking (its API can only close), so this does it from
 the outside, using what Herdr already tracks:
@@ -52,8 +52,8 @@ RECONNECT_DELAY = 1.0
 PARKABLE = {"idle", "done"}
 # herdr-fresh-pane --daemon tags the editor pane it starts. Only a tagged pane
 # may be stopped: its buffers live in the directory's daemon, so the editor can
-# be detached without losing anything. An untagged Fresh (telescope, sesh, a bare
-# `fresh`) keeps its own editor and is never touched.
+# be detached without losing anything. An untagged Fresh (a single-pane or custom
+# layout, a bare `fresh`) keeps its own editor and is never touched.
 EDITOR_TOKEN = "mash-fresh-daemon"
 KIND_AGENT = "agent"
 KIND_EDITOR = "editor"
@@ -404,11 +404,11 @@ def fresh_pid(pane_id):
 
 
 def park_editor(pane):
-    """Detach one dev tab's editor, so its daemon can reap.
+    """Detach one dev tab's editor client without terminating its daemon.
 
     The daemon holds the buffers, so nothing is lost: the tab comes back through
-    `herdr-fresh-pane --daemon`, and the daemon reaps only once no terminal is
-    attached to it -- which is what releases the language servers it started.
+    `herdr-fresh-pane --daemon`. Upstream keeps the daemon and its language
+    servers alive; detaching is not permission to terminate embedded work.
     """
     pane_id = pane.get("pane_id")
     try:
@@ -631,7 +631,10 @@ def main():
                 wake_visible(visible, last_focus, time.monotonic())
             follow(path, last_focus, wake_only=wake_only)
         except (Unavailable, ConnectionError, OSError):
-            time.sleep(RECONNECT_DELAY)
+            # Do not carry an old installation's timers and singleton lock
+            # into a new Herdr server. Its launcher starts fresh helpers.
+            held.close()
+            return 0
         except KeyboardInterrupt:
             held.close()
             return 0

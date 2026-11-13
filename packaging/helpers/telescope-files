@@ -254,12 +254,24 @@ fresh_pane_in_tab() {
 	return 1
 }
 
-# Open $1 in the Fresh instance whose daemon pid is $2.
+# Open $1 in the Fresh instance running in pane $3, whose pid is $2.
+#
+# A private editor runs as a daemon named after its own pid, which pins the file
+# to exactly that pane. A dev tab's editor is a client of its directory's shared
+# daemon instead, named after whichever tab started it, so no `local-<pid>` name
+# matches; the pane's directory is the handle then, and "." is how Fresh names
+# "the daemon for this directory". Without this fallback, cmd+p in a shared tab
+# missed the editor beside it and opened a new tab on every pick.
 open_in_running_fresh() {
 	session="$("$editor" --cmd daemon info 2>/dev/null |
 		grep -o "local-$2-[A-Za-z0-9]*" | head -n 1 || true)"
-	[ -n "$session" ] || return 1
-	"$editor" --cmd daemon open-file "$session" "$1" >/dev/null 2>&1
+	if [ -n "$session" ]; then
+		"$editor" --cmd daemon open-file "$session" "$1" >/dev/null 2>&1
+		return
+	fi
+	dir="$("$herdr" pane get "${3:-}" 2>/dev/null | "$here/herdr-json" cwd)"
+	[ -n "$dir" ] && [ -d "$dir" ] || return 1
+	(cd "$dir" && "$editor" --cmd daemon open-file . "$1") >/dev/null 2>&1
 }
 
 # Route right-clicks in $1 to $1 itself rather than Herdr's menu. Pane-scoped
@@ -318,7 +330,7 @@ open_in_new_dev_tab() {
 	# background job dies with the pane before it can open anything. Costs a
 	# fraction of a second of extra popup time.
 	if pid="$(wait_for_fresh_pid "$left")"; then
-		open_in_running_fresh "$abs" "$pid" || true
+		open_in_running_fresh "$abs" "$pid" "$left" || true
 	fi
 }
 
@@ -327,7 +339,7 @@ if [ "$editor_name" = "fresh" ]; then
 	if [ "$key" != "ctrl-o" ] && [ -n "$fresh_info" ]; then
 		set -- $fresh_info
 		# A Fresh that exited between detection and open-file falls through.
-		if open_in_running_fresh "$abs" "${2:-}"; then
+		if open_in_running_fresh "$abs" "${2:-}" "$1"; then
 			pane_rightclick_to_fresh "$1"
 			exit 0
 		fi

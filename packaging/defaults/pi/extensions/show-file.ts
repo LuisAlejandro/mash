@@ -199,8 +199,10 @@ async function paneCwd(paneId: string): Promise<string | undefined> {
  * A dev tab's Fresh attaches to one daemon per directory rather than running its
  * own, and that daemon is named after whichever client happened to create it --
  * a tab that is usually not this one. So no `local-<pid>` name derived from this
- * pane exists to find, which is the case this fallback covers. An empty session
- * name means "the daemon for this directory", which is the shared one.
+ * pane exists to find, which is the case this fallback covers. The session
+ * name "." means "the daemon for this directory", which is the shared one. An
+ * empty name is NOT that: Fresh reads it as a session literally named "", and
+ * open-file then spawns a hidden daemon nobody is looking at.
  *
  * Undefined when the pane's directory cannot be read, so the caller reports
  * "not shown" instead of guessing at an editor.
@@ -208,7 +210,7 @@ async function paneCwd(paneId: string): Promise<string | undefined> {
 async function openInSharedEditor(paneId: string, location: string) {
 	const cwd = await paneCwd(paneId);
 	if (!cwd) return undefined;
-	return run(freshBin(), ["--cmd", "daemon", "open-file", "", location], {
+	return run(freshBin(), ["--cmd", "daemon", "open-file", ".", location], {
 		cwd,
 		env: process.env,
 		timeoutMs: 10_000,

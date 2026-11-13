@@ -1,23 +1,20 @@
 #!/usr/bin/env python3
 """Keep every daemon-backed Fresh pane in a workspace at the same size.
 
-A Fresh daemon draws ONE grid and sends it to every attached terminal, sized by
-the first client that connected. That is fine when every dev tab in a workspace
-has the same layout, because then every Fresh pane comes out the same size. It
-is not fine when they differ: the first pane wins, and a smaller pane gets lines
-its terminal has to wrap (which pushes the menu bar off the top) or a larger one
-gets a small editor in the corner.
+Fresh 0.5.7 draws one grid for every attached terminal, sized by the last-used
+client. A resize or qualifying input transfers ownership, but merely showing
+a tab whose agent pane has focus does not. Keeping dev-tab sizes equal avoids
+clipping or letterboxing without changing upstream's sizing policy.
 
 So this keeps the dev tabs of a workspace at one split ratio. It is a sync, not
 a lock: drag a divider in any dev tab and the others follow, which is what makes
 the workspace's editor size a single property of the workspace instead of a
-per-tab accident. Dragging in the first client's tab is instant. Dragging in
-another tab is instant too, because copying the ratio to the first client is
-what makes the daemon redraw at the new size.
+per-tab accident. Hidden clients can also claim sizing when their panes resize;
+equal sizes keep that ownership transfer harmless.
 
 Only panes herdr-fresh-pane tagged with `mash-fresh-daemon` take part. A private
-editor (telescope, sesh, a bare `fresh`) has its own size to itself and must not
-be touched.
+editor (a single-pane or custom layout, a bare `fresh`) has its own size to
+itself and must not be touched.
 
 Started in the background by the launcher; it must never block a window and
 never fail a startup. Every path exits 0.
@@ -136,8 +133,8 @@ def unzoom(pane_id):
     """Undo a zoom, restoring the tab's split.
 
     Zoom hides the other pane without touching the ratio, so the daemon would be
-    asked for a grid the width of the whole tab. If the zoomed tab happens to be
-    the first client every other tab breaks; if it is not, it letterboxes. The
+    asked for a grid the width of the whole tab. Its resize claims sizing in
+    Fresh 0.5.7, so narrower clients can clip until their next input. The
     ratio sync cannot express "one tab is wider right now" without breaking the
     property it exists to keep, so zoom stays available on the agent pane and is
     undone on a dev tab's Fresh pane.
@@ -195,7 +192,8 @@ def sync_workspace(workspace_id, applied, source=None):
         # still makes Herdr emit an event for every client watching.
         applied[chosen_from] = chosen
     for tab in tabs:
-        if abs(applied.get(tab, -1.0) - chosen) < EPSILON:
+        current = root_ratio(tab)
+        if current is None or abs(current - chosen) < EPSILON:
             continue
         try:
             call("layout.set_split_ratio", {"tab_id": tab, "path": [], "ratio": chosen})
@@ -218,6 +216,23 @@ def focused_daemon_tab(workspace_id):
     return None
 
 
+def handle_layout(data, applied):
+    workspace, tab = data.get("workspace_id"), data.get("tab_id")
+    if not workspace or not tab or tab not in daemon_tabs(workspace):
+        return
+    layout = data.get("layout") or {}
+    if layout.get("zoomed"):
+        pane_id = layout.get("focused_pane_id")
+        # Zoom is disabled only for the shared Fresh pane, not its Pi sibling.
+        panes = call("pane.list", {"workspace_id": workspace}).get("panes") or []
+        if any(p.get("pane_id") == pane_id and (p.get("tokens") or {}).get(TOKEN) == "1" for p in panes):
+            unzoom(pane_id)
+        return
+    # Compare actual ratios rather than dropping a tab's subsequent events.
+    # Our own echoes have nothing left to change; another drag still propagates.
+    sync_workspace(workspace, applied, source=tab)
+
+
 def follow(sock_path):
     """Subscribe and follow layout changes until the session goes away."""
     sock = socket.socket(socket.AF_UNIX)
@@ -235,7 +250,6 @@ def follow(sock_path):
         ).encode()
     )
     applied = {}
-    seen = set()
     startup_pass(applied)
     buf = b""
     while True:
@@ -258,21 +272,7 @@ def follow(sock_path):
             tab = data.get("tab_id")
             if not workspace or not tab:
                 continue
-            layout = data.get("layout") or {}
-            if layout.get("zoomed"):
-                pane_id = layout.get("focused_pane_id")
-                if pane_id and tab in daemon_tabs(workspace):
-                    unzoom(pane_id)
-                continue
-            # A pass sets ratios, and each of those comes back as another
-            # layout_updated for every tab it touched. Answering those would be
-            # an endless conversation, so each tab is synced once per round.
-            key = (workspace, tab)
-            if key in seen:
-                continue
-            seen = {k for k in seen if k[0] != workspace}
-            seen.add(key)
-            sync_workspace(workspace, applied, source=tab)
+            handle_layout(data, applied)
 
 
 def main():
@@ -290,10 +290,10 @@ def main():
         try:
             follow(path)
         except (Unavailable, ConnectionError, OSError):
-            # The server restarting is normal: a Herdr upgrade, a session
-            # stop, a machine waking up. Wait for the next one rather than
-            # logging noise nobody reads.
-            time.sleep(RECONNECT_DELAY)
+            # A disconnected server ends this helper's lifetime. A new window
+            # starts a new copy; retaining this lock across session shutdown
+            # would block the new build's helper and retain obsolete code.
+            return 0
         except KeyboardInterrupt:
             return 0
     return 0

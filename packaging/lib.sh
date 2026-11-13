@@ -341,14 +341,6 @@ mash_isolate() {
   # Playwright downloads a browser per install. Keep it in the data folder so
   # Mash never shares or disturbs the user's own Playwright cache.
   export PLAYWRIGHT_BROWSERS_PATH="$d/cache/ms-playwright"
-  # A dev tab's Fresh attaches to the shared daemon for its directory, so the
-  # daemon outlives the pane. Fresh reaps itself once no terminal is attached,
-  # but its own default is an hour, which would keep an editor and every language
-  # server it started resident long after the last dev tab closed. Two minutes
-  # outlives a Herdr restart or a quick reopen and still gives the memory back.
-  # The exit path saves buffers, the recovery session and the workspace, so a
-  # reap loses no work. See packaging/patches/fresh-daemon-idle-timeout.patch.
-  export FRESH_DAEMON_IDLE_TIMEOUT="${FRESH_DAEMON_IDLE_TIMEOUT:-120}"
   # `pi install` runs npm, and HOME is never changed, so npm would cache every
   # download in the owner's real ~/.npm. A Mash install should write only under
   # ~/.mash, so the cache goes here. Nothing is lost if it is empty: it is a

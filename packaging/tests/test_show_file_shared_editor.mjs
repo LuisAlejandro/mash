@@ -99,9 +99,10 @@ exit 2
   assert.match(result.content[0].text, /is open in the Fresh editor/);
 
   const recorded = readFileSync(opened, "utf8").trim();
-  // An empty session name is how the CLI says "the daemon for this directory",
-  // and the directory is the pane's, not this process's.
-  assert.match(recorded, /^session=\[\]$/m, `used a session name: ${recorded}`);
+  // "." is how the CLI says "the daemon for this directory" -- the directory
+  // being the pane's, not this process's. An empty name would be a session
+  // literally named "", which open-file starts as a hidden daemon.
+  assert.match(recorded, /^session=\[\.\]$/m, `wrong session name: ${recorded}`);
   assert.match(recorded, new RegExp(`^location=\\[${report}\\]$`, "m"));
   // Resolved, because macOS answers `pwd` under /private/var for a /var path.
   const realCwd = realpathSync(paneCwdDir);
