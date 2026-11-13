@@ -74,7 +74,19 @@ fi
 rm -rf "$download"
 mkdir -p "$download"
 ditto "$dist/Mash.app" "$download/Mash.app"
-cp "$dist/fresh-0.5.1-patched.tar.gz" "$download/fresh-0.5.1-patched.tar.gz"
+# The GPL disclosure ships beside the app, so it has to be the source of the
+# Fresh this bundle actually contains. Taking the name from the manifest rather
+# than writing the version here is what keeps a raised pin from stapling a
+# previous release's source to the download.
+fresh_version="$(python3 "$root/packaging/assets.py" pins |
+    sed -n 's/^fresh \([^ ][^ ]*\)$/\1/p')"
+[ -n "$fresh_version" ] || { echo "could not read the Fresh pin." >&2; exit 1; }
+fresh_tar="fresh-$fresh_version-patched.tar.gz"
+[ -f "$dist/$fresh_tar" ] || {
+    echo "$dist/$fresh_tar is missing; the Fresh source archive must match the pin." >&2
+    exit 1
+}
+cp "$dist/$fresh_tar" "$download/$fresh_tar"
 cp "$root/packaging/fresh-gpl-notice.txt" "$download/FRESH-LICENSE.txt"
 ln -s /Applications "$download/Applications"
 # Printed because this stage has no other output: a silent gap after the build
