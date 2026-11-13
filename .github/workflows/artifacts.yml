@@ -29,24 +29,11 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # Both are pinned because neither is free to drift. Ghostty upstream pins a
-  # Zig version and fails compilation on a mismatch, and the fork requires
-  # 0.16.0; the fork commit is what makes a release reproducible.
+  # The one pin that is not a manifest component: Zig is a build-time tool the
+  # Ghostty build needs at an exact version, and the fork fails to compile
+  # without 0.16.0. Everything else the jobs clone is read from
+  # packaging/assets.json by the "Read the release pins" step below.
   ZIG_VERSION: "0.16.0"
-  GHOSTTY_FORK: "LuisAlejandro/ghostty"
-  GHOSTTY_FORK_REF: "fork-main"
-  # Full SHA, compared exactly: a short prefix could collide, and this pin is
-  # what makes a released DMG traceable to a specific terminal build. Move it
-  # whenever the fork gains a commit.
-  GHOSTTY_FORK_COMMIT: "9ce916c41a71e9f3c914ae5a3d682295d0ce1c75"
-  # Mash Programming Skills, whose skills and agents are copied into the app.
-  # The build refuses any other version. Both skills repos now cut releases and
-  # tag them, so the pin is the tag rather than a commit SHA: a tag names a
-  # released, tested state, and a commit only names where a branch happened to
-  # be. The repo is public, so this clones anonymously.
-  SKILLS_VERSION: "0.6.2"
-  SKILLS_REPO: "LuisAlejandro/mash-programming-skills"
-  SKILLS_REF: "0.6.2"
 
 jobs:
   setup:
@@ -102,6 +89,18 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.setup.outputs.tag }}
+
+      # The manifest is the only place a pin is written. Restating one here is
+      # how 0.5.0 shipped a stale skills pin and died in every build job, so
+      # these come from packaging/assets.json and nowhere else. The values land
+      # in $GITHUB_ENV for the steps below.
+      - name: Read the release pins
+        run: |
+          set -euo pipefail
+          pins="$RUNNER_TEMP/pins.env"
+          python3 packaging/assets.py export >"$pins"
+          cat "$pins"
+          cat "$pins" >>"$GITHUB_ENV"
 
       # The Intel image defaults to Xcode 16.4, which cannot install the Metal
       # Toolchain component Ghostty needs; the arm image already defaults to a
@@ -188,23 +187,26 @@ jobs:
           git -C "$dest" log --oneline -1
 
       - name: Clone the pinned skills checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: ${{ env.SKILLS_REPO }}
-          ref: ${{ env.SKILLS_REF }}
-          path: skills
+        run: |
+          set -euo pipefail
+          dest="$GITHUB_WORKSPACE/skills"
+          # A plain clone rather than actions/checkout: the ref comes from
+          # $GITHUB_ENV, which an action input cannot read. The repo is public,
+          # so this needs no credentials.
+          git clone --depth 1 --branch "$SKILLS_REF" \
+            "https://github.com/${SKILLS_REPO}.git" "$dest"
+          echo "MASH_SKILLS_SRC=$dest" >>"$GITHUB_ENV"
 
       - name: Verify the skills version
         run: |
           set -euo pipefail
           # The build pins this exact version and refuses anything else, so fail
           # here rather than deep inside the packaging pipeline.
-          got="$(tr -d '[:space:]' <skills/VERSION)"
+          got="$(tr -d '[:space:]' <"$MASH_SKILLS_SRC/VERSION")"
           [ "$got" = "$SKILLS_VERSION" ] || {
             echo "skills checkout is $got, want $SKILLS_VERSION" >&2
             exit 1
           }
-          echo "MASH_SKILLS_SRC=$GITHUB_WORKSPACE/skills" >>"$GITHUB_ENV"
           echo "skills $got from $SKILLS_REPO@$SKILLS_REF"
 
       # The build refuses to continue without this checkout, and it lives at a
@@ -279,6 +281,14 @@ jobs:
         with:
           ref: ${{ needs.setup.outputs.tag }}
 
+      - name: Read the release pins
+        run: |
+          set -euo pipefail
+          pins="$RUNNER_TEMP/pins.env"
+          python3 packaging/assets.py export >"$pins"
+          cat "$pins"
+          cat "$pins" >>"$GITHUB_ENV"
+
       # Everything the Linux half needs comes from the distro plus the pinned
       # sources. No Docker, so the artifact is built the way a maintainer builds
       # it and smoke-tested in the same step.
@@ -330,15 +340,15 @@ jobs:
           echo "MASH_GHOSTTY_SRC=$dest" >>"$GITHUB_ENV"
 
       - name: Clone the pinned skills checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: ${{ env.SKILLS_REPO }}
-          ref: ${{ env.SKILLS_REF }}
-          path: skills
+        run: |
+          set -euo pipefail
+          dest="$GITHUB_WORKSPACE/skills"
+          git clone --depth 1 --branch "$SKILLS_REF" \
+            "https://github.com/${SKILLS_REPO}.git" "$dest"
+          echo "MASH_SKILLS_SRC=$dest" >>"$GITHUB_ENV"
 
       - name: Build the package
         env:
-          MASH_SKILLS_SRC: ${{ github.workspace }}/skills
           MASH_BUILD_CACHE: ${{ github.workspace }}/.cache
         run: |
           set -euo pipefail

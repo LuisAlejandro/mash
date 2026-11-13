@@ -126,16 +126,21 @@ secrets and in the gitignored `.env` for local runs, never in a tracked file.
 
 ### What the build pulls in
 
-`artifacts.yml` pins all of it, so a release is reproducible: Zig `0.16.0`, the
+`packaging/assets.json` pins all of it, so a release is reproducible: the
 Ghostty fork at a fixed commit, the skills checkout pinned to a release tag
 (`mash-programming-skills`, required by the build), and the Metal Toolchain
-(downloaded per run, ~840 MB).
+(downloaded per run, ~840 MB). Zig `0.16.0` is the one pin still written in
+`artifacts.yml`, because it is a build-time tool rather than a manifest
+component.
 
-The skills repo cuts releases and tags them, so the pin is a tag (`SKILLS_REF`)
+The skills repo cuts releases and tags them, so the pin is a tag (`ref`)
 rather than a commit SHA: a tag names a released, tested
 state; a commit only names where a branch happened to be. Bumping the pin means
-cutting a release there first, then pointing `SKILLS_VERSION`/`SKILLS_REF` (and
-the matching values in `packaging/carry.sh` and `packaging/pins.txt`) at it.
+cutting a release there first, then updating `packaging/assets.json` and
+regenerating `packaging/pins.txt` with `python3 packaging/assets.py pins`. The
+workflow reads `repo`, `ref`, `commit` and `version` from the manifest through
+`python3 packaging/assets.py export`, so there is no second copy to move —
+`packaging/tests/test_assets.py` fails if one is ever restated in the workflow.
 
 ## Building the Linux package
 

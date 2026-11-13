@@ -355,5 +355,44 @@ class FailurePathsTest(unittest.TestCase):
         self.assertTrue(any("sentrux" in p and "linux-arm64" in p for p in problems), problems)
 
 
+class ReleaseWorkflowPinsTest(unittest.TestCase):
+    """The release workflow reads its pins from the manifest, not from a copy.
+
+    A restated pin is what released 0.5.0 with a stale skills checkout: the
+    manifest said 0.6.3, the workflow still said 0.6.2, and every artifact job
+    failed. These two assertions make that drift fail here instead.
+    """
+
+    def setUp(self):
+        self.manifest = assets.Manifest.load()
+        output = subprocess.run(
+            [sys.executable, str(PACKAGING / "assets.py"), "export"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
+        self.exported = dict(
+            line.split("=", 1) for line in output.splitlines() if line
+        )
+
+    def test_export_reports_the_pinned_sources(self):
+        ghostty = self.manifest.components["ghostty"]
+        skills = self.manifest.components["mash-programming-skills"]
+        self.assertEqual(ghostty["repo"], self.exported["GHOSTTY_FORK"])
+        self.assertEqual(ghostty["ref"], self.exported["GHOSTTY_FORK_REF"])
+        self.assertEqual(ghostty["commit"], self.exported["GHOSTTY_FORK_COMMIT"])
+        self.assertEqual(skills["repo"], self.exported["SKILLS_REPO"])
+        self.assertEqual(skills["version"], self.exported["SKILLS_VERSION"])
+        self.assertEqual(skills["ref"], self.exported["SKILLS_REF"])
+        self.assertTrue(self.manifest.pin_order)
+
+    def test_workflow_does_not_restate_an_exported_pin(self):
+        workflow = (PACKAGING.parent / ".github/workflows/artifacts.yml").read_text(
+            encoding="utf-8"
+        )
+        for env_name in self.exported:
+            self.assertNotIn(f'{env_name}: "', workflow, f"{env_name} is restated in artifacts.yml")
+
+
 if __name__ == "__main__":
     unittest.main()

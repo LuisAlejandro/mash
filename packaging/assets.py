@@ -11,6 +11,7 @@ bundle provides, before any dependency has been installed.
     assets.py validate                 # schema + integrity of the manifest
     assets.py pins                     # the projection packaging/pins.txt holds
     assets.py check <pins-path>        # compare the file against the manifest
+    assets.py export                   # the pins the release workflow clones from
     assets.py resolve <component> <target>
     assets.py target                   # this host's target name
     assets.py components <target>      # components that must resolve
@@ -328,6 +329,38 @@ def _main(argv: list[str]) -> int:
 
     if command == "target":
         print(host_target())
+        return 0
+
+    if command == "export":
+        # The release workflow must not restate a pin. A copy that drifts is a
+        # build that only fails once it runs: 0.5.0 shipped a stale skills pin
+        # that way and died in all four artifact jobs. These are the values
+        # artifacts.yml needs to clone and verify the pinned sources, as
+        # GITHUB_ENV/GITHUB_OUTPUT lines. Both components apply to every
+        # target, so the host's target is enough to resolve them.
+        target = normalise_target(argv[2]) if len(argv) > 2 else host_target()
+        wanted = {
+            "GHOSTTY_FORK": ("ghostty", "repo"),
+            "GHOSTTY_FORK_REF": ("ghostty", "ref"),
+            "GHOSTTY_FORK_COMMIT": ("ghostty", "commit"),
+            "SKILLS_REPO": ("mash-programming-skills", "repo"),
+            "SKILLS_VERSION": ("mash-programming-skills", "version"),
+            "SKILLS_REF": ("mash-programming-skills", "ref"),
+        }
+        resolved: dict[str, dict] = {}
+        try:
+            for component, _ in wanted.values():
+                if component not in resolved:
+                    resolved[component] = manifest.resolve(component, target)
+        except AssetError as error:
+            print(f"assets: {error}", file=sys.stderr)
+            return 1
+        for env_name, (component, field) in wanted.items():
+            value = resolved[component].get(field)
+            if not value:
+                print(f"assets: {component!r} has no {field} to export", file=sys.stderr)
+                return 1
+            print(f"{env_name}={value}")
         return 0
 
     if command == "components":
