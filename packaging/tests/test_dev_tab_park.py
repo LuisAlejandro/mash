@@ -288,6 +288,10 @@ class ParkTest(unittest.TestCase):
         self.assertEqual(
             fake.sent(),
             [
+                # The bare `:` absorbs a terminal reply still in flight, which
+                # otherwise glues itself to the command name and loses the launch.
+                ("pane.send_text", {"pane_id": "w:p1", "text": ":"}),
+                ("pane.send_keys", {"pane_id": "w:p1", "keys": ["Enter"]}),
                 ("pane.send_text", {"pane_id": "w:p1", "text": "herdr-fresh-pane --daemon ."}),
                 ("pane.send_keys", {"pane_id": "w:p1", "keys": ["Enter"]}),
             ],

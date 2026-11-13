@@ -26,6 +26,7 @@ class StartupShellTest(unittest.TestCase):
             "mash-pane-starting": "printf '\\033[2J\\033[HLOADER-READY\\n'\n",
             "mash-shell": "printf 'USER-SHELL-READY\\n'; exec /bin/sh\n",
             "fake-agent": "sleep 0.1; printf 'APP-READY\\n'\n",
+            "herdr-fresh-pane": "printf 'EDITOR-READY %s\\n' \"$*\"\n",
         }.items():
             path = self.bin / name
             path.write_text("#!/bin/sh\n" + body)
@@ -90,6 +91,24 @@ class StartupShellTest(unittest.TestCase):
         self.assertNotIn(b"NEVER-ECHO-THIS", self.output)
         self.assertNotIn(b"fake-agent", self.output)
         self.assertTrue(termios.tcgetattr(self.fd)[3] & termios.ECHO, "restore echo for the user shell")
+
+    def test_a_stray_reply_cannot_eat_the_launch(self):
+        # The parker wakes a pane with a bare `:` first, for exactly this: a
+        # terminal reply still in flight lands on that line instead of gluing
+        # itself to the command name.
+        os.write(self.fd, b"DS\nherdr-fresh-pane --daemon .\n")
+        self.wait_for(b"EDITOR-READY --daemon .")
+
+    def test_handing_the_pane_back_turns_terminal_modes_off(self):
+        # The program that enabled mouse reporting died; the shell that gets the
+        # pane back must turn it off, or every pointer move is typed into it.
+        self.stop()
+        self.output.clear()
+        self.spawn("1")
+        self.wait_for(b"USER-SHELL-READY")
+        self.assertIn(b"\x1b[?1000l", self.output)
+        self.assertIn(b"\x1b[?1006l", self.output)
+        self.assertIn(b"\x1b[?2004l", self.output)
 
     def test_a_launch_that_never_arrives_hands_the_pane_back(self):
         # No command is ever typed. Without a grace period the pane sits here
