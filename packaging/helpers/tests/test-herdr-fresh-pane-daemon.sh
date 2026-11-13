@@ -37,6 +37,16 @@ cat >"$tmp/bin/herdr" <<'SH'
 printf '%s\n' "$*" >>"$FAKE_HERDR_LOG"
 case "$1 $2" in
 "pane current") printf '%s\n' '{"result":{"pane":{"pane_id":"w1:p9"}}}' ;;
+"pane layout")
+  # FAKE_LAYOUT picks the tab's shape: dev (w1:p9 left of a right split),
+  # devright (w1:p9 on the right), or single (one pane).
+  case "${FAKE_LAYOUT:-single}" in
+  dev) printf '%s\n' '{"result":{"layout":{"panes":[{"pane_id":"w1:p9","rect":{"x":0}},{"pane_id":"w1:p8","rect":{"x":120}}],"splits":[{"direction":"right"}]}}}' ;;
+  devright) printf '%s\n' '{"result":{"layout":{"panes":[{"pane_id":"w1:p8","rect":{"x":0}},{"pane_id":"w1:p9","rect":{"x":120}}],"splits":[{"direction":"right"}]}}}' ;;
+  down) printf '%s\n' '{"result":{"layout":{"panes":[{"pane_id":"w1:p9","rect":{"x":0}},{"pane_id":"w1:p8","rect":{"x":0}}],"splits":[{"direction":"down"}]}}}' ;;
+  complex) printf '%s\n' '{"result":{"layout":{"panes":[{"pane_id":"w1:p9","rect":{"x":0}},{"pane_id":"w1:p8","rect":{"x":120}},{"pane_id":"w1:p7","rect":{"x":120}}],"splits":[{"direction":"right"},{"direction":"down"}]}}}' ;;
+  *) printf '%s\n' '{"result":{"layout":{"panes":[{"pane_id":"w1:p9","rect":{"x":0}}],"splits":[]}}}' ;;
+  esac ;;
 esac
 exit 0
 SH
@@ -46,14 +56,24 @@ chmod +x "$tmp/bin/herdr"
 cat >"$tmp/bin/fresh" <<'SH'
 #!/bin/sh
 printf 'fresh %s\n' "$*" >>"$FAKE_FRESH_LOG"
+printf 'entry=%s\n' "${MASH_FRESH_DIRECTORY_ENTRY:-unset}" >>"$FAKE_FRESH_LOG"
 SH
 chmod +x "$tmp/bin/fresh"
+
+# A PTY proxy must not sit in Fresh's foreground slot: Herdr would see the
+# loader instead of Fresh, breaking PID-based viewer and parking detection.
+cat >"$tmp/bin/mash-pane-runner" <<'SH'
+#!/bin/sh
+echo 'Fresh must exec directly rather than run behind a PTY proxy' >&2
+exit 42
+SH
+chmod +x "$tmp/bin/mash-pane-runner"
 
 run() {
   : >"$tmp/herdr.log"
   : >"$tmp/fresh.log"
-  PATH="$tmp/bin:$PATH" HERDR_BIN_PATH="$tmp/bin/herdr" \
-    FAKE_HERDR_LOG="$tmp/herdr.log" FAKE_FRESH_LOG="$tmp/fresh.log" \
+  PATH="$tmp/bin:$PATH" MASH_BIN="$tmp/bin" HERDR_BIN_PATH="$tmp/bin/herdr" \
+    FAKE_HERDR_LOG="$tmp/herdr.log" FAKE_FRESH_LOG="$tmp/fresh.log" FAKE_LAYOUT="${LAYOUT:-single}" \
     "$tmp/bin/herdr-fresh-pane" "$@"
 }
 
@@ -63,6 +83,7 @@ grep -qx 'fresh -a' "$tmp/fresh.log" || {
   echo "a dev tab did not attach to the daemon: $(cat "$tmp/fresh.log")" >&2
   exit 1
 }
+grep -qx 'entry=1' "$tmp/fresh.log" || exit 1
 grep -q 'report-metadata w1:p9 .*mash-fresh-daemon=1' "$tmp/herdr.log" || {
   echo "a daemon pane was not tagged for the split sync: $(cat "$tmp/herdr.log")" >&2
   exit 1
@@ -85,6 +106,7 @@ grep -qx 'fresh \.' "$tmp/fresh.log" || {
   echo "a private pane did not get its directory argument: $(cat "$tmp/fresh.log")" >&2
   exit 1
 }
+grep -qx 'entry=unset' "$tmp/fresh.log" || exit 1
 grep -q 'mash-fresh-daemon' "$tmp/herdr.log" && {
   echo "a private editor was tagged as shared: $(cat "$tmp/herdr.log")" >&2
   exit 1
@@ -105,13 +127,47 @@ for file in packaging/helpers/herdr-dev-tab-fill \
   }
 done
 
-# --- panes that are not dev tabs must not --------------------------------
-for file in packaging/helpers/telescope-files \
-  packaging/defaults/plugins/fullerzz.sesh/config.toml; do
-  grep -q 'herdr-fresh-pane --daemon' "$root/$file" && {
-    echo "$file is not a dev tab but would attach to the shared daemon" >&2
-    exit 1
-  }
+# --- a bare `.` that IS a dev tab shares too --------------------------------
+# Herdr replays the resume command a pane last reported, so a tab from before
+# the shared editor replays `herdr-fresh-pane .` forever. Telescope's new-tab
+# path and sesh build the same layout with that same bare command.
+LAYOUT=dev run .
+grep -qx 'fresh -a' "$tmp/fresh.log" || {
+  echo "a dev tab's bare resume stayed private: $(cat "$tmp/fresh.log")" >&2
+  exit 1
+}
+grep -q 'report-agent w1:p9 .*-- herdr-fresh-pane --daemon \.' "$tmp/herdr.log" || {
+  echo "a migrated dev tab did not report the shared resume command" >&2
+  exit 1
+}
+grep -q 'report-metadata w1:p9 .*mash-fresh-daemon=1' "$tmp/herdr.log" || {
+  echo "a migrated dev tab was not tagged for the split sync" >&2
+  exit 1
+}
+# Fresh on the right is not Mash's layout: keep it private.
+LAYOUT=devright run .
+grep -qx 'fresh \.' "$tmp/fresh.log" || {
+  echo "a right-hand Fresh pane was taken for a dev tab" >&2
+  exit 1
+}
+
+# Explicit daemon resumes are idempotent: no layout inference is needed again.
+LAYOUT=single run --daemon .
+grep -qx 'fresh -a' "$tmp/fresh.log" || exit 1
+if grep -q '^pane layout' "$tmp/herdr.log"; then
+  echo 'an explicit daemon resume unnecessarily inferred the layout' >&2
+  exit 1
+fi
+
+# Only the legacy directory launch is upgraded. Never swallow file arguments,
+# attach custom split layouts, or turn a deliberate bare launch into a daemon.
+LAYOUT=dev run report.md
+grep -qx 'fresh report.md' "$tmp/fresh.log" || exit 1
+LAYOUT=dev run
+grep -qx 'fresh ' "$tmp/fresh.log" || exit 1
+for shape in down complex; do
+  LAYOUT="$shape" run .
+  grep -qx 'fresh \.' "$tmp/fresh.log" || exit 1
 done
 
 # --- the syncer is shipped, started, and independent of the daemon patch ---

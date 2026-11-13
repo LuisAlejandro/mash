@@ -1,49 +1,36 @@
 --- a/crates/fresh-editor/src/server/editor_server.rs
 +++ b/crates/fresh-editor/src/server/editor_server.rs
-@@ -889,17 +889,25 @@
+@@ -910,7 +910,15 @@
  
          // Restore workspace and recovery data (mirrors the standalone startup
          // path in handle_first_run_setup in main.rs).
--        match editor.try_restore_workspace() {
-+        //
-+        // Modified by Mash on 2026-11-09: bind whether a workspace was
-+        // restored, because the file-explorer default below must not override
-+        // the visibility a restored workspace recorded.
+-        let restored = editor.try_restore_workspace();
++        // Modified by Mash on 2026-11-12: only a Mash dev-tab launch requests
++        // directory-entry semantics. Other daemons retain upstream behaviour.
 +        // Mash source: packaging/patches/fresh-daemon-explorer.patch
-+        let restored = match editor.try_restore_workspace() {
-             Ok(true) => {
-                 tracing::info!("Session workspace restored successfully");
-+                true
-             }
-             Ok(false) => {
-                 tracing::debug!("No previous session workspace found");
-+                false
-             }
-             Err(e) => {
-                 tracing::warn!("Failed to restore session workspace: {}", e);
-+                false
-             }
--        }
++        let restored = if std::env::var("MASH_FRESH_DIRECTORY_ENTRY").as_deref() == Ok("1") {
++            editor
++                .restore_active_window_on_launch(crate::app::workspace::ExplorerOnEntry::Directory)
++        } else {
++            editor.try_restore_workspace()
 +        };
- 
-         // Recover buffers from hot exit recovery files
-         if editor.has_recovery_files().unwrap_or(false) {
-@@ -921,6 +929,18 @@
-         if let Err(e) = editor.start_recovery_session() {
-             tracing::warn!("Failed to start recovery session: {}", e);
+         editor.mark_active_window_focused();
+         match restored {
+             Ok(true) => {
+--- a/crates/fresh-editor/src/main.rs
++++ b/crates/fresh-editor/src/main.rs
+@@ -5609,7 +5609,13 @@
+             }
          }
-+
-+        // Modified by Mash on 2026-11-09: a daemon is started for a directory,
-+        // so treat a workspace that did not restore the way `fresh .` does and
-+        // open the file explorer. The standalone path applies this same default
-+        // in handle_first_run_setup; the daemon path never did, so `fresh -a`
-+        // opened with no explorer at all even on a directory nobody had opened
-+        // before. A restored workspace returns early inside the call and keeps
-+        // the visibility it recorded, so a deliberately closed explorer stays
-+        // closed across relaunches.
-+        // Mash source: packaging/patches/fresh-daemon-explorer.patch
-+        let opened_files = !self.config.startup_files.is_empty();
-+        editor.apply_active_window_explorer_default(opened_files, restored);
- 
-         // Files named on the daemon's own command line (`fresh --web FILES…`).
-         // Queued through the same path the `OpenFiles` control message uses, so
+     }
+-    if args.session_name.is_none() && !attaches_elsewhere(&args.files) {
++    // Modified by Mash on 2026-11-12: a Mash dev-tab launch always reaches the
++    // daemon for its own directory. Auto Attach would otherwise send it to the
++    // one shared orchestrator editor, so dev tabs in different projects would
++    // mirror a single screen. A user's own bare `fresh` keeps their choice.
++    // Mash source: packaging/patches/fresh-daemon-explorer.patch
++    let mash_dev_tab = std::env::var("MASH_FRESH_DIRECTORY_ENTRY").as_deref() == Ok("1");
++    if args.session_name.is_none() && !mash_dev_tab && !attaches_elsewhere(&args.files) {
+         if let Some(config) = auto_attach_config() {
+             return run_orchestrator_launch(
+                 &config,

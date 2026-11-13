@@ -205,7 +205,7 @@ mash_pins_check() {
 # before the clipboard only to keep that one last.
 mash_fresh_patches() {
   printf '%s\n' fresh-config-dir fresh-reveal-in-finder fresh-warn-logs \
-    fresh-daemon-explorer fresh-daemon-idle-timeout fresh-explorer-clipboard
+    fresh-daemon-explorer fresh-explorer-clipboard
 }
 
 mash_require_sources() {

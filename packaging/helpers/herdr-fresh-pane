@@ -20,12 +20,16 @@
 # foreground would be this script and those checks would miss the pane.
 #
 # `--daemon` attaches to the shared daemon for this directory instead of
-# starting a private editor. Only dev tabs pass it: Mash wants one editor per
-# directory there, so every dev tab in a workspace looks at the same buffers
-# instead of paying for its own copy and its own language servers. Panes that
-# are not dev tabs (telescope, sesh) stay private -- they are short-lived, their
-# layout differs, and a shared editor would make them betray the dev tab they
-# happen to sit in.
+# starting a private editor: Mash wants one editor per directory in dev tabs, so
+# every dev tab on a directory looks at the same buffers instead of paying for
+# its own copy and its own language servers.
+#
+# A bare `herdr-fresh-pane .` is shared too when its pane IS a dev tab: the left
+# pane of a tab split once, left to right. Herdr replays the resume command each
+# pane last reported, so tabs created before the shared editor existed replay
+# `herdr-fresh-pane .` forever; without this they would never migrate. It also
+# covers telescope's new-tab path and sesh, which build the same layout. Any
+# other shape (a single pane, a custom layout) keeps a private editor.
 #
 # Extra arguments are dropped in daemon mode. They cannot reach the daemon --
 # the spawner forwards only the session name, the ssh url and the locale -- so
@@ -42,9 +46,31 @@ esac
 
 herdr="${HERDR_BIN_PATH:-herdr}"
 
+# True when pane $1 is the left pane of a tab split exactly once, left to right.
+# The tab's layout is restored before its panes start, so a resumed pane sees
+# its final shape. No python3 or no answer from Herdr means private: the safe
+# default, since a private editor is what every pane had before.
+dev_tab_left() {
+	"$herdr" pane layout --pane "$1" 2>/dev/null | python3 -c '
+import json, sys
+try:
+    layout = json.load(sys.stdin)["result"]["layout"]
+    panes, splits = layout["panes"], layout["splits"]
+    if len(panes) != 2 or len(splits) != 1 or splits[0]["direction"] != "right":
+        sys.exit(1)
+    left = min(panes, key=lambda p: p["rect"]["x"])
+    sys.exit(0 if left["pane_id"] == sys.argv[1] else 1)
+except Exception:
+    sys.exit(1)
+' "$1" 2>/dev/null
+}
+
 if pane="$("$herdr" pane current 2>/dev/null |
 	sed -n 's/.*"pane_id":"\([^"]*\)".*/\1/p' | head -n 1)" && [ -n "$pane" ]; then
 	"$herdr" pane input --pane "$pane" --right-click pane >/dev/null 2>&1 || true
+	if [ "$daemon" = 0 ] && [ "$#" = 1 ] && [ "$1" = . ] && dev_tab_left "$pane"; then
+		daemon=1
+	fi
 
 	# Report the command that reopens this pane, so a Herdr server restart brings
 	# Fresh back instead of leaving a shell. Herdr only resumes panes it knows how
@@ -71,8 +97,8 @@ if pane="$("$herdr" pane current 2>/dev/null |
 		resume='herdr-fresh-pane --daemon .'
 		# Mark the pane as shared for the split-ratio sync. Only panes that
 		# attach to a daemon need the workspace's dev tabs kept at one size:
-		# the daemon draws a single grid for all of them, so the first client's
-		# size would break a smaller pane and letterbox a larger one. A private
+		# the daemon draws a single grid, now sized by the last-used client in
+		# Fresh 0.5.7. Different-size views still clip or letterbox. A private
 		# editor is unaffected and is deliberately left untagged.
 		"$herdr" pane report-metadata "$pane" --source "fresh-daemon" \
 			--token mash-fresh-daemon=1 >/dev/null 2>&1 || true
@@ -81,26 +107,17 @@ if pane="$("$herdr" pane current 2>/dev/null |
 		--state idle --seq "$(date +%s)" -- $resume >/dev/null 2>&1 || true
 fi
 
-# Say the editor is coming instead of leaving the prompt and the command that
-# asked for it on screen: the Herdr pane label spans the whole start, and the
-# runner animates in the pane until Fresh paints its first frame.
-mash-pane-starting editor "$pane" >/dev/null 2>&1 || true
-
-runner=""
-for dir in $(printf '%s\n' "${MASH_BIN:-}" | tr ':' ' '); do
-	[ -x "$dir/mash-pane-runner" ] || continue
-	runner="$dir/mash-pane-runner"
-	break
-done
+# Show the startup label, then give Fresh the real PTY. A proxy would hide its
+# PID from show_file, telescope and the parker. An asynchronous spinner can
+# erase a fast editor's first frame, so Fresh deliberately uses the static
+# startup label rather than either kind of animation.
+mash-pane-starting editor "${pane:-}" >/dev/null 2>&1 || true
 
 if [ "$daemon" = 1 ]; then
-	if [ -n "$runner" ]; then
-		exec "$runner" --label "$(mash-pane-starting --print editor 2>/dev/null || printf 'Starting the editor...')" -- fresh -a
-	fi
+	# Only this explicit project-entry path asks a newly created daemon for
+	# the directory explorer policy. A saved user-closed tree stays closed.
+	export MASH_FRESH_DIRECTORY_ENTRY=1
 	exec fresh -a
-fi
-if [ -n "$runner" ]; then
-	exec "$runner" --label "$(mash-pane-starting --print editor 2>/dev/null || printf 'Starting the editor...')" -- fresh "$@"
 fi
 # Fresh 0.5.2+ sends a bare `fresh` to one shared background daemon unless
 # `auto_attach` is off, which Mash's seeded config sets. That default does not

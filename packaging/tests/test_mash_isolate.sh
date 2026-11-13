@@ -110,10 +110,9 @@ assert_value "$pane" HERDR_TAB_ID w1:t1
 assert_value "$pane" HERDR_SOCKET_PATH "$home/.mash/run/herdr.sock"
 assert_value "$pane" HERDR_CONFIG_PATH "$home/.mash/config/herdr/config.toml"
 assert_value "$pane" XDG_CONFIG_HOME "$home/.mash/config"
-# A dev tab's Fresh attaches to a shared daemon, which reaps itself once its
-# last terminal detaches. Fresh's own default is an hour; this pane environment
-# is what shortens it, and nothing else sets it.
-assert_value "$pane" FRESH_DAEMON_IDLE_TIMEOUT 120
+# Detaching must not terminate work inside a Fresh daemon. Mash no longer
+# imposes an idle expiry on it; upstream owns its lifetime.
+assert_unset "$pane" FRESH_DAEMON_IDLE_TIMEOUT
 
 launch="$(run_isolate)"
 assert_unset "$launch" HERDR_ENV
