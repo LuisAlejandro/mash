@@ -437,7 +437,9 @@ enabled = false
 row_gap = 0
 rows = [
   ["state_icon", "workspace"],
-  ["terminal_title_stripped"],
+  # Use Herdr's tab label itself (including manual renames / Auto Title), not
+  # Pi's independent OSC title, which can remain a generic startup label.
+  ["tab"],
   # cache-hit plugin: prompt-cache countdown, hit ratio, and retained cache.
   # Cache sorting stays disabled; agent_panel_sort remains native priority.
   [
