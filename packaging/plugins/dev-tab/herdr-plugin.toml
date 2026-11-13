@@ -1,6 +1,6 @@
 id = "dev-tab"
 name = "Dev Tab"
-version = "0.1.0"
+version = "0.1.1"
 min_herdr_version = "0.9.0"
 description = "Shape a bare new tab into the same two-pane layout as cmd+t (editor + agent)"
 platforms = ["macos", "linux"]
