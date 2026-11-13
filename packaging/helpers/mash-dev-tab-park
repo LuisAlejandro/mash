@@ -331,6 +331,17 @@ def wake(pane_id):
             diagnostic("wake-deferred", pane_id, "pane is not an available shell")
             return False
         if record.get("kind") == KIND_EDITOR:
+            # Two lines, and the first one is a no-op on purpose. Text typed into
+            # a pane is not always the first thing the shell reads: a terminal
+            # reply still in flight from the program that just exited -- a
+            # device-attributes or cursor-position answer -- lands ahead of it,
+            # and glues its tail onto the first word. `herdr-fresh-pane` then
+            # becomes something like `DSherdr-fresh-pane`, bash reports it as a
+            # missing command, and the pane falls back to a plain shell with the
+            # editor never started. A bare `:` absorbs whatever was ahead of it,
+            # and costs nothing when nothing was.
+            call("pane.send_text", {"pane_id": pane_id, "text": ":"})
+            call("pane.send_keys", {"pane_id": pane_id, "keys": ["Enter"]})
             call("pane.send_text", {"pane_id": pane_id, "text": "herdr-fresh-pane --daemon ."})
             call("pane.send_keys", {"pane_id": pane_id, "keys": ["Enter"]})
             drop_record(pane_id)

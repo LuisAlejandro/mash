@@ -24,12 +24,26 @@ PS4=''
 unset ENV BASH_ENV
 set +o history
 _mash_startup_tty="$(stty -g 2>/dev/null)"
+_mash_startup_self="${BASH_SOURCE[0]}"
+_mash_startup_self_dir="${_mash_startup_self%/*}"
 _mash_startup_seen=0
 _mash_startup_record="${MASH_DATA_DIR:-$HOME/.mash}/local/state/dev-tab-park/${HERDR_PANE_ID/:/_}"
+
+# The modes a full-screen program turns on and the terminal keeps until something
+# turns them off. A program that dies -- parked, crashed, killed -- leaves them
+# set, so the shell that gets the pane back receives mouse reports as literal
+# bytes: every pointer move is typed into the prompt and "executed", filling the
+# screen with `35;12;7M` and the history with nonsense. Nothing else resets them,
+# because the program that would have done so is gone.
+_mash_reset_terminal_modes() {
+    [ -t 1 ] || return 0
+    printf '\033[?1000l\033[?1002l\033[?1003l\033[?1004l\033[?1006l\033[?2004l\033[?25h'
+}
 
 _mash_normal_shell() {
     trap - INT
     [[ -z $_mash_startup_tty ]] || stty "$_mash_startup_tty" 2>/dev/null
+    _mash_reset_terminal_modes
     unset MASH_STARTUP_SHELL_RC MASH_PANE_STARTUP MASH_DEV_TAB_FRESH
     export MASH_STARTUP_GATE_DONE=1
     exec mash-shell
