@@ -20,6 +20,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import tomllib
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -85,6 +86,18 @@ def write_lock():
 
 
 class TestPluginVersions(unittest.TestCase):
+    def test_action_contexts_are_supported_by_the_pinned_herdr(self):
+        # Herdr 0.9.5 rejects an unknown enum during plugin linking, late in
+        # the app build. Agent-only actions still use the pane context and
+        # validate the selected agent themselves.
+        supported = {"global", "workspace", "tab", "pane", "selection"}
+        for info in plugin_ids().values():
+            manifest = info["dir"] / "herdr-plugin.toml"
+            data = tomllib.loads(manifest.read_text(encoding="utf-8"))
+            for action in data.get("actions", []):
+                with self.subTest(manifest=str(manifest), action=action["id"]):
+                    self.assertLessEqual(set(action.get("contexts", [])), supported)
+
     def test_changed_plugins_bump_their_version(self):
         recorded = json.loads(LOCK.read_text(encoding="utf-8"))
         problems = []

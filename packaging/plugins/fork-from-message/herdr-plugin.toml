@@ -1,6 +1,6 @@
 id = "fork-from-message"
 name = "Fork from Message"
-version = "0.2.1"
+version = "0.2.2"
 min_herdr_version = "0.8.0"
 description = "Fork a focused agent session from a chosen earlier user message"
 platforms = ["macos", "linux"]
@@ -9,19 +9,19 @@ platforms = ["macos", "linux"]
 id = "fork-tab"
 title = "Fork: new tab"
 description = "Open the forked conversation in a new dev tab"
-contexts = ["agent"]
+contexts = ["pane"]
 command = ["python3", "scripts/picker.py", "--destination", "tab"]
 
 [[actions]]
 id = "fork-split"
 title = "Fork: split pane"
 description = "Open the forked conversation in a split beside the current pane"
-contexts = ["agent"]
+contexts = ["pane"]
 command = ["python3", "scripts/picker.py", "--destination", "pane"]
 
 [[actions]]
 id = "fork-workspace"
 title = "Fork: new workspace"
 description = "Open the forked conversation in a new workspace"
-contexts = ["agent"]
+contexts = ["pane"]
 command = ["python3", "scripts/picker.py", "--destination", "workspace"]

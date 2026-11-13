@@ -132,6 +132,22 @@ class BuildScriptContractTest(unittest.TestCase):
 
 
 class FreshPatchParityTest(unittest.TestCase):
+    def test_daemon_lifetime_is_owned_by_upstream(self):
+        carry = (PACKAGING / "carry.sh").read_text()
+        library = (PACKAGING / "lib.sh").read_text()
+        self.assertNotIn("fresh-daemon-idle-timeout", carry)
+        self.assertNotIn("FRESH_DAEMON_IDLE_TIMEOUT", library)
+        self.assertFalse((PACKAGING / "patches/fresh-daemon-idle-timeout.patch").exists())
+
+    def test_directory_entry_is_an_explicit_launcher_opt_in(self):
+        patch = (PACKAGING / "patches/fresh-daemon-explorer.patch").read_text()
+        self.assertIn('var("MASH_FRESH_DIRECTORY_ENTRY")', patch)
+        self.assertIn("ExplorerOnEntry::Directory", patch)
+        self.assertIn("editor.try_restore_workspace()", patch)
+        # The same opt-in keeps a dev tab off Auto Attach's single shared editor,
+        # which would make dev tabs in different projects mirror one screen.
+        self.assertIn("!mash_dev_tab && !attaches_elsewhere", patch)
+
     def test_both_builds_and_the_cache_use_one_ordered_patch_list(self):
         carry = (PACKAGING / "carry.sh").read_text()
         common = (PACKAGING / "build-common.sh").read_text()

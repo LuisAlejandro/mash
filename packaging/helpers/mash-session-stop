@@ -1,0 +1,164 @@
+#!/usr/bin/env python3
+"""Stop detached Mash helpers and gracefully quit this bundle's Fresh daemons.
+
+Shared by explicit session shutdown and the updater. Never stops Herdr or the
+GUI itself. Selects by executable identity and start time, not process names;
+foreign Fresh sessions in the same socket directory are left alone. Fresh is
+asked to run its normal recovery/workspace shutdown, never forcibly killed.
+"""
+import json
+import os
+from pathlib import Path
+import secrets
+import select
+import signal
+import socket
+import subprocess
+import sys
+import time
+
+
+def output(*args):
+    p = subprocess.run(args, capture_output=True, text=True, timeout=10)
+    return p.stdout.strip() if p.returncode == 0 else ""
+
+
+def identity(pid, res):
+    inspector = res / "bin/mash-update-processes"
+    if sys.platform == "darwin":
+        image = output(str(inspector), "image", str(pid))
+        stamp = output(str(inspector), "stamp", str(pid))
+    else:
+        try:
+            image = os.readlink(f"/proc/{pid}/exe")
+            stamp = Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()[19]
+        except OSError:
+            return None
+    if not image or not stamp:
+        return None
+    return os.path.realpath(image), stamp
+
+
+def owned(res):
+    """Only this bundle's Fresh servers and two persistent Python helpers."""
+    python = os.path.realpath(res / "python/bin/python3")
+    fresh = os.path.realpath(res / "libexec/fresh")
+    helpers = [str(res / "bin" / n) for n in ("mash-dev-tab-park", "mash-fresh-split-sync")]
+    found = {}
+    for line in output("ps", "-axo", "pid=,args=").splitlines():
+        fields = line.strip().split(None, 1)
+        if len(fields) != 2:
+            continue
+        pid, args = int(fields[0]), fields[1]
+        if pid == os.getpid():
+            continue
+        kind = None
+        if args.startswith(str(res / "libexec/fresh") + " --server"):
+            kind = "fresh"
+        elif any(args == f"{res}/python/bin/python3 {h}" for h in helpers):
+            kind = "helper"
+        if not kind:
+            continue
+        token = identity(pid, res)
+        expected = fresh if kind == "fresh" else python
+        if token and token[0] == expected:
+            found[pid] = (kind, token)
+    return found
+
+
+def quit_fresh(pidfile):
+    """Fresh 0.5.7 IPC v5: paired data/control streams, then a normal Quit.
+
+    Address the exact sockets whose PID file we checked, not `daemon kill --all`
+    (which could stop the owner's unrelated Fresh in the same runtime folder).
+    """
+    stem = str(pidfile)[:-4]
+    token = secrets.token_hex(16)
+    with socket.socket(socket.AF_UNIX) as ctl, socket.socket(socket.AF_UNIX) as data:
+        ctl.settimeout(3)
+        data.settimeout(3)
+        ctl.connect(stem + ".ctrl.sock")
+        data.connect(stem + ".data.sock")
+        data.sendall(b"fresh-pair:" + token.encode())
+        hello = {"type": "hello", "protocol_version": 5, "client_version": "0.5.7",
+                 "term_size": {"cols": 80, "rows": 24}, "env": {}, "pair_token": token}
+        ctl.sendall((json.dumps(hello) + "\n").encode())
+        answer = b""
+        while not answer.endswith(b"\n"):
+            chunk = ctl.recv(4096)
+            if not chunk or len(answer) > 65536:
+                raise OSError("invalid Fresh handshake")
+            answer += chunk
+        ctl.sendall(b'{"type":"quit"}\n')
+        # Keep both streams alive while Fresh processes Quit. Drain render
+        # output too, so a full-screen repaint cannot block normal shutdown.
+        deadline = time.monotonic() + 3
+        while time.monotonic() < deadline:
+            ready, _, _ = select.select([ctl, data], [], [], max(0, deadline - time.monotonic()))
+            if not ready:
+                break
+            for stream in ready:
+                if not stream.recv(65536):
+                    return
+
+
+def stop(res, runtime, grace=10):
+    targets = owned(res)
+    for pid, (kind, token) in targets.items():
+        if kind == "helper" and identity(pid, res) == token:
+            try:
+                if sys.platform == "darwin":
+                    subprocess.run([str(res / "bin/mash-update-processes"), "term", str(pid), token[1]],
+                                   capture_output=True, timeout=5)
+                else:
+                    # Linux pidfd pins the process while its start token is
+                    # rechecked, so PID reuse cannot redirect the signal.
+                    fd = os.pidfd_open(pid)
+                    try:
+                        if identity(pid, res) == token:
+                            signal.pidfd_send_signal(fd, signal.SIGTERM)
+                    finally:
+                        os.close(fd)
+            except (OSError, AttributeError):
+                pass
+    for pidfile in runtime.glob("*.pid"):
+        try:
+            if pidfile.is_symlink() or pidfile.stat().st_uid != os.getuid():
+                continue
+            pid = int(pidfile.read_text().strip())
+            kind, token = targets.get(pid, (None, None))
+            if kind == "fresh" and identity(pid, res) == token:
+                quit_fresh(pidfile)
+        except (OSError, ValueError):
+            # Leave the process running and return failure below. Never trade
+            # an IPC failure for an unsafe hard kill of unsaved editor state.
+            continue
+    deadline = time.monotonic() + grace
+    while time.monotonic() < deadline:
+        if all(identity(p, res) != t for p, (_, t) in targets.items()):
+            return 0
+        time.sleep(.1)
+    remaining = [str(p) for p, (_, t) in targets.items() if identity(p, res) == t]
+    if remaining:
+        print("Mash session shutdown incomplete; processes still running: " + ", ".join(remaining), file=sys.stderr)
+    return int(bool(remaining))
+
+
+def main():
+    if len(sys.argv) != 3:
+        return 2
+    # Preserve the launch spelling for argv matching (/tmp vs /private/tmp).
+    # Executable identity below is still canonicalized independently.
+    res = Path(os.path.abspath(sys.argv[1]))
+    data = Path(sys.argv[2]).resolve()
+    if not res.is_dir() or not data.is_dir():
+        return 2
+    runtime = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp"))
+    runtime = runtime / ("fresh" if "XDG_RUNTIME_DIR" in os.environ else f"fresh-{os.getuid()}")
+    if runtime.exists() and (runtime.is_symlink() or runtime.stat().st_uid != os.getuid()):
+        return 1
+    return stop(res, runtime)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

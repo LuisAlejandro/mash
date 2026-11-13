@@ -96,27 +96,54 @@ directories get different editors, and worktrees are different directories.
 The consequences worth knowing before changing anything here:
 
 - **The panes of a workspace's dev tabs must stay the same size.** A Fresh
-  daemon draws one grid for every terminal attached to it, sized by the first
-  client, so a wider tab would letterbox and a narrower one would wrap its lines
+  daemon draws one grid for every terminal attached to it. Fresh 0.5.7 lets the
+  last-used client size it, so a wider tab would letterbox and a narrower one would wrap its lines
   until the menu bar scrolled away. `bin/mash-fresh-split-sync` subscribes to
   Herdr's `layout.updated` and copies the ratio of the tab you dragged to the
   others, which is why resizing one dev tab resizes them all; `zoom` is undone
   on these panes for the same reason.
-- **Only dev tabs attach.** Telescope and sesh panes run their own Fresh, and a
-  bare `fresh` always does. A pane is marked `mash-fresh-daemon` when it
-  attached, and that tag is the only thing the sync and the parker act on.
+- **Only dev tabs attach.** A dev tab is the left pane of a tab split once, left
+  to right — however it was made: cmd+t, the + button, telescope, sesh, or a
+  tab restored from before the shared editor existed. Other layouts keep their
+  previous launch behaviour; manually running `fresh` still follows the user's
+  `auto_attach` preference. A pane is marked
+  `mash-fresh-daemon` when it attached, and that tag is the only thing the sync
+  and the parker act on. Old `herdr-fresh-pane .` resumes upgrade automatically
+  in this layout and record the explicit `--daemon` command for later starts.
+  Mash does not merge old snapshots or recovery entries: Fresh restores its own
+  selected workspace. Some previously open saved files may need reopening, and
+  separate editor layouts become one shared layout. Source files are not changed
+  by this transition; unsaved recovery remains Fresh's responsibility.
 - **An automatically launched pane starts in a quiet shell.** `mash-startup-shell`
   hides the prompt, echo and the typed launch command, so a new or restored dev
   tab shows the loader instead of a shell that visibly runs `pi`; `mash-shell`
   hands an ordinary shell tab straight to the user's normal shell. Removing it
   brings back the visible prompt and command during startup.
 - **Idle tabs are parked.** `bin/mash-dev-tab-park` stops the agent, and detaches
-  the editor, of any tab unseen for ten minutes — never a working or
+  the editor, after a full idle hour — never a working or
   approval-blocked one — and wakes it on `tab.focused`. Agents resume from their
-  session file; a detached editor re-attaches, and its daemon exits 120 seconds
-  after its last client detaches so its language servers go with it. A restored
-  launch treats unvisited tabs as already stale, so opening Mash costs nothing
-  for the tabs you do not open.
+  session file; a detached editor re-attaches. Fresh 0.5.7 keeps its daemon,
+  language servers, terminals and embedded agents alive after the last client
+  detaches. Mash does not impose an idle kill: buffer recovery cannot preserve
+  running terminal commands. Parking saves the Pi process and its tools, but
+  does not promise to release the shared editor's language servers.
+  Dev-tab launches explicitly request Fresh's directory-entry explorer policy;
+  unrelated daemon launches retain their upstream defaults.
+
+## Session lifecycle and agent titles
+
+Normal window close and Quit detach; they do not terminate agents or Fresh
+work. Quit and Stop Sessions first asks Herdr to save and stop, then uses
+`mash-session-stop` to end detached helpers and request Fresh's normal shutdown.
+The macOS updater invokes that same cleanup before its final owned-process
+check; an unresponsive Fresh daemon blocks replacement rather than being
+forcibly killed. Full session shutdown intentionally ends embedded commands.
+The split sync and parker exit when their Herdr connection closes, releasing
+their singleton locks so obsolete code cannot attach to a later server.
+
+The Agents panel's title row uses Herdr's `tab` token, not the agent terminal's
+independent title. It follows Auto Title and manual tab renames. As with other
+seeded configuration, user-edited sidebar layouts remain the user's choice.
 
 ## Mash Terminal menus
 

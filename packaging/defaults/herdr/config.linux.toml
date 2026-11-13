@@ -414,7 +414,8 @@ enabled = false
 row_gap = 0
 rows = [
   ["state_icon", "workspace"],
-  ["terminal_title_stripped"],
+  # Match the corresponding tab's label, not the agent's OSC startup title.
+  ["tab"],
   # cache-hit plugin: prompt-cache countdown, hit ratio, and retained cache.
   # Cache sorting stays disabled; agent_panel_sort remains native priority.
   [

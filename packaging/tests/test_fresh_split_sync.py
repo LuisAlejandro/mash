@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """mash-fresh-split-sync keeps a workspace's dev tabs at one split ratio.
 
-A Fresh daemon draws a single grid for every terminal attached to it, sized by
-the first client. Two dev tabs at different ratios therefore cannot both be
-right, and the wrong one either wraps its lines until the menu bar scrolls away
-or letterboxes a small editor. The syncer's job is to make "the editor size" a
-property of the workspace.
+Fresh 0.5.7 draws one grid sized by the last-used client. Resize messages from
+hidden clients can transfer ownership too, so equal-size dev tabs still matter.
+The syncer must converge without swallowing subsequent drags or changing
+private editors.
 
 The Herdr side is stubbed here, so these run anywhere and assert only the
 decisions the helper makes: which tabs take part, which ratio wins, and that it
@@ -186,6 +185,49 @@ class SyncTest(unittest.TestCase):
             SYNC.call = original
         self.assertEqual([c[0] for c in fake.calls], ["pane.zoom"])
         self.assertEqual(fake.calls[0][1]["mode"], "off")
+
+    def test_repeated_drags_from_one_tab_are_not_dropped(self):
+        fake = FakeHerdr(
+            [pane("w:p1", "t1"), pane("w:p2", "t2")],
+            {"t1": dev_layout(0.6), "t2": dev_layout(0.6)},
+        )
+        original = SYNC.call
+        SYNC.call = fake
+        try:
+            applied = {}
+            for ratio in (0.45, 0.7, 0.35):
+                fake.layouts["t2"]["root"]["ratio"] = ratio
+                SYNC.handle_layout({"workspace_id": "w1", "tab_id": "t2", "layout": {}}, applied)
+                self.assertEqual(fake.layouts["t1"]["root"]["ratio"], ratio)
+                writes = len(fake.ratio_writes())
+                SYNC.handle_layout({"workspace_id": "w1", "tab_id": "t1", "layout": {}}, applied)
+                self.assertEqual(len(fake.ratio_writes()), writes)
+        finally:
+            SYNC.call = original
+
+    def test_complex_target_is_not_resized(self):
+        fake = FakeHerdr(
+            [pane("w:p1", "t1"), pane("w:p2", "t2")],
+            {"t1": dev_layout(0.4), "t2": dev_layout(0.6, panes=3)},
+        )
+        self.run_sync(fake, source="t1")
+        self.assertEqual(fake.ratios, {})
+
+    def test_zoom_only_rejected_for_the_shared_editor(self):
+        fake = FakeHerdr(
+            [pane("w:p1", "t1"), pane("w:p2", "t1", daemon=False)],
+            {"t1": dev_layout(0.6)},
+        )
+        original = SYNC.call
+        SYNC.call = fake
+        try:
+            for focused in ("w:p2", "w:p1"):
+                SYNC.handle_layout({"workspace_id": "w1", "tab_id": "t1",
+                                    "layout": {"zoomed": True, "focused_pane_id": focused}}, {})
+                zooms = [c for c in fake.calls if c[0] == "pane.zoom"]
+                self.assertEqual(len(zooms), 0 if focused == "w:p2" else 1)
+        finally:
+            SYNC.call = original
 
     def test_startup_converges_on_the_focused_tab(self):
         # Nothing guarantees they start equal: the tabs were dragged while the
