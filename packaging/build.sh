@@ -91,6 +91,7 @@ ship_helpers=(
   mash-update-notice
   mash-pane-resume
   mash-stop-sessions
+  mash-session-stop
   mash-update-verify
   mash-update-apply
   mash-update-common

@@ -13,8 +13,9 @@
 # launch with their resume commands replayed; what is running at this moment
 # does not. Herdr runs a `shell` command as a detached process, so this survives
 # the panes it stops: the client then exits by itself, the window closes, and
-# Mash quits with it (quit-after-last-window-closed). Nothing here has to quit
-# the app, and nothing here may stop a server that is not Mash's own.
+# Mash quits with it (quit-after-last-window-closed). Detached Fresh daemons and
+# the session helpers are then stopped through mash-session-stop, the same
+# graceful cleanup the updater uses. Nothing here may stop a foreign server.
 set -eu
 
 herdr="${HERDR_BIN_PATH:-herdr}"
@@ -34,4 +35,14 @@ case "$socket" in
 	;;
 esac
 
-exec "$herdr" server stop
+status=0
+"$herdr" server stop || status=$?
+# Never terminate detached work while a live server may still be saving or
+# resuming panes. A timeout is a failed shutdown, not permission to escalate.
+[ "$status" = 0 ] || exit "$status"
+res="$(cd "$(dirname "$0")/.." && pwd -P)"
+if [ -x "$res/python/bin/python3" ] && [ -f "$res/bin/mash-session-stop" ]; then
+	exec "$res/python/bin/python3" "$res/bin/mash-session-stop" "$res" "$home/.mash"
+fi
+# Source-tree tests / old bundles without detached-session support.
+exit 0

@@ -611,6 +611,15 @@ mash_update_quiesce() {
       mash_update_log "herdr-stop grace ended after $(( $("$proc" now) - now ))s"
     fi
   fi
+  # The explicit session-exit path uses this same graceful detached-runtime
+  # shutdown. In particular, give Fresh a chance to flush recovery/workspaces
+  # before the generic owned-process TERM sweep below. Failure blocks the swap.
+  if [ -f "$app/Contents/Resources/bin/mash-session-stop" ]; then
+    now="$("$proc" now)" || return 1
+    mash_update_run "$((MU_QUIESCE_BUDGET - (now - start)))" detached-stop \
+      "$app/Contents/Resources/python/bin/python3" \
+      "$app/Contents/Resources/bin/mash-session-stop" "$app/Contents/Resources" "$MU_DATA" || return 1
+  fi
   while :; do
     "$proc" list "$app" "$MU_DATA" >"$inventory.current" || return 1
     LC_ALL=C sort -u "$inventory" "$inventory.current" >"$inventory.all" || return 1
