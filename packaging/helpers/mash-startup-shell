@@ -53,5 +53,29 @@ PROMPT_COMMAND=_mash_startup_prompt
 # A launch that fails returns to this prompt, and the next cycle hands the pane
 # back as an ordinary shell (see _mash_startup_prompt). While a park record
 # exists the pane stays quiet instead: its wake arrives on focus.
+#
+# A launch that never arrives produces no second prompt at all, so that rule
+# cannot fire and the pane would sit here for ever -- echo off, no input read,
+# showing only "Starting the editor". That is not a rare shape: a pane whose
+# auto-launch failed, or a tab whose split never happened, shows exactly this.
+# Give it a grace period and then hand the pane back as an ordinary shell. A
+# parked pane is exempt: its record means a wake is expected on focus.
+#
+# The window is generous on purpose. Herdr staggers restored launches by
+# `session.startup_per_agent_delay_ms` (100 ms by default), so a session with a
+# few hundred panes legitimately types the last command a minute after start.
+# Handing a pane back early is not an error -- the command still runs, in the
+# normal shell instead of this quiet one -- but it is a visible flash the wait
+# exists to avoid.
+if [[ ! -f $_mash_startup_record ]]; then
+    (
+        sleep "${MASH_STARTUP_GRACE:-60}"
+        # The pane's program replaces this shell on a successful launch, so only
+        # a shell still running this rc reaches the signal. Compare the command
+        # line rather than trusting a bare PID, which the system may have reused.
+        ps -p "$$" -o args= 2>/dev/null | grep -q mash-startup-shell || exit 0
+        kill -INT "$$" 2>/dev/null
+    ) >/dev/null 2>&1 &
+fi
 stty -echo 2>/dev/null
 mash-pane-starting "${MASH_PANE_STARTUP:-agent}" "${HERDR_PANE_ID:-}" 2>/dev/null || true
