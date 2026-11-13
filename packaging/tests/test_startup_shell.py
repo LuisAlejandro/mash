@@ -31,10 +31,14 @@ class StartupShellTest(unittest.TestCase):
             path.write_text("#!/bin/sh\n" + body)
             path.chmod(0o755)
         self.record = self.root / "local/state/dev-tab-park/w1_p1"
+        self.spawn("600")
+
+    def spawn(self, grace):
         pid, self.fd = pty.fork()
         if pid == 0:
             env = {**os.environ, "PATH": str(self.bin) + ":/usr/bin:/bin",
                    "MASH_DATA_DIR": str(self.root), "HERDR_PANE_ID": "w1:p1",
+                   "MASH_STARTUP_GRACE": grace,
                    "MASH_PANE_STARTUP": "agent"}
             env.pop("MASH_STARTUP_SHELL_RC", None)
             os.execve(str(SHELL), [str(SHELL)], env)
@@ -51,15 +55,22 @@ class StartupShellTest(unittest.TestCase):
         self.output.clear()
 
     def stop(self):
+        # Idempotent: setUp's cleanup and a test that re-spawns both call it.
+        pid, self.pid = getattr(self, "pid", None), None
+        if pid is None:
+            return
         try:
-            os.kill(self.pid, signal.SIGTERM)
+            os.kill(pid, signal.SIGTERM)
         except ProcessLookupError:
             pass
         try:
             os.close(self.fd)
         except OSError:
             pass
-        os.waitpid(self.pid, 0)
+        try:
+            os.waitpid(pid, 0)
+        except ChildProcessError:
+            pass
 
     def wait_for(self, marker):
         deadline = time.monotonic() + 5
@@ -79,6 +90,23 @@ class StartupShellTest(unittest.TestCase):
         self.assertNotIn(b"NEVER-ECHO-THIS", self.output)
         self.assertNotIn(b"fake-agent", self.output)
         self.assertTrue(termios.tcgetattr(self.fd)[3] & termios.ECHO, "restore echo for the user shell")
+
+    def test_a_launch_that_never_arrives_hands_the_pane_back(self):
+        # No command is ever typed. Without a grace period the pane sits here
+        # for ever: echo off, nothing reading input, just "Starting the editor".
+        self.stop()
+        self.spawn("1")
+        self.wait_for(b"USER-SHELL-READY")
+
+    def test_a_parked_pane_is_not_handed_back_while_its_record_stands(self):
+        self.record.parent.mkdir(parents=True)
+        self.record.write_text("{}")
+        self.stop()
+        self.spawn("1")
+        time.sleep(3)
+        self.assertNotIn(b"USER-SHELL-READY", self.output)
+        self.record.unlink()
+        self.stop()
 
     def test_parked_pane_wakes_without_showing_a_prompt_or_command(self):
         self.record.parent.mkdir(parents=True)
