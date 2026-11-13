@@ -19,7 +19,28 @@ set -eu
 herdr="${HERDR_BIN_PATH:-herdr}"
 # FRESH_RATIO is read by bin/herdr-dev-tab-fill (inherited through the
 # environment), not here.
-dev_tab_fill="${DEV_TAB_FILL_BIN:-$(command -v herdr-dev-tab-fill || true)}"
+# The layout builder, which lives beside the other Mash helpers rather than in
+# this plugin. Resolving it by name alone makes the hook depend on the PATH Herdr
+# happens to give a plugin command: when that PATH lacks Mash's bin directory the
+# lookup finds nothing, the check below exits 0, and the "+" press produces a
+# single pane stuck on "Starting the editor" -- with no error anywhere, because a
+# hook that declines and a hook that ran are indistinguishable. Ask the plugin's
+# own location first, then PATH.
+find_dev_tab_fill() {
+    local candidate
+    for candidate in \
+        "${DEV_TAB_FILL_BIN:-}" \
+        "${HERDR_PLUGIN_ROOT:+$HERDR_PLUGIN_ROOT/../../bin/herdr-dev-tab-fill}" \
+        "$PWD/../../bin/herdr-dev-tab-fill" \
+        "$(dirname "${BASH_SOURCE[0]}")/../../bin/herdr-dev-tab-fill" \
+        "$(command -v herdr-dev-tab-fill 2>/dev/null || true)"; do
+        [ -n "$candidate" ] && [ -x "$candidate" ] || continue
+        printf '%s\n' "$candidate"
+        return 0
+    done
+    return 1
+}
+dev_tab_fill="$(find_dev_tab_fill || true)"
 
 json="${HERDR_PLUGIN_EVENT_JSON:-}"
 [ -n "$json" ] || exit 0
