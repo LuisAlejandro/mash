@@ -1,6 +1,15 @@
 # Changelog
 
 
+## 0.5.1 (2026-11-13)
+
+### Fixed
+
+* Find the layout builder without trusting PATH. [Luis Alejandro Martínez Faneyth]
+
+* Keep a stayed terminal reply from eating a pane's launch. [Luis Alejandro Martínez Faneyth]
+
+
 ## 0.5.0 (2026-11-13)
 
 ### Added
