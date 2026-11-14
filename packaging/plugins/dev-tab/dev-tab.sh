@@ -103,7 +103,10 @@ for p in panes:
 # tab creation can catch one of those instead of the shell and wrongly conclude
 # this is not a bare tab. That race is why the feature was intermittent: the
 # same chord sometimes enriched and sometimes did not. Wait for the foreground
-# process to repeat, which means startup has stopped churning.
+# shell process to repeat, which means startup has stopped churning. The
+# foreground list is unordered: the quiet startup shell's background grace
+# timer can appear first. Prefer the entry matching shell_pid, or a stable
+# `sleep` would be mistaken for the application and the hook would decline.
 fg=""
 prev="__unset__"
 for _ in $(seq 1 40); do
@@ -115,7 +118,12 @@ except Exception:
     sys.exit(0)
 procs = info.get("foreground_processes") or []
 if procs:
-    print(procs[0].get("name") or "")
+    shell_pid = info.get("shell_pid")
+    shell = next((p for p in procs if p.get("pid") == shell_pid), None)
+    # No shell in the foreground group means an actual program owns the pane.
+    # Keep the existing settle/skip path for plugin panes such as reviewr.
+    foreground = shell if shell is not None else procs[0]
+    print(foreground.get("name") or "")
 ' 2>/dev/null || true)"
 	if [ -n "$now" ] && [ "$now" = "$prev" ]; then
 		fg="$now"

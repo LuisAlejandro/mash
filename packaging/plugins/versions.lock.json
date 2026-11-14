@@ -4,8 +4,8 @@
     "version": "0.1.7"
   },
   "dev-tab": {
-    "digest": "5185a66e13003d16bba7ada921438836772ee7f46fcc0fb5e25816c6c1397401",
-    "version": "0.1.1"
+    "digest": "54195b0c64b396a4e1dabe697bd8bd0958985b8de5f9da5a7850ff49c849e993",
+    "version": "0.1.2"
   },
   "fork-from-message": {
     "digest": "05c1adf822b468e9ea8f125fb859c554cef48bdc1bd850827f2fe7043d2b9126",
@@ -32,8 +32,8 @@
     "version": "0.2.0"
   },
   "pr-watch-focus": {
-    "digest": "1b7d1e3d618da2da242809fb1cc76decd292e0be42c8cb23f2d812cb5a14cd4c",
-    "version": "0.2.2"
+    "digest": "2933e82537c19084e42df91188d5853367b21359af0bc1c0828e4553821d248e",
+    "version": "0.2.1"
   },
   "reopen-tab": {
     "digest": "5297f774bd3d3cd7b5a87d526fde2b464b237e095251738abb8e664cc7a9c9b7",
