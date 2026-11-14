@@ -16,8 +16,8 @@
     "version": "0.1.1"
   },
   "herdr-workspace": {
-    "digest": "64b1173a4a638630ecf6b8f10eaad26b128a573eaaf109232daad0b43a9058e6",
-    "version": "0.1.4"
+    "digest": "d0fdef744c813c8ce068249fa734513f167ff94c9078c53f58f07fa2dfd93730",
+    "version": "0.1.5"
   },
   "image-popup": {
     "digest": "44909416530f932e041d9aad1ec102416594180d6ff0c1f03218c164b9fafde7",
@@ -32,8 +32,8 @@
     "version": "0.2.0"
   },
   "pr-watch-focus": {
-    "digest": "2933e82537c19084e42df91188d5853367b21359af0bc1c0828e4553821d248e",
-    "version": "0.2.1"
+    "digest": "1b7d1e3d618da2da242809fb1cc76decd292e0be42c8cb23f2d812cb5a14cd4c",
+    "version": "0.2.2"
   },
   "reopen-tab": {
     "digest": "5297f774bd3d3cd7b5a87d526fde2b464b237e095251738abb8e664cc7a9c9b7",
