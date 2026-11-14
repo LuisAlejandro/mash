@@ -3,11 +3,14 @@
 Run with: python3 packaging/tests/test_assets.py
 """
 
+import contextlib
+import io
 import json
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 PACKAGING = Path(__file__).resolve().parents[1]
@@ -385,6 +388,26 @@ class ReleaseWorkflowPinsTest(unittest.TestCase):
         self.assertEqual(skills["version"], self.exported["SKILLS_VERSION"])
         self.assertEqual(skills["ref"], self.exported["SKILLS_REF"])
         self.assertTrue(self.manifest.pin_order)
+
+    def test_test_workflows_use_manifest_checkout_outputs(self):
+        for name in ("pr.yml", "push.yml"):
+            workflow = (PACKAGING.parent / ".github/workflows" / name).read_text()
+            with self.subTest(workflow=name):
+                export = workflow.index("python3 packaging/assets.py export")
+                checkout = workflow.index("repository: ${{ steps.test-pins.outputs.GHOSTTY_FORK }}")
+                self.assertLess(export, checkout)
+                self.assertIn('python3 packaging/assets.py export >>"$GITHUB_OUTPUT"', workflow)
+                self.assertIn("id: test-pins", workflow[:checkout])
+                self.assertIn("ref: ${{ steps.test-pins.outputs.GHOSTTY_FORK_COMMIT }}", workflow[checkout:])
+                self.assertNotIn(self.manifest.components["ghostty"]["commit"], workflow)
+
+    def test_changed_manifest_commit_is_exported_for_each_target(self):
+        self.manifest.components["ghostty"]["commit"] = "a" * 40
+        for target in ALL_TARGETS:
+            output = io.StringIO()
+            with patch.object(assets.Manifest, "load", return_value=self.manifest), contextlib.redirect_stdout(output):
+                self.assertEqual(assets._main(["assets.py", "export", target]), 0)
+            self.assertIn("GHOSTTY_FORK_COMMIT=" + "a" * 40, output.getvalue())
 
     def test_workflow_does_not_restate_an_exported_pin(self):
         workflow = (PACKAGING.parent / ".github/workflows/artifacts.yml").read_text(
