@@ -40,6 +40,10 @@ root="$(cd "$(dirname "$0")/../.." && pwd)"
 # aliases, from an agent directory with no node_modules.
 "$node" "$root/packaging/tests/test_pi_extensions_load.mjs" "$pi"
 
+# The paste-preview widget reads the editor text and draws through pi-tui's
+# Image component, so its render path is exercised against this pin too.
+"$node" "$root/packaging/tests/test_image_paste_preview.mjs" "$pi"
+
 # Check wizard models/auth and the embedded provider snapshot against this pin.
 # Metadata inspection must never resolve credentials or use a network.
 "$node" "$root/packaging/tests/test_wizard_model_catalog.mjs" "$pi"
