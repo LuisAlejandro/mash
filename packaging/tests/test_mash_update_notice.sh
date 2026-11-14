@@ -66,6 +66,7 @@ stub dpkg '[ "$1" = --compare-versions ] && [ "$3" = gt ] || exit 2
 # carries no asset for an architecture offers nothing to install there.
 stub curl 'echo "curl $*" >>"$CALLS"
 [ -n "${FAKE_CURL_RC:-}" ] && exit "$FAKE_CURL_RC" 2>/dev/null
+if [ -n "${FAKE_BODY:-}" ]; then printf "%s" "$FAKE_BODY"; exit 0; fi
 case "$(uname -m)" in
 arm64) arch=arm64 ;;
 *) arch=amd64 ;;
@@ -421,6 +422,22 @@ check "an offline check exits 0" test "$status" = 0
 check "an offline check shows nothing" test "$(count popup)" = 0
 check "an offline check prints nothing" test ! -s "$tmp/stderr"
 check "an offline check records no version" test ! -e "$data/local/state/update-notice"
+check "an offline check does not consume the cooldown" test ! -e "$data/local/state/update-checked"
+: >"$calls"
+mac FAKE_RELEASE=0.2.0
+check "the next launch retries after network failure" test "$(count curl)" = 1
+check "the retry announces the newer release" test "$(count popup)" = 1
+
+body_case=0
+for body in 'not json' '[]' '{"tag_name":"0.2.0","assets":null}' '{"tag_name":"0.2.0","assets":[null]}'; do
+  body_case=$((body_case + 1))
+  fresh "mac-bad-body-$body_case"
+  mac FAKE_BODY="$body"
+  check "invalid metadata does not consume cooldown: $body" test ! -e "$data/local/state/update-checked"
+  : >"$calls"
+  mac FAKE_RELEASE=0.2.0
+  check "the next launch retries after invalid metadata" test "$(count curl)" = 1
+done
 
 # --- no VERSION to compare against ----------------------------------------------
 fresh mac-noversion
@@ -558,7 +575,7 @@ env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" \
 check "image popup without mash-t prints English" \
   grep -q 'No image to show:' "$tmp/status-out"
 
-# --- a build with no release channel (macos-amd64) never updates ---------------
+# --- an explicitly disabled developer build never updates -------------------
 # build.sh drops Resources/updates-disabled for any target the official releases
 # do not cover. The automatic check and the manual one must both honour it.
 nochan="$tmp/nochannel/Mash.app/Contents/Resources"
@@ -568,7 +585,7 @@ cp "$fake/herdr" "$nochan/bin/herdr"
 printf '#!/bin/bash\necho "notify $*" >>"$CALLS"\n' >"$nochan/bin/mash-notify"
 chmod +x "$nochan/bin/mash-notify"
 printf '0.1.1\n' >"$nochan/VERSION"
-printf 'No release channel for macos-amd64; updates are disabled in this build.\n' >"$nochan/updates-disabled"
+printf 'Updates explicitly disabled in this developer fixture.\n' >"$nochan/updates-disabled"
 
 fresh mac-disabled
 env -i HOME="$tmp" PATH="$fake:$tools" CALLS="$calls" FAKE_UNAME=Darwin FAKE_RELEASE=0.9.0 \

@@ -31,7 +31,7 @@ export PR_WATCH_REPO_BIN="$tmp/bin/pr-watch-repo" GIT_STATUS_WATCH_BIN="$tmp/bin
 
 wait_for() {
 	local i
-	for i in $(seq 1 50); do
+	for i in $(seq 1 100); do
 		eval "$1" && return 0
 		sleep 0.1
 	done
@@ -45,6 +45,20 @@ pids+=("$a")
 wait_for '[ "$(cat "$state"/*/poll.log 2>/dev/null | grep -c " poll ok")" = 2 ]' ||
 	fail "both watchers should run on start"
 
+# Stable advisory locks survive abrupt exit without PID-file recovery.
+lock_held() {
+	python3 - "$lockdir/$1.flock" <<'PY'
+import fcntl, sys
+with open(sys.argv[1], "a") as handle:
+    try:
+        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        sys.exit(0)
+    sys.exit(1)
+PY
+}
+lock_held poll || fail "poller must own a kernel lock"
+
 # A second poller for the same server exits and leaves the first in charge.
 bash "$poll" || fail "a second poller should exit 0"
 kill -0 "$a" 2>/dev/null || fail "the first poller should keep running"
@@ -55,36 +69,40 @@ bash "$poll" --startup || fail "window startup refresh should finish"
 [ "$(grep -h -c ' poll ok' "$state"/*/poll.log | awk '{n += $1} END {print n}')" = 4 ] ||
 	fail "window startup should refresh both badges again"
 kill -0 "$a" 2>/dev/null || fail "window refresh must preserve the hourly poller"
-[ ! -d "$lockdir/startup.lock" ] || fail "startup refresh should release its lock"
+if lock_held startup; then fail "startup refresh should release its lock"; fi
 
 # TERM stops it at once, removes the lock and leaves no sleeper behind.
 kill "$a"
 wait "$a" 2>/dev/null || true
-wait_for '[ ! -d "$lockdir/poll.lock" ]' || fail "lock should be removed on TERM"
+if lock_held poll; then fail "lock should be released on TERM"; fi
 
-# A failed startup poll must retry before the hourly sleep. Stub sleep so
-# retries are fast without changing production timing.
-mkdir -p "$tmp/sleep-bin"
-printf '#!/bin/sh\necho "$1" >> "$SLEEP_LOG"\nexec /bin/sleep 0.1\n' >"$tmp/sleep-bin/sleep"
-chmod +x "$tmp/sleep-bin/sleep"
+# A failed startup poll must retry within this test's ten-second deadline,
+# rather than entering the hourly delay.
 printf '#!/bin/sh\nif [ ! -f "$RETRY_MARK" ]; then touch "$RETRY_MARK"; exit 1; fi\necho recovered\n' >"$tmp/bin/pr-watch-repo"
-export RETRY_MARK="$tmp/retry-mark" SLEEP_LOG="$tmp/sleeps"
-PATH="$tmp/sleep-bin:$PATH" bash "$poll" &
+export RETRY_MARK="$tmp/retry-mark"
+bash "$poll" &
 r=$!
 pids+=("$r")
 wait_for 'grep -q recovered "$state/pr-watch-repo/poll.log"' || fail "startup failure should retry"
 kill "$r"
 wait "$r" 2>/dev/null || true
-[ "$(head -1 "$SLEEP_LOG")" -lt 3600 ] || fail "startup retry must not wait an hour"
+# wait_for above already bounded the retry to less than ten seconds.
 
 # A lock left by a dead process is taken over.
 mkdir -p "$lockdir/poll.lock"
-echo 999999 >"$lockdir/poll.lock/pid"
+# An unrelated live PID in the legacy directory must not suppress the new owner.
+echo $$ >"$lockdir/poll.lock/pid"
 bash "$poll" &
 b=$!
 pids+=("$b")
-wait_for '[ "$(cat "$lockdir/poll.lock/pid" 2>/dev/null)" = "$b" ]' ||
-	fail "a stale lock should be taken over"
+wait_for 'lock_held poll' || fail "legacy pid directories must not suppress ownership"
+kill -KILL "$b"
+wait "$b" 2>/dev/null || true
+if lock_held poll; then fail "watcher/sleeper must not inherit ownership after SIGKILL"; fi
+bash "$poll" &
+b=$!
+pids+=("$b")
+wait_for 'lock_held poll' || fail "abrupt owner exit must allow reacquisition"
 kill "$b"
 wait "$b" 2>/dev/null || true
 
@@ -103,5 +121,63 @@ for helper in pr-watch-repo git-status-watch; do
 		fail "$helper should retry when startup panes are not restored yet"
 	fi
 done
+
+# Real concurrent contenders, with the winning watcher blocked until killed.
+# The descriptor must not leak into that still-running watcher after SIGKILL.
+python3 - "$poll" "$tmp" <<'PY'
+import fcntl
+import os
+from pathlib import Path
+import signal
+import subprocess
+import sys
+import time
+
+poll, tmp = sys.argv[1:]
+for abrupt in (False, True):
+    state = Path(tmp) / str(abrupt) / "home/.mash/state"
+    state.mkdir(parents=True)
+    entered = state / "entered"
+    watcher = state / "watcher"
+    watcher.write_text('#!/bin/sh\necho $$ >> "$ENTERED"\nexec /bin/sleep 60\n')
+    watcher.chmod(0o755)
+    env = {**os.environ, "XDG_STATE_HOME": str(state),
+           "HERDR_PLUGIN_STATE_DIR": str(state), "ENTERED": str(entered),
+           "PR_WATCH_REPO_BIN": str(watcher), "GIT_STATUS_WATCH_BIN": "/missing"}
+    contenders = [subprocess.Popen(["bash", poll, "--startup"], env=env) for _ in range(8)]
+    watcher_pid = None
+    try:
+        deadline = time.monotonic() + 10
+        while sum(p.poll() is not None for p in contenders) != 7 or not entered.exists():
+            assert time.monotonic() < deadline, "contenders did not settle to one owner"
+            time.sleep(.02)
+        rows = entered.read_text().splitlines()
+        assert len(rows) == 1, "duplicate same-mode watcher"
+        watcher_pid = int(rows[0])
+        owner = next(p for p in contenders if p.poll() is None)
+        owner.send_signal(signal.SIGKILL if abrupt else signal.SIGTERM)
+        owner.wait(timeout=5)
+        with (state / "startup.flock").open("a") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        if not abrupt:
+            try:
+                os.kill(watcher_pid, 0)
+            except ProcessLookupError:
+                pass
+            else:
+                raise AssertionError("TERM left the active watcher running")
+    finally:
+        for p in contenders:
+            if p.poll() is None:
+                p.kill()
+            p.wait(timeout=5)
+        if watcher_pid is None and entered.exists():
+            watcher_pid = int(entered.read_text().splitlines()[0])
+        if watcher_pid:
+            try:
+                os.killpg(watcher_pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+PY
 
 echo "pr-watch poll: ok"
