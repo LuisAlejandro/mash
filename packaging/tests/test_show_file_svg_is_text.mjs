@@ -1,7 +1,9 @@
 // An SVG is XML, not a decodable image: the image popup runs `viu`, which
 // rejects it (`Unsupported(PathExtension("svg"))`). show_file must therefore
 // route it to the Fresh editor, where the markup is readable, and never to the
-// image pane.
+// image pane. AVIF is the same failure with no useful alternate view, so it is
+// reported as not shown rather than handed to a popup that can only print
+// viu's `Unsupported(Exact(Avif))`.
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync, chmodSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -75,7 +77,19 @@ exit 0
   // It belongs in the editor instead.
   assert.match(text, /Fresh|editor/i, text);
 
-  console.log("show_file routes SVG to the editor, not the image pane: ok");
+  // Same rule for a format viu was built without: no image pane, no hex dump
+  // dressed up as a picture.
+  writeFileSync(join(dir, "photo.avif"), "avif");
+  writeFileSync(calls, "");
+  const avif = await tool.execute("test", { path: join(dir, "photo.avif") });
+  const avifCalls = readFileSync(calls, "utf8");
+  assert.ok(
+    !avifCalls.includes("image-popup"),
+    `an AVIF was sent to the image popup:\n${avifCalls}`,
+  );
+  assert.match(avif.content[0].text, /not shown/i, avif.content[0].text);
+
+  console.log("show_file routes SVG to the editor and AVIF nowhere: ok");
 } finally {
   for (const key of ["HERDR_BIN_PATH", "HERDR_PANE_ID", "HERDR_CALLS"]) {
     if (env[key] === undefined) delete process.env[key];

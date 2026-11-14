@@ -48,12 +48,15 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { t } from "./lib/mash-i18n.ts";
 
-// Raster formats only. SVG is deliberately absent: it is XML, and the image
-// popup decodes with `viu`, which rejects it outright
-// (`Unsupported(PathExtension("svg"))`). It is listed as text below, where the
-// editor shows the markup the person can actually read and edit.
+// Raster formats only, and only the ones the pinned `viu` (1.6.1) decodes.
+// SVG is deliberately absent: it is XML, and the image popup decodes with
+// `viu`, which rejects it outright (`Unsupported(PathExtension("svg"))`). It is
+// listed as text below, where the editor shows the markup the person can
+// actually read and edit. AVIF is absent for the same reason one step worse:
+// the shipped viu reports `Unsupported(Exact(Avif))`, so a popup could only
+// show an error. Re-add a format only after probing the bundled viu for it.
 const IMAGE_EXTENSIONS = new Set([
-	"png", "jpg", "jpeg", "gif", "webp", "bmp", "tiff", "tif", "ico", "avif",
+	"png", "jpg", "jpeg", "gif", "webp", "bmp", "tiff", "tif", "ico",
 ]);
 
 const TEXT_EXTENSIONS = new Set([

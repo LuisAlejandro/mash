@@ -9,7 +9,7 @@
 # .mash/insights/herdr-popup-from-background.md.
 id = "image-popup"
 name = "Image Popup"
-version = "0.1.0"
+version = "0.1.1"
 min_herdr_version = "0.9.0"
 description = "Show an image with real pixels in a popup, via the Kitty graphics protocol"
 platforms = ["macos", "linux"]
@@ -18,8 +18,8 @@ platforms = ["macos", "linux"]
 id = "view"
 title = "Image"
 placement = "popup"
-width = "80%"
-height = "80%"
+width = "40%"
+height = "40%"
 command = ["bash", "view.sh"]
 
 [[actions]]
