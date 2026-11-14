@@ -7,10 +7,6 @@
     "digest": "54195b0c64b396a4e1dabe697bd8bd0958985b8de5f9da5a7850ff49c849e993",
     "version": "0.1.2"
   },
-  "fork-from-message": {
-    "digest": "acea16888e224e7099425a8949aaf5b50333c8475fa15d50f303aabc2dbb0017",
-    "version": "0.2.3"
-  },
   "herdr-fingers": {
     "digest": "467a677a2084cffb708cd4841c2f60be15c10b982390d72a84084da33df9e84c",
     "version": "0.1.1"

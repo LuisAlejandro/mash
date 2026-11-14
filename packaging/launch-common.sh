@@ -354,9 +354,30 @@ def collect(node):
 
 
 try:
-    collect(json.load(open(listed, encoding="utf-8")))
+    registry = json.load(open(listed, encoding="utf-8"))
+    collect(registry)
 except (OSError, ValueError):
-    pass
+    registry = None
+
+# A plugin this bundle stopped carrying (fork-from-message, replaced by the
+# native Pi /fork) stays registered with a root that no longer exists, and Herdr
+# keeps offering its actions. Drop such entries -- only ones rooted in this
+# bundle plugin directory, so an install by the owner is never touched.
+# Offline, like the links below: `herdr plugin unlink` needs a live server.
+# ponytail: a server already running keeps the entry in memory until it
+# restarts; unlinking through it would need the socket this step avoids.
+gone = [
+    pid for pid, entry in entries.items()
+    if isinstance(entry.get("plugin_root"), str)
+    and entry["plugin_root"].startswith(src + "/")
+    and not os.path.isdir(entry["plugin_root"])
+]
+if gone and isinstance(registry, list):
+    kept = [e for e in registry if not (isinstance(e, dict) and e.get("plugin_id") in gone)]
+    tmp = listed + ".mash-tmp"
+    with open(tmp, "w", encoding="utf-8") as handle:
+        json.dump(kept, handle, indent=2)
+    os.replace(tmp, listed)
 
 for name in sorted(os.listdir(src)):
     path = os.path.join(src, name)

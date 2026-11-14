@@ -94,5 +94,13 @@
   "pi.show-file.shown-text": {
     "text": "Mostrado: {name} está aberto no editor Fresh ao lado deste painel.",
     "source_hash": "ac958177710d"
+  },
+  "pi.fork.description": {
+    "text": "Faça fork de uma mensagem no painel que o Mash abriu para ela",
+    "source_hash": "97659c08eee4"
+  },
+  "pi.fork.no-messages": {
+    "text": "Nenhuma mensagem para fazer fork",
+    "source_hash": "3c38b95def9e"
   }
 }

@@ -94,5 +94,13 @@
   "pi.show-file.shown-text": {
     "text": "Показано: {name} е отворен в редактора Fresh до този панел.",
     "source_hash": "ac958177710d"
+  },
+  "pi.fork.description": {
+    "text": "Разклоняване от съобщение в панела, който Mash отвори за него",
+    "source_hash": "97659c08eee4"
+  },
+  "pi.fork.no-messages": {
+    "text": "Няма съобщения за разклоняване",
+    "source_hash": "3c38b95def9e"
   }
 }

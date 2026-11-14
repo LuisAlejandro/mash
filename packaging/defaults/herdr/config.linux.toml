@@ -633,14 +633,16 @@ type = "plugin_action"
 command = "telescope.open-actions"
 description = "Command palette"
 
-# Fork the focused agent's session from an earlier user message. The plugin
-# resolves the agent from the focused pane; Pi is the one it supports today.
+# Fork the focused Pi from an earlier user message into a new dev tab, leaving
+# the source pane as it is. herdr-fork-pi makes the destination and starts Pi
+# there; Pi's own /fork selector and fork run inside it (the fork-from-message
+# Pi extension), so the chord works only on a Pi pane.
 # macOS uses Cmd+Alt+Y beside open_notification_target's Cmd+Y; both would land
 # on Ctrl+Alt+Y here, so the fork moves up to Ctrl+Alt+Shift+Y.
 [[keys.command]]
 key = "ctrl+alt+shift+y"
-type = "plugin_action"
-command = "fork-from-message.fork"
+type = "shell"
+command = "PATH=\"${HERDR_BIN_PATH%/*}:$PATH\"; herdr-fork-pi tab"
 description = "Fork agent from message"
 
 # Session search. macOS uses Cmd+Alt+L beside paste-annotations' Cmd+L; both
@@ -675,14 +677,14 @@ description = "Search files and actions"
 # Fresh and GNOME.
 [[keys.command]]
 key = "ctrl+super+y"
-type = "plugin_action"
-command = "fork-from-message.fork-pane"
+type = "shell"
+command = "PATH=\"${HERDR_BIN_PATH%/*}:$PATH\"; herdr-fork-pi pane"
 description = "Fork agent beside current pane"
 
 [[keys.command]]
 key = "ctrl+super+shift+y"
-type = "plugin_action"
-command = "fork-from-message.fork-workspace"
+type = "shell"
+command = "PATH=\"${HERDR_BIN_PATH%/*}:$PATH\"; herdr-fork-pi workspace"
 description = "Fork agent into new workspace"
 
 # Quit Mash and stop the Herdr server, ending every pane's process. Ctrl+Shift+Q

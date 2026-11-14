@@ -94,5 +94,13 @@
   "pi.show-file.shown-text": {
     "text": "Показано: {name} відкрито в редакторі Fresh поруч із цією панеллю.",
     "source_hash": "ac958177710d"
+  },
+  "pi.fork.description": {
+    "text": "Відгалуження від повідомлення в панель, яку Mash для нього відкрив",
+    "source_hash": "97659c08eee4"
+  },
+  "pi.fork.no-messages": {
+    "text": "Немає повідомлень для відгалуження",
+    "source_hash": "3c38b95def9e"
   }
 }

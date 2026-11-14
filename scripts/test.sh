@@ -77,20 +77,12 @@ if command -v node >/dev/null 2>&1; then
     [ -f "$extension_test" ] || continue
     run "$extension_test" node "$extension_test"
   done
-  run "fork-from-message session helper" \
-    node packaging/plugins/fork-from-message/tests/test_pi_session.mjs
 else
   for extension_test in packaging/tests/test_*.mjs; do
     [ -f "$extension_test" ] || continue
     skip "$extension_test: node not installed"
   done
-  skip "fork-from-message session helper: node not installed"
 fi
-
-# Mash's own plugin: Herdr's `pane run` prints nothing on success, and the
-# fork-from-message code has to stay that way or the fork tab breaks.
-run "packaging/plugins/fork-from-message/tests/test_fork_from_message.py" \
-  python3 packaging/plugins/fork-from-message/tests/test_fork_from_message.py
 
 # Mash's own orchestration loop: renamed CLI and state are part of this repo.
 run "packaging/plugins/mash-orchestration/tests/test_orchestration.py" \

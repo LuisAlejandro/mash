@@ -94,5 +94,13 @@
   "pi.show-file.shown-text": {
     "text": "Đã hiện: {name} đang mở trong trình sửa Fresh cạnh khung này.",
     "source_hash": "ac958177710d"
+  },
+  "pi.fork.description": {
+    "text": "Tạo nhánh từ tin nhắn vào khung Mash đã mở cho nó",
+    "source_hash": "97659c08eee4"
+  },
+  "pi.fork.no-messages": {
+    "text": "Không có tin nhắn để tạo nhánh",
+    "source_hash": "3c38b95def9e"
   }
 }

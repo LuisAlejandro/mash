@@ -94,5 +94,13 @@
   "pi.show-file.shown-text": {
     "text": "แสดงแล้ว: {name} เปิดอยู่ในตัวแก้ไข Fresh ข้างบานหน้าต่างนี้",
     "source_hash": "ac958177710d"
+  },
+  "pi.fork.description": {
+    "text": "แตกแขนงจากข้อความไปยังแผงที่ Mash เปิดให้",
+    "source_hash": "97659c08eee4"
+  },
+  "pi.fork.no-messages": {
+    "text": "ไม่มีข้อความให้แตกแขนง",
+    "source_hash": "3c38b95def9e"
   }
 }
