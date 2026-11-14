@@ -1,0 +1,22 @@
+--- a/crates/fresh-editor/src/server/editor_server.rs
++++ b/crates/fresh-editor/src/server/editor_server.rs
+@@ -1224,6 +1224,19 @@
+                         claimed_by = Some(client.id);
+                         resize_occurred = true;
+                     }
++                    // Modified by Mash on 2026-11-15: a terminal that reports
++                    // its size is a terminal about to be looked at, and its
++                    // screen is not necessarily the frame the daemon last drew.
++                    // One grid is painted for every client, so a terminal that
++                    // was hidden while another client owned sizing, or one
++                    // whose own screen dropped output, holds cells the next
++                    // diff will never revisit -- it only rewrites what changed
++                    // in the daemon's model. A clear and a full paint is the
++                    // only thing that repairs that.
++                    // Mash source: packaging/patches/fresh-resize-full-render.patch
++                    for client in self.clients.iter_mut() {
++                        client.needs_full_render = true;
++                    }
+                 }
+                 ClientControl::GpmPointer => {
+                     if let Some(client) = self.clients.get_mut(idx) {

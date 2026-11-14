@@ -69,10 +69,12 @@ fi
 
 # Dev tabs share one Fresh daemon per directory, and a daemon draws one grid for
 # every terminal attached to it. This keeps the dev tabs of a workspace at one
-# split ratio so that grid fits them all. It acts only on panes tagged
-# mash-fresh-daemon, which is what herdr-fresh-pane --daemon writes, so a
-# session with no dev tab yet costs one idle process. Backgrounded, and it takes
-# a lock so a second window does not start a second copy.
+# split ratio so that grid fits them all, and hands the grid to a dev tab when
+# it is shown: showing a tab claims nothing in Fresh, so the tab on screen was
+# otherwise drawn at whichever size some other client claimed last. It acts only
+# on panes tagged mash-fresh-daemon, which is what herdr-fresh-pane --daemon
+# writes, so a session with no dev tab yet costs one idle process. Backgrounded,
+# and it takes a lock so a second window does not start a second copy.
 if [ -x "$bin_dir/mash-fresh-split-sync" ] && [ -n "${HERDR_SOCKET_PATH:-}" ]; then
   nohup "$res/python/bin/python3" "$bin_dir/mash-fresh-split-sync" </dev/null >/dev/null 2>&1 &
 fi

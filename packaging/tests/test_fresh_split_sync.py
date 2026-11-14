@@ -12,8 +12,10 @@ does not answer its own writes.
 """
 
 import importlib.util
+import signal
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).parents[2]
 HELPER = ROOT / "packaging/helpers/mash-fresh-split-sync"
@@ -28,10 +30,11 @@ spec.loader.exec_module(SYNC)
 class FakeHerdr:
     """Records calls and answers from a fixture."""
 
-    def __init__(self, panes, layouts, workspaces=None):
+    def __init__(self, panes, layouts, workspaces=None, processes=None):
         self.panes = panes
         self.layouts = layouts
         self.workspaces = workspaces or []
+        self.processes = processes or {}
         self.calls = []
         self.ratios = {}
 
@@ -57,6 +60,11 @@ class FakeHerdr:
             return {}
         if method == "pane.zoom":
             return {}
+        if method == "pane.process_info":
+            info = self.processes.get(params["pane_id"])
+            if info is None:
+                raise SYNC.Unavailable("no such pane")
+            return {"type": "pane_process_info", "process_info": info}
         raise AssertionError(f"unexpected call {method}")
 
     def ratio_writes(self):
@@ -244,6 +252,87 @@ class SyncTest(unittest.TestCase):
         finally:
             SYNC.call = original
         self.assertEqual(fake.ratios, {"t1": 0.52})
+
+
+class RefitTest(unittest.TestCase):
+    """Showing a tab has to hand the shared grid to that tab's own terminal.
+
+    The daemon sizes its one grid for whichever client claimed it last, and
+    merely showing a tab claims nothing -- one Herdr tab is not a terminal
+    surface, so the OS never moves focus and Fresh never sees a FocusGained.
+    The panel shows a grid sized for another window until something refits it.
+    """
+
+    def run_refit(self, fake, workspace="w1", tab="t1", seen=None):
+        original = SYNC.call
+        SYNC.call = fake
+        killed = []
+        try:
+            with mock.patch.object(
+                SYNC.os, "kill", lambda target, sig: killed.append((target, sig))
+            ):
+                SYNC.refit_visible(workspace, tab, {} if seen is None else seen)
+        finally:
+            SYNC.call = original
+        return killed
+
+    def processes(self, pane_id, group=4242):
+        return {pane_id: {"pane_id": pane_id, "foreground_process_group_id": group,
+                          "foreground_processes": [{"pid": group, "name": "fresh"}]}}
+
+    def test_showing_a_dev_tab_hands_it_the_grid(self):
+        fake = FakeHerdr(
+            [pane("w:p1", "t1"), pane("w:p2", "t2")],
+            {"t1": dev_layout(0.5), "t2": dev_layout(0.5)},
+            processes=self.processes("w:p1"),
+        )
+        self.assertEqual(self.run_refit(fake), [(-4242, signal.SIGWINCH)])
+        self.assertIn(("pane.process_info", {"pane_id": "w:p1"}), fake.calls)
+
+    def test_a_private_editor_is_never_signalled(self):
+        # A telescope or sesh pane owns its own size; a resize would refit a
+        # session nothing else shares.
+        fake = FakeHerdr(
+            [pane("w:p9", "t9", daemon=False)],
+            {"t9": dev_layout(0.5)},
+            processes=self.processes("w:p9"),
+        )
+        self.assertEqual(self.run_refit(fake, tab="t9"), [])
+        self.assertEqual([c[0] for c in fake.calls], ["pane.list"])
+
+    def test_a_workspace_switch_refits_its_focused_tab(self):
+        # A workspace switch names no tab: the visible one is the one holding
+        # the focused pane.
+        fake = FakeHerdr(
+            [pane("w:p1", "t1", focused=True), pane("w:p2", "t1", daemon=False)],
+            {"t1": dev_layout(0.5)},
+            processes=self.processes("w:p1", group=77),
+        )
+        self.assertEqual(self.run_refit(fake, tab=None), [(-77, signal.SIGWINCH)])
+
+    def test_one_showing_is_one_refit(self):
+        # A window regain and a workspace switch can both report the same tab.
+        fake = FakeHerdr(
+            [pane("w:p1", "t1")],
+            {"t1": dev_layout(0.5)},
+            processes=self.processes("w:p1"),
+        )
+        seen = {}
+        self.assertEqual(len(self.run_refit(fake, seen=seen)), 1)
+        self.assertEqual(self.run_refit(fake, seen=seen), [])
+
+    def test_a_process_without_a_group_is_signalled_directly(self):
+        # Foreground group is not reported on every platform.
+        fake = FakeHerdr(
+            [pane("w:p1", "t1")],
+            {"t1": dev_layout(0.5)},
+            processes={"w:p1": {"pane_id": "w:p1", "foreground_processes": [{"pid": 9}]}},
+        )
+        self.assertEqual(self.run_refit(fake), [(9, signal.SIGWINCH)])
+
+    def test_a_pane_whose_processes_cannot_be_read_is_skipped(self):
+        fake = FakeHerdr([pane("w:p1", "t1")], {"t1": dev_layout(0.5)})
+        self.assertEqual(self.run_refit(fake), [])
 
 
 if __name__ == "__main__":

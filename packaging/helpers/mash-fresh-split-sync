@@ -12,6 +12,17 @@ the workspace's editor size a single property of the workspace instead of a
 per-tab accident. Hidden clients can also claim sizing when their panes resize;
 equal sizes keep that ownership transfer harmless.
 
+Equal sizes still leave one hole: the grid belongs to whichever client claimed
+it last, and that is not always the tab on screen -- a one-shot `fresh FILE`, a
+dev tab of the same directory in another workspace, or a pane resized while
+hidden can all take it. The tab the user is looking at then shows a grid sized
+for a different window, and Fresh paints only the cells that changed in its own
+last model, so the cells that were drawn at the wrong size stay wrong. Two
+halves close that: this hands the grid to a tab when it is shown (see
+`signal_winch`), and fresh-resize-full-render.patch makes a client that reports
+its size get a clear and a full paint instead of a diff -- the only thing that
+also repairs a pane whose terminal dropped output while it was hidden.
+
 Only panes herdr-fresh-pane tagged with `mash-fresh-daemon` take part. A private
 editor (a single-pane or custom layout, a bare `fresh`) has its own size to
 itself and must not be touched.
@@ -22,6 +33,7 @@ never fail a startup. Every path exits 0.
 
 import json
 import os
+import signal
 import socket
 import sys
 import time
@@ -29,6 +41,10 @@ import time
 TOKEN = "mash-fresh-daemon"
 EPSILON = 0.002
 RECONNECT_DELAY = 1.0
+# One refit per pane per showing. Herdr reports a tab focus once, but a window
+# regain and a workspace switch can arrive as two events for the same tab.
+REFIT_DEBOUNCE = 0.5
+SIGWINCH = getattr(signal, "SIGWINCH", None)
 
 
 def single_instance():
@@ -216,6 +232,70 @@ def focused_daemon_tab(workspace_id):
     return None
 
 
+def daemon_pane_in(workspace_id, tab_id=None):
+    """The shared-Fresh pane of `tab_id`, or of the focused tab when None.
+
+    A workspace switch reports no tab, so the visible tab is the one holding the
+    focused pane -- Herdr focuses a pane, never a tab on its own.
+    """
+    try:
+        panes = call("pane.list", {"workspace_id": workspace_id}).get("panes") or []
+    except (Unavailable, AttributeError):
+        return None
+    if tab_id is None:
+        tab_id = next((p.get("tab_id") for p in panes if p.get("focused")), None)
+    if not tab_id:
+        return None
+    for pane in panes:
+        if pane.get("tab_id") != tab_id:
+            continue
+        if (pane.get("tokens") or {}).get(TOKEN) == "1":
+            return pane.get("pane_id")
+    return None
+
+
+def signal_winch(pane_id):
+    """Make this pane's terminal the one the shared grid is sized for.
+
+    Nothing is sent to Fresh: SIGWINCH is the signal a terminal sends when its
+    window changed, so the client re-reads its size and reports it, which is the
+    same claim a real resize makes. That is what hands sizing to the tab on
+    screen, since merely showing a tab transfers nothing.
+
+    The pane's foreground process group is the target: `herdr-fresh-pane` execs
+    Fresh, so the relay client and the pane's shell share it, and SIGWINCH's
+    default action is to ignore, which leaves the shell alone.
+    """
+    if SIGWINCH is None:
+        return
+    try:
+        info = (call("pane.process_info", {"pane_id": pane_id}) or {}).get("process_info") or {}
+    except (Unavailable, AttributeError):
+        return
+    group = info.get("foreground_process_group_id")
+    if group:
+        targets = [-group]
+    else:
+        targets = [p.get("pid") for p in info.get("foreground_processes") or [] if p.get("pid")]
+    for target in targets:
+        try:
+            os.kill(target, SIGWINCH)
+        except OSError:
+            continue
+
+
+def refit_visible(workspace_id, tab_id, seen):
+    """Hand sizing to the tab that was just shown, at most once per showing."""
+    pane_id = daemon_pane_in(workspace_id, tab_id)
+    if not pane_id:
+        return
+    now = time.monotonic()
+    if now - seen.get(pane_id, 0.0) < REFIT_DEBOUNCE:
+        return
+    seen[pane_id] = now
+    signal_winch(pane_id)
+
+
 def handle_layout(data, applied):
     workspace, tab = data.get("workspace_id"), data.get("tab_id")
     if not workspace or not tab or tab not in daemon_tabs(workspace):
@@ -234,7 +314,7 @@ def handle_layout(data, applied):
 
 
 def follow(sock_path):
-    """Subscribe and follow layout changes until the session goes away."""
+    """Subscribe and follow layout and focus changes until the session goes away."""
     sock = socket.socket(socket.AF_UNIX)
     sock.connect(sock_path)
     sock.sendall(
@@ -243,13 +323,20 @@ def follow(sock_path):
                 {
                     "id": "subscribe",
                     "method": "events.subscribe",
-                    "params": {"subscriptions": [{"type": "layout.updated"}]},
+                    "params": {
+                        "subscriptions": [
+                            {"type": "layout.updated"},
+                            {"type": "tab.focused"},
+                            {"type": "workspace.focused"},
+                        ]
+                    },
                 }
             )
             + "\n"
         ).encode()
     )
     applied = {}
+    seen = {}
     startup_pass(applied)
     buf = b""
     while True:
@@ -265,14 +352,18 @@ def follow(sock_path):
                 message = json.loads(line.decode("utf-8", "replace"))
             except ValueError:
                 continue
-            if message.get("event") != "layout_updated":
-                continue
+            event = message.get("event")
             data = message.get("data") or {}
             workspace = data.get("workspace_id")
-            tab = data.get("tab_id")
-            if not workspace or not tab:
+            if not workspace:
                 continue
-            handle_layout(data, applied)
+            if event == "layout_updated":
+                tab = data.get("tab_id")
+                if not tab:
+                    continue
+                handle_layout(data, applied)
+            elif event in ("tab_focused", "workspace_focused"):
+                refit_visible(workspace, data.get("tab_id"), seen)
 
 
 def main():

@@ -101,7 +101,11 @@ The consequences worth knowing before changing anything here:
   until the menu bar scrolled away. `bin/mash-fresh-split-sync` subscribes to
   Herdr's `layout.updated` and copies the ratio of the tab you dragged to the
   others, which is why resizing one dev tab resizes them all; `zoom` is undone
-  on these panes for the same reason.
+  on these panes for the same reason. It also refits on `tab.focused` and
+  `workspace.focused`: showing a tab claims nothing in Fresh, so it signals that
+  pane's own client (`SIGWINCH`), which hands it the grid and, with
+  `fresh-resize-full-render.patch`, produces a clear and a full paint instead of
+  a diff that cannot repair a screen drawn at another size.
 - **Only dev tabs attach.** A dev tab is the left pane of a tab split once, left
   to right — however it was made: cmd+t, the + button, telescope, sesh, or a
   tab restored from before the shared editor existed. Other layouts keep their

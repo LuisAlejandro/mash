@@ -200,12 +200,12 @@ mash_pins_check() {
 
 # Ordered once for source checks, the macOS build and Linux's source-cache key.
 # The clipboard patch shares file_explorer.rs with reveal-in-finder, so it goes
-# last. fresh-daemon-explorer touches only editor_server.rs, which no other
-# patch names, so its position relative to the rest does not matter; it sits
-# before the clipboard only to keep that one last.
+# last. fresh-daemon-explorer and fresh-resize-full-render both edit
+# editor_server.rs, in disjoint regions, so their relative order does not
+# matter; both sit before the clipboard only to keep that one last.
 mash_fresh_patches() {
   printf '%s\n' fresh-config-dir fresh-reveal-in-finder fresh-warn-logs \
-    fresh-daemon-explorer fresh-explorer-clipboard
+    fresh-daemon-explorer fresh-resize-full-render fresh-explorer-clipboard
 }
 
 mash_require_sources() {
