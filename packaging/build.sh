@@ -33,9 +33,9 @@ arm64 | x86_64) ;;
   ;;
 esac
 # The manifest target this build resolves every pinned artifact for. The Linux
-# adapter derives it the same way; nothing may assume a literal. Apple silicon is
-# the official, released build; Intel (macos-amd64) is built from source with the
-# pins the manifest keeps for it.
+# adapter derives it the same way; nothing may assume a literal. Both macOS
+# architectures have official releases while Intel remains supported, and
+# each resolves the native artifacts the manifest keeps for it.
 target="$(python3 "$root/packaging/assets.py" target)"
 case "$target" in
 macos-arm64 | macos-amd64) ;;

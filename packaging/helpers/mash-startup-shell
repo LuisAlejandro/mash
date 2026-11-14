@@ -58,6 +58,9 @@ _mash_startup_prompt() {
         _mash_normal_shell
     fi
     _mash_startup_seen=1
+    # Parking keeps this shell rather than calling _mash_normal_shell. Reset
+    # modes here too, after the foreground program exits and before any wake.
+    _mash_reset_terminal_modes
     stty -echo 2>/dev/null
     # Preserve shell-integration readiness without a visible prompt. Herdr's
     # agent.start validates this shell and still waits for the real agent.

@@ -116,8 +116,8 @@ mash_read_line() {
 mash_macos_candidate() {
   installed="${runtime_version:-$(mash_read_line "$res/VERSION")}"
   [ -n "$installed" ] || return 1
-  # One request a day, whatever the user does with windows. The lock is already
-  # held, so two launches cannot both decide the window has expired.
+  # One successful check a day. Failed requests leave this timestamp alone so
+  # a later launch can retry. The lock already serializes concurrent checks.
   local now last
   now="$(date +%s)"
   last="$(mash_read_line "$checked")"
@@ -128,7 +128,6 @@ mash_macos_candidate() {
     mash_log "macos: next check in $((86400 - (now - last)))s"
     return 1
   fi
-  mash_write "$checked" "$now"
   # The asset a Mac can install is named for its own CPU. A release that carries
   # no asset for this architecture offers nothing to this Mac, so the check is
   # "no newer version" rather than a failed or impossible download.
@@ -153,10 +152,16 @@ mash_macos_candidate() {
 arch = sys.argv[1]
 try:
     data = json.load(sys.stdin)
-except Exception:
+    if not isinstance(data, dict) or not isinstance(data.get("assets"), list):
+        raise ValueError("invalid release metadata")
+    if not isinstance(data.get("tag_name"), str):
+        raise ValueError("invalid release tag")
+    if any(not isinstance(a, dict) or not isinstance(a.get("name"), str) for a in data["assets"]):
+        raise ValueError("invalid release assets")
+except (ValueError, TypeError):
     raise SystemExit(0)
-tag = str(data.get("tag_name", "")).strip().lstrip("vV")
-names = {asset.get("name", "") for asset in data.get("assets", [])}
+tag = data["tag_name"].strip().lstrip("vV")
+names = {asset["name"] for asset in data["assets"]}
 print(tag)
 print("1" if "Mash-%s-mac-%s.dmg" % (tag, arch) in names else "0")' "$arch" 2>/dev/null)"
   candidate="$(printf '%s\n' "$parsed" | sed -n '1p')"
@@ -167,6 +172,7 @@ print("1" if "Mash-%s-mac-%s.dmg" % (tag, arch) in names else "0")' "$arch" 2>/d
   fi
   # The check itself succeeded, so a release that has no DMG for this Mac means
   # "nothing new for you", not "update checking is broken".
+  mash_write "$checked" "$now"
   check_ok=1
   if [ "$present" != 1 ]; then
     mash_log "macos: $candidate has no $arch DMG for this Mac"

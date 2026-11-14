@@ -68,6 +68,10 @@ jobs:
         with:
           node-version: "24"
 
+      - name: Read the test pins
+        id: test-pins
+        run: python3 packaging/assets.py export >>"$GITHUB_OUTPUT"
+
       # Mash's menus live in the fork and replay chords this repository binds,
       # so the suite that compares the two needs the fork checked out. Without
       # it that test skips, and a menu item pointing at an unbound chord would
@@ -75,8 +79,8 @@ jobs:
       - name: Clone the pinned Ghostty fork
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: LuisAlejandro/ghostty
-          ref: 9ce916c41a71e9f3c914ae5a3d682295d0ce1c75 # the pinned fork commit, as in packaging/assets.json
+          repository: ${{ steps.test-pins.outputs.GHOSTTY_FORK }}
+          ref: ${{ steps.test-pins.outputs.GHOSTTY_FORK_COMMIT }}
           path: ghostty-fork
 
       - name: Point the suite at the fork

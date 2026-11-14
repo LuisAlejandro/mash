@@ -110,6 +110,21 @@ class StartupShellTest(unittest.TestCase):
         self.assertIn(b"\x1b[?1006l", self.output)
         self.assertIn(b"\x1b[?2004l", self.output)
 
+    def test_parked_quiet_prompt_resets_modes_after_foreground_exit(self):
+        self.record.parent.mkdir(parents=True, exist_ok=True)
+        self.record.write_text("{}")
+        program = self.bin / "mode-agent"
+        program.write_text("#!/bin/sh\nprintf '\\033[?1000h\\033[?1006hAPP-EXIT\\n'\n")
+        program.chmod(0o755)
+        os.write(self.fd, (shlex.quote(str(program)) + "\n").encode())
+        self.wait_for(b"APP-EXIT")
+        self.wait_for(b"\x1b]133;B\x07")
+        after_exit = bytes(self.output).split(b"APP-EXIT", 1)[1]
+        # This proves emitted cleanup, not terminal-emulator mouse behavior.
+        self.assertIn(b"\x1b[?1000l", after_exit)
+        self.assertIn(b"\x1b[?1006l", after_exit)
+        self.assertNotIn(b"USER-SHELL-READY", self.output)
+
     def test_a_launch_that_never_arrives_hands_the_pane_back(self):
         # No command is ever typed. Without a grace period the pane sits here
         # for ever: echo off, nothing reading input, just "Starting the editor".

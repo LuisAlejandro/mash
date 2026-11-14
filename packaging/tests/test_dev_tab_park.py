@@ -18,6 +18,7 @@ import importlib.machinery
 import importlib.util
 import json
 import os
+import subprocess
 import tempfile
 import time
 import unittest
@@ -32,6 +33,7 @@ spec = importlib.util.spec_from_loader(
 )
 PARK = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(PARK)
+PROCESS_CWD = PARK.process_cwd
 
 
 class FakeHerdr:
@@ -94,6 +96,13 @@ class ParkTest(unittest.TestCase):
         PARK.os.path.isfile = lambda path: path == "/s/x.jsonl" or original_isfile(path)
         self.addCleanup(setattr, PARK.os.path, "isfile", original_isfile)
         self.now = 10_000.0
+        self.cwd_patch = patch.object(PARK, "process_cwd", return_value="/w")
+        self.cwd_patch.start()
+        self.addCleanup(self.cwd_patch.stop)
+        real_isdir = PARK.os.path.isdir
+        isdir = patch.object(PARK.os.path, "isdir", side_effect=lambda p: p == "/w" or real_isdir(p))
+        isdir.start()
+        self.addCleanup(isdir.stop)
 
     def _restore(self, value):
         if value is None:
@@ -264,6 +273,16 @@ class ParkTest(unittest.TestCase):
         self.assertEqual(killed, [99])
         self.assertEqual(PARK.read_record("w:p1")["kind"], "editor")
 
+    def test_editor_record_uses_process_directory_not_stale_pane_metadata(self):
+        fake = FakeHerdr(process={"w:p1": {"foreground_processes": [{"argv0": "fresh", "pid": 99}]}})
+        with patch.object(PARK, "call", fake), patch.object(PARK.os, "kill"):
+            self.assertTrue(PARK.park_editor({"pane_id": "w:p1", "tab_id": "t1", "cwd": "/stale"}))
+        self.assertEqual(PARK.read_record("w:p1")["cwd"], "/w")
+        with patch.object(PARK, "call", fake), patch.object(PARK.os, "kill") as kill, \
+             patch.object(PARK, "process_cwd", return_value=None):
+            self.assertFalse(PARK.park_editor({"pane_id": "w:p1", "tab_id": "t1"}))
+            kill.assert_not_called()
+
     def test_an_editor_pane_already_a_shell_is_left_alone(self):
         # Nothing to stop, and a record would make the wake start an editor in a
         # pane somebody is using for something else.
@@ -282,21 +301,119 @@ class ParkTest(unittest.TestCase):
         PARK.call = fake
         try:
             PARK.save_record("w:p1", {"kind": "editor", "tab": "t1", "cwd": "/w"})
+            self.assertFalse(PARK.wake("w:p1"))
+            self.assertEqual(fake.sent()[0], ("pane.send_text", {"pane_id": "w:p1", "text": ":"}))
+            self.assertIn("herdr-fresh-pane --daemon .", fake.sent()[2][1]["text"])
+            self.assertIsNotNone(PARK.read_record("w:p1"))
+            fake.process["w:p1"] = {"foreground_processes": [{"argv0": "fresh", "pid": 99}]}
             self.assertTrue(PARK.wake("w:p1"))
+            self.assertIsNone(PARK.read_record("w:p1"))
         finally:
             PARK.call = original
-        self.assertEqual(
-            fake.sent(),
-            [
-                # The bare `:` absorbs a terminal reply still in flight, which
-                # otherwise glues itself to the command name and loses the launch.
-                ("pane.send_text", {"pane_id": "w:p1", "text": ":"}),
-                ("pane.send_keys", {"pane_id": "w:p1", "keys": ["Enter"]}),
-                ("pane.send_text", {"pane_id": "w:p1", "text": "herdr-fresh-pane --daemon ."}),
-                ("pane.send_keys", {"pane_id": "w:p1", "keys": ["Enter"]}),
-            ],
-        )
+
+    def test_editor_submission_is_not_recovery(self):
+        fake = FakeHerdr()
+        PARK.save_record("w:p1", {"kind": "editor", "tab": "t1", "cwd": "/w"})
+        with patch.object(PARK, "call", fake):
+            self.assertFalse(PARK.wake("w:p1"))
+            self.assertIsNotNone(PARK.read_record("w:p1"))
+            sent = len(fake.sent())
+            self.assertFalse(PARK.wake("w:p1"))
+            self.assertEqual(len(fake.sent()), sent, "do not duplicate a queued launch")
+
+    def test_failure_before_editor_submission_does_not_block_retry(self):
+        fake = FakeHerdr()
+        PARK.save_record("w:p1", {"kind": "editor", "tab": "t1", "cwd": "/w"})
+        def fail(method, params=None, timeout=5):
+            if method == "pane.send_text":
+                raise PARK.Unavailable("prelude failed")
+            return fake(method, params, timeout)
+        with patch.object(PARK, "call", fail):
+            self.assertFalse(PARK.wake("w:p1"))
+        self.assertNotIn("pending", PARK.read_record("w:p1"))
+        with patch.object(PARK, "call", fake):
+            self.assertFalse(PARK.wake("w:p1"))
+        self.assertEqual(len(fake.sent()), 4)
+
+    def test_editor_is_acknowledged_as_soon_as_client_appears(self):
+        fake = FakeHerdr()
+        PARK.save_record("w:p1", {"kind": "editor", "tab": "t1", "cwd": "/w"})
+        def call(method, params=None, timeout=5):
+            result = fake(method, params, timeout)
+            if method == "pane.send_keys" and len(fake.sent()) == 4:
+                fake.process["w:p1"] = {"foreground_processes": [{"argv0": "fresh", "pid": 99}]}
+            return result
+        with patch.object(PARK, "call", call):
+            self.assertTrue(PARK.wake("w:p1"))
         self.assertIsNone(PARK.read_record("w:p1"))
+
+    def test_editor_can_retry_if_original_shell_has_been_replaced(self):
+        fake = FakeHerdr()
+        PARK.save_record("w:p1", {"kind": "editor", "tab": "t1", "cwd": "/w"})
+        with patch.object(PARK, "call", fake):
+            self.assertFalse(PARK.wake("w:p1"))
+            fake.process["w:p1"] = {"shell_pid": 405, "foreground_processes": [{"argv0": "bash", "pid": 405}]}
+            self.assertFalse(PARK.wake("w:p1"))
+        self.assertEqual(len(fake.sent()), 8)
+
+    def test_failed_editor_command_can_retry_after_shell_completion(self):
+        fake = FakeHerdr()
+        PARK.save_record("w:p1", {"kind": "editor", "tab": "t1", "cwd": "/w"})
+        with patch.object(PARK, "call", fake):
+            self.assertFalse(PARK.wake("w:p1"))
+            record = PARK.read_record("w:p1")
+            result = Path(PARK.park_dir()) / "w_p1.result"
+            result.write_text(record["pending"])
+            self.assertFalse(PARK.wake("w:p1"))
+            self.assertEqual(len(fake.sent()), 8)
+            self.assertNotEqual(record["pending"], PARK.read_record("w:p1")["pending"])
+            self.assertEqual(PARK.parked_panes(), ["w:p1"])
+
+    def test_editor_wrong_or_unknown_directory_is_not_typed_into(self):
+        for cwd in (None, "/other"):
+            fake = FakeHerdr()
+            PARK.save_record("w:p1", {"kind": "editor", "tab": "t1", "cwd": "/w"})
+            with patch.object(PARK, "call", fake), patch.object(PARK, "process_cwd", return_value=cwd):
+                self.assertFalse(PARK.wake("w:p1"))
+            self.assertEqual(fake.sent(), [])
+            self.assertIsNotNone(PARK.read_record("w:p1"))
+
+    def test_editor_rechecks_visibility_after_recording(self):
+        for visible in ({"t1"}, None):
+            fake = FakeHerdr(process={"w:p1": {"foreground_processes": [{"argv0": "fresh", "pid": 99}]}})
+            with patch.object(PARK, "call", fake), \
+                 patch.object(PARK, "visible_tabs", return_value=visible), \
+                 patch.object(PARK.os, "kill") as kill:
+                self.assertFalse(PARK.park_editor({"pane_id": "w:p1", "tab_id": "t1", "cwd": "/w"}))
+                kill.assert_not_called()
+
+    def test_process_directory_uses_actual_process(self):
+        self.assertEqual(os.path.realpath(PROCESS_CWD(os.getpid())), os.path.realpath(os.getcwd()))
+        self.assertIsNone(PROCESS_CWD(None))
+
+    def test_real_shell_completion_allows_retry_without_changing_directory(self):
+        project = Path(self.tmp.name) / "project with 'quotes'"
+        project.mkdir()
+        binary = Path(self.tmp.name) / "bin"
+        binary.mkdir()
+        helper = binary / "herdr-fresh-pane"
+        helper.write_text("#!/bin/sh\nexit 127\n")
+        helper.chmod(0o755)
+        alias = Path(self.tmp.name) / "alias"
+        alias.symlink_to(project, target_is_directory=True)
+        fake = FakeHerdr()
+        PARK.save_record("w:p1", {"kind": "editor", "tab": "t1", "cwd": str(alias)})
+        with patch.object(PARK, "call", fake), patch.object(PARK, "process_cwd", return_value=str(project)):
+            self.assertFalse(PARK.wake("w:p1"))
+            command = fake.sent()[2][1]["text"]
+            result = subprocess.run(["/bin/sh", "-c", command], cwd=project,
+                                    env={**os.environ, "PATH": str(binary) + ":/usr/bin:/bin"},
+                                    capture_output=True, text=True, timeout=5)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            token = PARK.read_record("w:p1")["pending"]
+            self.assertEqual((Path(PARK.park_dir()) / "w_p1.result").read_text(), token)
+            self.assertFalse(PARK.wake("w:p1"))
+            self.assertEqual(len(fake.sent()), 8)
 
     def test_a_tab_with_a_working_agent_keeps_its_editor_open(self):
         # Taking the editor away from a tab whose agent is mid-turn or waiting on
