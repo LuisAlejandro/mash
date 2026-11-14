@@ -117,4 +117,20 @@ if out="$(env -i HOME="$home" PATH="$PATH" "$linux/packaging/linux/launcher" 2>&
 fi
 grep -q 'Mash could not pin its update settings; the file was kept.' <<<"$out" || { echo 'FAIL: no-language Linux alert changed' >&2; exit 1; }
 
+# The fallback formatter must insert values literally on macOS Bash 3.2 and
+# newer Bash: quotes, ampersands, backslashes and glob syntax are path bytes.
+. "$root/packaging/lib.sh"
+value=$'a&b\\c "quoted" *?[x]\n{path}'
+[ "$(mash_messages_fill '{path}|{path}|{missing}' "path=$value")" = "$value|$value|{missing}" ] || {
+  echo 'FAIL: fallback placeholders changed literal value bytes' >&2; exit 1
+}
+[ "$(mash_messages_fill 'a{empty}b {literal*}' 'empty=' 'literal*=x&y')" = 'ab x&y' ] || {
+  echo 'FAIL: empty or literal placeholder names changed' >&2; exit 1
+}
+[ "$(mash_messages_fill '{path}' 'path=first' 'path=second')" = first ] || exit 1
+
+# A real missing-catalog fallback follows the same path as launch errors.
+mash_messages_t=''
+[ "$(mash_say absent '{path}' "path=$value")" = "$value" ] || exit 1
+
 echo 'Mash helper i18n: ok'

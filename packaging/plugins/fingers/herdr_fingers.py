@@ -18,7 +18,6 @@ Flow:
 import os
 import re
 import sys
-import json
 import shutil
 import subprocess
 import tty
@@ -227,7 +226,7 @@ def extract_items(text: str) -> list[tuple[str, str, int]]:
 
     # Remove matches that are substrings of higher-priority matches
     # (e.g., /path inside a URL match)
-    items = _remove_overlapping(items, text)
+    items = _remove_overlapping(items)
 
     # Filter path items: keep only valid paths (exists or has valid structure)
     items = _filter_valid_paths(items)
@@ -235,7 +234,7 @@ def extract_items(text: str) -> list[tuple[str, str, int]]:
     return items
 
 
-def _remove_overlapping(items: list[tuple[str, str, int]], text: str) -> list[tuple[str, str, int]]:
+def _remove_overlapping(items: list[tuple[str, str, int]]) -> list[tuple[str, str, int]]:
     """
     Remove items whose span is fully contained within another item's span.
     Preserves the outer (higher-priority) match.

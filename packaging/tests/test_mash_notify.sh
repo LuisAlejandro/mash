@@ -14,14 +14,7 @@ root="$(cd "$(dirname "$0")/../.." && pwd)"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
-pass=0 fail=0
-ok() { printf 'ok   - %s\n' "$1"; pass=$((pass + 1)); }
-nok() { printf 'FAIL - %s\n' "$1"; fail=$((fail + 1)); }
-check() { # check MSG CMD... -- record a pass when CMD succeeds
-  local msg="$1"
-  shift
-  if "$@"; then ok "$msg"; else nok "$msg"; fi
-}
+. "$root/packaging/tests/lib.sh"
 
 # A stand-in bundle: the wrapper at bin/, a notifier that records its argv.
 res="$tmp/res"

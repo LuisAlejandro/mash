@@ -7,7 +7,7 @@
 
 id = "herdr-fingers"
 name = "Link Picker"
-version = "0.1.0"
+version = "0.1.1"
 min_herdr_version = "0.7.0"
 description = "Extract file paths, URLs, IPs, UUIDs, hashes, and other identifiers from the focused pane and pick one with vimium-style letter keys."
 platforms = ["linux", "macos"]

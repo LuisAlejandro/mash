@@ -282,6 +282,25 @@ mash_cargo() {
 #     empty project), which is why the fork tracks a branch on 0.16.0.
 #   * Metal Toolchain. Xcode does not install it by default, and the stock
 #     `metal` shim stays broken until TOOLCHAINS names the downloaded one.
+# Fixed-string checks shared by the fork guard below. Keep regex, counts and
+# compound assertions at their call sites, where their distinct semantics live.
+mash_ghostty_require() {
+  local message="$1"
+  shift
+  grep -qF -- "$@" 2>/dev/null && return 0
+  printf '%s\n' "$message" >&2
+  return 1
+}
+
+mash_ghostty_forbid() {
+  local message="$1"
+  shift
+  if grep -qF -- "$@" 2>/dev/null; then
+    printf '%s\n' "$message" >&2
+    return 1
+  fi
+}
+
 # Fail the build when a Ghostty feature Mash deliberately removes comes back.
 #
 # Mash Terminal is a host for one full-window Herdr client: Ghostty's own tabs,
@@ -324,19 +343,15 @@ mash_ghostty_trim_check() {
   for item in "New Tab" "Close Tab" "Split Right" "Split Left" "Split Down" \
     "Split Up" "Command Palette" "Quick Terminal" "Terminal Inspector" \
     "Zoom Split" "Equalize Splits" "Resize Split" "Change Tab Title..."; do
-    if grep -qF "title=\"$item\"" "$xib" 2>/dev/null; then
-      echo "Ghostty fork reintroduced the macOS menu item '$item'" >&2
-      status=1
-    fi
+    mash_ghostty_forbid "Ghostty fork reintroduced the macOS menu item '$item'" \
+      "title=\"$item\"" "$xib" || status=1
   done
 
   # Mash has one window. A rebase that brings New Window back would offer a
   # menu item that only brings the existing window forward, and a rebase that
   # drops the guard in newWindow would let a second window clone the first.
-  if grep -qF 'title="New Window"' "$xib" 2>/dev/null; then
-    echo "Ghostty fork reintroduced the macOS 'New Window' menu item" >&2
-    status=1
-  fi
+  mash_ghostty_forbid "Ghostty fork reintroduced the macOS 'New Window' menu item" \
+    'title="New Window"' "$xib" || status=1
   [ "$(grep -c 'if let existing = all.first' \
     "$src/macos/Sources/Features/Terminal/TerminalController.swift" 2>/dev/null)" = 2 ] || {
     echo "Ghostty fork lost the one-window guard in TerminalController.newWindow" >&2
@@ -344,10 +359,8 @@ mash_ghostty_trim_check() {
   }
   # Every launch must hand off to Mash's setup before Ghostty initializes, or a
   # Dock click or a restart reopens a terminal without Mash's environment.
-  grep -qF 'Resources/bin/mash-launch' "$src/macos/Sources/App/main.swift" 2>/dev/null || {
-    echo "Ghostty fork no longer hands its launch to Mash's setup (main.swift)" >&2
-    status=1
-  }
+  mash_ghostty_require "Ghostty fork no longer hands its launch to Mash's setup (main.swift)" \
+    'Resources/bin/mash-launch' "$src/macos/Sources/App/main.swift" || status=1
 
   # The GTK menus and buttons, which are a different frontend from the macOS
   # xib. window.blp owns the titlebar and main menu, surface.blp the terminal
@@ -358,10 +371,8 @@ mash_ghostty_trim_check() {
   local gtk_info="$src/src/apprt/gtk/build/info.zig"
   for needle in 'pub const base_application_id = "app.mash.Mash"' \
     'pub const resource_path = "/app/mash/Mash"'; do
-    grep -qF "$needle" "$gtk_info" 2>/dev/null || {
-      echo "Ghostty fork lost GTK branding: $needle" >&2
-      status=1
-    }
+    mash_ghostty_require "Ghostty fork lost GTK branding: $needle" \
+      "$needle" "$gtk_info" || status=1
   done
   if grep -A1 -F '      [top]' "$gtk_window" | grep -qF '      Box {'; then
     echo "Ghostty fork marked the terminal content as a GTK top bar" >&2
@@ -371,58 +382,42 @@ mash_ghostty_trim_check() {
     'action: "win.toggle-command-palette"' 'action: "win.toggle-inspector"' \
     'action: "win.split-' 'clicked => $new_tab()' \
     'tooltip-text: _("View Open Tabs")'; do
-    if grep -qF "$needle" "$gtk_window" 2>/dev/null; then
-      echo "Ghostty fork reintroduced '$needle' in the GTK window" >&2
-      status=1
-    fi
+    mash_ghostty_forbid "Ghostty fork reintroduced '$needle' in the GTK window" \
+      "$needle" "$gtk_window" || status=1
   done
   for needle in 'action: "split-tree.new-split"' 'action: "win.new-tab"' \
     'label: _("Close Split")' 'label: _("Tab")'; do
-    if grep -qF "$needle" "$gtk_surface" 2>/dev/null; then
-      echo "Ghostty fork reintroduced '$needle' in the GTK context menu" >&2
-      status=1
-    fi
+    mash_ghostty_forbid "Ghostty fork reintroduced '$needle' in the GTK context menu" \
+      "$needle" "$gtk_surface" || status=1
   done
   # Menu deletion alone leaves these registered as directly invokable GTK
   # actions (notably app.new-tab and app.toggle-quick-terminal via DBus).
   for name in new-tab split-right split-left split-up split-down \
     toggle-command-palette toggle-inspector; do
-    if grep -qF ".init(\"$name\", " "$src/src/apprt/gtk/class/window.zig" 2>/dev/null; then
-      echo "Ghostty fork still registers the GTK window action '$name'" >&2
-      status=1
-    fi
+    mash_ghostty_forbid "Ghostty fork still registers the GTK window action '$name'" \
+      ".init(\"$name\", " "$src/src/apprt/gtk/class/window.zig" || status=1
   done
   for name in new-tab toggle-quick-terminal; do
-    if grep -qF ".init(\"$name\", " "$src/src/apprt/gtk/class/application.zig" 2>/dev/null; then
-      echo "Ghostty fork still registers the GTK application action '$name'" >&2
-      status=1
-    fi
+    mash_ghostty_forbid "Ghostty fork still registers the GTK application action '$name'" \
+      ".init(\"$name\", " "$src/src/apprt/gtk/class/application.zig" || status=1
   done
   # The page and split-tree widgets expose direct GTK actions too: unlike
   # keyboard bindings, these bypass Surface.performBindingAction entirely.
   for name in new-split equalize zoom close-split; do
-    if grep -qF ".init(\"$name\", " "$src/src/apprt/gtk/class/split_tree.zig" 2>/dev/null; then
-      echo "Ghostty fork still registers the GTK split-tree action '$name'" >&2
-      status=1
-    fi
+    mash_ghostty_forbid "Ghostty fork still registers the GTK split-tree action '$name'" \
+      ".init(\"$name\", " "$src/src/apprt/gtk/class/split_tree.zig" || status=1
   done
   for name in close next-page previous-page prompt-tab-title; do
-    if grep -qF ".init(\"$name\", " "$src/src/apprt/gtk/class/tab.zig" 2>/dev/null; then
-      echo "Ghostty fork still registers the GTK tab action '$name'" >&2
-      status=1
-    fi
+    mash_ghostty_forbid "Ghostty fork still registers the GTK tab action '$name'" \
+      ".init(\"$name\", " "$src/src/apprt/gtk/class/tab.zig" || status=1
   done
-  if grep -qF '"tab.next-page"' "$src/src/apprt/gtk/class/surface.zig" 2>/dev/null; then
-    echo "Ghostty fork still diverts horizontal scrolling to GTK tabs" >&2
-    status=1
-  fi
+  mash_ghostty_forbid "Ghostty fork still diverts horizontal scrolling to GTK tabs" \
+    '"tab.next-page"' "$src/src/apprt/gtk/class/surface.zig" || status=1
 
   # One window on Linux too: no New Window item, and a second launch or a
   # new_window action presents the existing window.
-  if grep -qF 'action: "win.new-window"' "$gtk_window" "$gtk_surface" 2>/dev/null; then
-    echo "Ghostty fork reintroduced a GTK 'New Window' menu item" >&2
-    status=1
-  fi
+  mash_ghostty_forbid "Ghostty fork reintroduced a GTK 'New Window' menu item" \
+    'action: "win.new-window"' "$gtk_window" "$gtk_surface" || status=1
   [ "$(grep -c 'getActiveWindow()) |win|' "$src/src/apprt/gtk/class/application.zig" 2>/dev/null)" -ge 2 ] || {
     echo "Ghostty fork lost the GTK one-window guard in activate/newWindow" >&2
     status=1
@@ -433,14 +428,10 @@ mash_ghostty_trim_check() {
   # check cannot see it. Removing the tab bar from window.blp is what makes
   # this pairing worth asserting.
   if ! grep -qF 'Adw.TabBar' "$gtk_window" 2>/dev/null; then
-    if grep -qF 'bindTemplateChildPrivate("tab_bar"' "$src/src/apprt/gtk/class/window.zig" 2>/dev/null; then
-      echo "Ghostty fork still binds the 'tab_bar' template child that window.blp no longer declares" >&2
-      status=1
-    fi
-    if grep -qF 'priv.tab_bar' "$src/src/apprt/gtk/class/window.zig" 2>/dev/null; then
-      echo "Ghostty fork still uses priv.tab_bar after the tab bar was removed" >&2
-      status=1
-    fi
+    mash_ghostty_forbid "Ghostty fork still binds the 'tab_bar' template child that window.blp no longer declares" \
+      'bindTemplateChildPrivate("tab_bar"' "$src/src/apprt/gtk/class/window.zig" || status=1
+    mash_ghostty_forbid "Ghostty fork still uses priv.tab_bar after the tab bar was removed" \
+      'priv.tab_bar' "$src/src/apprt/gtk/class/window.zig" || status=1
   fi
 
   # Scripting and Finder services are entry points a menu grep cannot see.
@@ -460,10 +451,8 @@ mash_ghostty_trim_check() {
     "Use as Default" "Ghostty Help" "About Ghostty" "Hide Ghostty" \
     "Quit Ghostty" "Close" "Close All Windows" "Paste Selection" "Select All" \
     "Terminal Read-only" "Show/Hide All Terminals"; do
-    if grep -qF "title=\"$item\"" "$xib" 2>/dev/null; then
-      echo "Ghostty fork reintroduced the macOS menu item '$item'" >&2
-      status=1
-    fi
+    mash_ghostty_forbid "Ghostty fork reintroduced the macOS menu item '$item'" \
+      "title=\"$item\"" "$xib" || status=1
   done
   # Items Mash keeps, including the renamed app-menu entries. One window makes
   # Close and Close All Windows the same as Close Window, and Show/Hide the same
@@ -471,20 +460,16 @@ mash_ghostty_trim_check() {
   # Read-only locks every key out of Herdr. Those are removed above.
   for item in "About Mash" "Hide Mash" "Quit Mash" "Close Window" "Copy" \
     "Paste"; do
-    grep -qF "title=\"$item\"" "$xib" 2>/dev/null || {
-      echo "Ghostty fork lost the macOS menu item '$item'" >&2
-      status=1
-    }
+    mash_ghostty_require "Ghostty fork lost the macOS menu item '$item'" \
+      "title=\"$item\"" "$xib" || status=1
   done
   # The terminal right-click menu is built in Swift, not the xib.
   local surface_view="$src/macos/Sources/Ghostty/Surface View/SurfaceView_AppKit.swift"
   for item in "Split Right" "Split Left" "Split Down" "Split Up" \
     "Toggle Terminal Inspector" "Change Tab Title..." "Change Terminal Title..." \
     "Reset Terminal" "Terminal Read-only"; do
-    if grep -qF "withTitle: \"$item\"" "$surface_view" 2>/dev/null; then
-      echo "Ghostty fork reintroduced '$item' in the macOS terminal context menu" >&2
-      status=1
-    fi
+    mash_ghostty_forbid "Ghostty fork reintroduced '$item' in the macOS terminal context menu" \
+      "withTitle: \"$item\"" "$surface_view" || status=1
   done
   # Native window tabbing makes AppKit add Show Tab Bar, Show All Tabs, Show
   # Previous/Next Tab, Move Tab to New Window and Merge All Windows to the menus,
@@ -501,22 +486,16 @@ mash_ghostty_trim_check() {
   # item or a registered window action.
   for needle in 'action: "win.reset"' 'action: "win.clear"' \
     'action: "surface.notify-on-next-command-finish"' 'action: "app.open-config"'; do
-    if grep -qF "$needle" "$gtk_window" "$gtk_surface" 2>/dev/null; then
-      echo "Ghostty fork reintroduced '$needle' in the GTK menus" >&2
-      status=1
-    fi
+    mash_ghostty_forbid "Ghostty fork reintroduced '$needle' in the GTK menus" \
+      "$needle" "$gtk_window" "$gtk_surface" || status=1
   done
   for name in reset clear; do
-    if grep -qF ".init(\"$name\", " "$src/src/apprt/gtk/class/window.zig" 2>/dev/null; then
-      echo "Ghostty fork still registers the GTK window action '$name'" >&2
-      status=1
-    fi
+    mash_ghostty_forbid "Ghostty fork still registers the GTK window action '$name'" \
+      ".init(\"$name\", " "$src/src/apprt/gtk/class/window.zig" || status=1
   done
-  if grep -qF 'title: "Rename Tab..."' \
-    "$src/macos/Sources/Features/Terminal/Window Styles/TerminalWindow.swift" 2>/dev/null; then
-    echo "Ghostty fork reintroduced the macOS 'Rename Tab...' tab menu item" >&2
-    status=1
-  fi
+  mash_ghostty_forbid "Ghostty fork reintroduced the macOS 'Rename Tab...' tab menu item" \
+    'title: "Rename Tab..."' \
+    "$src/macos/Sources/Features/Terminal/Window Styles/TerminalWindow.swift" || status=1
   for path in "macos/Sources/Features/QuickTerminal" \
     "macos/Sources/Features/Command Palette" "macos/Sources/Features/Update" \
     "macos/Sources/Features/App Intents/QuickTerminalIntent.swift" \
@@ -544,11 +523,8 @@ mash_ghostty_trim_check() {
   fi
   # The undo registrations stay in tab and window code; a zero expiry is what
   # turns every one of them into a no-op, so a closed window frees its instance.
-  grep -qF 'mash: no Ghostty undo' \
-    "$src/macos/Sources/Features/Terminal/BaseTerminalController.swift" 2>/dev/null || {
-    echo "Ghostty fork re-enabled undo of closed windows" >&2
-    status=1
-  }
+  mash_ghostty_require "Ghostty fork re-enabled undo of closed windows" \
+    'mash: no Ghostty undo' "$src/macos/Sources/Features/Terminal/BaseTerminalController.swift" || status=1
   for name in undo redo check_for_updates toggle_window_float_on_top \
     prompt_surface_title prompt_tab_title prompt_window_title set_surface_title; do
     awk '/^(pub )?const mash_removed_ui/,/^}\);/' "$src/src/Surface.zig" 2>/dev/null |
@@ -559,15 +535,11 @@ mash_ghostty_trim_check() {
   done
   for needle in 'win.prompt-surface-title' 'win.prompt-window-title' \
     'label: _("About Ghostty")'; do
-    if grep -qF "$needle" "$gtk_window" "$gtk_surface" 2>/dev/null; then
-      echo "Ghostty fork reintroduced '$needle' in the GTK menus" >&2
-      status=1
-    fi
+    mash_ghostty_forbid "Ghostty fork reintroduced '$needle' in the GTK menus" \
+      "$needle" "$gtk_window" "$gtk_surface" || status=1
   done
-  grep -qF 'label: _("About Mash Terminal")' "$gtk_window" 2>/dev/null || {
-    echo "Ghostty fork lost the GTK 'About Mash Terminal' menu item" >&2
-    status=1
-  }
+  mash_ghostty_require "Ghostty fork lost the GTK 'About Mash Terminal' menu item" \
+    'label: _("About Mash Terminal")' "$gtk_window" || status=1
 
   # Mash's own menus: every item invokes a Herdr command by sending its chord
   # through mash_send_key. Losing the action or either menu table drops the

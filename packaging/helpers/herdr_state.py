@@ -11,6 +11,7 @@ helpers by name and build-common.sh skips directories, so anything under a
 """
 
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -35,6 +36,22 @@ def repo_root(path):
     r = subprocess.run(["git", "-C", path, "rev-parse", "--show-toplevel"],
                        capture_output=True, text=True)
     return r.stdout.strip() if r.returncode == 0 else None
+
+
+def workspace_repos(panes, only, previous, current):
+    """One repo per live workspace; keep unselected workspaces' readings."""
+    dirs = {}
+    for pane in panes:
+        dirs.setdefault(pane["workspace_id"], pane.get("foreground_cwd") or pane.get("cwd"))
+    for workspace, path in dirs.items():
+        if only and workspace != only:
+            if workspace in previous:
+                current[workspace] = previous[workspace]
+            continue
+        if path and os.path.isdir(path):
+            root = repo_root(path)
+            if root:
+                yield workspace, root
 
 
 def load_state(path):

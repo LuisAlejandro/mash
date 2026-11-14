@@ -30,15 +30,12 @@ def process_started(pid):
 
 
 def timestamp(value):
-    if not isinstance(value, str):
+    try:
+        parsed = datetime.datetime.fromisoformat(value)
+        # Session timestamps must be absolute, never interpreted in host time.
+        return parsed.timestamp() if parsed.tzinfo is not None else None
+    except (ValueError, TypeError):
         return None
-    value = re.sub(r"([+-]\d{2}):(\d{2})$", r"\1\2", value.replace("Z", "+0000"))
-    for fmt in ("%Y-%m-%dT%H:%M:%S.%f%z", "%Y-%m-%dT%H:%M:%S%z"):
-        try:
-            return datetime.datetime.strptime(value, fmt).timestamp()
-        except ValueError:
-            pass
-    return None
 
 
 def usage_summary(path, started):

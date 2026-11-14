@@ -29,6 +29,7 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 mkdir -p "$tmp/bin"
 cp "$helper" "$tmp/bin/herdr-fresh-pane"
+cp "$root/packaging/helpers/herdr-json" "$root/packaging/helpers/mash-bin" "$tmp/bin/"
 chmod +x "$tmp/bin/herdr-fresh-pane"
 
 # A fake herdr: answers `pane current` and records every other call.
@@ -36,7 +37,7 @@ cat >"$tmp/bin/herdr" <<'SH'
 #!/bin/sh
 printf '%s\n' "$*" >>"$FAKE_HERDR_LOG"
 case "$1 $2" in
-"pane current") printf '%s\n' '{"result":{"pane":{"pane_id":"w1:p9"}}}' ;;
+"pane current") printf '%s\n' '{"result": {"pane": {"pane_id": "w1:p9"}, "peer": {"pane_id": "wrong"}}}' ;;
 "pane layout")
   # FAKE_LAYOUT picks the tab's shape: dev (w1:p9 left of a right split),
   # devright (w1:p9 on the right), or single (one pane).

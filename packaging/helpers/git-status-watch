@@ -160,24 +160,11 @@ def main():
     panes = herdr_state.herdr("pane", "list")
     if not panes or not panes.get("panes"):
         return 1
-    dirs = {}
-    for p in panes["panes"]:
-        dirs.setdefault(p["workspace_id"], p.get("foreground_cwd") or p.get("cwd"))
 
     previous = herdr_state.load_state(STATE)
 
     current = {}
-    for ws, path in dirs.items():
-        if ONLY and ws != ONLY:
-            if ws in previous:
-                current[ws] = previous[ws]
-            continue
-        if not path or not os.path.isdir(path):
-            continue
-        root = herdr_state.repo_root(path)
-        if not root:
-            continue
-
+    for ws, root in herdr_state.workspace_repos(panes["panes"], ONLY, previous, current):
         branch = current_branch(root)
         if not branch:
             continue

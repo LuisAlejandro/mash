@@ -99,10 +99,6 @@ toggle_sort_mode() {
   printf '%s\n' "$next"
 }
 
-cycle_sort_mode() {
-  toggle_sort_mode
-}
-
 restore_sort_mode() {
   local current
   current=$(get_sort_mode)

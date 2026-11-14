@@ -499,7 +499,7 @@ if [ -z "$cwd" ] || [ ! -d "$cwd" ]; then
 fi
 if [ -z "$cwd" ] || [ ! -d "$cwd" ]; then
 	cwd="$("$herdr" pane current 2>/dev/null |
-		sed -n 's/.*"foreground_cwd":"\([^"]*\)".*/\1/p' | head -n 1)"
+		"$here/herdr-json" foreground_cwd)"
 fi
 [ -n "$cwd" ] && [ -d "$cwd" ] || cwd="$PWD"
 if [ ! -d "$cwd" ]; then
@@ -524,8 +524,8 @@ pi_cmd="$("$here/mash-bin" --bundled pi)" || {
 created="$("$herdr" tab create --label "herdr-tab-launcher-pi" \
 	${target:+--workspace "$target"} \
 	--cwd "$cwd" --focus)"
-tab="$(printf '%s' "$created" | sed -n 's/.*"tab_id":"\([^"]*\)".*/\1/p' | head -n 1)"
-pane="$(printf '%s' "$created" | sed -n 's/.*"pane_id":"\([^"]*\)".*/\1/p' | head -n 1)"
+tab="$(printf '%s' "$created" | "$here/herdr-json" tab_id)"
+pane="$(printf '%s' "$created" | "$here/herdr-json" pane_id)"
 [ -n "$pane" ] || {
 	toast "could not create a pi tab"
 	exit 1
