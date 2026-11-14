@@ -640,7 +640,7 @@ description = "Command palette"
 [[keys.command]]
 key = "ctrl+alt+shift+y"
 type = "plugin_action"
-command = "fork-from-message.fork"
+command = "fork-from-message.fork-tab"
 description = "Fork agent from message"
 
 # Session search. macOS uses Cmd+Alt+L beside paste-annotations' Cmd+L; both
@@ -676,7 +676,7 @@ description = "Search files and actions"
 [[keys.command]]
 key = "ctrl+super+y"
 type = "plugin_action"
-command = "fork-from-message.fork-pane"
+command = "fork-from-message.fork-split"
 description = "Fork agent beside current pane"
 
 [[keys.command]]
