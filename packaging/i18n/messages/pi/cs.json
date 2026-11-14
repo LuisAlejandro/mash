@@ -94,5 +94,13 @@
   "pi.show-file.shown-text": {
     "text": "Zobrazeno: {name} je otevřený v editoru Fresh vedle tohoto panelu.",
     "source_hash": "ac958177710d"
+  },
+  "pi.fork.description": {
+    "text": "Rozvětvit ze zprávy do panelu, který pro ni Mash otevřel",
+    "source_hash": "97659c08eee4"
+  },
+  "pi.fork.no-messages": {
+    "text": "Žádné zprávy k rozvětvení",
+    "source_hash": "3c38b95def9e"
   }
 }

@@ -94,5 +94,13 @@
   "pi.show-file.shown-text": {
     "text": "Mostrato: {name} è aperto nell'editor Fresh accanto a questo riquadro.",
     "source_hash": "ac958177710d"
+  },
+  "pi.fork.description": {
+    "text": "Crea un fork da un messaggio nel riquadro aperto da Mash",
+    "source_hash": "97659c08eee4"
+  },
+  "pi.fork.no-messages": {
+    "text": "Nessun messaggio da cui creare un fork",
+    "source_hash": "3c38b95def9e"
   }
 }

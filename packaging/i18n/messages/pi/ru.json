@@ -94,5 +94,13 @@
   "pi.show-file.shown-text": {
     "text": "Показано: {name} открыт в редакторе Fresh рядом с этой панелью.",
     "source_hash": "ac958177710d"
+  },
+  "pi.fork.description": {
+    "text": "Ответвить от сообщения в открытую Mash панель",
+    "source_hash": "97659c08eee4"
+  },
+  "pi.fork.no-messages": {
+    "text": "Нет сообщений для ответвления",
+    "source_hash": "3c38b95def9e"
   }
 }

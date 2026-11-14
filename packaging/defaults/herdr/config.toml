@@ -673,8 +673,10 @@ type = "plugin_action"
 command = "telescope.open-actions"
 description = "Command palette"
 
-# Fork the focused agent's session from an earlier user message. The plugin
-# resolves the agent from the focused pane; Pi is the one it supports today.
+# Fork the focused Pi from an earlier user message into a new dev tab, leaving
+# the source pane as it is. herdr-fork-pi makes the destination and starts Pi
+# there; Pi's own /fork selector and fork run inside it (the fork-from-message
+# Pi extension), so the chord works only on a Pi pane.
 # Was cmd+alt+f (Fresh's start_search_replace), then cmd+alt+m -- which
 # minimized the window, because macOS owns plain cmd+m as Minimize and the
 # chord's Option never reached Herdr. cmd+alt+y is free in Fresh, Herdr and
@@ -682,8 +684,8 @@ description = "Command palette"
 # OS shortcut the way m/h/q are.
 [[keys.command]]
 key = "cmd+alt+y"
-type = "plugin_action"
-command = "fork-from-message.fork"
+type = "shell"
+command = "herdr-fork-pi tab"
 description = "Fork agent from message"
 
 # Session transcripts. Own popup, same size as the file finder (cmd+p).
@@ -717,14 +719,14 @@ description = "Search files and actions"
 # workspace family's cmd+ctrl for the workspace. Free in Ghostty and Fresh.
 [[keys.command]]
 key = "cmd+alt+shift+y"
-type = "plugin_action"
-command = "fork-from-message.fork-pane"
+type = "shell"
+command = "herdr-fork-pi pane"
 description = "Fork agent beside current pane"
 
 [[keys.command]]
 key = "cmd+ctrl+y"
-type = "plugin_action"
-command = "fork-from-message.fork-workspace"
+type = "shell"
+command = "herdr-fork-pi workspace"
 description = "Fork agent into new workspace"
 
 # Quit Mash and stop the Herdr server, ending every pane's process. Cmd+Q and

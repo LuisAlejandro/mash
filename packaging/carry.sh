@@ -210,7 +210,7 @@ mash_fresh_patches() {
 
 mash_require_sources() {
   local name font plugins="$root/packaging/plugins"
-  for name in cache-hit dev-tab reopen-tab fingers fork-from-message mash-orchestration pr-watch-focus herdr-workspace telescope mash-update-notice; do
+  for name in cache-hit dev-tab reopen-tab fingers mash-orchestration pr-watch-focus herdr-workspace telescope mash-update-notice; do
     [ -f "$plugins/$name/herdr-plugin.toml" ] || {
       echo "missing plugin source $plugins/$name" >&2
       exit 1
@@ -755,7 +755,7 @@ mash_build_plugins() {
   # defaults/fresh/plugins/packages/mash-image-popup opens a Herdr pane with
   # `--plugin image-popup`, so leaving the Herdr half out registered that pane
   # from the build machine's source checkout and broke show_file anywhere else.
-  for name in cache-hit dev-tab reopen-tab fingers fork-from-message mash-orchestration \
+  for name in cache-hit dev-tab reopen-tab fingers mash-orchestration \
     image-popup pr-watch-focus; do
     mash_copy_tree "$src/$name" "$plugins/$name"
   done

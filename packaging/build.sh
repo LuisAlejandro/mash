@@ -52,6 +52,7 @@ ship_helpers=(
   herdr-new-plain-tab
   herdr-new-dev-tab
   herdr-new-pi-tab
+  herdr-fork-pi
   herdr-new-reviewr-tab
   herdr-fresh-pane
   mash-fresh-split-sync

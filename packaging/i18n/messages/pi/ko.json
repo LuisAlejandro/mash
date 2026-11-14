@@ -94,5 +94,13 @@
   "pi.show-file.shown-text": {
     "text": "표시됨: {name}이(가) 이 창 옆 Fresh 편집기에서 열려 있습니다.",
     "source_hash": "ac958177710d"
+  },
+  "pi.fork.description": {
+    "text": "메시지에서 포크해 Mash가 연 창으로",
+    "source_hash": "97659c08eee4"
+  },
+  "pi.fork.no-messages": {
+    "text": "포크할 메시지가 없음",
+    "source_hash": "3c38b95def9e"
   }
 }

@@ -94,5 +94,13 @@
   "pi.show-file.shown-text": {
     "text": "Mostrado: {name} está abierto en el editor Fresh junto a este panel.",
     "source_hash": "ac958177710d"
+  },
+  "pi.fork.description": {
+    "text": "Bifurca desde un mensaje al panel que Mash abrió para él",
+    "source_hash": "97659c08eee4"
+  },
+  "pi.fork.no-messages": {
+    "text": "No hay mensajes desde los que bifurcar",
+    "source_hash": "3c38b95def9e"
   }
 }

@@ -1,4 +1,6 @@
 {
+  "pi.fork.description": "Fork from a message into the pane Mash opened for it",
+  "pi.fork.no-messages": "No messages to fork from",
   "pi.header.restore": "Restore the built-in pi header",
   "pi.header.restored": "Built-in header restored",
   "pi.orchestration.answered": "Coordinator answered: {reply}",

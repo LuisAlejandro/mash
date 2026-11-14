@@ -120,10 +120,16 @@ grep -q 'report-agent w1:p9 .*-- herdr-fresh-pane \.' "$tmp/herdr.log" || {
 # --- the callers that build dev tabs all ask for the daemon -----------------
 for file in packaging/helpers/herdr-dev-tab-fill \
   packaging/defaults/plugins/herdr-workspace/config.yaml \
-  packaging/mash-shell \
-  packaging/plugins/fork-from-message/scripts/fork_from_message.py; do
+  packaging/mash-shell; do
   grep -q 'herdr-fresh-pane --daemon \.' "$root/$file" || {
     echo "$file builds a dev tab without --daemon" >&2
+    exit 1
+  }
+done
+# The fork tab starts its Fresh through mash-shell's MASH_DEV_TAB_FRESH path.
+for file in packaging/helpers/herdr-new-dev-tab packaging/helpers/herdr-fork-pi; do
+  grep -q 'MASH_DEV_TAB_FRESH=1' "$root/$file" || {
+    echo "$file builds a dev tab without mash-shell's daemon editor" >&2
     exit 1
   }
 done

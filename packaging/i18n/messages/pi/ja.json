@@ -94,5 +94,13 @@
   "pi.show-file.shown-text": {
     "text": "表示しました: {name} をこのペインの横の Fresh エディタで開いています。",
     "source_hash": "ac958177710d"
+  },
+  "pi.fork.description": {
+    "text": "メッセージから、Mash がそのために開いたペインへフォーク",
+    "source_hash": "97659c08eee4"
+  },
+  "pi.fork.no-messages": {
+    "text": "フォーク元のメッセージがありません",
+    "source_hash": "3c38b95def9e"
   }
 }

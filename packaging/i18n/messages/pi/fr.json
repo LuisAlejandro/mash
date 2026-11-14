@@ -94,5 +94,13 @@
   "pi.show-file.shown-text": {
     "text": "Affiché : {name} est ouvert dans l'éditeur Fresh à côté de ce volet.",
     "source_hash": "ac958177710d"
+  },
+  "pi.fork.description": {
+    "text": "Créer un fork depuis un message dans le volet que Mash a ouvert",
+    "source_hash": "97659c08eee4"
+  },
+  "pi.fork.no-messages": {
+    "text": "Aucun message depuis lequel forker",
+    "source_hash": "3c38b95def9e"
   }
 }

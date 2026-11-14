@@ -94,5 +94,13 @@
   "pi.show-file.shown-text": {
     "text": "已显示：{name} 已在此窗格旁的 Fresh 编辑器中打开。",
     "source_hash": "ac958177710d"
+  },
+  "pi.fork.description": {
+    "text": "从消息分叉到 Mash 为其打开的面板",
+    "source_hash": "97659c08eee4"
+  },
+  "pi.fork.no-messages": {
+    "text": "没有可分叉的消息",
+    "source_hash": "3c38b95def9e"
   }
 }

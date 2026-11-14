@@ -94,5 +94,13 @@
   "pi.show-file.shown-text": {
     "text": "Gezeigt: {name} ist im Fresh-Editor neben diesem Bereich geöffnet.",
     "source_hash": "ac958177710d"
+  },
+  "pi.fork.description": {
+    "text": "Von einer Nachricht in den dafür von Mash geöffneten Bereich forken",
+    "source_hash": "97659c08eee4"
+  },
+  "pi.fork.no-messages": {
+    "text": "Keine Nachrichten zum Forken",
+    "source_hash": "3c38b95def9e"
   }
 }

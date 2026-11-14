@@ -1,0 +1,131 @@
+#!/bin/sh
+# Fork the focused Pi from an earlier message into a new tab, split or workspace.
+#
+#   herdr-fork-pi tab|pane|workspace
+#
+# Bound to the fork chords in Mash's Herdr config as `shell` custom commands.
+# The source pane is only read: the destination gets its own Pi, started with
+#
+#   pi --fork <source session> --mash-fork-into <kind>:<id> /mash-fork
+#
+# and the fork-from-message Pi extension finishes there with Pi's own /fork:
+# its message selector, the fork before the chosen message, the message back
+# in the editor unsent. A cancelled pick closes the destination again. This
+# script owns only what Pi cannot do from inside one pane: find the source
+# session, make the destination, start Pi in it.
+set -eu
+
+herdr="${HERDR_BIN_PATH:-herdr}"
+here="$(cd "$(dirname "$0")" && pwd)"
+kind="${1:?usage: herdr-fork-pi tab|pane|workspace}"
+case "$kind" in tab | pane | workspace) ;; *)
+	echo "herdr-fork-pi: unknown destination $kind" >&2
+	exit 2
+	;;
+esac
+
+fail() {
+	"$herdr" notification show "Fork agent from message" --body "$1" >/dev/null 2>&1 || true
+	echo "herdr-fork-pi: $1" >&2
+	exit 1
+}
+
+source_pane="${HERDR_ACTIVE_PANE_ID:-}"
+[ -n "$source_pane" ] || fail "No focused pane."
+info="$("$herdr" pane get "$source_pane" 2>/dev/null)" || fail "Could not read the focused pane."
+# The session Herdr's Pi integration reported for this pane, nothing guessed.
+# A pane that is not a tracked Pi has no such record and is refused here.
+session="$(printf '%s' "$info" | "$("$here/mash-bin" python3 2>/dev/null || echo python3)" -c '
+import json, os, sys
+pane = json.load(sys.stdin)["result"]["pane"]
+s = pane.get("agent_session") or {}
+if pane.get("agent") == "pi" and s.get("source") == "herdr:pi" and s.get("kind") == "path":
+    path = s.get("value") or ""
+    if os.path.isabs(path) and path.endswith(".jsonl") and os.path.isfile(path):
+        print(path)
+' 2>/dev/null || true)"
+[ -n "$session" ] || fail "Focus a Pi pane that has saved a message, then try again."
+# Without the extension Pi rejects --mash-fork-into and exits, but only after
+# --fork has written its copy: a 45-second wait, then an orphan session in
+# /resume. Refuse before anything exists. The default is Pi's own.
+ext="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}/extensions/fork-from-message.ts"
+[ -f "$ext" ] || fail "Pi's fork-from-message extension is missing: $ext"
+cwd="$(printf '%s' "$info" | "$here/herdr-json" cwd)"
+[ -d "$cwd" ] || cwd="${HERDR_ACTIVE_PANE_CWD:-$HOME}"
+workspace="$(printf '%s' "$info" | "$here/herdr-json" workspace_id)"
+
+# Each destination is created unfocused. Pi's pane is a plain shell, not the
+# quiet startup shell (MASH_PANE_STARTUP=agent): that shell's grace timer sits
+# in the pane's foreground group, and Herdr refuses `agent start` on a pane
+# with a foreground program until the timer fires, a full minute later. The tab
+# is the cmd+t layout: Fresh on the left, started by MASH_DEV_TAB_FRESH, and
+# Pi's pane split off to its right. Its label keeps dev-tab's tab.created hook
+# from adding a second layout.
+case "$kind" in
+tab)
+	created="$("$herdr" tab create --label herdr-tab-launcher-fork \
+		${workspace:+--workspace "$workspace"} --cwd "$cwd" \
+		--env MASH_DEV_TAB_FRESH=1 --no-focus)" || fail "Could not create a tab."
+	close="tab:$(printf '%s' "$created" | "$here/herdr-json" tab_id)"
+	left="$(printf '%s' "$created" | "$here/herdr-json" pane_id)"
+	pane="$("$herdr" pane split "$left" --direction right --ratio 0.6 --cwd "$cwd" \
+		--no-focus | "$here/herdr-json" pane_id)"
+	;;
+pane)
+	# Wide panes split beside, tall ones below, like herdr's own split chords.
+	direction="$(printf '%s' "$("$herdr" pane layout --pane "$source_pane" 2>/dev/null)" | "$("$here/mash-bin" python3 2>/dev/null || echo python3)" -c '
+import json, sys
+for p in json.load(sys.stdin)["result"]["layout"]["panes"]:
+    if p.get("pane_id") == sys.argv[1]:
+        r = p["rect"]
+        print("right" if r["width"] >= r["height"] * 2 else "down")
+' "$source_pane" 2>/dev/null || true)"
+	pane="$("$herdr" pane split "$source_pane" --direction "${direction:-right}" --cwd "$cwd" \
+		--no-focus | "$here/herdr-json" pane_id)"
+	close="pane:$pane"
+	;;
+workspace)
+	created="$("$herdr" workspace create --cwd "$cwd" --no-focus)" ||
+		fail "Could not create a workspace."
+	close="workspace:$(printf '%s' "$created" | "$here/herdr-json" workspace_id)"
+	pane="$(printf '%s' "$created" | "$here/herdr-json" pane_id)"
+	;;
+esac
+case "$close" in *:) close= ;; esac
+[ -n "$pane" ] && [ -n "$close" ] || {
+	[ -z "$close" ] || "$herdr" "${close%%:*}" close "${close#*:}" >/dev/null 2>&1 || true
+	fail "Herdr did not return the new pane."
+}
+
+# Show a tab at once: its focus lands on Fresh's pane. Pi's own pane is focused
+# only once Pi is ready, so a key typed meanwhile cannot reach the shell that
+# `agent start` is typing into (see herdr-dev-tab-fill).
+[ "$kind" != tab ] || "$herdr" tab focus "${close#tab:}" >/dev/null 2>&1 || true
+
+name="$(info="$("$herdr" pane get "$pane" 2>/dev/null || true)"; "$here/herdr-agent-name" pi \
+	"$(printf '%s' "$info" | "$here/herdr-json" workspace_id)" \
+	"$(printf '%s' "$info" | "$here/herdr-json" cwd)" 2>/dev/null || true)"
+# A fresh pane's shell takes a moment to reach its prompt; agent start refuses
+# a busy pane rather than waiting, so retry that one answer briefly.
+started=0
+tries=0
+while [ -n "$name" ] && [ "$tries" -lt 40 ]; do
+	# --session-dir keeps the fork beside its source, as Pi's own /fork does.
+	# Without it Pi files the fork under the new pane's cwd, which Herdr reports
+	# resolved (/private/tmp, not /tmp), so /resume would list it elsewhere.
+	out="$("$herdr" agent start "$name" --kind pi --pane "$pane" --timeout 45000 -- \
+		--session-dir "${session%/*}" --fork "$session" --mash-fork-into "$close" /mash-fork 2>&1)" &&
+		{ started=1; break; }
+	case "$out" in *agent_pane_busy*) ;; *) break ;; esac
+	tries=$((tries + 1))
+	sleep "${MASH_FORK_RETRY_DELAY:-0.2}"
+done
+# No untracked `pane run` fallback: it would type the session path into a
+# shell, and a fork that cannot be tracked is better refused than half-made.
+[ "$started" = 1 ] || {
+	"$herdr" "${close%%:*}" close "${close#*:}" >/dev/null 2>&1 || true
+	fail "Could not start Pi in the new pane."
+}
+[ "$kind" != workspace ] || "$herdr" workspace focus "${close#workspace:}" >/dev/null 2>&1 || true
+"$herdr" agent focus "$name" >/dev/null 2>&1 || true
+[ "$kind" != tab ] || "$herdr" tab rename "${close#tab:}" "" >/dev/null 2>&1 || true

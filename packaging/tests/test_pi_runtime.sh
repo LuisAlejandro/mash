@@ -31,10 +31,10 @@ for specifier in "${checks[@]}"; do
 done
 echo "Pi Codemode: PASS"
 
-# Exercise the storage API against the freshly staged pin, even on builders
-# without a host Pi. Runtime staging precedes plugin copying on both platforms.
+# The fork chords finish with Pi's own fork, through its session runtime; run
+# that against the freshly staged pin, even on builders without a host Pi.
 root="$(cd "$(dirname "$0")/../.." && pwd)"
-"$node" "$root/packaging/plugins/fork-from-message/tests/test_pi_session.mjs" "$pi"
+"$node" "$root/packaging/tests/test_fork_from_message.mjs" "$pi"
 
 # Seeded extensions resolve typebox and pi's own packages through Pi's loader
 # aliases, from an agent directory with no node_modules.
