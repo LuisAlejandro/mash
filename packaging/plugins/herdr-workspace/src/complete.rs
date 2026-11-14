@@ -69,6 +69,9 @@ pub fn accept(suggestion: &str) -> String {
     }
 }
 
+/// Test-only: production paths create a missing directory instead of
+/// rejecting it (see `format::apply_dir`), so nothing else asks this question.
+#[cfg(test)]
 pub fn is_existing_dir(input: &str) -> bool {
     let path = expand_user(input.trim());
     path.is_dir()

@@ -363,11 +363,19 @@ impl App {
 
     fn apply_dir(&mut self, path: &str) {
         let trimmed = path.trim();
-        if !complete::is_existing_dir(trimmed) {
+        let expanded = complete::expand_user(trimmed);
+        // Committing a path that does not exist yet creates it, recursively:
+        // the dialog is how a new project directory gets started.
+        if !expanded.exists() {
+            if let Err(e) = std::fs::create_dir_all(&expanded) {
+                self.error = e.to_string();
+                return;
+            }
+        }
+        if !expanded.is_dir() {
             self.error = t("plugin.herdr-workspace.form.error.not_directory");
             return;
         }
-        let expanded = complete::expand_user(trimmed);
         self.dir = expanded.to_string_lossy().into_owned();
         if !self.dir.ends_with('/') {
             self.dir.push('/');
@@ -943,10 +951,27 @@ mod tests {
     }
 
     #[test]
-    fn commit_dir_requires_real_path() {
+    fn commit_dir_creates_missing_path_recursively() {
+        let tree = tempfile::tempdir().unwrap();
+        let nested = tree.path().join("one").join("two");
         let mut app = app();
-        app.dir = "/no/such/path".into();
-        app.refresh_suggestions();
+        app.dir = nested.to_string_lossy().into_owned();
+        app.suggestions.clear();
+        app.commit_dir();
+        assert!(app.error.is_empty(), "{}", app.error);
+        assert!(app.dir_committed);
+        assert!(nested.is_dir());
+        assert_eq!(app.name, "two");
+    }
+
+    #[test]
+    fn commit_dir_rejects_a_file_path() {
+        let tree = tempfile::tempdir().unwrap();
+        let file = tree.path().join("notadir");
+        std::fs::write(&file, b"x").unwrap();
+        let mut app = app();
+        app.dir = file.to_string_lossy().into_owned();
+        app.suggestions.clear();
         app.commit_dir();
         assert!(!app.dir_committed);
         assert!(!app.error.is_empty());
