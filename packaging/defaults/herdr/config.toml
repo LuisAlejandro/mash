@@ -683,7 +683,7 @@ description = "Command palette"
 [[keys.command]]
 key = "cmd+alt+y"
 type = "plugin_action"
-command = "fork-from-message.fork-tab"
+command = "fork-from-message.fork"
 description = "Fork agent from message"
 
 # Session transcripts. Own popup, same size as the file finder (cmd+p).
@@ -718,7 +718,7 @@ description = "Search files and actions"
 [[keys.command]]
 key = "cmd+alt+shift+y"
 type = "plugin_action"
-command = "fork-from-message.fork-split"
+command = "fork-from-message.fork-pane"
 description = "Fork agent beside current pane"
 
 [[keys.command]]
