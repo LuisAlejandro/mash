@@ -14,25 +14,45 @@
  *
  * The handoff is one command:
  *   herdr plugin pane open --plugin image-popup --entrypoint view \
- *     --placement split --target-pane <this pane> --direction right \
- *     --env IMAGE_POPUP_FILE=<file>
+ *     --placement popup --target-pane <this pane> \
+ *     --width 40% --height 40% --env IMAGE_POPUP_FILE=<file>
  *
- * `--placement split` rather than `popup` on purpose: a popup is a CLIENT-side
- * surface, rendered by the terminal window. On herdr 0.9.3 a helper's
- * `plugin pane open --placement popup` does draw while a client is attached
- * (see .mash/insights/herdr-popup-from-background.md), but whether it draws
- * with no client attached is unproven. A split is server-side and works from
- * anywhere, and an image wants the room.
+ * `--placement popup` rather than a split: the picture covers the editor for a
+ * moment instead of rearranging the layout. 40% of the window is a glanceable
+ * preview -- big enough to recognise the picture, small enough to leave the
+ * text around it visible -- and herdr has no way to place a popup anywhere but
+ * centred, so size is the only geometry lever there is. A popup is a
+ * CLIENT-side surface, drawn by the attached terminal window; Mash has exactly
+ * one attached client, so the no-client case -- the only one ever observed to
+ * return ok and draw nothing -- cannot arise here.
+ * `packaging/helpers/mash-update-notice` opens its popups from a background
+ * launch helper the same way.
  *
- * `--direction right` is a VERTICAL split: the image lands beside the editor,
- * not under it. `down` would stack them.
+ * `--width`/`--height` are the popup's OUTER cells (border included) and are
+ * passed explicitly rather than left to the manifest's own `[[panes]]` entry, so
+ * the geometry does not depend on which copy of the manifest is installed.
+ * `--target-pane` keeps the popup over the editor instead of whichever pane
+ * happens to be active.
  *
  * The buffer is closed only after the popup is on its way, so a failure never
  * costs the user the file.
  */
 
+/**
+ * Raster formats the pinned `viu` (1.6.1) actually decodes. Everything else
+ * that merely LOOKS like an image is deliberately absent, because each one
+ * fails inside the popup with a decoder error instead of a picture:
+ *
+ *   svg       XML. viu has no SVG support at all, and the hex buffer Fresh
+ *             replaced was the readable source -- so leave the buffer alone.
+ *   avif      the shipped viu is built without an AVIF decoder
+ *             (`Unsupported(Exact(Avif))`).
+ *   heic/jxl  no decoder (`Unsupported(PathExtension(...))`).
+ *
+ * Re-add a format only after probing the bundled viu for it.
+ */
 const IMAGE_EXTENSIONS = [
-	"png", "jpg", "jpeg", "gif", "webp", "bmp", "tiff", "tif", "ico", "avif", "svg",
+	"png", "jpg", "jpeg", "gif", "webp", "bmp", "tiff", "tif", "ico",
 ];
 
 /** Buffers already handed to the popup, so the two hooks do not open it twice. */
@@ -92,9 +112,10 @@ async function openInPopup(path: string): Promise<boolean> {
 			"plugin", "pane", "open",
 			"--plugin", "image-popup",
 			"--entrypoint", "view",
-			"--placement", "split",
+			"--placement", "popup",
 			"--target-pane", selfPane,
-			"--direction", "right",
+			"--width", "40%",
+			"--height", "40%",
 			"--env", `IMAGE_POPUP_FILE=${path}`,
 			"--focus",
 		], editor.getCwd());

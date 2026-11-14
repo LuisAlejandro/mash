@@ -83,6 +83,22 @@ test("a previewed image opens the pane and then drops the hex buffer", async () 
 	assert.deepEqual(state.closed, [11]);
 });
 
+test("the picture opens as a popup, not a layout-changing split", async () => {
+	const state = useEditor({ spawnResult: opened });
+	handlers.get("mashImagePopupOpen")({ buffer_id: 15, path: "/tmp/picture.png" });
+	await settle();
+
+	const [command, args] = state.spawns[0];
+	assert.equal(command, "herdr");
+	assert.equal(args[args.indexOf("--placement") + 1], "popup");
+	assert.deepEqual(
+		[args[args.indexOf("--width") + 1], args[args.indexOf("--height") + 1]],
+		["40%", "40%"],
+	);
+	assert.ok(!args.includes("--direction"), "a popup is not split, so no direction applies");
+	assert.equal(args[args.indexOf("--target-pane") + 1], "w1:p1");
+});
+
 test("herdr's JSON error leaves the file on screen", async () => {
 	const state = useEditor({
 		spawnResult: { stdout: '{"error":{"code":"plugin_not_found"}}', stderr: "", exit_code: 0 },
@@ -100,6 +116,19 @@ test("the same buffer does not bounce twice", async () => {
 	handlers.get("mashImagePopupOpen")({ buffer_id: 13, path: "/tmp/picture.png" });
 	await settle();
 	assert.equal(state.spawns.length, 1);
+});
+
+test("a format viu cannot decode is left alone, not shown as an error", async () => {
+	// svg is XML the editor can display; avif would only produce viu's
+	// `UnsupportedError` inside a popup. Neither may be handed over.
+	for (const path of ["/tmp/drawing.svg", "/tmp/photo.avif", "/tmp/live.heic"]) {
+		const state = useEditor({ buffer: { path } });
+		handlers.get("mashImagePopupOpen")({ buffer_id: 21, path });
+		await settle();
+
+		assert.equal(state.spawns.length, 0, `${path} must not open a popup`);
+		assert.deepEqual(state.closed, [], `${path} must stay on screen`);
+	}
 });
 
 test("non-image files and virtual buffers are ignored", async () => {
