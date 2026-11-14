@@ -38,6 +38,8 @@ import fcntl
 import hashlib
 import json
 import os
+import secrets
+import shlex
 import signal
 import socket
 import subprocess
@@ -212,7 +214,7 @@ def parked_panes():
         names = os.listdir(park_dir())
     except OSError:
         return []
-    return [name.replace("_", ":", 1) for name in names if not name.endswith(".tmp")]
+    return [name.replace("_", ":", 1) for name in names if not name.endswith((".tmp", ".result"))]
 
 
 def pi_pid(pane_id):
@@ -300,6 +302,22 @@ def diagnostic(action, pane_id, detail=""):
         pass
 
 
+def process_cwd(pid):
+    """Read the actual foreground process directory, not saved pane metadata."""
+    if not isinstance(pid, int) or pid <= 1:
+        return None
+    try:
+        if sys.platform != "darwin":
+            return os.readlink(f"/proc/{pid}/cwd")
+        result = subprocess.run(
+            ["/usr/sbin/lsof", "-a", "-p", str(pid), "-d", "cwd", "-Fn"],
+            capture_output=True, text=True, timeout=2, check=False,
+        )
+        return next((line[1:] for line in result.stdout.splitlines() if line.startswith("n/")), None)
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+
 def wake(pane_id):
     """Resume only into the recorded pane while it is an available shell.
 
@@ -327,10 +345,35 @@ def wake(pane_id):
         info = call("pane.process_info", {"pane_id": pane_id})["process_info"]
         processes = info.get("foreground_processes") or []
         shell = info.get("shell_pid")
+        if record.get("kind") == KIND_EDITOR:
+            fresh = next((p.get("pid") for p in processes if p.get("argv0") == "fresh"), None)
+            cwd = process_cwd(fresh if fresh is not None else shell)
+            recorded_cwd = record.get("cwd")
+            if (not isinstance(recorded_cwd, str) or not cwd
+                    or not os.path.isdir(recorded_cwd)
+                    or os.path.realpath(cwd) != os.path.realpath(recorded_cwd)):
+                diagnostic("wake-refused", pane_id, "editor directory unknown or changed")
+                return False
+            if fresh is not None:
+                drop_record(pane_id)
+                diagnostic("editor-woke", pane_id)
+                return True
         if not processes or any(p.get("pid") != shell for p in processes):
             diagnostic("wake-deferred", pane_id, "pane is not an available shell")
             return False
         if record.get("kind") == KIND_EDITOR:
+            result_path = os.path.join(park_dir(), pane_id.replace(":", "_") + ".result")
+            if record.get("pending"):
+                # Only the shell knows that a submitted command has finished.
+                # A timeout is not proof: it might still be queued after restart.
+                try:
+                    with open(result_path) as handle:
+                        finished = handle.read(64) == record["pending"]
+                except OSError:
+                    finished = False
+                if not finished and record.get("pending_shell") == shell:
+                    diagnostic("wake-deferred", pane_id, "editor command pending; recovery kept")
+                    return False
             # Two lines, and the first one is a no-op on purpose. Text typed into
             # a pane is not always the first thing the shell reads: a terminal
             # reply still in flight from the program that just exited -- a
@@ -342,11 +385,35 @@ def wake(pane_id):
             # and costs nothing when nothing was.
             call("pane.send_text", {"pane_id": pane_id, "text": ":"})
             call("pane.send_keys", {"pane_id": pane_id, "keys": ["Enter"]})
-            call("pane.send_text", {"pane_id": pane_id, "text": "herdr-fresh-pane --daemon ."})
+            token = secrets.token_hex(16)
+            record["pending"] = token
+            record["pending_shell"] = shell
+            if not save_record(pane_id, record):
+                return False
+            # The completion token permits retry only after this command really
+            # returns. Keep the record while queued or running; observing Fresh
+            # above acknowledges success. A directory guard also closes the gap
+            # between inspecting the shell and its eventual execution.
+            command = (
+                f'[ "$(pwd -P)" = {shlex.quote(os.path.realpath(record["cwd"]))} ] && '
+                'herdr-fresh-pane --daemon .; '
+                f'printf %s {token} > {shlex.quote(result_path)}'
+            )
+            call("pane.send_text", {"pane_id": pane_id, "text": command})
             call("pane.send_keys", {"pane_id": pane_id, "keys": ["Enter"]})
-            drop_record(pane_id)
             diagnostic("editor-wake-submitted", pane_id)
-            return True
+            # A short bounded observation usually acknowledges the client before
+            # a user can quit it. Slow starts keep the record for maintenance;
+            # an uncertain queued command is never resubmitted on a timer.
+            for _ in range(10):
+                time.sleep(0.05)
+                pid = fresh_pid(pane_id, timeout=0.1)
+                cwd = process_cwd(pid) if pid is not None else None
+                if cwd and os.path.realpath(cwd) == os.path.realpath(record["cwd"]):
+                    drop_record(pane_id)
+                    diagnostic("editor-woke", pane_id)
+                    return True
+            return False
         session = record.get("session")
         if not isinstance(session, str) or not os.path.isfile(session):
             diagnostic("wake-refused", pane_id, "session file unavailable; record preserved")
@@ -402,10 +469,10 @@ def editor_panes():
     return panes
 
 
-def fresh_pid(pane_id):
+def fresh_pid(pane_id, timeout=5.0):
     """The pane's Fresh process id, or None when the pane is not running one."""
     try:
-        info = call("pane.process_info", {"pane_id": pane_id}).get("process_info") or {}
+        info = call("pane.process_info", {"pane_id": pane_id}, timeout=timeout).get("process_info") or {}
     except (Unavailable, AttributeError):
         return None
     for entry in info.get("foreground_processes") or []:
@@ -433,9 +500,15 @@ def park_editor(pane):
         # Already a shell: nothing to stop, and a record would make the wake
         # start an editor in a pane somebody is using for something else.
         return False
-    if not save_record(pane_id, {"kind": KIND_EDITOR, "tab": pane.get("tab_id"), "cwd": pane.get("cwd")}):
+    cwd = process_cwd(pid)
+    if not cwd or not os.path.isdir(cwd):
+        return False
+    if not save_record(pane_id, {"kind": KIND_EDITOR, "tab": pane.get("tab_id"), "cwd": cwd}):
         return False
     try:
+        visible = visible_tabs()
+        if visible is None or pane.get("tab_id") in visible:
+            return False
         os.kill(pid, signal.SIGTERM)
     except OSError:
         drop_record(pane_id)
