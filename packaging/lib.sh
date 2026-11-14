@@ -126,24 +126,14 @@ mash_messages_bind() {
 # Fill {name} from name=value arguments. Values are inserted literally, so a
 # path containing '&' or a backslash is not reinterpreted.
 mash_messages_fill() {
-  local text="$1" arg name value out
+  local text="$1" arg name value
   shift
   for arg in "$@"; do
     name="${arg%%=*}"
     value="${arg#*=}"
-    out=""
-    while true; do
-      case "$text" in
-      *"{$name}"*)
-        out="$out${text%%"{$name}"*}$value"
-        text="${text#*"{$name}"}"
-        ;;
-      *)
-        text="$out$text"
-        break
-        ;;
-      esac
-    done
+    # Quote pattern and replacement, not the whole assignment: Bash 3.2
+    # otherwise inserts the replacement's quotes into the result.
+    text=${text//"{$name}"/"$value"}
   done
   printf '%s' "$text"
 }

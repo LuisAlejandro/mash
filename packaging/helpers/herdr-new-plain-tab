@@ -19,13 +19,14 @@
 set -eu
 
 herdr="${HERDR_BIN_PATH:-herdr}"
+here="$(dirname "$0")"
 cwd="${HERDR_ACTIVE_PANE_CWD:-$HOME}"
 
 created="$("$herdr" tab create --label "herdr-tab-launcher-plain" \
 	${HERDR_ACTIVE_WORKSPACE_ID:+--workspace "$HERDR_ACTIVE_WORKSPACE_ID"} \
 	--cwd "$cwd" --focus)"
-tab="$(printf '%s' "$created" | sed -n 's/.*"tab_id":"\([^"]*\)".*/\1/p' | head -n 1)"
-pane="$(printf '%s' "$created" | sed -n 's/.*"pane_id":"\([^"]*\)".*/\1/p' | head -n 1)"
+tab="$(printf '%s' "$created" | "$here/herdr-json" tab_id)"
+pane="$(printf '%s' "$created" | "$here/herdr-json" pane_id)"
 
 [ -n "$tab" ] && "$herdr" tab rename "$tab" "" || true
 [ -n "$pane" ] && "$herdr" pane run "$pane" "herdr-shell-greeting" >/dev/null 2>&1 || true

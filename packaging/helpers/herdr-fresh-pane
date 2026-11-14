@@ -45,6 +45,7 @@ case "${1:-}" in
 esac
 
 herdr="${HERDR_BIN_PATH:-herdr}"
+here="$(dirname "$0")"
 
 # True when pane $1 is the left pane of a tab split exactly once, left to right.
 # The tab's layout is restored before its panes start, so a resumed pane sees
@@ -66,7 +67,7 @@ except Exception:
 }
 
 if pane="$("$herdr" pane current 2>/dev/null |
-	sed -n 's/.*"pane_id":"\([^"]*\)".*/\1/p' | head -n 1)" && [ -n "$pane" ]; then
+	"$here/herdr-json" pane_id)" && [ -n "$pane" ]; then
 	"$herdr" pane input --pane "$pane" --right-click pane >/dev/null 2>&1 || true
 	if [ "$daemon" = 0 ] && [ "$#" = 1 ] && [ "$1" = . ] && dev_tab_left "$pane"; then
 		daemon=1

@@ -6,13 +6,7 @@ root="$(cd "$(dirname "$0")/../.." && pwd)"
 . "$root/packaging/launch-common.sh"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
-pass=0 fail=0
-check() {
-  local msg="$1"
-  shift
-  if "$@"; then printf 'ok   - %s\n' "$msg"; pass=$((pass + 1));
-  else printf 'FAIL - %s\n' "$msg"; fail=$((fail + 1)); fi
-}
+. "$root/packaging/tests/lib.sh"
 
 helper="$root/packaging/helpers/mash-github-mcp"
 d="$tmp/Mash data's folder"

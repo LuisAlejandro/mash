@@ -163,12 +163,6 @@ mash_cargo "$root/packaging/pane-runner/Cargo.toml" pane-runner
   exit 1
 }
 
-fetch() {
-  local url="$1" out="$2" sha="$3"
-  curl -fL --retry 2 --max-time 300 -o "$out" "$url"
-  echo "$sha  $out" | shasum -a 256 -c -
-}
-
 fetch_bottle() {
   local name="$1" url="$2" sha="$3"
   mkdir -p "$work/cellar/$name"
@@ -194,33 +188,6 @@ take_bin() {
   mkdir -p "$work/tools"
   cp -L "$2" "$work/tools/$1"
   chmod 755 "$work/tools/$1"
-}
-
-unpack_bin() {
-  local name="$1" url="$2" sha="$3" member="${4:-}" dir
-  dir="$work/unpack/$name"
-  mkdir -p "$dir"
-  fetch "$url" "$dir/archive" "$sha"
-  case "$url" in
-  *.tar.gz)
-    tar -xzf "$dir/archive" -C "$dir"
-    take_bin "$name" "$dir/$member"
-    ;;
-  *.zip)
-    unzip -q "$dir/archive" -d "$dir"
-    take_bin "$name" "$dir/$member"
-    ;;
-  *.gz)
-    gunzip -c "$dir/archive" >"$dir/$name"
-    chmod 755 "$dir/$name"
-    take_bin "$name" "$dir/$name"
-    ;;
-  *)
-    cp "$dir/archive" "$dir/$name"
-    chmod 755 "$dir/$name"
-    take_bin "$name" "$dir/$name"
-    ;;
-  esac
 }
 
 # Herdr is the one component still fetched here: macOS takes it from a Homebrew

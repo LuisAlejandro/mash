@@ -51,6 +51,8 @@ printf 'onboarding = false\n\n[terminal]\nshell_mode = "non_login"\ndefault_shel
 # The wrapper resolves by name on resume and ends in `exec fresh`. Put the real
 # wrapper on PATH, and a stand-in Fresh that stays running and is easy to spot.
 ln -s "$wrapper" "$root/bin/herdr-fresh-pane"
+ln -s "$here/../helpers/herdr-json" "$root/bin/herdr-json"
+ln -s "$here/../helpers/mash-bin" "$root/bin/mash-bin"
 printf '#!/bin/sh\necho FRESH-RUNNING; exec sleep 100000\n' >"$root/bin/fresh"
 chmod +x "$root/bin/fresh"
 export PATH="$root/bin:$PATH"

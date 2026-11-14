@@ -62,6 +62,16 @@ if python3 - "$ROOT" "$TMP" <<'PY'
 import json, os, pathlib, runpy, sys, time
 module = runpy.run_path(str(pathlib.Path(sys.argv[1]) / 'lib/codex_session.py'))
 resolve = module['resolve_session']
+timestamp = module['timestamp']
+utc = timestamp('2026-09-06T10:00:00Z')
+assert utc is not None
+for value in ('2026-09-06T10:00:00+0000', '2026-09-06T12:30:00+02:30',
+              '2026-09-06T05:00:00-0500'):
+    assert timestamp(value) == utc, value
+assert timestamp('2026-09-06T10:00:00.123456Z') == utc + 0.123456
+for value in (None, 42, '', 'bad', '2026-09-06', '2026-09-06T10:00:00',
+              '2026-02-30T10:00:00Z', '2026-09-06T10:00:00+99:00'):
+    assert timestamp(value) is None, value
 sessions = pathlib.Path(sys.argv[2]) / 'resolver-sessions'
 sessions.mkdir()
 started = time.time()

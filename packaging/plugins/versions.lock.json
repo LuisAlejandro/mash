@@ -1,7 +1,7 @@
 {
   "cache-hit": {
-    "digest": "a922d6bf0fbf6e74995f89c10812baec1f645cc9c72663754e0a54cac0b6f287",
-    "version": "0.1.7"
+    "digest": "ec59a45f6c9299e65f4c8e63c7cc20b3f387f111845d55804fac69a2ff9d989e",
+    "version": "0.1.8"
   },
   "dev-tab": {
     "digest": "54195b0c64b396a4e1dabe697bd8bd0958985b8de5f9da5a7850ff49c849e993",
@@ -12,8 +12,8 @@
     "version": "0.2.2"
   },
   "herdr-fingers": {
-    "digest": "8bfd7f519d4421568777bcca0e5d6470c5e6b16d7caa2a8dda4211c760dce4f9",
-    "version": "0.1.0"
+    "digest": "467a677a2084cffb708cd4841c2f60be15c10b982390d72a84084da33df9e84c",
+    "version": "0.1.1"
   },
   "herdr-workspace": {
     "digest": "64b1173a4a638630ecf6b8f10eaad26b128a573eaaf109232daad0b43a9058e6",
