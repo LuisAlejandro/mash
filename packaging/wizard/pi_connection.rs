@@ -385,10 +385,13 @@ mod tests {
         connection
             .probe(&root, &root.join("agent"), 1, &target, None, "exact-model")
             .unwrap();
-        let deadline = std::time::Instant::now() + Duration::from_secs(3);
+        // A hang detector, not a speed test: the machine may be running the
+        // whole suite in parallel, and a tight deadline failed there while the
+        // helper itself was fine.
+        let deadline = std::time::Instant::now() + Duration::from_secs(120);
         while connection.busy() {
             let _ = connection.poll(1);
-            assert!(std::time::Instant::now() < deadline);
+            assert!(std::time::Instant::now() < deadline, "helper never answered");
             std::thread::sleep(Duration::from_millis(5));
         }
         let request: Value =
@@ -466,11 +469,14 @@ mod tests {
             "-c",
             "cat >/dev/null; printf '{\"version\":1,\"status\":\"ok\",\"accepted\":true,\"api\":\"openai-completions\"}'",
         ]);
+        // The budget is incidental here (the child exits at once); a short one
+        // turns a loaded runner into a false timeout, which reads as an
+        // accepted stale result.
         connection.job = Some((
             7,
-            Job::spawn_for_test(command, b"{}".to_vec(), Duration::from_secs(5)).unwrap(),
+            Job::spawn_for_test(command, b"{}".to_vec(), Duration::from_secs(120)).unwrap(),
         ));
-        let deadline = std::time::Instant::now() + Duration::from_secs(5);
+        let deadline = std::time::Instant::now() + Duration::from_secs(120);
         loop {
             match connection.poll(8) {
                 Some(_) => panic!("an obsolete draft result was accepted"),
