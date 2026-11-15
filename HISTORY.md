@@ -1,6 +1,37 @@
 # Changelog
 
 
+## 0.5.2 (2026-11-15)
+
+### Added
+
+* Show image thumbnails when pasting into the prompt. [Luis Alejandro Martínez Faneyth]
+
+
+### Changed
+
+* Fork from Message now runs on Pi's own /fork. [Luis Alejandro Martínez Faneyth]
+
+* Open the image popup as a centred popup at 40%. [Luis Alejandro Martínez Faneyth]
+
+
+### Fixed
+
+* Refit the shared editor when a dev tab is shown. [Luis Alejandro Martínez Faneyth]
+
+* Create the directory for a new workspace path. [Luis Alejandro Martínez Faneyth]
+
+* Restore the fork picker the manifest rewrite dropped. [Luis Alejandro Martínez Faneyth]
+
+* Point the fork chords at the plugin's real actions. [Luis Alejandro Martínez Faneyth]
+
+* Recognize the shell behind a startup timer. [Luis Alejandro Martínez Faneyth]
+
+* Keep background refreshes retryable. [Luis Alejandro Martínez Faneyth]
+
+* Confirm editor recovery before forgetting it. [Luis Alejandro Martínez Faneyth]
+
+
 ## 0.5.1 (2026-11-13)
 
 ### Fixed
