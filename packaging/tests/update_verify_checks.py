@@ -87,10 +87,22 @@ class VerifyTests(unittest.TestCase):
         sibling = self.f.app.parent / ".mash-update-ABCDEF"
         sibling.mkdir()
         observed = self.f.root / "child-observed"
+        ready = self.f.root / "child-ready"
+        release = self.f.root / "child-release"
         child = self.f.root / "finite-copy"
+        # The child announces that its TERM trap is installed and then waits for
+        # a release file instead of sleeping a fixed time. Both halves matter on
+        # a loaded runner: a fixed sleep let the child exit before the checks
+        # below looked at it, and a budget that expired during a stalled spawn
+        # killed it before it could ignore TERM at all. The bounded wait keeps a
+        # broken test from hanging.
         child.write_text('''#!/bin/bash
 trap '' TERM
-sleep 4
+printf ready >"$4"
+for _ in $(seq 1 1200); do
+  [ -e "$5" ] && break
+  sleep 0.05
+done
 if [ -d "$1" ] && [ -d "$2" ]; then printf kept >"$3"; else printf lost >"$3"; fi
 ''')
         child.chmod(0o700)
@@ -101,12 +113,16 @@ MU_ID="{attempt}"
 mash_update_finish failed-before-swap
 work="{self.f.work}" sibling="{sibling}" mnt=""
 status=0
-mash_update_run 1 fixture-copy "{child}" "$work" "$sibling" "{observed}" || status=$?
+mash_update_run 5 fixture-copy "{child}" "$work" "$sibling" "{observed}" "{ready}" "{release}" || status=$?
 [ "$status" = 124 ] || exit 2
 busy="$MU_COMMAND_BUSY"
+# A budget that expired before the child started would prove nothing: the
+# timeout must land on a child that is already ignoring TERM.
+[ -s "{ready}" ] || exit 3
 (exit 1); mash_update_abandon_preparation "$work" "$sibling" "$mnt"; cleanup_status=$?
 alive=0; kill -0 "$busy" 2>/dev/null && alive=1
 kept=0; [ -d "$work" ] && [ -d "$sibling" ] && kept=1
+: >"{release}"
 wait "$busy" || true
 printf 'status=%s alive=%s kept=%s cleanup=%s\\n' "$status" "$alive" "$kept" "$cleanup_status"
 [ "$kept" = 1 ] && [ "$(cat "{observed}")" = kept ]
@@ -215,9 +231,10 @@ printf 'kept=%s cleanup=%s\\n' "$kept" "$cleanup_status"
         proc.stdout.close()
         pinned.close()
         self.addCleanup(lambda: subprocess.run(["kill", "-TERM", str(pid)], stderr=subprocess.DEVNULL, check=False))
-        self.assertEqual(proc.wait(timeout=5), 0)
+        self.assertEqual(proc.wait(timeout=120), 0)
         self.assertEqual(subprocess.check_output(["ps", "-o", "ppid=", "-p", str(pid)], text=True).strip(), "1")
-        deadline = time.time() + 2
+        # Hang detector, not a speed test: `make test` runs suites in parallel.
+        deadline = time.time() + 120
         while True:
             owned = subprocess.run(["/usr/sbin/lsof", "-n", "-P", "-p", str(pid)], capture_output=True, text=True)
             cwd = subprocess.run(["/usr/sbin/lsof", "-n", "-P", "-a", "-p", str(pid), "-d", "cwd"], capture_output=True, text=True)
@@ -235,7 +252,7 @@ printf 'kept=%s cleanup=%s\\n' "$kept" "$cleanup_status"
         busy = subprocess.run([str(binary), "serve", str(status), str(mutex)], capture_output=True, text=True)
         self.assertEqual(busy.returncode, 2)
         status.write_text("mode close\nlabel Closing\ndone 0\ntotal 0\nfraction 1000\n")
-        deadline = time.time() + 3
+        deadline = time.time() + 120
         while time.time() < deadline and subprocess.run(["kill", "-0", str(pid)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False).returncode == 0:
             time.sleep(0.1)
         self.assertNotEqual(subprocess.run(["kill", "-0", str(pid)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False).returncode, 0)
