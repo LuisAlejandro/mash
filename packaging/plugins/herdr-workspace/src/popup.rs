@@ -169,9 +169,12 @@ mod tests {
         let out = tmp.join("args.txt");
         std::fs::write(
             &stub,
-            format!("#!/bin/sh
+            format!(
+                "#!/bin/sh
 printf '%s\n' \"$@\" > {}
-", out.display()),
+",
+                out.display()
+            ),
         )
         .unwrap();
         #[cfg(unix)]
