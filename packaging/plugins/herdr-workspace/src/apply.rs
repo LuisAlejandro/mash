@@ -717,7 +717,12 @@ mod tests {
     #[test]
     fn unnamed_tabs_are_never_renamed_or_labeled() {
         let yaml = "profiles:\n  - id: anon\n    name: Anon\n    tabs:\n      - panes:\n          - id: shell\n      - panes:\n          - id: second\n";
-        let profile = parse_yaml(yaml).unwrap().profiles.into_iter().next().unwrap();
+        let profile = parse_yaml(yaml)
+            .unwrap()
+            .profiles
+            .into_iter()
+            .next()
+            .unwrap();
         let dir = tempfile::tempdir().unwrap();
         let mut fake = Fake::new();
         apply_with(&mut fake, dir.path().to_str().unwrap(), "demo", &profile).unwrap();
@@ -746,7 +751,12 @@ mod tests {
     #[test]
     fn named_tabs_still_rename() {
         let yaml = "profiles:\n  - id: named\n    name: Named\n    tabs:\n      - name: code\n        panes:\n          - id: shell\n";
-        let profile = parse_yaml(yaml).unwrap().profiles.into_iter().next().unwrap();
+        let profile = parse_yaml(yaml)
+            .unwrap()
+            .profiles
+            .into_iter()
+            .next()
+            .unwrap();
         let dir = tempfile::tempdir().unwrap();
         let mut fake = Fake::new();
         apply_with(&mut fake, dir.path().to_str().unwrap(), "demo", &profile).unwrap();
@@ -755,7 +765,10 @@ mod tests {
             .iter()
             .map(|c| c.iter().cloned().collect::<Vec<_>>().join(" "))
             .collect();
-        assert!(joined.iter().any(|c| c == "tab rename w1:t1 code"), "{joined:?}");
+        assert!(
+            joined.iter().any(|c| c == "tab rename w1:t1 code"),
+            "{joined:?}"
+        );
     }
 
     /// `dir` must carry the workspace directory out to the popup, which uses it

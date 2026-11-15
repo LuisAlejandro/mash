@@ -391,7 +391,10 @@ mod tests {
         let deadline = std::time::Instant::now() + Duration::from_secs(120);
         while connection.busy() {
             let _ = connection.poll(1);
-            assert!(std::time::Instant::now() < deadline, "helper never answered");
+            assert!(
+                std::time::Instant::now() < deadline,
+                "helper never answered"
+            );
             std::thread::sleep(Duration::from_millis(5));
         }
         let request: Value =

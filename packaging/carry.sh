@@ -153,15 +153,21 @@ mash_commit() {
   mash_assets resolve-shell "$1" "$(mash_assets target)" | sed -n 's/^COMMIT=//p'
 }
 
-# Clone one pinned component and prove the result is the pinned commit.
+# Clone one pinned component at the commit the manifest names.
 #
 #   mash_clone_pinned <component> <repo-url> <destination>
 #
 # A ref alone is not reproducible: a branch moves by design and a tag can be
-# repointed. Every build therefore checks what it actually got against the
-# manifest, the way release CI already does for the Ghostty fork. A component
-# with no pinned commit clones its ref and says so, rather than failing -- that
-# keeps the gate honest about which components are reproducible today.
+# repointed. So the ref only fetches the repository, and the manifest's commit
+# decides what is checked out; the result is then proved to BE that commit. A
+# component with no pinned commit clones its ref and says so, rather than
+# failing -- that keeps the gate honest about which components are reproducible
+# today.
+#
+# Checking out the pin rather than refusing a moved branch is what keeps a
+# release buildable: `annotate` upstream pushed to `main` between 0.5.1 and
+# 0.5.2 and every platform of the 0.5.2 build failed on the comparison, while
+# the pinned commit was still present and correct.
 mash_clone_pinned() {
   local component="$1" url="$2" dest="$3" ref commit actual
   ref="$(mash_ref "$component")" || exit 1
@@ -178,11 +184,22 @@ mash_clone_pinned() {
     return 0
   fi
   if [ "$actual" != "$commit" ]; then
-    echo "$component: $ref is at $actual, but the manifest pins $commit" >&2
-    echo "The ref moved. Update packaging/assets.json or check out the pin." >&2
-    exit 1
+    # The branch moved since the pin was recorded. That is expected; the
+    # manifest, not the branch, decides what ships.
+    if ! git -C "$dest" checkout --quiet "$commit" 2>/dev/null; then
+      echo "$component: $ref is at $actual and no longer contains $commit" >&2
+      echo "Update packaging/assets.json to a commit that exists upstream." >&2
+      exit 1
+    fi
+    actual="$(git -C "$dest" rev-parse HEAD)"
+    if [ "$actual" != "$commit" ]; then
+      echo "$component: asked for $commit, got $actual" >&2
+      exit 1
+    fi
+    echo "$component pinned at ${actual:0:12} (ref $ref has moved on)"
+  else
+    echo "$component pinned at ${actual:0:12}"
   fi
-  echo "$component pinned at ${actual:0:12}"
 }
 
 mash_pins_check() {

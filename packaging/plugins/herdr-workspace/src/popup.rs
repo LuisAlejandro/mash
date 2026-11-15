@@ -77,6 +77,10 @@ fn notify_failure(message: &str) {
 fn zoxide_add(dir: &str) {
     // Overridable so tests can point at a stub; unset in normal use.
     let bin = std::env::var("HERDR_WORKSPACE_ZOXIDE_BIN").unwrap_or_else(|_| "zoxide".into());
+    run_zoxide_add(&bin, dir);
+}
+
+fn run_zoxide_add(bin: &str, dir: &str) {
     let _ = Command::new(bin)
         .arg("add")
         .arg(dir)
@@ -159,16 +163,18 @@ mod tests {
     /// The directory must reach `zoxide add` verbatim, including spaces.
     #[test]
     fn zoxide_add_invokes_the_binary_with_the_dir() {
-        let _env = env_lock();
         let tmp = std::env::temp_dir().join(format!("hw-zx-{}", std::process::id()));
         std::fs::create_dir_all(&tmp).unwrap();
         let stub = tmp.join("stub.sh");
         let out = tmp.join("args.txt");
         std::fs::write(
             &stub,
-            format!("#!/bin/sh
+            format!(
+                "#!/bin/sh
 printf '%s\n' \"$@\" > {}
-", out.display()),
+",
+                out.display()
+            ),
         )
         .unwrap();
         #[cfg(unix)]
@@ -176,9 +182,10 @@ printf '%s\n' \"$@\" > {}
             use std::os::unix::fs::PermissionsExt;
             std::fs::set_permissions(&stub, std::fs::Permissions::from_mode(0o755)).unwrap();
         }
-        std::env::set_var("HERDR_WORKSPACE_ZOXIDE_BIN", &stub);
-        zoxide_add("/tmp/some dir/proj");
-        std::env::remove_var("HERDR_WORKSPACE_ZOXIDE_BIN");
+        // Pass the stub path directly: env vars are unsynchronized across test
+        // threads even with a mutex, and CI lost the race with the missing-bin test.
+        let stub = stub.to_str().expect("stub path is valid UTF-8");
+        run_zoxide_add(stub, "/tmp/some dir/proj");
 
         let got = std::fs::read_to_string(&out).unwrap();
         let lines: Vec<&str> = got.lines().collect();
@@ -189,13 +196,7 @@ printf '%s\n' \"$@\" > {}
     /// A missing zoxide must not panic: it is an optional dependency.
     #[test]
     fn zoxide_add_tolerates_a_missing_binary() {
-        let _env = env_lock();
-        std::env::set_var(
-            "HERDR_WORKSPACE_ZOXIDE_BIN",
-            "/nonexistent/zoxide-does-not-exist",
-        );
-        zoxide_add("/tmp/whatever");
-        std::env::remove_var("HERDR_WORKSPACE_ZOXIDE_BIN");
+        run_zoxide_add("/nonexistent/zoxide-does-not-exist", "/tmp/whatever");
     }
 }
 

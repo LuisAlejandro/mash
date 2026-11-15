@@ -242,10 +242,16 @@ mod tests {
         // global core.hooksPath could otherwise inject.
         run(dir.path(), &["git", "config", "commit.gpgsign", "false"]);
         run(dir.path(), &["git", "config", "tag.gpgsign", "false"]);
-        run(dir.path(), &["git", "config", "core.hooksPath", "/dev/null"]);
+        run(
+            dir.path(),
+            &["git", "config", "core.hooksPath", "/dev/null"],
+        );
         fs::write(dir.path().join("a"), "a").unwrap();
         run(dir.path(), &["git", "add", "a"]);
-        run(dir.path(), &["git", "commit", "-q", "--no-verify", "-m", "init"]);
+        run(
+            dir.path(),
+            &["git", "commit", "-q", "--no-verify", "-m", "init"],
+        );
         dir
     }
 

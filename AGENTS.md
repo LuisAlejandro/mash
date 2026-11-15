@@ -18,7 +18,7 @@ This file is for agents changing **this repository**. Follow the user's request 
 
 ## Verification and release
 
-- Run `make test` and `make release-preflight` for changes to packaged code. For the Rust wizard, `cargo test --locked --manifest-path packaging/wizard/Cargo.toml` and `cargo fmt --manifest-path packaging/wizard/Cargo.toml -- --check` are useful focused checks. Add the smallest runnable regression check for nontrivial behavior.
+- Run `make test` and `./scripts/preflight.sh` for changes to packaged code. `make release-preflight` is the full release gate (lint, every suite and the ~20-minute macOS build); run it before a release or when a change touches the build, pins or patches. For the Rust wizard, `cargo test --locked --manifest-path packaging/wizard/Cargo.toml` and `cargo fmt --manifest-path packaging/wizard/Cargo.toml -- --check` are useful focused checks. Add the smallest runnable regression check for nontrivial behavior.
 - There is no working Compose file at this repo root; the generated Docker targets in `Makefile` are not a build/test path. Use the host toolchain for local checks.
 - CI builds a signed, notarized macOS DMG per architecture (Apple silicon and, until 1 September 2027, Intel) and both Linux `.deb`s, then publishes the latter through the signed APT repository. Do not cut a release or publish artifacts without explicit authorization. See [MAINTAINER.md](MAINTAINER.md) and `packaging/apt/README.md` for the release contract.
 - Mash's APT repository is isolated from Dockershelf on the same host. Never modify Dockershelf's repository, signing key, nginx site, importer, or SSH configuration while working on Mash.

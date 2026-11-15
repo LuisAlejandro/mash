@@ -65,7 +65,10 @@ impl RawTerminal {
         if unsafe { libc::tcsetattr(libc::STDIN_FILENO, libc::TCSADRAIN, &raw) } != 0 {
             return Err(io::Error::last_os_error());
         }
-        Ok(Self { original, active: true })
+        Ok(Self {
+            original,
+            active: true,
+        })
     }
 
     fn restore(&mut self) {
@@ -86,7 +89,11 @@ fn write_out(fd: RawFd, bytes: &[u8]) -> io::Result<()> {
     let mut off = 0;
     while off < bytes.len() {
         let written = unsafe {
-            libc::write(fd, bytes[off..].as_ptr() as *const libc::c_void, bytes.len() - off)
+            libc::write(
+                fd,
+                bytes[off..].as_ptr() as *const libc::c_void,
+                bytes.len() - off,
+            )
         };
         if written < 0 {
             let err = io::Error::last_os_error();
@@ -130,7 +137,13 @@ impl<'a> Spinner<'a> {
     fn new(label: &'a str, max: Duration) -> Self {
         // Hide the cursor for the duration; the child re-enables it as it likes.
         let _ = write_out(libc::STDOUT_FILENO, b"\x1b[?25l");
-        Self { label, frame: 0, started: Instant::now(), max, drawn: false }
+        Self {
+            label,
+            frame: 0,
+            started: Instant::now(),
+            max,
+            drawn: false,
+        }
     }
 
     fn tick(&mut self) {
@@ -161,7 +174,9 @@ impl Drop for Spinner<'_> {
 }
 
 fn run_without_terminal(command: &[String]) -> ! {
-    let error = std::process::Command::new(&command[0]).args(&command[1..]).exec();
+    let error = std::process::Command::new(&command[0])
+        .args(&command[1..])
+        .exec();
     eprintln!("mash-pane-runner: {}: {}", command[0], error);
     std::process::exit(127);
 }
@@ -196,10 +211,15 @@ fn parse(arguments: impl Iterator<Item = String>) -> Result<Options, String> {
     }
     if command.is_empty() {
         return Err(
-            "usage: mash-pane-runner [--label TEXT] [--max-spin-ms N] -- <command> [args...]".to_string(),
+            "usage: mash-pane-runner [--label TEXT] [--max-spin-ms N] -- <command> [args...]"
+                .to_string(),
         );
     }
-    Ok(Options { label, max_spin, command })
+    Ok(Options {
+        label,
+        max_spin,
+        command,
+    })
 }
 
 fn main() {
@@ -210,7 +230,11 @@ fn main() {
             std::process::exit(2);
         }
     };
-    let Options { label, max_spin, command } = options;
+    let Options {
+        label,
+        max_spin,
+        command,
+    } = options;
 
     // No terminal, no animation: run the command and disappear, exactly as the
     // caller would have without this wrapper.
@@ -225,7 +249,16 @@ fn main() {
         .as_ref()
         .map(|s| s as *const libc::winsize as *mut libc::winsize)
         .unwrap_or(ptr::null_mut());
-    if unsafe { libc::openpty(&mut master, &mut slave, ptr::null_mut(), ptr::null_mut(), size_ptr) } != 0 {
+    if unsafe {
+        libc::openpty(
+            &mut master,
+            &mut slave,
+            ptr::null_mut(),
+            ptr::null_mut(),
+            size_ptr,
+        )
+    } != 0
+    {
         let error = io::Error::last_os_error();
         eprintln!("mash-pane-runner: could not allocate a terminal: {error}");
         run_without_terminal(&command);
@@ -286,8 +319,14 @@ unsafe fn supervise(child: libc::pid_t, master: RawFd, label: &str, max_spin: Du
 
     unsafe {
         libc::signal(libc::SIGWINCH, on_winch as *const () as libc::sighandler_t);
-        libc::signal(libc::SIGTERM, on_terminate as *const () as libc::sighandler_t);
-        libc::signal(libc::SIGINT, on_terminate as *const () as libc::sighandler_t);
+        libc::signal(
+            libc::SIGTERM,
+            on_terminate as *const () as libc::sighandler_t,
+        );
+        libc::signal(
+            libc::SIGINT,
+            on_terminate as *const () as libc::sighandler_t,
+        );
     }
 
     let mut spinner = Spinner::new(label, max_spin);
@@ -306,8 +345,16 @@ unsafe fn supervise(child: libc::pid_t, master: RawFd, label: &str, max_spin: Du
         }
 
         let mut fds = [
-            libc::pollfd { fd: libc::STDIN_FILENO, events: libc::POLLIN, revents: 0 },
-            libc::pollfd { fd: master, events: libc::POLLIN, revents: 0 },
+            libc::pollfd {
+                fd: libc::STDIN_FILENO,
+                events: libc::POLLIN,
+                revents: 0,
+            },
+            libc::pollfd {
+                fd: master,
+                events: libc::POLLIN,
+                revents: 0,
+            },
         ];
         let ready = unsafe { libc::poll(fds.as_mut_ptr(), 2, TICK.as_millis() as libc::c_int) };
 
@@ -333,7 +380,13 @@ unsafe fn supervise(child: libc::pid_t, master: RawFd, label: &str, max_spin: Du
         }
 
         if fds[1].revents & libc::POLLIN != 0 {
-            let read = unsafe { libc::read(master, buffer.as_mut_ptr() as *mut libc::c_void, buffer.len()) };
+            let read = unsafe {
+                libc::read(
+                    master,
+                    buffer.as_mut_ptr() as *mut libc::c_void,
+                    buffer.len(),
+                )
+            };
             if read > 0 {
                 if !handed_over {
                     // The program has spoken: from here it owns the screen.
@@ -353,7 +406,13 @@ unsafe fn supervise(child: libc::pid_t, master: RawFd, label: &str, max_spin: Du
         }
 
         if fds[0].revents & libc::POLLIN != 0 {
-            let read = unsafe { libc::read(libc::STDIN_FILENO, buffer.as_mut_ptr() as *mut libc::c_void, buffer.len()) };
+            let read = unsafe {
+                libc::read(
+                    libc::STDIN_FILENO,
+                    buffer.as_mut_ptr() as *mut libc::c_void,
+                    buffer.len(),
+                )
+            };
             if read > 0 {
                 let _ = write_out(master, &buffer[..read as usize]);
             } else if read == 0 {
@@ -395,7 +454,13 @@ unsafe fn reap(child: libc::pid_t) -> Option<i32> {
 unsafe fn drain(master: RawFd) {
     let mut buffer = [0u8; 8192];
     loop {
-        let read = unsafe { libc::read(master, buffer.as_mut_ptr() as *mut libc::c_void, buffer.len()) };
+        let read = unsafe {
+            libc::read(
+                master,
+                buffer.as_mut_ptr() as *mut libc::c_void,
+                buffer.len(),
+            )
+        };
         if read <= 0 {
             return;
         }
@@ -407,10 +472,20 @@ unsafe fn drain(master: RawFd) {
 unsafe fn forward_until_exit(child: libc::pid_t, master: RawFd) -> ! {
     let mut buffer = [0u8; 8192];
     loop {
-        let mut fds = [libc::pollfd { fd: master, events: libc::POLLIN, revents: 0 }];
+        let mut fds = [libc::pollfd {
+            fd: master,
+            events: libc::POLLIN,
+            revents: 0,
+        }];
         let ready = unsafe { libc::poll(fds.as_mut_ptr(), 1, 100) };
         if ready > 0 && fds[0].revents & libc::POLLIN != 0 {
-            let read = unsafe { libc::read(master, buffer.as_mut_ptr() as *mut libc::c_void, buffer.len()) };
+            let read = unsafe {
+                libc::read(
+                    master,
+                    buffer.as_mut_ptr() as *mut libc::c_void,
+                    buffer.len(),
+                )
+            };
             if read > 0 {
                 let _ = write_out(libc::STDOUT_FILENO, &buffer[..read as usize]);
                 continue;
@@ -427,7 +502,10 @@ mod tests {
     use super::*;
 
     fn args(list: &[&str]) -> impl Iterator<Item = String> {
-        list.iter().map(|v| v.to_string()).collect::<Vec<_>>().into_iter()
+        list.iter()
+            .map(|v| v.to_string())
+            .collect::<Vec<_>>()
+            .into_iter()
     }
 
     #[test]
