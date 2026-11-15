@@ -1,10 +1,12 @@
 --- a/src/form.rs
 +++ b/src/form.rs
-@@ -367,7 +367,14 @@
+@@ -376,7 +376,16 @@
+             self.error = t("plugin.herdr-workspace.form.error.not_directory");
              return;
          }
-         let expanded = complete::expand_user(trimmed);
 -        self.dir = expanded.to_string_lossy().into_owned();
++        // Absolute before it is stored: the workspace is later applied from a
++        // different working directory than the dialog ran in.
 +        let absolute = match expanded.canonicalize() {
 +            Ok(path) => path,
 +            Err(_) if expanded.is_absolute() => expanded,
