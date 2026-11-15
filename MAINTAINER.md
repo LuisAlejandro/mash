@@ -29,13 +29,29 @@ From a **clean** `develop`:
 | Manual | `make release-preflight` then `make release-patch` (or `-minor` / `-major`) |
 | Rollback | `VERSION=<version> make undo-release` |
 
-`make release-preflight` runs `scripts/preflight.sh`, which checks that every
-shipped script parses, that `VERSION`/.bumpversion.cfg/the tag agree, and that
-the release inputs are all present. The same script is the CI gate, so the two
-cannot drift. It needs no Apple tooling, no Docker and no network.
+`make release-preflight` runs `scripts/release-preflight.sh`, which proves the
+release on this Mac before anything is tagged, in this order:
 
-`make release-*` runs that same gate automatically before bumping anything, so a
-bad tree stops the release instead of producing a tag that only CI rejects.
+1. **Consistency** — `scripts/preflight.sh`: every shipped script parses,
+   `VERSION`/.bumpversion.cfg/the tag agree, the manifest and catalogs are valid,
+   the release inputs exist. This offline script is also the CI gate at the tag.
+2. **Lint and format** — `rustfmt --check` and clippy's correctness group on the
+   four Rust crates Mash owns, and ruff's error rules on Mash's Python. Held to
+   the clean baseline: the style backlogs (clippy ~90, ruff ~150) are not gated.
+3. **Tests** — `make test`, every suite.
+4. **Build** — `packaging/build.sh`, the real macOS app from the pinned upstreams
+   and Mash's patches, ad-hoc signed, then checked for its version and
+   `codesign --verify --deep --strict`. Log: `dist/release-preflight-build.log`.
+
+Expect about half an hour, most of it the build. It needs the network (the build
+fetches every pin), Xcode with the Metal toolchain, the Ghostty fork checkout and
+Zig 0.16.0 where `build.sh` looks for them, plus `ruff`. It needs no Docker and no
+Developer ID: signing and notarization stay in the release CI.
+
+`make release-*` runs this gate before creating the release branch or bumping
+anything, and refuses `MASH_PREFLIGHT_SKIP_BUILD=1`, so a tree that does not
+build stops the release instead of producing a tag only the artifact build
+rejects. Every failure of the first 0.5.2 attempts was in step 4.
 
 ### Translations
 

@@ -20,8 +20,14 @@ source "$SCRIPT_DIR/lib.sh"
 # Repository-specific gates override the shared preflight placeholder. Keep the
 # override in generator configuration so a future sync cannot remove the gate.
 release_run_preflight() {
-    print_step "Running release preflight"
-    "$SCRIPT_DIR/preflight.sh"
+    # The full local gate: lint, every suite, and the real macOS build. A tree
+    # that cannot be built is refused here, before anything is bumped or pushed.
+    print_step "Running release preflight (lint, tests, macOS build)"
+    if [[ "${MASH_PREFLIGHT_SKIP_BUILD:-}" = 1 ]]; then
+        print_error "MASH_PREFLIGHT_SKIP_BUILD is set; a release must prove its build"
+        exit 1
+    fi
+    "$SCRIPT_DIR/release-preflight.sh"
 }
 
 if [[ ! "$VERSION_TYPE" =~ ^(major|minor|patch|--resume)$ ]]; then
