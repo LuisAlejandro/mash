@@ -225,17 +225,24 @@ class WizardPreviewTest(unittest.TestCase):
                     nonlocal columns
                     if keys:
                         os.write(master, keys)
-                    drain(0.1)
-                    if process.poll() is not None:
-                        return ""
+                    drain(0.12)
+                    code = process.poll()
+                    self.assertIsNone(
+                        code,
+                        f"wizard exited early with status {code}",
+                    )
                     columns = 81 if columns == 80 else 80
                     size()
                     os.kill(process.pid, signal.SIGWINCH)
-                    # Under a loaded machine the redraw can miss a fixed window;
-                    # keep reading until it arrives, up to a short deadline.
-                    output = drain(0.2)
-                    deadline = time.monotonic() + 3
-                    while not output.strip() and time.monotonic() < deadline and process.poll() is None:
+                    # Hang detector, not a speed test: this loop walks every
+                    # catalog and CI runs the full matrix on one runner.
+                    output = drain(0.25)
+                    deadline = time.monotonic() + 30
+                    while not output.strip() and time.monotonic() < deadline:
+                        self.assertIsNone(
+                            process.poll(),
+                            f"wizard exited before a frame arrived (status {process.returncode})",
+                        )
                         output += drain(0.1)
                     return ANSI.sub("", output.decode("utf-8", errors="replace"))
 

@@ -57,12 +57,13 @@ class CarryPatchTest(unittest.TestCase):
                 with tempfile.TemporaryDirectory() as raw:
                     copy = Path(raw) / tree.name
                     shutil.copytree(tree, copy, symlinks=True)
-                    result = subprocess.run(
-                        ["patch", "-p1", "--dry-run", "-d", str(copy)],
-                        stdin=patch_file.open("rb"),
-                        capture_output=True,
-                        text=True,
-                    )
+                    with patch_file.open("rb") as patch:
+                        result = subprocess.run(
+                            ["patch", "-p1", "--dry-run", "-d", str(copy)],
+                            stdin=patch,
+                            capture_output=True,
+                            text=True,
+                        )
                     self.assertEqual(
                         result.returncode,
                         0,
