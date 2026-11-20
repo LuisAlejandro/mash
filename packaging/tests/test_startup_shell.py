@@ -6,6 +6,7 @@ import pty
 import select
 import shlex
 import signal
+import subprocess
 import tempfile
 import termios
 import time
@@ -124,6 +125,14 @@ class StartupShellTest(unittest.TestCase):
         self.assertIn(b"\x1b[?1000l", after_exit)
         self.assertIn(b"\x1b[?1006l", after_exit)
         self.assertNotIn(b"USER-SHELL-READY", self.output)
+
+    def test_grace_timer_does_not_make_the_shell_look_busy(self):
+        # Herdr's agent.start accepts only the shell PID in the foreground job.
+        rows = subprocess.check_output(["ps", "-ax", "-o", "pid=,ppid=,pgid="], text=True)
+        groups = [tuple(map(int, row.split())) for row in rows.splitlines()]
+        self.assertTrue(any(parent == self.pid for _, parent, _ in groups), "grace timer did not start")
+        shell_group = os.getpgid(self.pid)
+        self.assertEqual([pid for pid, _, group in groups if group == shell_group], [self.pid])
 
     def test_a_launch_that_never_arrives_hands_the_pane_back(self):
         # No command is ever typed. Without a grace period the pane sits here

@@ -85,6 +85,10 @@ PROMPT_COMMAND=_mash_startup_prompt
 # normal shell instead of this quiet one -- but it is a visible flash the wait
 # exists to avoid.
 if [[ ! -f $_mash_startup_record ]]; then
+    # Bash sources this rc before enabling job control. Start it now so the
+    # timer gets its own process group; Herdr rejects a shell sharing its
+    # foreground group with another process.
+    set -m
     (
         sleep "${MASH_STARTUP_GRACE:-60}"
         # The pane's program replaces this shell on a successful launch, so only
