@@ -1,6 +1,17 @@
 # Changelog
 
 
+## 0.5.3 (2026-11-20)
+
+### Fixed
+
+* Keep wizard keystrokes during Linux resize. [Luis Alejandro Martínez Faneyth]
+
+* Start Pi promptly in new workspaces. [Luis Alejandro Martínez Faneyth]
+
+* Restore Fresh cleanly after tab parking. [Luis Alejandro Martínez Faneyth]
+
+
 ## 0.5.2 (2026-11-15)
 
 ### Added
