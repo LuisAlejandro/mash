@@ -114,6 +114,8 @@ else
             bad "dist/Mash.app does not pass codesign --verify --deep --strict"
         else
             ok "dist/Mash.app $built built and verifies ($log)"
+            check "Fresh park/reattach on a PTY" python3 packaging/tests/fresh-park-pty.py \
+                "$app/Contents/Resources/libexec/fresh"
         fi
     else
         bad "packaging/build.sh failed; full log: $log"

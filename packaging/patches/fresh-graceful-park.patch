@@ -1,0 +1,60 @@
+--- a/crates/fresh-editor/src/main.rs
++++ b/crates/fresh-editor/src/main.rs
+@@ -6017,6 +6017,10 @@
+     }
+ 
+     // Continue to relay loop
++
++    // Modified by Mash, 2026-11-19: let SIGTERM detach through terminal cleanup.
++    #[cfg(unix)]
++    client::setup_detach_handler()?;
+ 
+     // Save original console mode before anything modifies it
+     #[cfg(windows)]
+--- a/crates/fresh-editor/src/client/mod.rs
++++ b/crates/fresh-editor/src/client/mod.rs
+@@ -23,6 +23,9 @@
+ 
+ #[cfg(unix)]
+ mod relay_unix;
++// Modified by Mash, 2026-11-19: install the park handler before entering raw mode.
++#[cfg(unix)]
++pub use relay_unix::setup_detach_handler;
+ 
+ /// Reason the client exited
+ #[derive(Debug)]
+--- a/crates/fresh-editor/src/client/relay_unix.rs
++++ b/crates/fresh-editor/src/client/relay_unix.rs
+@@ -11,6 +11,22 @@
+ use crate::server::ipc::ClientConnection;
+ use crate::server::protocol::ClientControl;
+ 
++// Modified by Mash, 2026-11-19: parking terminates the client, not the daemon.
++static DETACH_REQUESTED: AtomicBool = AtomicBool::new(false);
++
++pub fn setup_detach_handler() -> io::Result<()> {
++    use nix::sys::signal::{signal, SigHandler, Signal};
++
++    extern "C" fn request_detach(_: libc::c_int) {
++        DETACH_REQUESTED.store(true, Ordering::Relaxed);
++    }
++
++    // SAFETY: the handler only stores to a lock-free atomic. Terminal cleanup
++    // runs on the relay's normal exit path, never in the signal handler.
++    unsafe { signal(Signal::SIGTERM, SigHandler::Handler(request_detach)) }?;
++    Ok(())
++}
++
+ /// Main relay loop - bidirectional byte forwarding using poll()
+ pub fn relay_loop(
+     conn: &mut ClientConnection,
+@@ -55,6 +71,9 @@
+     }
+ 
+     loop {
++        if DETACH_REQUESTED.load(Ordering::Relaxed) {
++            return Ok(ClientExitReason::Detached);
++        }
+         // Check for resize
+         if resize_flag.swap(false, Ordering::SeqCst) {
+             if let Ok(size) = get_terminal_size() {

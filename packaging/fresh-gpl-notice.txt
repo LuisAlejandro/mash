@@ -30,6 +30,9 @@ and in Mash's public repository (packaging/patches/):
                                one of them reports its size, since a diff only
                                rewrites what changed in the daemon's model and
                                cannot repair a screen drawn at another size
+  - fresh-graceful-park.patch  detach the Unix terminal client on SIGTERM so
+                               parking restores the terminal without stopping
+                               the shared daemon
 
 GPL-3.0 section 5(a) asks that a modified work carry prominent notices stating
 that it was changed, and when.

@@ -222,7 +222,7 @@ mash_pins_check() {
 # matter; both sit before the clipboard only to keep that one last.
 mash_fresh_patches() {
   printf '%s\n' fresh-config-dir fresh-reveal-in-finder fresh-warn-logs \
-    fresh-daemon-explorer fresh-resize-full-render fresh-explorer-clipboard
+    fresh-daemon-explorer fresh-resize-full-render fresh-graceful-park fresh-explorer-clipboard
 }
 
 mash_require_sources() {
